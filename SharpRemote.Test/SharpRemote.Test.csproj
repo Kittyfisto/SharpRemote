@@ -1,0 +1,110 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{377C04C5-EE8C-4159-BDDC-37F1A8372705}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SharpRemote.Test</RootNamespace>
+    <AssemblyName>SharpRemote.Test</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="FluentAssertions">
+      <HintPath>..\packages\FluentAssertions.3.3.0\lib\net45\FluentAssertions.dll</HintPath>
+    </Reference>
+    <Reference Include="FluentAssertions.Core">
+      <HintPath>..\packages\FluentAssertions.3.3.0\lib\net45\FluentAssertions.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq, Version=4.2.1502.911, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Moq.4.2.1502.0911\lib\net40\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CodeGeneration\CreatorTest.cs" />
+    <Compile Include="CodeGeneration\ServantCreatorTest.cs" />
+    <Compile Include="CodeGeneration\Test.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\IEmpty.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetDoubleProperty.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetFloatProperty.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetInt16Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetInt32Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetInt64Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetInt8Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetStringProperty.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetUInt16Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetUInt32Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetUInt64Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetUInt8Property.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\IVoidMethodBaseClassParameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\IVoidMethodSealedClassParameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodDoubleParameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodFloatParameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodInt16Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodInt32Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodInt64Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodInt8Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\IVoidMethodNoParameters.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\NativeTypes\IVoidMethodStringParameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\IVoidMethodStructParameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodUInt16Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodUInt32Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodUInt64Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IVoidMethodUInt8Parameter.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\BaseClass.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\Birke.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\FieldStruct.cs" />
+    <Compile Include="CodeGeneration\ProxyCreatorTest.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\FieldSealedClass.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\Tree.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Remoting\EndpointTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharpRemote\SharpRemote.csproj">
+      <Project>{1b908b3a-2f3b-47b8-b69f-3827b8829586}</Project>
+      <Name>SharpRemote</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

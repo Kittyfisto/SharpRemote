@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpRemote", "SharpRemote\SharpRemote.csproj", "{1B908B3A-2F3B-47B8-B69F-3827B8829586}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpRemote.Test", "SharpRemote.Test\SharpRemote.Test.csproj", "{377C04C5-EE8C-4159-BDDC-37F1A8372705}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "__Solution Items", "__Solution Items", "{4539F890-A585-4651-BE41-6D560801E44C}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		license.txt = license.txt
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Code", "Code", "{0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{FEBCB651-C5D8-4374-BF9C-20D6FE6AC60E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E624D4D5-6EF9-4DCE-B5FC-C7DB6F387760}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C54CC6BB-A650-475B-A07B-94FCA8BE71A3}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\packages.config = .nuget\packages.config
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1B908B3A-2F3B-47B8-B69F-3827B8829586}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B908B3A-2F3B-47B8-B69F-3827B8829586}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B908B3A-2F3B-47B8-B69F-3827B8829586}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B908B3A-2F3B-47B8-B69F-3827B8829586}.Release|Any CPU.Build.0 = Release|Any CPU
+		{377C04C5-EE8C-4159-BDDC-37F1A8372705}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{377C04C5-EE8C-4159-BDDC-37F1A8372705}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{377C04C5-EE8C-4159-BDDC-37F1A8372705}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{377C04C5-EE8C-4159-BDDC-37F1A8372705}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1B908B3A-2F3B-47B8-B69F-3827B8829586} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
+		{FEBCB651-C5D8-4374-BF9C-20D6FE6AC60E} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
+		{E624D4D5-6EF9-4DCE-B5FC-C7DB6F387760} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
+		{377C04C5-EE8C-4159-BDDC-37F1A8372705} = {E624D4D5-6EF9-4DCE-B5FC-C7DB6F387760}
+	EndGlobalSection
+EndGlobal

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
-using SharpRemote.Test.CodeGeneration.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration
 {
@@ -11,14 +9,19 @@ namespace SharpRemote.Test.CodeGeneration
 	{
 		private IVoidMethodDoubleParameter _subject;
 
+		public Test(IVoidMethodDoubleParameter subject)
+		{
+			_subject = subject;
+		}
+
 		public ulong ObjectId
 		{
-			get { throw new System.NotImplementedException(); }
+			get { throw new NotImplementedException(); }
 		}
 
 		public ISerializer Serializer
 		{
-			get { throw new System.NotImplementedException(); }
+			get { throw new NotImplementedException(); }
 		}
 
 		public object Subject

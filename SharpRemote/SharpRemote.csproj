@@ -39,7 +39,7 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EndPointChannel.cs" />
+    <Compile Include="NoSuchEndPointException.cs" />
     <Compile Include="NoSuchServantException.cs" />
     <Compile Include="NotConnectedException.cs" />
     <Compile Include="PeerEndPoint.cs" />

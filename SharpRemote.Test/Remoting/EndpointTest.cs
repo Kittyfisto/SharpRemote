@@ -2,7 +2,6 @@
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Remoting
@@ -16,11 +15,12 @@ namespace SharpRemote.Test.Remoting
 		[SetUp]
 		public void SetUp()
 		{
-			_server = new PeerEndPoint(new IPEndPoint(IPAddress.Loopback, 8888));
+			_server = new PeerEndPoint("Test", IPAddress.Loopback);
 			_server.Start();
 
-			_client = new PeerEndPoint(new IPEndPoint(IPAddress.Loopback, 32144));
+			_client = new PeerEndPoint("Test", IPAddress.Loopback);
 			_client.Start();
+
 			_client.Connect(_server.Address);
 		}
 

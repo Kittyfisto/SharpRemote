@@ -11,6 +11,6 @@ namespace SharpRemote
 		/// <param name="methodName"></param>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
-		Stream CallRemoteMethod(ulong objectId, string methodName, Stream arguments);
+		MemoryStream CallRemoteMethod(ulong objectId, string methodName, MemoryStream arguments);
 	}
 }

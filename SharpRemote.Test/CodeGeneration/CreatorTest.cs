@@ -4,7 +4,6 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.CodeGeneration
@@ -38,7 +37,7 @@ namespace SharpRemote.Test.CodeGeneration
 			_proxyCreator = new ProxyCreator(_channel);
 			_servantCreator = new ServantCreator();
 
-			channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 			       .Returns((ulong objectId, string methodName, Stream arguments) =>
 				       {
 					       if (objectId != _servant.ObjectId)

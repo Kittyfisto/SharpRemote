@@ -71,7 +71,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetStringProperty()
 		{
 			var proxy = TestGenerate<IGetStringProperty>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -92,7 +92,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetDoubleProperty()
 		{
 			var proxy = TestGenerate<IGetDoubleProperty>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 			        .Returns((ulong objectId, string methodName, Stream stream) =>
 				        {
 					        objectId.Should().Be(((IProxy) proxy).ObjectId);
@@ -113,7 +113,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetFloatProperty()
 		{
 			var proxy = TestGenerate<IGetFloatProperty>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -134,7 +134,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetÍnt64Property()
 		{
 			var proxy = TestGenerate<IGetInt64Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -155,7 +155,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetUÍnt64Property()
 		{
 			var proxy = TestGenerate<IGetUInt64Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -176,7 +176,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetUÍnt32Property()
 		{
 			var proxy = TestGenerate<IGetUInt32Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -197,7 +197,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetÍnt32Property()
 		{
 			var proxy = TestGenerate<IGetInt32Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -218,7 +218,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetÍnt16Property()
 		{
 			var proxy = TestGenerate<IGetInt16Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -239,7 +239,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetUÍnt16Property()
 		{
 			var proxy = TestGenerate<IGetUInt16Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -260,7 +260,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetUÍnt8Property()
 		{
 			var proxy = TestGenerate<IGetUInt8Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -281,7 +281,7 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestGetÍnt8Property()
 		{
 			var proxy = TestGenerate<IGetUInt8Property>();
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -304,7 +304,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodNoParameters>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -325,7 +325,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodDoubleParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -350,7 +350,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodFloatParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -375,7 +375,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodInt64Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -400,7 +400,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodUInt64Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -425,7 +425,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodInt32Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -450,7 +450,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodUInt32Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -475,7 +475,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodInt16Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -500,7 +500,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodUInt16Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -525,7 +525,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodInt8Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -550,7 +550,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodUInt8Parameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -575,7 +575,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodStringParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -599,7 +599,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodStructParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -633,7 +633,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodSealedClassParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -669,7 +669,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodSealedClassParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -694,7 +694,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodBaseClassParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
@@ -723,7 +723,7 @@ namespace SharpRemote.Test.CodeGeneration
 			var proxy = TestGenerate<IVoidMethodBaseClassParameter>();
 
 			bool doCalled = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<Stream>()))
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{
 						objectId.Should().Be(((IProxy)proxy).ObjectId);

@@ -1,6 +1,6 @@
 # SharpRemote
 
-[![Build status](https://ci.appveyor.com/api/projects/status/aaup8gk4iwecmco6/branch/master?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/e4s3he430y1a27cb?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote)
 
 A library designed to seamlessly integrate remoting into a .NET application.
 

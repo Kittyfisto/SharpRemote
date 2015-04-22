@@ -5,6 +5,8 @@ using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces;
+using SharpRemote.Test.CodeGeneration.Types.Interfaces.Classes;
+using SharpRemote.Test.CodeGeneration.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 using SharpRemote.Test.CodeGeneration.Types.Structs;
 

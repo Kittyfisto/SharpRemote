@@ -39,13 +39,14 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeGeneration\SerializerExtensions.cs" />
     <Compile Include="NoSuchEndPointException.cs" />
     <Compile Include="NoSuchServantException.cs" />
     <Compile Include="NotConnectedException.cs" />
     <Compile Include="PeerEndPoint.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
-    <Compile Include="CodeGeneration\SerializerCompiler.cs" />
+    <Compile Include="CodeGeneration\Serializer.cs" />
     <Compile Include="CodeGeneration\ServantCompiler.cs" />
     <Compile Include="CodeGeneration\ServantCreator.cs" />
     <Compile Include="IEndpoint.cs" />

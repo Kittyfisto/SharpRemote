@@ -7,7 +7,7 @@ namespace SharpRemote.CodeGeneration
 {
 	public sealed class ServantCreator
 	{
-		private readonly SerializerCompiler _serializer;
+		private readonly Serializer _serializer;
 		private readonly AssemblyBuilder _assembly;
 		private readonly string _moduleName;
 		private readonly Dictionary<Type, Type> _interfaceToSubject;
@@ -18,7 +18,7 @@ namespace SharpRemote.CodeGeneration
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
 			var module = _assembly.DefineDynamicModule(_moduleName);
-			_serializer = new SerializerCompiler(module);
+			_serializer = new Serializer(module);
 			_interfaceToSubject= new Dictionary<Type, Type>();
 		}
 

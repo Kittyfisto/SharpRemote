@@ -10,14 +10,14 @@ namespace SharpRemote.CodeGeneration
 		private readonly AssemblyBuilder _assembly;
 		private readonly Type _interfaceType;
 		private readonly ModuleBuilder _module;
-		private readonly SerializerCompiler _serializerCompiler;
+		private readonly Serializer _serializerCompiler;
 		private readonly string _moduleName;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly FieldBuilder _objectId;
 		private readonly FieldBuilder _serializer;
 		private readonly FieldBuilder _subject;
 
-		public ServantCompiler(SerializerCompiler serializer,
+		public ServantCompiler(Serializer serializer,
 		                       AssemblyName assemblyName,
 		                       string subjectTypeName,
 		                       Type interfaceType)

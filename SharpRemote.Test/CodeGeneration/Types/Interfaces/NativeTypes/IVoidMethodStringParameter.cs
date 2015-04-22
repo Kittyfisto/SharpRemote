@@ -1,4 +1,4 @@
-﻿namespace SharpRemote.Test.CodeGeneration.Types.Interfaces
+﻿namespace SharpRemote.Test.CodeGeneration.Types.Interfaces.NativeTypes
 {
 	public interface IVoidMethodStringParameter
 	{

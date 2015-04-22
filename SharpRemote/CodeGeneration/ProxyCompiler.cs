@@ -8,7 +8,7 @@ namespace SharpRemote.CodeGeneration
 {
 	public class ProxyCompiler
 	{
-		private readonly SerializerCompiler _serializerCompiler;
+		private readonly Serializer _serializerCompiler;
 		private readonly Type _interfaceType;
 		private readonly AssemblyBuilder _assembly;
 		private readonly ModuleBuilder _module;
@@ -23,7 +23,7 @@ namespace SharpRemote.CodeGeneration
 
 		#endregion
 
-		public ProxyCompiler(SerializerCompiler serializer, AssemblyName assemblyName, string proxyTypeName, Type interfaceType)
+		public ProxyCompiler(Serializer serializer, AssemblyName assemblyName, string proxyTypeName, Type interfaceType)
 		{
 			_serializerCompiler = serializer;
 			_interfaceType = interfaceType;

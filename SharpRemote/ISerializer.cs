@@ -1,11 +1,11 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 
 namespace SharpRemote
 {
 	public interface ISerializer
 	{
+		void RegisterType<T>();
 		void WriteObject(BinaryWriter writer, object value);
-		object Deserialize(BinaryReader reader, Type type);
+		object ReadObject(BinaryReader reader);
 	}
 }

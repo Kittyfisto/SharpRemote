@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace SharpRemote.Test.CodeGeneration.Types.Structs
+namespace SharpRemote.Test.CodeGeneration.Types.Interfaces.Classes
 {
 	[DataContract]
 	public sealed class FieldSealedClass

@@ -7,7 +7,7 @@ namespace SharpRemote.CodeGeneration
 {
 	public sealed class ProxyCreator
 	{
-		private readonly SerializerCompiler _serializer;
+		private readonly Serializer _serializer;
 		private readonly IEndPointChannel _channel;
 		private readonly Dictionary<Type, Type> _interfaceToProxy;
 		private readonly AssemblyBuilder _assembly;
@@ -23,7 +23,7 @@ namespace SharpRemote.CodeGeneration
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
 			var module = _assembly.DefineDynamicModule(_moduleName);
-			_serializer = new SerializerCompiler(module);
+			_serializer = new Serializer(module);
 
 			_interfaceToProxy = new Dictionary<Type, Type>();
 		}

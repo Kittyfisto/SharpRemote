@@ -6,7 +6,7 @@ using NUnit.Framework;
 using SharpRemote.CodeGeneration;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 
-namespace SharpRemote.Test.CodeGeneration
+namespace SharpRemote.Test.CodeGeneration.Remoting
 {
 	[TestFixture]
 	[Description("Verifies that proxy and subject can communicate to each other- arguments, return values and exceptions are serialized already")]

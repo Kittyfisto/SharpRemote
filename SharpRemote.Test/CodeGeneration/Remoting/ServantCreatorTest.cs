@@ -7,7 +7,7 @@ using SharpRemote.CodeGeneration;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 
-namespace SharpRemote.Test.CodeGeneration
+namespace SharpRemote.Test.CodeGeneration.Remoting
 {
 	[TestFixture]
 	public sealed class ServantCreatorTest

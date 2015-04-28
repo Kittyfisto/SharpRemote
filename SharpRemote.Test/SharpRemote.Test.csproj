@@ -51,9 +51,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CodeGeneration\CreatorTest.cs" />
-    <Compile Include="CodeGeneration\SerializationTest.cs" />
-    <Compile Include="CodeGeneration\ServantCreatorTest.cs" />
+    <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\SerializationConstraintsTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\SerializationTest.cs" />
+    <Compile Include="CodeGeneration\Remoting\ServantCreatorTest.cs" />
     <Compile Include="CodeGeneration\Test.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\IEmpty.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetDoubleProperty.cs" />
@@ -85,9 +86,12 @@
     <Compile Include="CodeGeneration\Types\Interfaces\Classes\BaseClass.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\Classes\Birke.cs" />
     <Compile Include="CodeGeneration\Types\Structs\FieldStruct.cs" />
-    <Compile Include="CodeGeneration\ProxyCreatorTest.cs" />
+    <Compile Include="CodeGeneration\Remoting\ProxyCreatorTest.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\Classes\FieldSealedClass.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\Classes\Tree.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\MissingDataContractStruct.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\ReadOnlyDataMemberFieldStruct.cs" />
+    <Compile Include="CodeGeneration\Types\Structs\StaticDataMemberFieldStruct.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Remoting\EndpointTest.cs" />
   </ItemGroup>

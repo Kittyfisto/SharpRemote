@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.CodeGeneration
 {

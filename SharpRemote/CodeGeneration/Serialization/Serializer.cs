@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
 
-namespace SharpRemote.CodeGeneration
+namespace SharpRemote.CodeGeneration.Serialization
 {
 	public sealed class Serializer
 		: ISerializer
@@ -36,6 +36,18 @@ namespace SharpRemote.CodeGeneration
 			{
 				Info = method;
 			}
+		}
+
+		public Serializer()
+		{
+			var assemblyName = new AssemblyName("SharpRemote.CodeGeneration.Serializer");
+			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			var moduleName = assemblyName.Name + ".dll";
+			var module = assembly.DefineDynamicModule(moduleName);
+
+			_module = module;
+			_typeToWriteMethods = new Dictionary<Type, WriteMethod>();
+			_typeToReadMethods = new Dictionary<Type, ReadMethod>();
 		}
 
 		public Serializer(ModuleBuilder module)
@@ -77,44 +89,37 @@ namespace SharpRemote.CodeGeneration
 		/// <returns></returns>
 		public MethodInfo GetWriteObjectMethodInfo(Type type)
 		{
-			WriteMethod method;
-			if (!_typeToWriteMethods.TryGetValue(type, out method))
+			if (type.IsValueType || type.IsSealed)
 			{
-				method = CompileWriteMethod(type);
+				WriteMethod method;
+				ReadMethod unused;
+				RegisterType(type, out method, out unused);
+				return method.Info;
 			}
-			return method.Info;
+			else
+			{
+				// We don't know the true type of the parameter until we inspect it's actual value.
+				// Thus we're forced to do a dynamic dispatch.
+				throw new NotImplementedException();
+			}
 		}
 
 		private Action<BinaryWriter, object, ISerializer> GetWriteObjectDelegate(Type type)
 		{
 			WriteMethod method;
-			if (!_typeToWriteMethods.TryGetValue(type, out method))
-			{
-				method = CompileWriteMethod(type);
-			}
+			ReadMethod unused;
+			RegisterType(type, out method, out unused);
+
 			return method.WriteDelegate;
 		}
 
 		private Func<BinaryReader, ISerializer, object> GetReadObjectDelegate(Type type)
 		{
+			WriteMethod unused;
 			ReadMethod method;
-			if (!_typeToReadMethods.TryGetValue(type, out method))
-			{
-				method = CompileReadMethod(type);
-			}
+			RegisterType(type, out unused, out method);
+
 			return method.ReadDelegate;
-		}
-
-		[Pure]
-		private static bool CanBeSerialized(Type type)
-		{
-			if (type.IsPrimitive)
-				return true;
-
-			if (type.GetCustomAttribute<DataContractAttribute>() != null)
-				return true;
-
-			return false;
 		}
 
 		/// <summary>
@@ -137,51 +142,44 @@ namespace SharpRemote.CodeGeneration
 			return true;
 		}
 
-		private ReadMethod CompileReadMethod(Type type)
+		private ReadMethod CompileReadMethod(TypeInformation typeInformation)
 		{
-			if (!CanBeSerialized(type))
-				throw new ArgumentException(string.Format("Type '{0}' is missing the DataContract attribute", type));
-
-			var typeName = string.Format("Read.{0}.{1}", type.Namespace, type.Name);
+			var typeName = string.Format("Read.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
 			var typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
 			var method = typeBuilder.DefineMethod("ReadValue", MethodAttributes.Public | MethodAttributes.Static,
-												   CallingConventions.Standard, type, new[]
+												   CallingConventions.Standard, typeInformation.Type, new[]
 				                                       {
 														   typeof(BinaryReader),
 														   typeof (ISerializer)
 				                                       });
 
-			CreateReadDelegate(typeBuilder, method, type);
+			CreateReadDelegate(typeBuilder, method, typeInformation.Type);
 			var m = new ReadMethod(method);
-			_typeToReadMethods.Add(type, m);
+			_typeToReadMethods.Add(typeInformation.Type, m);
 
 			var gen = method.GetILGenerator();
-			if (type.IsPrimitive)
+			if (typeInformation.IsPrimitive)
 			{
 				gen.Emit(OpCodes.Ldarg_0);
 
-				if (!gen.EmitReadPod(type))
+				if (!gen.EmitReadPod(typeInformation.Type))
 					throw new NotImplementedException();
 			}
 			else
 			{
-				var tmp = gen.DeclareLocal(type);
-				if (type.IsValueType)
+				var tmp = gen.DeclareLocal(typeInformation.Type);
+				if (typeInformation.IsValueType)
 				{
 					gen.Emit(OpCodes.Ldloca, tmp);
-					gen.Emit(OpCodes.Initobj, type);
+					gen.Emit(OpCodes.Initobj, typeInformation.Type);
 				}
 				else
 				{
-					var ctor = type.GetConstructor(new Type[0]);
-					if (ctor == null)
-						throw new ArgumentException(string.Format("Type '{0}' is missing a parameterless constructor", type));
-
-					gen.Emit(OpCodes.Newobj, ctor);
+					gen.Emit(OpCodes.Newobj, typeInformation.Constructor);
 					gen.Emit(OpCodes.Stloc, tmp);
 				}
 
-				ReadFields(gen, tmp, type);
+				ReadFields(gen, tmp, typeInformation.Type);
 
 				gen.Emit(OpCodes.Ldloc, tmp);
 			}
@@ -217,7 +215,7 @@ namespace SharpRemote.CodeGeneration
 			}
 			else
 			{
-				throw new NotImplementedException();
+				gen.Emit(OpCodes.Castclass, type);
 			}
 
 			gen.Emit(OpCodes.Ret);
@@ -251,45 +249,42 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Stfld, field);
 		}
 
-		private WriteMethod CompileWriteMethod(Type type)
+		private WriteMethod CompileWriteMethod(TypeInformation typeInformation)
 		{
-			if (!CanBeSerialized(type))
-				throw new ArgumentException(string.Format("Type '{0}' is missing the DataContract attribute", type));
-
-			var typeName = string.Format("Write.{0}.{1}", type.Namespace, type.Name);
+			var typeName = string.Format("Write.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
 			var typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
 			var method = typeBuilder.DefineMethod("WriteValue", MethodAttributes.Public | MethodAttributes.Static,
 			                                       CallingConventions.Standard, typeof (void), new[]
 				                                       {
 														   typeof(BinaryWriter),
-					                                       type,
+					                                       typeInformation.Type,
 														   typeof (ISerializer)
 				                                       });
-			CreateWriteDelegate(typeBuilder, method, type);
+			CreateWriteDelegate(typeBuilder, method, typeInformation.Type);
 			var m = new WriteMethod(method);
-			_typeToWriteMethods.Add(type, m);
+			_typeToWriteMethods.Add(typeInformation.Type, m);
 
 			var gen = method.GetILGenerator();
 
-			if (type.IsPrimitive)
+			if (typeInformation.IsPrimitive)
 			{
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldarg_1);
-				if (!gen.EmitWritePodToWriter(type))
+				if (!gen.EmitWritePodToWriter(typeInformation.Type))
 					throw new NotImplementedException();
 			}
-			else if (type.IsValueType)
+			else if (typeInformation.IsValueType)
 			{
-				WriteFields(gen, type);
+				WriteFields(gen, typeInformation.Type);
 				gen.Emit(OpCodes.Ret);
 			}
-			else if (type.IsSealed)
+			else if (typeInformation.IsSealed)
 			{
-				WriteSealedObject(gen, type);
+				WriteSealedObject(gen, typeInformation.Type);
 			}
 			else
 			{
-				WriteUnsealedObject(gen, type);
+				WriteUnsealedObject(gen, typeInformation.Type);
 			}
 
 			var serializerType = typeBuilder.CreateType();
@@ -446,10 +441,34 @@ namespace SharpRemote.CodeGeneration
 		public void RegisterType<T>()
 		{
 			var type = typeof (T);
+			RegisterType(type);
+		}
+
+		public void RegisterType(Type type)
+		{
 			if (!_typeToWriteMethods.ContainsKey(type))
 			{
-				CompileWriteMethod(type);
-				CompileReadMethod(type);
+				WriteMethod unused1;
+				ReadMethod unused2;
+				RegisterType(type, out unused1, out unused2);
+			}
+		}
+
+		private void RegisterType(Type type, out WriteMethod writeMethod, out ReadMethod readMethod)
+		{
+			TypeInformation typeInfo = null;
+			if (!_typeToWriteMethods.TryGetValue(type, out writeMethod))
+			{
+				typeInfo = new TypeInformation(type);
+				writeMethod = CompileWriteMethod(typeInfo);
+			}
+
+			if (!_typeToReadMethods.TryGetValue(type, out readMethod))
+			{
+				if (typeInfo == null)
+					typeInfo = new TypeInformation(type);
+
+				readMethod = CompileReadMethod(typeInfo);
 			}
 		}
 
@@ -478,6 +497,20 @@ namespace SharpRemote.CodeGeneration
 			}
 
 			return null;
+		}
+
+		[Pure]
+		public bool IsTypeRegistered<T>()
+		{
+			return IsTypeRegistered(typeof (T));
+		}
+
+		[Pure]
+		public bool IsTypeRegistered(Type type)
+		{
+			if (type == null) throw new ArgumentNullException("type");
+
+			return _typeToReadMethods.ContainsKey(type);
 		}
 	}
 }

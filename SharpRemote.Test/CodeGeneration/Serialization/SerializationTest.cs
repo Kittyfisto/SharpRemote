@@ -4,9 +4,10 @@ using System.Reflection.Emit;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
+using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Test.CodeGeneration.Types.Structs;
 
-namespace SharpRemote.Test.CodeGeneration
+namespace SharpRemote.Test.CodeGeneration.Serialization
 {
 	[TestFixture]
 	public sealed class SerializationTest

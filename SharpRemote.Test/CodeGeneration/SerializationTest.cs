@@ -4,6 +4,7 @@ using System.Reflection.Emit;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
+using SharpRemote.Test.CodeGeneration.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration
 {
@@ -29,6 +30,7 @@ namespace SharpRemote.Test.CodeGeneration
 			_serializer.RegisterType<UInt32>();
 			_serializer.RegisterType<Int64>();
 			_serializer.RegisterType<UInt64>();
+			_serializer.RegisterType<FieldStruct>();
 			assembly.Save(moduleName);
 		}
 
@@ -84,6 +86,18 @@ namespace SharpRemote.Test.CodeGeneration
 		public void TestRoundtripUInt64()
 		{
 			_serializer.RoundtripObject(9899045442343232423).Should().Be(9899045442343232423);
+		}
+
+		[Test]
+		public void TestRoundtripFieldStruct()
+		{
+			var value = new FieldStruct
+				{
+					A = Math.PI,
+					B = 42,
+					C = "Foobar"
+				};
+			_serializer.RoundtripObject(value).Should().Be(value);
 		}
 	}
 }

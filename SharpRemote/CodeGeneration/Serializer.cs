@@ -156,7 +156,6 @@ namespace SharpRemote.CodeGeneration
 			_typeToReadMethods.Add(type, m);
 
 			var gen = method.GetILGenerator();
-
 			if (type.IsPrimitive)
 			{
 				gen.Emit(OpCodes.Ldarg_0);
@@ -166,7 +165,25 @@ namespace SharpRemote.CodeGeneration
 			}
 			else
 			{
-				throw new NotImplementedException();
+				var tmp = gen.DeclareLocal(type);
+				if (type.IsValueType)
+				{
+					gen.Emit(OpCodes.Ldloca, tmp);
+					gen.Emit(OpCodes.Initobj, type);
+				}
+				else
+				{
+					var ctor = type.GetConstructor(new Type[0]);
+					if (ctor == null)
+						throw new ArgumentException(string.Format("Type '{0}' is missing a parameterless constructor", type));
+
+					gen.Emit(OpCodes.Newobj, ctor);
+					gen.Emit(OpCodes.Stloc, tmp);
+				}
+
+				ReadFields(gen, tmp, type);
+
+				gen.Emit(OpCodes.Ldloc, tmp);
 			}
 
 			gen.Emit(OpCodes.Ret);
@@ -198,8 +215,40 @@ namespace SharpRemote.CodeGeneration
 			{
 				gen.Emit(OpCodes.Box, type);
 			}
+			else
+			{
+				throw new NotImplementedException();
+			}
 
 			gen.Emit(OpCodes.Ret);
+		}
+
+		private void ReadFields(ILGenerator gen, LocalBuilder target, Type type)
+		{
+			var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+			                 .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
+			                 .ToArray();
+
+			foreach (var field in fields)
+			{
+				ReadField(gen, target, field);
+			}
+		}
+
+		private void ReadField(ILGenerator gen, LocalBuilder target, FieldInfo field)
+		{
+			// tmp.<Field> = writer.ReadXYZ();
+
+			gen.Emit(OpCodes.Ldloca, target);
+			gen.Emit(OpCodes.Ldarg_0);
+
+			var type = field.FieldType;
+			if (!gen.EmitReadPod(type))
+			{
+				throw new NotImplementedException();
+			}
+
+			gen.Emit(OpCodes.Stfld, field);
 		}
 
 		private WriteMethod CompileWriteMethod(Type type)
@@ -232,6 +281,7 @@ namespace SharpRemote.CodeGeneration
 			else if (type.IsValueType)
 			{
 				WriteFields(gen, type);
+				gen.Emit(OpCodes.Ret);
 			}
 			else if (type.IsSealed)
 			{
@@ -260,42 +310,30 @@ namespace SharpRemote.CodeGeneration
 				                                       });
 			var gen = method.GetILGenerator();
 
-			if (!RequiresTypeInformation(type))
-			{
-				// We need to inject type information here...
-				WriteTypeInformationOrNull(gen, type, () =>
-					{
-						gen.Emit(OpCodes.Ldarg_0);
-						gen.Emit(OpCodes.Ldarg_1);
-
-						if (type.IsPrimitive)
-						{
-							gen.Emit(OpCodes.Unbox_Any, type);
-						}
-						else
-						{
-							gen.Emit(OpCodes.Castclass, type);
-						}
-
-						gen.Emit(OpCodes.Ldarg_2);
-						gen.Emit(OpCodes.Call, methodInfo);
-					});
-			}
-			else
+			WriteTypeInformationOrNull(gen, type, () =>
 			{
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldarg_1);
-				gen.Emit(OpCodes.Castclass, type);
+
+				if (type.IsPrimitive || type.IsValueType)
+				{
+					gen.Emit(OpCodes.Unbox_Any, type);
+				}
+				else
+				{
+					gen.Emit(OpCodes.Castclass, type);
+				}
+
 				gen.Emit(OpCodes.Ldarg_2);
 				gen.Emit(OpCodes.Call, methodInfo);
-			}
+			});
 		}
 
 		private void WriteTypeInformationOrNull(ILGenerator gen, Type type, Action emitSerializationCode)
 		{
 			//gen.EmitWriteLine("writing type info");
 
-			var result = gen.DeclareLocal(typeof(int));
+			var result = gen.DeclareLocal(typeof(bool));
 
 			// if (object == null)
 			var @true = gen.DefineLabel();

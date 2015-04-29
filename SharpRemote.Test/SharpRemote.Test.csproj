@@ -93,7 +93,7 @@
     <Compile Include="CodeGeneration\Types\Structs\ReadOnlyDataMemberFieldStruct.cs" />
     <Compile Include="CodeGeneration\Types\Structs\StaticDataMemberFieldStruct.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Remoting\EndpointTest.cs" />
+    <Compile Include="Remoting\EndpointAcceptanceTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

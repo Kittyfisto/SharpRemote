@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Lidgren.Network;
@@ -14,6 +15,9 @@ namespace SharpRemote
 		: IEndPoint
 		, IEndPointChannel
 	{
+		private const string RequestToken = "Request";
+		private const string ResponseToken = "Response";
+
 		private readonly CancellationTokenSource _cancel;
 		private readonly NetPeerConfiguration _configuration;
 		private readonly Dictionary<IPEndPoint, NetConnection> _connections;
@@ -23,17 +27,23 @@ namespace SharpRemote
 		private readonly ServantCreator _servantCreator;
 		private readonly Task _task;
 		private IPEndPoint _localAddress;
-		private ulong _nextMessageId;
-		private readonly Dictionary<ulong, Action<NetIncomingMessage>> _pending;
+		private long _nextRpcId;
+		private readonly string _endPointName;
 
-		public PeerEndPoint(string appName, IPAddress localAddress)
+		#region Pending Methods
+		private readonly Dictionary<long, Action<MemoryStream>> _pendingCalls;
+		private readonly Dictionary<IPEndPoint, Action<NetIncomingMessage>> _pendingConnects;
+		#endregion
+
+		public PeerEndPoint(string endPointName, IPAddress localAddress)
 		{
-			if (appName == null) throw new ArgumentNullException("appName");
+			if (endPointName == null) throw new ArgumentNullException("endPointName");
 			if (localAddress == null) throw new ArgumentNullException("localAddress");
 
+			_endPointName = endPointName;
 			_servantCreator = new ServantCreator();
 
-			_configuration = new NetPeerConfiguration(appName)
+			_configuration = new NetPeerConfiguration("Test")
 				{
 					LocalAddress = localAddress
 				};
@@ -60,7 +70,9 @@ namespace SharpRemote
 			_connections = new Dictionary<IPEndPoint, NetConnection>();
 			_servants = new Dictionary<ulong, IServant>();
 			_proxyCreator = new ProxyCreator(this);
-			_pending = new Dictionary<ulong, Action<NetIncomingMessage>>();
+
+			_pendingCalls = new Dictionary<long, Action<MemoryStream>>();
+			_pendingConnects = new Dictionary<IPEndPoint, Action<NetIncomingMessage>>();
 		}
 
 		public IPEndPoint Address
@@ -83,33 +95,43 @@ namespace SharpRemote
 					switch (msg.MessageType)
 					{
 						case NetIncomingMessageType.StatusChanged:
-							Console.WriteLine("Status: {0}", msg.ReadString());
+							var connection = msg.SenderConnection;
+							Console.WriteLine("{0}: Status changed to {1}", _endPointName, connection.Status);
+							if (connection.Status == NetConnectionStatus.Connected)
+							{
+								NotifySuccessfulConnection(msg);
+							}
 							break;
 
 						case NetIncomingMessageType.DebugMessage:
-							Console.WriteLine("Debug: {0}", msg.ReadString());
+							Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
 							break;
 
 						case NetIncomingMessageType.VerboseDebugMessage:
-							Console.WriteLine("Debug: {0}", msg.ReadString());
+							Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
 							break;
 
 						case NetIncomingMessageType.WarningMessage:
-							Console.WriteLine("Warning: {0}", msg.ReadString());
+							Console.WriteLine("{0}: WARN {1}", _endPointName, msg.ReadString());
 							break;
 
 						case NetIncomingMessageType.Error:
-							Console.WriteLine("Error: {0}", msg.ReadString());
+							Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
 							break;
 
 						case NetIncomingMessageType.ErrorMessage:
-							Console.WriteLine("Error Message: {0}", msg.ReadString());
+							Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
 							break;
 
 						case NetIncomingMessageType.ConnectionApproval:
-							Console.WriteLine("Incoming connection from '{0}', approving it...", msg.SenderEndPoint);
+							Console.WriteLine("{0}: Incoming connection from '{1}', approving it...", _endPointName, msg.SenderEndPoint);
 							msg.SenderConnection.Approve();
 							_connections.Add(msg.SenderEndPoint, msg.SenderConnection);
+							break;
+
+						case NetIncomingMessageType.Data:
+							Console.WriteLine("{0}: Data received from {1}", _endPointName, msg.SenderEndPoint);
+							HandleMessage(msg);
 							break;
 					}
 				}
@@ -117,6 +139,129 @@ namespace SharpRemote
 				{
 					if (token.WaitHandle.WaitOne(1))
 						break;
+				}
+			}
+		}
+
+		private void HandleMessage(NetIncomingMessage msg)
+		{
+			var type = msg.ReadString();
+			var messageId = msg.ReadInt64();
+
+			switch(type)
+			{
+				case RequestToken:
+					HandleRequest(messageId, msg);
+					break;
+
+				case ResponseToken:
+					HandleResponse(messageId, msg);
+					break;
+
+				default:
+					// Unhandled
+					break;
+			}
+		}
+
+		/// <summary>
+		/// Handles an RPC request (e.g. the call itself) by forwarding the call to the desired <see cref="IServant"/>.
+		/// </summary>
+		/// <param name="rpcId">The ID of the remote procedure call, uniquely identifying this call amonst all other pending ones</param>
+		/// <param name="msg">The incoming message to forward to the <see cref="IServant"/></param>
+		private void HandleRequest(long rpcId, NetIncomingMessage msg)
+		{
+			ulong servantId = msg.ReadUInt64();
+			string methodName = msg.ReadString();
+			int length = msg.ReadInt32();
+			var data = new byte[length];
+			if (length > 0)
+			{
+				msg.ReadBytes(data, 0, length);
+			}
+
+			IServant servant;
+			lock (_servants)
+			{
+				if (!_servants.TryGetValue(servantId, out servant))
+					return;
+			}
+
+			var encoding = Encoding.UTF8;
+
+			using (var input = new MemoryStream(data))
+			using (var reader = new BinaryReader(input, encoding))
+			using (var output = new MemoryStream())
+			using (var writer = new BinaryWriter(output, encoding))
+			{
+				servant.Invoke(methodName, reader, writer);
+				output.Position = 0;
+				SendRpcResponse(rpcId, msg.SenderConnection, output);
+			}
+		}
+
+		/// <summary>
+		/// Sends a response for the given RPC (<paramref name="rpcId"/>) to the client that fired it in the first place.
+		/// </summary>
+		/// <param name="rpcId"></param>
+		/// <param name="connection"></param>
+		/// <param name="output"></param>
+		private void SendRpcResponse(long rpcId, NetConnection connection, MemoryStream output)
+		{
+			var responseMsg = _peer.CreateMessage();
+			responseMsg.Write(ResponseToken);
+			responseMsg.Write(rpcId);
+
+			var outLength = (int) output.Length;
+			if (outLength > 0)
+			{
+				responseMsg.Write(outLength);
+				responseMsg.Write(output.GetBuffer(), 0, outLength);
+			}
+			else
+			{
+				responseMsg.Write(outLength);
+			}
+
+			connection.SendMessage(responseMsg, NetDeliveryMethod.ReliableOrdered, 0);
+		}
+
+		private void HandleResponse(long rpcId, NetIncomingMessage msg)
+		{
+			Action<MemoryStream> fn;
+			lock (_pendingCalls)
+			{
+				if (!_pendingCalls.TryGetValue(rpcId, out fn))
+					return;
+			}
+
+			int length = msg.ReadInt32();
+			var response = new byte[length];
+			if (length > 0)
+			{
+				msg.ReadBytes(response, 0, length);
+				fn(new MemoryStream(response));
+			}
+			else
+			{
+				fn(null);
+			}
+		}
+
+		private void NotifySuccessfulConnection(NetIncomingMessage msg)
+		{
+			lock (_pendingConnects)
+			{
+				Action<NetIncomingMessage> fn;
+				if (_pendingConnects.TryGetValue(msg.SenderEndPoint, out fn))
+				{
+					Console.WriteLine("{0}: Pending connection to '{1}' approved", _endPointName, msg.SenderEndPoint);
+
+					fn(msg);
+				}
+				else
+				{
+					// What to do now?!
 				}
 			}
 		}
@@ -136,7 +281,7 @@ namespace SharpRemote
 		/// <returns></returns>
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
-			throw new NotImplementedException();
+			return _proxyCreator.CreateProxy<T>(objectId);
 		}
 
 		/// <summary>
@@ -147,67 +292,95 @@ namespace SharpRemote
 		/// <returns></returns>
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
-			throw new NotImplementedException();
-		}
-
-		/// <summary>
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="subject"></param>
-		/// <returns></returns>
-		public IServant CreateServant<T>(T subject) where T : class
-		{
-			return _servantCreator.CreateServant(1, subject);
+			var servant = _servantCreator.CreateServant(objectId, subject);
+			lock (_servants)
+			{
+				_servants.Add(objectId, servant);
+			}
+			return servant;
 		}
 
 		public void Connect(IPEndPoint address)
 		{
-			NetConnection connection = _peer.Connect(address);
-			_connections.Add(address, connection);
-			Thread.Sleep(TimeSpan.FromMinutes(10));
-		}
-
-		MemoryStream IEndPointChannel.CallRemoteMethod(ulong objectId, string methodName, MemoryStream arguments)
-		{
-			var con = _connections.First().Value;
-			var msg = _peer.CreateMessage();
-			var id = ++_nextMessageId;
-			msg.Write(id);
-			msg.Write(objectId);
-			msg.Write(methodName);
-			msg.Write(arguments.GetBuffer(), 0, (int) arguments.Length);
-			NetIncomingMessage message;
-			SendAndWaitFor(con, id, msg, out message);
-
-			var data = message.Data;
-			return new MemoryStream(data, 8, data.Length - 8);
-		}
-
-		private void SendAndWaitFor(NetConnection con, ulong id, NetOutgoingMessage msg, out NetIncomingMessage netOutgoingMessage)
-		{
 			var handle = new ManualResetEvent(false);
 			try
 			{
-				NetIncomingMessage receivedMessage = null;
-				_pending.Add(id, message =>
-					{
-						var actualId = message.PeekUInt64();
-						if (actualId == id)
+				lock (_pendingConnects)
+				{
+					_pendingConnects.Add(address, msg =>
 						{
-							receivedMessage = message;
 							handle.Set();
-						}
-					});
-				var result = con.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
-				if (handle.WaitOne(TimeSpan.FromSeconds(60)))
-					throw new TimeoutException();
+						});
+				}
 
-				netOutgoingMessage = receivedMessage;
+				NetConnection connection = _peer.Connect(address);
+				_connections.Add(address, connection);
+
+				if (!handle.WaitOne(TimeSpan.FromMinutes(1)))
+					throw new NotConnectedException();
 			}
 			finally
 			{
 				handle.Dispose();
-				_pending.Remove(id);
+
+				lock (_pendingConnects)
+				{
+					_pendingConnects.Remove(address);
+				}
+			}
+		}
+
+		MemoryStream IEndPointChannel.CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments)
+		{
+			var con = _connections.First().Value;
+			var msg = _peer.CreateMessage();
+			var rpcId = Interlocked.Increment(ref _nextRpcId);
+			msg.Write(RequestToken);
+			msg.Write(rpcId);
+			msg.Write(servantId);
+			msg.Write(methodName);
+			if (arguments != null)
+			{
+				var length = (int) arguments.Length;
+				msg.Write(length);
+				msg.Write(arguments.GetBuffer(), 0, length);
+			}
+			else
+			{
+				const int length = 0;
+				msg.Write(length);
+			}
+
+			MemoryStream message;
+			SendAndWaitFor(con, rpcId, msg, out message);
+			return message;
+		}
+
+		private void SendAndWaitFor(NetConnection con, long rpcId, NetOutgoingMessage msg, out MemoryStream response)
+		{
+			var handle = new ManualResetEvent(false);
+			try
+			{
+				MemoryStream receivedData = null;
+
+				lock (_pendingCalls)
+				{
+					_pendingCalls.Add(rpcId, message =>
+						{
+							receivedData = message;
+							handle.Set();
+						});
+				}
+
+				var result = con.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+				handle.WaitOne();
+
+				response = receivedData;
+			}
+			finally
+			{
+				handle.Dispose();
+				_pendingCalls.Remove(rpcId);
 			}
 		}
 	}

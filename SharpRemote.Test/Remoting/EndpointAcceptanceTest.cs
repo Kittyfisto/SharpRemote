@@ -7,7 +7,7 @@ using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
-	public sealed class EndpointTest
+	public sealed class EndpointAcceptanceTest
 	{
 		private PeerEndPoint _server;
 		private PeerEndPoint _client;
@@ -15,24 +15,24 @@ namespace SharpRemote.Test.Remoting
 		[SetUp]
 		public void SetUp()
 		{
-			_server = new PeerEndPoint("Test", IPAddress.Loopback);
+			_server = new PeerEndPoint("Server", IPAddress.Loopback);
 			_server.Start();
 
-			_client = new PeerEndPoint("Test", IPAddress.Loopback);
+			_client = new PeerEndPoint("Client", IPAddress.Loopback);
 			_client.Start();
 
 			_client.Connect(_server.Address);
 		}
 
 		[Test]
-		[Ignore("TBD")]
 		public void TestGetProperty()
 		{
 			var subject = new Mock<IGetDoubleProperty>();
 			subject.Setup(x => x.Value).Returns(42);
 
-			var servant = _server.CreateServant(subject.Object);
-			var proxy = _client.CreateProxy<IGetDoubleProperty>(servant.ObjectId);
+			const int servantId = 1;
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			proxy.Value.Should().Be(42);
 		}
 	}

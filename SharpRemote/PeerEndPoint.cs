@@ -17,6 +17,8 @@ namespace SharpRemote
 	{
 		private const string RequestToken = "Request";
 		private const string ResponseToken = "Response";
+		private const string ResponseSuccessToken = "Success";
+		private const string ResponseExceptionToken = "Exception";
 
 		private readonly CancellationTokenSource _cancel;
 		private readonly NetPeerConfiguration _configuration;
@@ -31,8 +33,10 @@ namespace SharpRemote
 		private readonly string _endPointName;
 
 		#region Pending Methods
-		private readonly Dictionary<long, Action<MemoryStream>> _pendingCalls;
+		private readonly Dictionary<long, Action<string, MemoryStream>> _pendingCalls;
 		private readonly Dictionary<IPEndPoint, Action<NetIncomingMessage>> _pendingConnects;
+		private readonly ISerializer _serializer;
+
 		#endregion
 
 		public PeerEndPoint(string endPointName, IPAddress localAddress)
@@ -42,6 +46,7 @@ namespace SharpRemote
 
 			_endPointName = endPointName;
 			_servantCreator = new ServantCreator();
+			_serializer = _servantCreator.Serializer;
 
 			_configuration = new NetPeerConfiguration("Test")
 				{
@@ -71,7 +76,7 @@ namespace SharpRemote
 			_servants = new Dictionary<ulong, IServant>();
 			_proxyCreator = new ProxyCreator(this);
 
-			_pendingCalls = new Dictionary<long, Action<MemoryStream>>();
+			_pendingCalls = new Dictionary<long, Action<string, MemoryStream>>();
 			_pendingConnects = new Dictionary<IPEndPoint, Action<NetIncomingMessage>>();
 		}
 
@@ -194,9 +199,25 @@ namespace SharpRemote
 			using (var output = new MemoryStream())
 			using (var writer = new BinaryWriter(output, encoding))
 			{
-				servant.Invoke(methodName, reader, writer);
+				bool success;
+
+				try
+				{
+					servant.Invoke(methodName, reader, writer);
+					success = true;
+				}
+				catch (Exception e)
+				{
+					success = false;
+
+					writer.Flush();
+					output.Position = 0;
+
+					_serializer.WriteException(writer, e);
+				}
+
 				output.Position = 0;
-				SendRpcResponse(rpcId, msg.SenderConnection, output);
+				SendRpcResponse(rpcId, msg.SenderConnection, success, output);
 			}
 		}
 
@@ -205,12 +226,14 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="rpcId"></param>
 		/// <param name="connection"></param>
+		/// <param name="success"></param>
 		/// <param name="output"></param>
-		private void SendRpcResponse(long rpcId, NetConnection connection, MemoryStream output)
+		private void SendRpcResponse(long rpcId, NetConnection connection, bool success, MemoryStream output)
 		{
 			var responseMsg = _peer.CreateMessage();
 			responseMsg.Write(ResponseToken);
 			responseMsg.Write(rpcId);
+			responseMsg.Write(success ? ResponseSuccessToken : ResponseExceptionToken);
 
 			var outLength = (int) output.Length;
 			if (outLength > 0)
@@ -228,23 +251,24 @@ namespace SharpRemote
 
 		private void HandleResponse(long rpcId, NetIncomingMessage msg)
 		{
-			Action<MemoryStream> fn;
+			Action<string, MemoryStream> fn;
 			lock (_pendingCalls)
 			{
 				if (!_pendingCalls.TryGetValue(rpcId, out fn))
 					return;
 			}
 
+			string responseToken = msg.ReadString();
 			int length = msg.ReadInt32();
 			var response = new byte[length];
 			if (length > 0)
 			{
 				msg.ReadBytes(response, 0, length);
-				fn(new MemoryStream(response));
+				fn(responseToken, new MemoryStream(response));
 			}
 			else
 			{
-				fn(null);
+				fn(responseToken, null);
 			}
 		}
 
@@ -352,30 +376,49 @@ namespace SharpRemote
 			}
 
 			MemoryStream message;
-			SendAndWaitFor(con, rpcId, msg, out message);
-			return message;
+			string responseToken;
+			SendAndWaitFor(con, rpcId, msg, out responseToken, out message);
+
+			switch (responseToken)
+			{
+				case ResponseSuccessToken:
+					return message;
+
+				case ResponseExceptionToken:
+					using (var reader = new BinaryReader(message, Encoding.UTF8))
+					{
+						var exception = _serializer.ReadException(reader);
+						throw exception;
+					}
+
+				default:
+					throw new NotImplementedException(string.Format("Unexpected token: {0}", responseToken));
+			}
 		}
 
-		private void SendAndWaitFor(NetConnection con, long rpcId, NetOutgoingMessage msg, out MemoryStream response)
+		private void SendAndWaitFor(NetConnection con, long rpcId, NetOutgoingMessage msg, out string responseToken, out MemoryStream response)
 		{
 			var handle = new ManualResetEvent(false);
 			try
 			{
 				MemoryStream receivedData = null;
+				string receivedToken = null;
 
 				lock (_pendingCalls)
 				{
-					_pendingCalls.Add(rpcId, message =>
+					_pendingCalls.Add(rpcId, (token, message) =>
 						{
+							receivedToken = token;
 							receivedData = message;
 							handle.Set();
 						});
 				}
 
-				var result = con.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
+				con.SendMessage(msg, NetDeliveryMethod.ReliableOrdered, 0);
 				handle.WaitOne();
 
 				response = receivedData;
+				responseToken = receivedToken;
 			}
 			finally
 			{

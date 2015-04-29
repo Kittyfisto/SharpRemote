@@ -23,6 +23,11 @@ namespace SharpRemote.CodeGeneration
 			_interfaceToSubject= new Dictionary<Type, Type>();
 		}
 
+		public ISerializer Serializer
+		{
+			get { return _serializer; }
+		}
+
 		public Type GenerateSubject<T>()
 		{
 			var interfaceType = typeof(T);
@@ -31,12 +36,6 @@ namespace SharpRemote.CodeGeneration
 
 			var assemblyName = GetSubjectAssemblyName(interfaceType);
 			var proxyTypeName = GetSubjectTypeName(interfaceType);
-
-			/*Assembly proxyAssembly;
-			if (TryLoadAssembly(assemblyName, out proxyAssembly))
-			{
-				throw new NotImplementedException();
-			}*/
 
 			var generator = new ServantCompiler(_serializer, assemblyName, proxyTypeName, interfaceType);
 			var proxyType = generator.Generate();

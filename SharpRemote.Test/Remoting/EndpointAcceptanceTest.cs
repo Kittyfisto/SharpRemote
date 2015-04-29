@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -34,6 +35,22 @@ namespace SharpRemote.Test.Remoting
 			var servant = _server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			proxy.Value.Should().Be(42);
+		}
+
+		[Test]
+		public void TestThrowException1()
+		{
+			var subject = new Mock<IGetDoubleProperty>();
+			subject.Setup(x => x.Value).Returns(() =>
+				{
+					throw new ArgumentException();
+				});
+
+			const int servantId = 1;
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
+			new Action(() => { var unused = proxy.Value; })
+				.ShouldThrow<ArgumentException>();
 		}
 	}
 }

@@ -491,6 +491,21 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return null;
 		}
 
+		public Exception ReadException(BinaryReader reader)
+		{
+			var typeName = reader.ReadString();
+			var exceptionType = Type.GetType(typeName);
+
+			var exception = (Exception)Activator.CreateInstance(exceptionType);
+			return exception;
+		}
+
+		public void WriteException(BinaryWriter writer, Exception e)
+		{
+			var type = e.GetType();
+			writer.Write(type.AssemblyQualifiedName);
+		}
+
 		[Pure]
 		public bool IsTypeRegistered<T>()
 		{

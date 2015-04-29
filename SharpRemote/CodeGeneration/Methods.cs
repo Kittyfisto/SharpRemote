@@ -109,48 +109,64 @@ namespace SharpRemote.CodeGeneration
 
 		public static bool EmitReadPod(this ILGenerator gen, Type valueType)
 		{
+			return EmitReadPod(gen, () => { }, valueType);
+		}
+
+		public static bool EmitReadPod(this ILGenerator gen, Action preRead, Type valueType)
+		{
 			if (valueType == typeof(float))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadSingle);
 			}
 			else if (valueType == typeof(double))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadDouble);
 			}
 			else if (valueType == typeof(ulong))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadULong);
 			}
 			else if (valueType == typeof(long))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadLong);
 			}
 			else if (valueType == typeof(uint))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadUInt);
 			}
 			else if (valueType == typeof(int))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadInt);
 			}
 			else if (valueType == typeof(ushort))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadUShort);
 			}
 			else if (valueType == typeof(short))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadShort);
 			}
 			else if (valueType == typeof(sbyte))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadSByte);
 			}
 			else if (valueType == typeof(byte))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadByte);
 			}
 			else if (valueType == typeof(string))
 			{
+				preRead();
 				gen.Emit(OpCodes.Call, ReadString);
 			}
 			else
@@ -163,48 +179,64 @@ namespace SharpRemote.CodeGeneration
 
 		public static bool EmitWritePodToWriter(this ILGenerator gen, Type valueType)
 		{
+			return EmitWritePodToWriter(gen, () => { }, valueType);
+		}
+
+		public static bool EmitWritePodToWriter(this ILGenerator gen, Action preWrite, Type valueType)
+		{
 			if (valueType == typeof(float))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteSingle);
 			}
 			else if (valueType == typeof(double))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteDouble);
 			}
 			else if (valueType == typeof(ulong))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteULong);
 			}
 			else if (valueType == typeof(long))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteLong);
 			}
 			else if (valueType == typeof(uint))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteUInt);
 			}
 			else if (valueType == typeof(int))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteInt);
 			}
 			else if (valueType == typeof(short))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteShort);
 			}
 			else if (valueType == typeof(ushort))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteUShort);
 			}
 			else if (valueType == typeof(sbyte))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteSByte);
 			}
 			else if (valueType == typeof(byte))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteByte);
 			}
 			else if (valueType == typeof (string))
 			{
+				preWrite();
 				gen.Emit(OpCodes.Call, WriteString);
 			}
 			else

@@ -32,11 +32,40 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return false;
 		}
 
+		public static bool RequiresConstructor(Type type)
+		{
+			if (type.IsPrimitive)
+				return false;
+
+			if (type == typeof (string))
+				return false;
+
+			if (type.IsValueType)
+				return false;
+
+			if (type.IsAbstract)
+				return false;
+
+			return true;
+		}
+
+		[Pure]
+		public static bool IsNativelySupportedType(Type type)
+		{
+			if (type.IsPrimitive)
+				return true;
+
+			if (type == typeof (string))
+				return true;
+
+			return false;
+		}
+
 		public TypeInformation(Type type)
 		{
 			if (type == null) throw new ArgumentNullException("type");
 
-			if (!type.IsPrimitive && type.GetCustomAttribute<DataContractAttribute>() == null)
+			if (!IsNativelySupportedType(type) && type.GetCustomAttribute<DataContractAttribute>() == null)
 				throw new ArgumentException(string.Format("The type '{0}.{1}' is missing the [DataContract] attribute - this is not supported", type.Namespace, type.Name));
 
 			_type = type;
@@ -54,7 +83,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			ThrowIfConstraintsAreViolated(_properties);
 
-			if (!type.IsValueType && !type.IsAbstract)
+			if (RequiresConstructor(type))
 			{
 				_ctor = type.GetConstructor(new Type[0]);
 				if (_ctor == null)
@@ -157,6 +186,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 		public ConstructorInfo Constructor
 		{
 			get { return _ctor; }
+		}
+
+		public override string ToString()
+		{
+			return _type.ToString();
 		}
 	}
 }

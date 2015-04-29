@@ -31,6 +31,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer.RegisterType<UInt32>();
 			_serializer.RegisterType<Int64>();
 			_serializer.RegisterType<UInt64>();
+			_serializer.RegisterType<string>();
 			_serializer.RegisterType<FieldStruct>();
 			assembly.Save(moduleName);
 		}
@@ -87,6 +88,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestRoundtripUInt64()
 		{
 			_serializer.RoundtripObject(9899045442343232423).Should().Be(9899045442343232423);
+		}
+
+		[Test]
+		public void TestRoundtripString()
+		{
+			_serializer.RoundtripObject("Foobar").Should().Be("Foobar");
 		}
 
 		[Test]

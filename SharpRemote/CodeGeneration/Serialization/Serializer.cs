@@ -122,26 +122,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return method.ReadDelegate;
 		}
 
-		/// <summary>
-		/// Whether or not a value of the given type *always* requires type information
-		/// to be injected into the bytestream.
-		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
-		private static bool RequiresTypeInformation(Type type)
-		{
-			if (type.IsPrimitive)
-				return false;
-
-			if (type.IsValueType)
-				return false;
-
-			if (type.IsSealed)
-				return false;
-
-			return true;
-		}
-
 		private ReadMethod CompileReadMethod(TypeInformation typeInformation)
 		{
 			var typeName = string.Format("Read.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
@@ -158,17 +138,15 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_typeToReadMethods.Add(typeInformation.Type, m);
 
 			var gen = method.GetILGenerator();
-			if (typeInformation.IsPrimitive)
+			if (gen.EmitReadPod(() => gen.Emit(OpCodes.Ldarg_0),
+					typeInformation.Type))
 			{
-				gen.Emit(OpCodes.Ldarg_0);
-
-				if (!gen.EmitReadPod(typeInformation.Type))
-					throw new NotImplementedException();
+				
 			}
 			else
 			{
 				var tmp = gen.DeclareLocal(typeInformation.Type);
-				if (typeInformation.IsValueType)
+				if (typeInformation.Constructor == null)
 				{
 					gen.Emit(OpCodes.Ldloca, tmp);
 					gen.Emit(OpCodes.Initobj, typeInformation.Type);
@@ -266,12 +244,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			var gen = method.GetILGenerator();
 
-			if (typeInformation.IsPrimitive)
+			if (gen.EmitWritePodToWriter(() =>
+				{
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldarg_1);
+					}, typeInformation.Type))
 			{
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldarg_1);
-				if (!gen.EmitWritePodToWriter(typeInformation.Type))
-					throw new NotImplementedException();
 			}
 			else if (typeInformation.IsValueType)
 			{

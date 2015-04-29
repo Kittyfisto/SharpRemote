@@ -7,10 +7,10 @@ namespace SharpRemote
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="objectId"></param>
+		/// <param name="servantId"></param>
 		/// <param name="methodName"></param>
 		/// <param name="arguments"></param>
 		/// <returns></returns>
-		MemoryStream CallRemoteMethod(ulong objectId, string methodName, MemoryStream arguments);
+		MemoryStream CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments);
 	}
 }

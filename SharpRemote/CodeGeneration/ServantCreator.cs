@@ -74,15 +74,15 @@ namespace SharpRemote.CodeGeneration
 				});
 		}
 
-		private AssemblyName GetSubjectAssemblyName(Type type)
+		private AssemblyName GetSubjectAssemblyName(Type interfaceType)
 		{
-			var fileName = string.Format("{0}.{1}.Servant", type.Namespace, type.Name);
+			var fileName = string.Format("{0}.{1}.Servant", interfaceType.Namespace, interfaceType.Name);
 			return new AssemblyName(fileName);
 		}
 
 		private string GetSubjectTypeName(Type interfaceType)
 		{
-			return string.Format("Corba.{0}.Servant", interfaceType.Name);
+			return string.Format("{0}.{1}.Servant", interfaceType.Namespace, interfaceType.Name);
 		}
 	}
 }

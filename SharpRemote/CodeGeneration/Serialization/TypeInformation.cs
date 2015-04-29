@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -40,6 +41,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			if (type == typeof (string))
 				return false;
 
+			if (type == typeof (IPAddress))
+				return false;
+
 			if (type.IsValueType)
 				return false;
 
@@ -56,6 +60,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 				return true;
 
 			if (type == typeof (string))
+				return true;
+
+			if (type == typeof (IPAddress))
 				return true;
 
 			return false;

@@ -29,12 +29,25 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		sealed class WriteMethod
 		{
-			public readonly MethodInfo Info;
+			/// <summary>
+			/// The method that takes a parameter of the actual type in question.
+			/// </summary>
+			public readonly MethodInfo ValueMethod;
+
+			/// <summary>
+			/// The method that takes an object parameter.
+			/// </summary>
+			public readonly MethodInfo ObjectMethod;
+
 			public Action<BinaryWriter, object, ISerializer> WriteDelegate;
 
-			public WriteMethod(MethodBuilder method)
+			public WriteMethod(MethodBuilder valueMethod, MethodInfo objectMethod)
 			{
-				Info = method;
+				if (valueMethod == null) throw new ArgumentNullException("valueMethod");
+				if (objectMethod == null) throw new ArgumentNullException("objectMethod");
+
+				ValueMethod = valueMethod;
+				ObjectMethod = objectMethod;
 			}
 		}
 
@@ -94,7 +107,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				WriteMethod method;
 				ReadMethod unused;
 				RegisterType(type, out method, out unused);
-				return method.Info;
+				return method.ValueMethod;
 			}
 			else
 			{
@@ -231,24 +244,23 @@ namespace SharpRemote.CodeGeneration.Serialization
 		{
 			var typeName = string.Format("Write.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
 			var typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
-			var method = typeBuilder.DefineMethod("WriteValue", MethodAttributes.Public | MethodAttributes.Static,
+			var valueMethod = typeBuilder.DefineMethod("WriteValue", MethodAttributes.Public | MethodAttributes.Static,
 			                                       CallingConventions.Standard, typeof (void), new[]
 				                                       {
 														   typeof(BinaryWriter),
 					                                       typeInformation.Type,
 														   typeof (ISerializer)
 				                                       });
-			CreateWriteDelegate(typeBuilder, method, typeInformation.Type);
-			var m = new WriteMethod(method);
+			var objectMethod = CreateWriteDelegate(typeBuilder, valueMethod, typeInformation.Type);
+			var m = new WriteMethod(valueMethod, objectMethod);
 			_typeToWriteMethods.Add(typeInformation.Type, m);
 
-			var gen = method.GetILGenerator();
+			var gen = valueMethod.GetILGenerator();
 
-			if (gen.EmitWritePodToWriter(() =>
-				{
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldarg_1);
-					}, typeInformation.Type))
+			if (gen.EmitWritePodToWriter(
+				() => gen.Emit(OpCodes.Ldarg_0),
+				() => gen.Emit(OpCodes.Ldarg_1),
+				typeInformation.Type))
 			{
 			}
 			else if (typeInformation.IsValueType)
@@ -272,7 +284,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return m;
 		}
 
-		private void CreateWriteDelegate(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
+		private MethodInfo CreateWriteDelegate(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
 		{
 			var method = typeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
 												   CallingConventions.Standard, typeof(void), new[]
@@ -300,6 +312,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				gen.Emit(OpCodes.Ldarg_2);
 				gen.Emit(OpCodes.Call, methodInfo);
 			});
+
+			return method;
 		}
 
 		private void WriteTypeInformationOrNull(ILGenerator gen, Type type, Action emitSerializationCode)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
 
@@ -14,6 +15,8 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo ObjectCtor;
 		public static readonly ConstructorInfo MemoryStreamCtor;
 		public static readonly ConstructorInfo BinaryWriterCtor;
+		public static readonly ConstructorInfo IPAddressFromBytes;
+		public static readonly MethodInfo WriteBytes;
 		public static readonly MethodInfo WriteString;
 		public static readonly MethodInfo BinaryWriterFlush;
 		public static readonly ConstructorInfo BinaryReaderCtor;
@@ -35,6 +38,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly FieldInfo StringEmpty;
 		public static readonly MethodInfo ServantInvoke;
 		public static readonly MethodInfo StringEquality;
+		public static readonly MethodInfo ReadBytes;
 		public static readonly MethodInfo ReadString;
 		public static readonly MethodInfo ReadSingle;
 		public static readonly MethodInfo ReadLong;
@@ -50,6 +54,8 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo ArgumentExceptionCtor;
 		public static readonly MethodInfo ServantGetSubject;
 		public static readonly MethodInfo StringFormat;
+		public static readonly MethodInfo IPAddressGetAddressBytes;
+		public static readonly MethodInfo ArrayGetLength;
 
 		static Methods()
 		{
@@ -68,6 +74,7 @@ namespace SharpRemote.CodeGeneration
 			ObjectCtor = typeof(object).GetConstructor(new Type[0]);
 			ChannelCallRemoteMethod = typeof(IEndPointChannel).GetMethod("CallRemoteMethod");
 
+			ReadBytes = typeof (BinaryReader).GetMethod("ReadBytes");
 			ReadString = typeof(BinaryReader).GetMethod("ReadString");
 			ReadDouble = typeof(BinaryReader).GetMethod("ReadDouble");
 			ReadSingle = typeof(BinaryReader).GetMethod("ReadSingle");
@@ -81,6 +88,7 @@ namespace SharpRemote.CodeGeneration
 			ReadByte = typeof(BinaryReader).GetMethod("ReadByte");
 			ReadBool = typeof(BinaryReader).GetMethod("ReadBoolean");
 
+			WriteBytes = typeof (BinaryWriter).GetMethod("Write", new[] {typeof (byte[])});
 			WriteString = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(string)});
 			WriteDouble = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(double)});
 			WriteSingle = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(Single)});
@@ -105,6 +113,11 @@ namespace SharpRemote.CodeGeneration
 
 			NotImplementedCtor = typeof (NotImplementedException).GetConstructor(new Type[0]);
 			ArgumentExceptionCtor = typeof (ArgumentException).GetConstructor(new[] {typeof (string)});
+
+			IPAddressGetAddressBytes = typeof (IPAddress).GetMethod("GetAddressBytes");
+			IPAddressFromBytes = typeof (IPAddress).GetConstructor(new[] {typeof(byte[])});
+
+			ArrayGetLength = typeof (byte[]).GetProperty("Length").GetMethod;
 		}
 
 		public static bool EmitReadPod(this ILGenerator gen, Type valueType)
@@ -112,62 +125,71 @@ namespace SharpRemote.CodeGeneration
 			return EmitReadPod(gen, () => { }, valueType);
 		}
 
-		public static bool EmitReadPod(this ILGenerator gen, Action preRead, Type valueType)
+		public static bool EmitReadPod(this ILGenerator gen, Action loadWriter, Type valueType)
 		{
 			if (valueType == typeof(float))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadSingle);
 			}
 			else if (valueType == typeof(double))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadDouble);
 			}
 			else if (valueType == typeof(ulong))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadULong);
 			}
 			else if (valueType == typeof(long))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadLong);
 			}
 			else if (valueType == typeof(uint))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadUInt);
 			}
 			else if (valueType == typeof(int))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadInt);
 			}
 			else if (valueType == typeof(ushort))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadUShort);
 			}
 			else if (valueType == typeof(short))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadShort);
 			}
 			else if (valueType == typeof(sbyte))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadSByte);
 			}
 			else if (valueType == typeof(byte))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadByte);
 			}
 			else if (valueType == typeof(string))
 			{
-				preRead();
+				loadWriter();
 				gen.Emit(OpCodes.Call, ReadString);
+			}
+			else if (valueType == typeof (IPAddress))
+			{
+				// new IPAddress(writer.ReadBytes(writer.ReadInt()));
+				loadWriter();
+				loadWriter();
+				gen.Emit(OpCodes.Call, ReadInt);
+				gen.Emit(OpCodes.Call, ReadBytes);
+				gen.Emit(OpCodes.Newobj, IPAddressFromBytes);
 			}
 			else
 			{
@@ -179,65 +201,94 @@ namespace SharpRemote.CodeGeneration
 
 		public static bool EmitWritePodToWriter(this ILGenerator gen, Type valueType)
 		{
-			return EmitWritePodToWriter(gen, () => { }, valueType);
+			return EmitWritePodToWriter(gen, () => { }, () => { }, valueType);
 		}
 
-		public static bool EmitWritePodToWriter(this ILGenerator gen, Action preWrite, Type valueType)
+		public static bool EmitWritePodToWriter(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType)
 		{
 			if (valueType == typeof(float))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteSingle);
 			}
 			else if (valueType == typeof(double))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteDouble);
 			}
 			else if (valueType == typeof(ulong))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteULong);
 			}
 			else if (valueType == typeof(long))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteLong);
 			}
 			else if (valueType == typeof(uint))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteUInt);
 			}
 			else if (valueType == typeof(int))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteInt);
 			}
 			else if (valueType == typeof(short))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteShort);
 			}
 			else if (valueType == typeof(ushort))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteUShort);
 			}
 			else if (valueType == typeof(sbyte))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteSByte);
 			}
 			else if (valueType == typeof(byte))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteByte);
 			}
 			else if (valueType == typeof (string))
 			{
-				preWrite();
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Call, WriteString);
+			}
+			else if (valueType == typeof(IPAddress))
+			{
+				var data = gen.DeclareLocal(typeof(byte[]));
+
+				loadValue();
+				gen.Emit(OpCodes.Call, IPAddressGetAddressBytes);
+				gen.Emit(OpCodes.Stloc, data);
+
+				loadWriter();
+				gen.Emit(OpCodes.Ldloc, data);
+				gen.Emit(OpCodes.Call, ArrayGetLength);
+
+				gen.Emit(OpCodes.Call, WriteInt);
+
+				loadWriter();
+				gen.Emit(OpCodes.Ldloc, data);
+				gen.Emit(OpCodes.Call, WriteBytes);
 			}
 			else
 			{

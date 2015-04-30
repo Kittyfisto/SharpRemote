@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,10 +17,28 @@ namespace SharpRemote
 		: IEndPoint
 		, IEndPointChannel
 	{
+		#region Tokens
+
 		private const string RequestToken = "Request";
+
 		private const string ResponseToken = "Response";
+
 		private const string ResponseSuccessToken = "Success";
+
 		private const string ResponseExceptionToken = "Exception";
+
+		/// <summary>
+		/// This token is placed in the stream when the exception was serialized using a binary formatter.
+		/// </summary>
+		private const string ExceptionBinaryFormatter = "BinaryFormatter";
+
+		/// <summary>
+		/// This token is placed in the stream when the exception could not be serialized, but it's assembly qualified type
+		/// name was.
+		/// </summary>
+		private const string ExceptionTypeInfo = "TypeInfo";
+
+		#endregion
 
 		private readonly CancellationTokenSource _cancel;
 		private readonly NetPeerConfiguration _configuration;
@@ -97,47 +117,58 @@ namespace SharpRemote
 				NetIncomingMessage msg;
 				if ((msg = _peer.ReadMessage()) != null)
 				{
-					switch (msg.MessageType)
+					try
 					{
-						case NetIncomingMessageType.StatusChanged:
-							var connection = msg.SenderConnection;
-							Console.WriteLine("{0}: Status changed to {1}", _endPointName, connection.Status);
-							if (connection.Status == NetConnectionStatus.Connected)
-							{
-								NotifySuccessfulConnection(msg);
-							}
-							break;
+						switch (msg.MessageType)
+						{
+							case NetIncomingMessageType.StatusChanged:
+								var connection = msg.SenderConnection;
+								Console.WriteLine("{0}: Status changed to {1}", _endPointName, connection.Status);
+								if (connection.Status == NetConnectionStatus.Connected)
+								{
+									NotifySuccessfulConnection(msg);
+								}
+								break;
 
-						case NetIncomingMessageType.DebugMessage:
-							Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
-							break;
+							case NetIncomingMessageType.DebugMessage:
+								Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
+								break;
 
-						case NetIncomingMessageType.VerboseDebugMessage:
-							Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
-							break;
+							case NetIncomingMessageType.VerboseDebugMessage:
+								Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
+								break;
 
-						case NetIncomingMessageType.WarningMessage:
-							Console.WriteLine("{0}: WARN {1}", _endPointName, msg.ReadString());
-							break;
+							case NetIncomingMessageType.WarningMessage:
+								Console.WriteLine("{0}: WARN {1}", _endPointName, msg.ReadString());
+								break;
 
-						case NetIncomingMessageType.Error:
-							Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
-							break;
+							case NetIncomingMessageType.Error:
+								Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
+								break;
 
-						case NetIncomingMessageType.ErrorMessage:
-							Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
-							break;
+							case NetIncomingMessageType.ErrorMessage:
+								Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
+								break;
 
-						case NetIncomingMessageType.ConnectionApproval:
-							Console.WriteLine("{0}: Incoming connection from '{1}', approving it...", _endPointName, msg.SenderEndPoint);
-							msg.SenderConnection.Approve();
-							_connections.Add(msg.SenderEndPoint, msg.SenderConnection);
-							break;
+							case NetIncomingMessageType.ConnectionApproval:
+								Console.WriteLine("{0}: Incoming connection from '{1}', approving it...", _endPointName, msg.SenderEndPoint);
+								msg.SenderConnection.Approve();
+								_connections.Add(msg.SenderEndPoint, msg.SenderConnection);
+								break;
 
-						case NetIncomingMessageType.Data:
-							Console.WriteLine("{0}: Data received from {1}", _endPointName, msg.SenderEndPoint);
-							HandleMessage(msg);
-							break;
+							case NetIncomingMessageType.Data:
+								Console.WriteLine("{0}: Data received from {1}", _endPointName, msg.SenderEndPoint);
+								HandleMessage(msg);
+								break;
+						}
+					}
+					catch (Exception e)
+					{
+						Console.WriteLine("{0}: Caught exception while handling msg - {1}", _endPointName, e);
+					}
+					finally
+					{
+						_peer.Recycle(msg);
 					}
 				}
 				else
@@ -210,14 +241,37 @@ namespace SharpRemote
 				{
 					success = false;
 
-					writer.Flush();
-					output.Position = 0;
+					
 
-					_serializer.WriteException(writer, e);
+					WriteException(writer, e);
 				}
 
 				output.Position = 0;
 				SendRpcResponse(rpcId, msg.SenderConnection, success, output);
+			}
+		}
+
+		private void WriteException(BinaryWriter writer, Exception e)
+		{
+			var start = writer.BaseStream.Position;
+			try
+			{
+				writer.Write(ExceptionBinaryFormatter);
+				var formatter = new BinaryFormatter();
+				formatter.Serialize(writer.BaseStream, e);
+			}
+			catch (SerializationException ex)
+			{
+				// TODO: Log this..
+
+				writer.Flush();
+				writer.BaseStream.Position = start;
+
+				var exceptionType = e.GetType();
+				var typeName = exceptionType.AssemblyQualifiedName;
+
+				writer.Write(ExceptionTypeInfo);
+				writer.Write(typeName);
 			}
 		}
 
@@ -387,8 +441,24 @@ namespace SharpRemote
 				case ResponseExceptionToken:
 					using (var reader = new BinaryReader(message, Encoding.UTF8))
 					{
-						var exception = _serializer.ReadException(reader);
-						throw exception;
+						Exception e;
+						var token = reader.ReadString();
+						switch (token)
+						{
+							case ExceptionBinaryFormatter:
+								var formatter = new BinaryFormatter();
+								e = (Exception)formatter.Deserialize(reader.BaseStream);
+								throw e;
+
+							case ExceptionTypeInfo:
+								var typeName = reader.ReadString();
+								var type = Type.GetType(typeName);
+								e = (Exception) Activator.CreateInstance(type);
+								throw e;
+
+							default:
+								throw new NotImplementedException("Malformatted message");
+						}
 					}
 
 				default:

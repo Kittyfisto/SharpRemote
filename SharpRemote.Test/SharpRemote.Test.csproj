@@ -56,6 +56,8 @@
     <Compile Include="CodeGeneration\Serialization\SerializationTest.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCreatorTest.cs" />
     <Compile Include="CodeGeneration\Test.cs" />
+    <Compile Include="CodeGeneration\Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
+    <Compile Include="CodeGeneration\Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\IEmpty.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetDoubleProperty.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetFloatProperty.cs" />

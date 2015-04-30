@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
@@ -489,21 +490,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 
 			return null;
-		}
-
-		public Exception ReadException(BinaryReader reader)
-		{
-			var typeName = reader.ReadString();
-			var exceptionType = Type.GetType(typeName);
-
-			var exception = (Exception)Activator.CreateInstance(exceptionType);
-			return exception;
-		}
-
-		public void WriteException(BinaryWriter writer, Exception e)
-		{
-			var type = e.GetType();
-			writer.Write(type.AssemblyQualifiedName);
 		}
 
 		[Pure]

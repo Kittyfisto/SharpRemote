@@ -27,17 +27,6 @@ namespace SharpRemote
 
 		private const string ResponseExceptionToken = "Exception";
 
-		/// <summary>
-		/// This token is placed in the stream when the exception was serialized using a binary formatter.
-		/// </summary>
-		private const string ExceptionBinaryFormatter = "BinaryFormatter";
-
-		/// <summary>
-		/// This token is placed in the stream when the exception could not be serialized, but it's assembly qualified type
-		/// name was.
-		/// </summary>
-		private const string ExceptionTypeInfo = "TypeInfo";
-
 		#endregion
 
 		private readonly CancellationTokenSource _cancel;
@@ -253,25 +242,21 @@ namespace SharpRemote
 
 		private void WriteException(BinaryWriter writer, Exception e)
 		{
-			var start = writer.BaseStream.Position;
+			var stream = writer.BaseStream;
+			var start = stream.Position;
+			var formatter = new BinaryFormatter();
+
 			try
 			{
-				writer.Write(ExceptionBinaryFormatter);
-				var formatter = new BinaryFormatter();
-				formatter.Serialize(writer.BaseStream, e);
+				formatter.Serialize(stream, e);
 			}
 			catch (SerializationException ex)
 			{
 				// TODO: Log this..
 
 				writer.Flush();
-				writer.BaseStream.Position = start;
-
-				var exceptionType = e.GetType();
-				var typeName = exceptionType.AssemblyQualifiedName;
-
-				writer.Write(ExceptionTypeInfo);
-				writer.Write(typeName);
+				stream.Position = start;
+				formatter.Serialize(stream, new UnserializableException(e));
 			}
 		}
 
@@ -441,24 +426,9 @@ namespace SharpRemote
 				case ResponseExceptionToken:
 					using (var reader = new BinaryReader(message, Encoding.UTF8))
 					{
-						Exception e;
-						var token = reader.ReadString();
-						switch (token)
-						{
-							case ExceptionBinaryFormatter:
-								var formatter = new BinaryFormatter();
-								e = (Exception)formatter.Deserialize(reader.BaseStream);
-								throw e;
-
-							case ExceptionTypeInfo:
-								var typeName = reader.ReadString();
-								var type = Type.GetType(typeName);
-								e = (Exception) Activator.CreateInstance(type);
-								throw e;
-
-							default:
-								throw new NotImplementedException("Malformatted message");
-						}
+						var formatter = new BinaryFormatter();
+						var e = (Exception)formatter.Deserialize(reader.BaseStream);
+						throw e;
 					}
 
 				default:

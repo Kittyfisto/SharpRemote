@@ -70,7 +70,7 @@ namespace SharpRemote.Test.Remoting
 			var servant = _server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			new Action(() => { var unused = proxy.Value; })
-				.ShouldThrow<NonSerializableExceptionButDefaultCtor>();
+				.ShouldThrow<UnserializableException>();
 		}
 	}
 }

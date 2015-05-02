@@ -691,6 +691,27 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
+		public void TestEvent()
+		{
+			var proxy = TestGenerate<IEvent>();
+			int actualValue = 0;
+			Action<int> tmp = value => actualValue = value;
+			proxy.Foobar += tmp;
+
+			var input = new MemoryStream();
+			var writer = new BinaryWriter(input);
+			writer.Write(42);
+			writer.Flush();
+			input.Position = 0;
+			var reader = new BinaryReader(input);
+			var output = new MemoryStream();
+			writer = new BinaryWriter(output);
+			((IProxy)proxy).InvokeEvent("Foobar", reader, writer);
+
+			actualValue.Should().Be(42);
+		}
+
+		[Test]
 		[Ignore("TBD")]
 		public void TestVoidMethodBaseClassParameter1()
 		{

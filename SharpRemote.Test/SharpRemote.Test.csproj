@@ -59,6 +59,7 @@
     <Compile Include="CodeGeneration\Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="CodeGeneration\Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\IEmpty.cs" />
+    <Compile Include="CodeGeneration\Types\Interfaces\IEvent.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetDoubleProperty.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetFloatProperty.cs" />
     <Compile Include="CodeGeneration\Types\Interfaces\PrimitiveTypes\IGetInt16Property.cs" />

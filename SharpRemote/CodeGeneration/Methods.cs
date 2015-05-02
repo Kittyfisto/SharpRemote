@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -36,7 +38,8 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo ObjectGetType;
 		public static readonly MethodInfo TypeGetAssemblyQualifiedName;
 		public static readonly FieldInfo StringEmpty;
-		public static readonly MethodInfo ServantInvoke;
+		public static readonly MethodInfo ServantInvokeMethod;
+		public static readonly MethodInfo ProxyInvokeEvent;
 		public static readonly MethodInfo StringEquality;
 		public static readonly MethodInfo ReadBytes;
 		public static readonly MethodInfo ReadString;
@@ -56,6 +59,9 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo StringFormat;
 		public static readonly MethodInfo IPAddressGetAddressBytes;
 		public static readonly MethodInfo ArrayGetLength;
+		public static readonly MethodInfo DelegateCombine;
+		public static readonly MethodInfo DelegateRemove;
+		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
 
 		static Methods()
 		{
@@ -68,8 +74,9 @@ namespace SharpRemote.CodeGeneration
 
 			GrainGetObjectId = typeof(IGrain).GetMethod("get_ObjectId");
 			GrainGetSerializer = typeof(IGrain).GetMethod("get_Serializer");
-			ServantInvoke = typeof (IServant).GetMethod("Invoke");
+			ServantInvokeMethod = typeof (IServant).GetMethod("InvokeMethod");
 			ServantGetSubject = typeof (IServant).GetMethod("get_Subject");
+			ProxyInvokeEvent = typeof (IProxy).GetMethod("InvokeEvent");
 
 			ObjectCtor = typeof(object).GetConstructor(new Type[0]);
 			ChannelCallRemoteMethod = typeof(IEndPointChannel).GetMethod("CallRemoteMethod");
@@ -118,6 +125,12 @@ namespace SharpRemote.CodeGeneration
 			IPAddressFromBytes = typeof (IPAddress).GetConstructor(new[] {typeof(byte[])});
 
 			ArrayGetLength = typeof (byte[]).GetProperty("Length").GetMethod;
+
+			DelegateCombine = typeof (Delegate).GetMethod("Combine", new[]{typeof(Delegate), typeof(Delegate)});
+			DelegateRemove = typeof (Delegate).GetMethod("Remove", new[] {typeof (Delegate), typeof (Delegate)});
+
+			InterlockedCompareExchangeGeneric =
+				typeof (Interlocked).GetMethods().First(x => x.Name == "CompareExchange" && x.IsGenericMethod);
 		}
 
 		public static bool EmitReadPod(this ILGenerator gen, Type valueType)

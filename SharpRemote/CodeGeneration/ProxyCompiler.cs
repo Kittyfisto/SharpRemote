@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
 using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.CodeGeneration
 {
 	public class ProxyCompiler
+		: Compiler
 	{
-		private readonly Serializer _serializerCompiler;
 		private readonly Type _interfaceType;
 		private readonly AssemblyBuilder _assembly;
 		private readonly ModuleBuilder _module;
@@ -17,7 +19,7 @@ namespace SharpRemote.CodeGeneration
 		private readonly FieldBuilder _objectId;
 		private readonly FieldBuilder _channel;
 		private readonly FieldBuilder _serializer;
-
+		private readonly Dictionary<string, FieldBuilder> _fields;
 		private readonly string _moduleName;
 
 		#region Methods
@@ -25,8 +27,8 @@ namespace SharpRemote.CodeGeneration
 		#endregion
 
 		public ProxyCompiler(Serializer serializer, AssemblyName assemblyName, string proxyTypeName, Type interfaceType)
+			: base(serializer)
 		{
-			_serializerCompiler = serializer;
 			_interfaceType = interfaceType;
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
@@ -43,6 +45,7 @@ namespace SharpRemote.CodeGeneration
 			                                    FieldAttributes.Private | FieldAttributes.InitOnly);
 			_serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
 												FieldAttributes.Private | FieldAttributes.InitOnly);
+			_fields= new Dictionary<string, FieldBuilder>();
 		}
 
 		public Type Generate()
@@ -51,6 +54,7 @@ namespace SharpRemote.CodeGeneration
 			GenerateGetObjectId();
 			GenerateGetSerializer();
 			GenerateMethods();
+			GenerateInvokeEvent();
 
 			var proxyType = _typeBuilder.CreateType();
 			return proxyType;
@@ -116,8 +120,269 @@ namespace SharpRemote.CodeGeneration
 			var allMethods = _interfaceType.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public);
 			foreach (var method in allMethods)
 			{
-				GenerateMethod(method);
+				if (method.IsSpecialName)
+				{
+					var methodName = method.Name;
+					if (methodName.StartsWith("add_"))
+					{
+						GenerateAddEvent(method);
+					}
+					else if (methodName.StartsWith("remove_"))
+					{
+						GenerateRemoveEvent(method);
+					}
+					else
+					{
+						GenerateMethod(method);
+					}
+				}
+				else
+				{
+					GenerateMethod(method);
+				}
 			}
+		}
+
+		private void GenerateAddEvent(MethodInfo originalMethod)
+		{
+			var delegateType = originalMethod.GetParameters().First().ParameterType;
+			var method = _typeBuilder.DefineMethod(originalMethod.Name,
+			                                       MethodAttributes.Public | MethodAttributes.Virtual |
+			                                       MethodAttributes.SpecialName,
+			                                       typeof (void),
+			                                       new[] {delegateType});
+
+			var fieldName = EventBackingFieldName(originalMethod.Name);
+			var backingField = _typeBuilder.DefineField(fieldName, delegateType, FieldAttributes.Private);
+			_fields.Add(fieldName, backingField);
+
+			var gen = method.GetILGenerator();
+			var l0 = gen.DeclareLocal(delegateType);
+			var l1 = gen.DeclareLocal(delegateType);
+			var l2 = gen.DeclareLocal(delegateType);
+			var l3 = gen.DeclareLocal(typeof(bool));
+			var startAllOver = gen.DefineLabel();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, backingField);
+			gen.Emit(OpCodes.Stloc, l0);
+			gen.MarkLabel(startAllOver);
+			gen.Emit(OpCodes.Ldloc, l0);
+			gen.Emit(OpCodes.Stloc, l1);
+			gen.Emit(OpCodes.Ldloc, l1);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, Methods.DelegateCombine);
+			gen.Emit(OpCodes.Castclass, delegateType);
+			gen.Emit(OpCodes.Stloc, l2);
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldflda, backingField);
+			gen.Emit(OpCodes.Ldloc, l2);
+			gen.Emit(OpCodes.Ldloc, l1);
+
+			var compareExchange = Methods.InterlockedCompareExchangeGeneric.MakeGenericMethod(delegateType);
+			gen.Emit(OpCodes.Call, compareExchange);
+
+			gen.Emit(OpCodes.Stloc, l0);
+			gen.Emit(OpCodes.Ldloc, l0);
+			gen.Emit(OpCodes.Ldloc, l1);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Stloc, l3);
+			gen.Emit(OpCodes.Ldloc, l3);
+			gen.Emit(OpCodes.Brtrue_S, startAllOver);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(method, originalMethod);
+		}
+
+		private void GenerateRemoveEvent(MethodInfo originalMethod)
+		{
+			var delegateType = originalMethod.GetParameters().First().ParameterType;
+			var method = _typeBuilder.DefineMethod(originalMethod.Name,
+												   MethodAttributes.Public | MethodAttributes.Virtual |
+												   MethodAttributes.SpecialName,
+												   typeof(void),
+												   new[] { delegateType });
+
+			var fieldName = EventBackingFieldName(originalMethod.Name);
+			var backingField = _fields[fieldName];
+
+			var gen = method.GetILGenerator();
+			gen.DeclareLocal(delegateType);
+			gen.DeclareLocal(delegateType);
+			gen.DeclareLocal(delegateType);
+			gen.DeclareLocal(typeof(bool));
+			var startAllOver = gen.DefineLabel();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, backingField);
+			gen.Emit(OpCodes.Stloc_0);
+			gen.MarkLabel(startAllOver);
+			gen.Emit(OpCodes.Ldloc_0);
+			gen.Emit(OpCodes.Stloc_1);
+			gen.Emit(OpCodes.Ldloc_1);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, Methods.DelegateRemove);
+			gen.Emit(OpCodes.Castclass, delegateType);
+			gen.Emit(OpCodes.Stloc_2);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldflda, backingField);
+			gen.Emit(OpCodes.Ldloc_2);
+			gen.Emit(OpCodes.Ldloc_1);
+			var compareExchanged = Methods.InterlockedCompareExchangeGeneric.MakeGenericMethod(delegateType);
+			gen.Emit(OpCodes.Call, compareExchanged);
+			gen.Emit(OpCodes.Stloc_0);
+			gen.Emit(OpCodes.Ldloc_0);
+			gen.Emit(OpCodes.Ldloc_1);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Stloc_3);
+			gen.Emit(OpCodes.Ldloc_3);
+			gen.Emit(OpCodes.Brtrue_S, startAllOver);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(method, originalMethod);
+		}
+
+		private string EventBackingFieldName(string methodName)
+		{
+			var builder = new StringBuilder(methodName);
+			if (methodName.StartsWith("add_"))
+			{
+				builder.Remove(0, 4);
+			}
+			else if (methodName.StartsWith("remove_"))
+			{
+				builder.Remove(0, 7);
+			}
+			else
+			{
+				throw new ArgumentException(string.Format("Can't build field-name for special method: {0}", methodName));
+			}
+
+			builder[0] = char.ToLower(builder[0]);
+			builder.Insert(0, '_');
+			return builder.ToString();
+		}
+
+		private void GenerateInvokeEvent()
+		{
+			var originalMethod = Methods.ProxyInvokeEvent;
+			var method = _typeBuilder.DefineMethod(originalMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual,
+			                                       typeof (void),
+			                                       new[]
+				                                       {
+					                                       typeof (string),
+					                                       typeof (BinaryReader),
+					                                       typeof (BinaryWriter)
+				                                       });
+
+			var gen = method.GetILGenerator();
+
+			var name = gen.DeclareLocal(typeof(string));
+			var @throw = gen.DefineLabel();
+			var @ret = gen.DefineLabel();
+
+			// if (method == null) goto ret
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Stloc, name);
+			gen.Emit(OpCodes.Ldloc, name);
+			gen.Emit(OpCodes.Brfalse_S, @throw);
+
+			var allEvents = _interfaceType.GetEvents();
+			var labels = new Label[allEvents.Length];
+			int index = 0;
+			foreach (var eventInfo in allEvents)
+			{
+				gen.Emit(OpCodes.Ldloc, name);
+				gen.Emit(OpCodes.Ldstr, eventInfo.Name);
+				gen.Emit(OpCodes.Call, Methods.StringEquality);
+
+				var @true = gen.DefineLabel();
+				labels[index++] = @true;
+				gen.Emit(OpCodes.Brtrue_S, @true);
+			}
+
+			gen.Emit(OpCodes.Br_S, @throw);
+
+			for (int i = 0; i < allEvents.Length; ++i)
+			{
+				var methodInfo = allEvents[i];
+				var label = labels[i];
+
+				gen.MarkLabel(label);
+				ExtractArgumentsAndInvokeEvent(gen, methodInfo);
+				gen.Emit(OpCodes.Br_S, @ret);
+			}
+
+			gen.MarkLabel(@throw);
+			gen.Emit(OpCodes.Ldstr, "Event '{0}' not found");
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, Methods.StringFormat);
+			gen.Emit(OpCodes.Newobj, Methods.ArgumentExceptionCtor);
+			gen.Emit(OpCodes.Throw);
+
+			gen.MarkLabel(@ret);
+			gen.Emit(OpCodes.Ldarg_3);
+			gen.Emit(OpCodes.Call, Methods.BinaryWriterFlush);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(method, Methods.ProxyInvokeEvent);
+		}
+
+		private void ExtractArgumentsAndInvokeEvent(ILGenerator gen, EventInfo eventInfo)
+		{
+			var method = GenerateInvokeEventMethod(eventInfo);
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Ldarg_2);
+			gen.Emit(OpCodes.Ldarg_3);
+			gen.Emit(OpCodes.Call, method);
+		}
+
+		private MethodInfo GenerateInvokeEventMethod(EventInfo eventInfo)
+		{
+			var methodName = string.Format("Invoke_{0}", eventInfo.Name);
+			var method = _typeBuilder.DefineMethod(methodName, MethodAttributes.Private, CallingConventions.HasThis, typeof (void),
+			                                       new[]
+				                                       {
+					                                       typeof (string),
+					                                       typeof (BinaryReader),
+					                                       typeof (BinaryWriter)
+				                                       });
+
+			var gen = method.GetILGenerator();
+
+			var fieldName = EventBackingFieldName(eventInfo.AddMethod.Name);
+			var field = _fields[fieldName];
+			var delegateType = eventInfo.EventHandlerType;
+			var methodInfo = delegateType.GetMethod("Invoke");
+
+			var tmp = gen.DeclareLocal(delegateType);
+			var result = gen.DeclareLocal(typeof(bool));
+			var dontInvoke = gen.DefineLabel();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, field);
+			gen.Emit(OpCodes.Stloc, tmp);
+			gen.Emit(OpCodes.Ldloc, tmp);
+			gen.Emit(OpCodes.Ldnull);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Stloc, result);
+			gen.Emit(OpCodes.Ldloc, result);
+			gen.Emit(OpCodes.Brtrue_S, dontInvoke);
+			gen.Emit(OpCodes.Ldarg_3);
+			gen.Emit(OpCodes.Ldloc_0);
+			ExtractArgumentsAndCallMethod(gen, methodInfo);
+
+			gen.MarkLabel(dontInvoke);
+			gen.Emit(OpCodes.Ret);
+
+			return method;
 		}
 
 		private void GenerateMethod(MethodInfo originalMethod)

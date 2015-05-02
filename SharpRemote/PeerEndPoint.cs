@@ -223,7 +223,7 @@ namespace SharpRemote
 
 				try
 				{
-					servant.Invoke(methodName, reader, writer);
+					servant.InvokeMethod(methodName, reader, writer);
 					success = true;
 				}
 				catch (Exception e)

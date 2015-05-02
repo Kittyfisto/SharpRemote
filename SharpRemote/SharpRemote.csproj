@@ -39,6 +39,7 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeGeneration\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeInformation.cs" />
     <Compile Include="CodeGeneration\SerializerExtensions.cs" />
     <Compile Include="UnserializableException.cs" />

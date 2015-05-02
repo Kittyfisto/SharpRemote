@@ -59,7 +59,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			var outStream = new MemoryStream();
 			var @out = new BinaryWriter(outStream);
-			servant.Invoke("get_Value", null, @out);
+			servant.InvokeMethod("get_Value", null, @out);
 
 			outStream.Position = 0;
 			var reader = new BinaryReader(outStream);

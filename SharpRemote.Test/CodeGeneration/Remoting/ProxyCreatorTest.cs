@@ -691,9 +691,9 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
-		public void TestEvent()
+		public void TestEventInt32()
 		{
-			var proxy = TestGenerate<IEvent>();
+			var proxy = TestGenerate<IEventInt32>();
 			int actualValue = 0;
 			Action<int> tmp = value => actualValue = value;
 			proxy.Foobar += tmp;

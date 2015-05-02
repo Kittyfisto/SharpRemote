@@ -4,7 +4,7 @@ using SharpRemote.Test.CodeGeneration.Types.Interfaces;
 namespace SharpRemote.Test.CodeGeneration
 {
 	public class Test
-		: IEvent
+		: IEventInt32
 	{
 		public void Invoke2(int n)
 		{

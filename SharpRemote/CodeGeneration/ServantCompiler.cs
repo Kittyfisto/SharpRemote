@@ -7,23 +7,22 @@ using SharpRemote.CodeGeneration.Serialization;
 namespace SharpRemote.CodeGeneration
 {
 	public sealed class ServantCompiler
+		: Compiler
 	{
 		private readonly AssemblyBuilder _assembly;
 		private readonly Type _interfaceType;
 		private readonly ModuleBuilder _module;
-		private readonly Serializer _serializerCompiler;
 		private readonly string _moduleName;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly FieldBuilder _objectId;
-		private readonly FieldBuilder _serializer;
 		private readonly FieldBuilder _subject;
 
 		public ServantCompiler(Serializer serializer,
 		                       AssemblyName assemblyName,
 		                       string subjectTypeName,
 		                       Type interfaceType)
+			: base(serializer)
 		{
-			_serializerCompiler = serializer;
 			_interfaceType = interfaceType;
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
@@ -34,7 +33,7 @@ namespace SharpRemote.CodeGeneration
 
 			_subject = _typeBuilder.DefineField("_subject", interfaceType, FieldAttributes.Private | FieldAttributes.InitOnly);
 			_objectId = _typeBuilder.DefineField("_objectId", typeof(ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
-			_serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
+			Serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
 												FieldAttributes.Private | FieldAttributes.InitOnly);
 		}
 
@@ -44,7 +43,7 @@ namespace SharpRemote.CodeGeneration
 			var gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _serializer);
+			gen.Emit(OpCodes.Ldfld, Serializer);
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetSerializer);
@@ -91,7 +90,7 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateDispatchMethod()
 		{
-			var method = _typeBuilder.DefineMethod("Invoke",
+			var method = _typeBuilder.DefineMethod("InvokeMethod",
 			                                       MethodAttributes.Public | MethodAttributes.Virtual,
 												   typeof(void),
 												   new[]
@@ -151,25 +150,15 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Call, Methods.BinaryWriterFlush);
 			gen.Emit(OpCodes.Ret);
 
-			_typeBuilder.DefineMethodOverride(method, Methods.ServantInvoke);
+			_typeBuilder.DefineMethodOverride(method, Methods.ServantInvokeMethod);
 		}
 
-		private void ExtractArgumentsAndCallMethod(ILGenerator gen, MethodInfo methodInfo)
+		private new void ExtractArgumentsAndCallMethod(ILGenerator gen, MethodInfo methodInfo)
 		{
 			gen.Emit(OpCodes.Ldarg_3);
-
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
-
-			var allParameters = methodInfo.GetParameters();
-			foreach (var parameter in allParameters)
-			{
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.EmitReadPod(parameter.ParameterType);
-			}
-
-			gen.Emit(OpCodes.Callvirt, methodInfo);
-			_serializerCompiler.WriteValue(gen, methodInfo.ReturnType, _serializer);
+			base.ExtractArgumentsAndCallMethod(gen, methodInfo);
 		}
 
 		private void GenerateCtor()
@@ -191,7 +180,7 @@ namespace SharpRemote.CodeGeneration
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_2);
-			gen.Emit(OpCodes.Stfld, _serializer);
+			gen.Emit(OpCodes.Stfld, Serializer);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_3);

@@ -2,7 +2,7 @@
 
 namespace SharpRemote.Test.CodeGeneration.Types.Interfaces
 {
-	public interface IEvent
+	public interface IEventInt32
 	{
 		event Action<int> Foobar;
 	}

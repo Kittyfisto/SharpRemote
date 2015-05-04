@@ -35,7 +35,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_channel = channel.Object;
 
 			_proxyCreator = new ProxyCreator(_channel);
-			_servantCreator = new ServantCreator();
+			_servantCreator = new ServantCreator(_channel);
 
 			channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 			       .Returns((ulong objectId, string methodName, Stream arguments) =>

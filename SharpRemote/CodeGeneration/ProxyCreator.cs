@@ -47,8 +47,8 @@ namespace SharpRemote.CodeGeneration
 			var generator = new ProxyCompiler(_serializer, assemblyName, proxyTypeName, interfaceType);
 			var proxyType = generator.Generate();
 
-			generator.Save();
-			_assembly.Save(_moduleName);
+			//generator.Save();
+			//_assembly.Save(_moduleName);
 
 			_interfaceToProxy.Add(interfaceType, proxyType);
 			return proxyType;

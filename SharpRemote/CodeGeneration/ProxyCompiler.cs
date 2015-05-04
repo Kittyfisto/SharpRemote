@@ -16,9 +16,6 @@ namespace SharpRemote.CodeGeneration
 		private readonly AssemblyBuilder _assembly;
 		private readonly ModuleBuilder _module;
 		private readonly TypeBuilder _typeBuilder;
-		private readonly FieldBuilder _objectId;
-		private readonly FieldBuilder _channel;
-		private readonly FieldBuilder _serializer;
 		private readonly Dictionary<string, FieldBuilder> _fields;
 		private readonly string _moduleName;
 
@@ -40,10 +37,10 @@ namespace SharpRemote.CodeGeneration
 				});
 			_typeBuilder.AddInterfaceImplementation(typeof(IProxy));
 
-			_objectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
-			_channel = _typeBuilder.DefineField("_channel", typeof (IEndPointChannel),
+			ObjectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
+			Channel = _typeBuilder.DefineField("_channel", typeof (IEndPointChannel),
 			                                    FieldAttributes.Private | FieldAttributes.InitOnly);
-			_serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
+			Serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
 												FieldAttributes.Private | FieldAttributes.InitOnly);
 			_fields= new Dictionary<string, FieldBuilder>();
 		}
@@ -80,15 +77,15 @@ namespace SharpRemote.CodeGeneration
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Stfld, _objectId);
+			gen.Emit(OpCodes.Stfld, ObjectId);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_2);
-			gen.Emit(OpCodes.Stfld, _channel);
+			gen.Emit(OpCodes.Stfld, Channel);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_3);
-			gen.Emit(OpCodes.Stfld, _serializer);
+			gen.Emit(OpCodes.Stfld, Serializer);
 		}
 
 		private void GenerateGetSerializer()
@@ -97,7 +94,7 @@ namespace SharpRemote.CodeGeneration
 			var gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _serializer);
+			gen.Emit(OpCodes.Ldfld, Serializer);
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetSerializer);
@@ -109,7 +106,7 @@ namespace SharpRemote.CodeGeneration
 			var gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _objectId);
+			gen.Emit(OpCodes.Ldfld, ObjectId);
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetObjectId);
@@ -133,12 +130,12 @@ namespace SharpRemote.CodeGeneration
 					}
 					else
 					{
-						GenerateMethod(method);
+						GenerateMethodInvocation(method);
 					}
 				}
 				else
 				{
-					GenerateMethod(method);
+					GenerateMethodInvocation(method);
 				}
 			}
 		}
@@ -385,94 +382,24 @@ namespace SharpRemote.CodeGeneration
 			return method;
 		}
 
-		private void GenerateMethod(MethodInfo originalMethod)
+		/// <summary>
+		/// Generates the method responsible for invoking the given interface method via
+		/// <see cref="IEndPointChannel.CallRemoteMethod"/>.
+		/// </summary>
+		/// <param name="remoteMethod"></param>
+		private void GenerateMethodInvocation(MethodInfo remoteMethod)
 		{
-			var methodName = originalMethod.Name;
-			var parameterTypes = originalMethod.GetParameters().Select(x => x.ParameterType).ToArray();
+			var methodName = remoteMethod.Name;
+			var parameterTypes = remoteMethod.GetParameters().Select(x => x.ParameterType).ToArray();
 			var method = _typeBuilder.DefineMethod(methodName,
 												   MethodAttributes.Public |
 													MethodAttributes.Virtual,
-													originalMethod.ReturnType,
+													remoteMethod.ReturnType,
 													parameterTypes);
 
-			var gen = method.GetILGenerator();
+			GenerateMethodInvocation(method, methodName, parameterTypes, remoteMethod.ReturnType);
 
-			var stream = gen.DeclareLocal(typeof(MemoryStream));
-			var binaryWriter = gen.DeclareLocal(typeof(StreamWriter));
-			var binaryReader = gen.DeclareLocal(typeof(StreamReader));
-
-			if (parameterTypes.Length > 0)
-			{
-				// var stream = new MemoryStream();
-				gen.Emit(OpCodes.Newobj, Methods.MemoryStreamCtor);
-				gen.Emit(OpCodes.Stloc, stream);
-
-				// var binaryWriter = new BinaryWriter(stream);
-				gen.Emit(OpCodes.Ldloc, stream);
-				gen.Emit(OpCodes.Newobj, Methods.BinaryWriterCtor);
-				gen.Emit(OpCodes.Stloc, binaryWriter);
-
-				var allParameters = originalMethod.GetParameters();
-				int index = 0;
-				foreach (var parameter in allParameters)
-				{
-					//WriteXXX(_serializer, arg[y], binaryWriter);
-					gen.Emit(OpCodes.Ldloc, binaryWriter);
-					gen.Emit(OpCodes.Ldarg, ++index);
-					_serializerCompiler.WriteValue(gen, parameter.ParameterType, _serializer);
-				}
-
-				// binaryWriter.Flush()
-				gen.Emit(OpCodes.Ldloc, binaryWriter);
-				gen.Emit(OpCodes.Callvirt, Methods.BinaryWriterFlush);
-
-				// stream.Position = 0
-				gen.Emit(OpCodes.Ldloc, stream);
-				gen.Emit(OpCodes.Ldc_I8, (long)0);
-				gen.Emit(OpCodes.Call, Methods.StreamSetPosition);
-			}
-			else
-			{
-				gen.Emit(OpCodes.Ldnull);
-				gen.Emit(OpCodes.Stloc, stream);
-			}
-
-			// _channel.CallRemoteMethod(_objectId, "get_XXX", stream);
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _channel);
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _objectId);
-			gen.Emit(OpCodes.Ldstr, methodName);
-			gen.Emit(OpCodes.Ldloc, stream);
-			gen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
-
-			if (originalMethod.ReturnType == typeof (void))
-			{
-				gen.Emit(OpCodes.Pop);
-			}
-			else
-			{
-				// reader = new BinaryReader(...)
-				gen.Emit(OpCodes.Newobj, Methods.BinaryReaderCtor);
-				gen.Emit(OpCodes.Stloc, binaryReader);
-
-				// return _serializer.DeserializeXXX(reader);
-				DeserializeValue(gen, binaryReader, originalMethod.ReturnType);
-			}
-
-			gen.Emit(OpCodes.Ret);
-
-			_typeBuilder.DefineMethodOverride(method, originalMethod);
-		}
-
-		private void DeserializeValue(ILGenerator gen, LocalBuilder binaryReader, Type propertyType)
-		{
-			gen.Emit(OpCodes.Ldloc, binaryReader);
-
-			if (!gen.EmitReadPod(propertyType))
-			{
-				throw new NotImplementedException();
-			}
+			_typeBuilder.DefineMethodOverride(method, remoteMethod);
 		}
 	}
 }

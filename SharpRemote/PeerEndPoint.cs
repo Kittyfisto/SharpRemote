@@ -54,8 +54,6 @@ namespace SharpRemote
 			if (localAddress == null) throw new ArgumentNullException("localAddress");
 
 			_endPointName = endPointName;
-			_servantCreator = new ServantCreator();
-			_serializer = _servantCreator.Serializer;
 
 			_configuration = new NetPeerConfiguration("Test")
 				{
@@ -83,6 +81,9 @@ namespace SharpRemote
 			_cancel = new CancellationTokenSource();
 			_connections = new Dictionary<IPEndPoint, NetConnection>();
 			_servants = new Dictionary<ulong, IServant>();
+
+			_servantCreator = new ServantCreator(this);
+			_serializer = _servantCreator.Serializer;
 			_proxyCreator = new ProxyCreator(this);
 
 			_pendingCalls = new Dictionary<long, Action<string, MemoryStream>>();
@@ -250,10 +251,9 @@ namespace SharpRemote
 			{
 				formatter.Serialize(stream, e);
 			}
-			catch (SerializationException ex)
+			catch (SerializationException)
 			{
 				// TODO: Log this..
-
 				writer.Flush();
 				stream.Position = start;
 				formatter.Serialize(stream, new UnserializableException(e));

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using SharpRemote.CodeGeneration.Serialization;
@@ -14,8 +16,8 @@ namespace SharpRemote.CodeGeneration
 		private readonly ModuleBuilder _module;
 		private readonly string _moduleName;
 		private readonly TypeBuilder _typeBuilder;
-		private readonly FieldBuilder _objectId;
 		private readonly FieldBuilder _subject;
+		private readonly List<KeyValuePair<EventInfo, MethodInfo>> _eventInvocationMethods;
 
 		public ServantCompiler(Serializer serializer,
 		                       AssemblyName assemblyName,
@@ -31,8 +33,12 @@ namespace SharpRemote.CodeGeneration
 			_typeBuilder = _module.DefineType(subjectTypeName, TypeAttributes.Class, typeof(object));
 			_typeBuilder.AddInterfaceImplementation(typeof(IServant));
 
+			_eventInvocationMethods = new List<KeyValuePair<EventInfo, MethodInfo>>();
+
 			_subject = _typeBuilder.DefineField("_subject", interfaceType, FieldAttributes.Private | FieldAttributes.InitOnly);
-			_objectId = _typeBuilder.DefineField("_objectId", typeof(ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
+			ObjectId = _typeBuilder.DefineField("_objectId", typeof(ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
+			Channel = _typeBuilder.DefineField("_channel", typeof (IEndPointChannel),
+			                                   FieldAttributes.Private | FieldAttributes.InitOnly);
 			Serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
 												FieldAttributes.Private | FieldAttributes.InitOnly);
 		}
@@ -55,7 +61,7 @@ namespace SharpRemote.CodeGeneration
 			var gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _objectId);
+			gen.Emit(OpCodes.Ldfld, ObjectId);
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetObjectId);
@@ -63,14 +69,44 @@ namespace SharpRemote.CodeGeneration
 
 		public Type Generate()
 		{
-			GenerateCtor();
 			GenerateGetObjectId();
 			GenerateGetSerializer();
 			GenerateGetSubject();
 			GenerateDispatchMethod();
+			GenerateEvents();
+			GenerateCtor();
 
 			var proxyType = _typeBuilder.CreateType();
 			return proxyType;
+		}
+
+		private void GenerateEvents()
+		{
+			// For every event we have to compile a method that essentially does the same that the proxy compiler
+			// does for interface methods: serialize the arguments into a stream and then call IEndPointChannel.InvokeMethod
+			var allEvents = _interfaceType.GetEvents();
+			foreach (var @event in allEvents)
+			{
+				GenerateEvent(@event);
+			}
+		}
+
+		private void GenerateEvent(EventInfo @event)
+		{
+			var delegateType = @event.EventHandlerType;
+			var methodInfo = delegateType.GetMethod("Invoke");
+
+			var methodName = string.Format("On{0}", @event.Name);
+			var parameterTypes = methodInfo.GetParameters().Select(x => x.ParameterType).ToArray();
+			var returnType = typeof (void);
+			var method = _typeBuilder.DefineMethod(methodName,
+												   MethodAttributes.Public,
+													returnType,
+													parameterTypes);
+
+			GenerateMethodInvocation(method, @event.Name, parameterTypes, returnType);
+
+			_eventInvocationMethods.Add(new KeyValuePair<EventInfo, MethodInfo>(@event, method));
 		}
 
 		private void GenerateGetSubject()
@@ -166,6 +202,7 @@ namespace SharpRemote.CodeGeneration
 			var builder = _typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[]
 				{
 					typeof (ulong),
+					typeof (IEndPointChannel),
 					typeof (ISerializer),
 					_interfaceType
 				});
@@ -176,15 +213,45 @@ namespace SharpRemote.CodeGeneration
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Stfld, _objectId);
+			gen.Emit(OpCodes.Stfld, ObjectId);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_2);
-			gen.Emit(OpCodes.Stfld, Serializer);
+			gen.Emit(OpCodes.Stfld, Channel);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_3);
+			gen.Emit(OpCodes.Stfld, Serializer);
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg, 4);
 			gen.Emit(OpCodes.Stfld, _subject);
+
+			foreach (var pair in _eventInvocationMethods)
+			{
+				var eventAddMethod = pair.Key.AddMethod;
+				var delegateType = pair.Key.EventHandlerType;
+				var onEventMethod = pair.Value;
+
+				AddOnFireEvent(gen, eventAddMethod, delegateType, onEventMethod);
+			}
+
+			gen.Emit(OpCodes.Ret);
+		}
+
+		private void AddOnFireEvent(ILGenerator gen, MethodInfo eventAddMethod, Type delegateType, MethodInfo onEventMethod)
+		{
+			// We need to find the constructor of the Action/Delegate that we're creating....
+			var ctor = delegateType.GetConstructor(new[] {typeof (object), typeof (IntPtr)});
+			if (ctor == null)
+				throw new NotImplementedException(string.Format("Could not find a suitable constructor for delegate '{0}' with an (object, IntPtr) signature", delegateType));
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, _subject);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldftn, onEventMethod);
+			gen.Emit(OpCodes.Newobj, ctor);
+			gen.Emit(OpCodes.Callvirt, eventAddMethod);
 		}
 
 		public void Save()

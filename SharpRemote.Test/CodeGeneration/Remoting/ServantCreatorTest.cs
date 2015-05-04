@@ -15,6 +15,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private ServantCreator _creator;
 		private Random _random;
 		private ulong _objectId;
+		private Mock<IEndPointChannel> _channel;
 
 		[SetUp]
 		public void SetUp()
@@ -22,7 +23,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var seed = (int)(DateTime.Now.Ticks % Int32.MaxValue);
 			Console.WriteLine("Seed: {0}", seed);
 			_random = new Random(seed);
-			_creator = new ServantCreator();
+			_channel = new Mock<IEndPointChannel>();
+			_creator = new ServantCreator(_channel.Object);
 		}
 
 		private IServant TestGenerate<T>(T subject)
@@ -40,6 +42,28 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			servant.Subject.Should().BeSameAs(subject);
 
 			return servant;
+		}
+
+		[Test]
+		[Description("Verifies that raising an event on the subject causes the servant to serialize the arguments and send the call via IEndPointChannel.CallRemoteMethod")]
+		public void TestEventInt32()
+		{
+			var subject = new Mock<IEventInt32>();
+			var servant = TestGenerate(subject.Object);
+
+			var callRemoteMethodInvoked = false;
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+					.Callback((ulong id, string methodName, MemoryStream stream) =>
+						{
+							id.Should().Be(servant.ObjectId);
+							methodName.Should().Be("Foobar");
+							stream.Should().NotBeNull();
+							var reader = new BinaryReader(stream);
+							reader.ReadInt32().Should().Be(42);
+							callRemoteMethodInvoked = true;
+						});
+			subject.Raise(x => x.Foobar += null, 42);
+			callRemoteMethodInvoked.Should().BeTrue();
 		}
 
 		[Test]

@@ -8,13 +8,17 @@ namespace SharpRemote.CodeGeneration
 {
 	public sealed class ServantCreator
 	{
+		private readonly IEndPointChannel _channel;
 		private readonly Serializer _serializer;
 		private readonly AssemblyBuilder _assembly;
 		private readonly string _moduleName;
 		private readonly Dictionary<Type, Type> _interfaceToSubject;
 
-		public ServantCreator()
+		public ServantCreator(IEndPointChannel channel)
 		{
+			if (channel == null) throw new ArgumentNullException("channel");
+
+			_channel = channel;
 			var assemblyName = new AssemblyName("SharpRemote.CodeGeneration.Servants");
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
@@ -40,8 +44,8 @@ namespace SharpRemote.CodeGeneration
 			var generator = new ServantCompiler(_serializer, assemblyName, proxyTypeName, interfaceType);
 			var proxyType = generator.Generate();
 
-			generator.Save();
-			_assembly.Save(_moduleName);
+			//generator.Save();
+			//_assembly.Save(_moduleName);
 
 			_interfaceToSubject.Add(interfaceType, proxyType);
 			return proxyType;
@@ -59,15 +63,17 @@ namespace SharpRemote.CodeGeneration
 			ConstructorInfo ctor = subjectType.GetConstructor(new[]
 				{
 					typeof(ulong),
+					typeof (IEndPointChannel),
 					typeof (ISerializer),
 					interfaceType
 				});
 			if (ctor == null)
-				throw new Exception();
+				throw new NotImplementedException(string.Format("Could not find ctor of servant for type '{0}'", interfaceType));
 
 			return (IServant)ctor.Invoke(new object[]
 				{
 					objectId,
+					_channel,
 					_serializer,
 					subject
 				});

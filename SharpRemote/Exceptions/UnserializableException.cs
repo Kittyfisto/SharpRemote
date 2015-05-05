@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// This exception is thrown when the exception thrown by the servant could not be serialized.

@@ -42,17 +42,18 @@
     <Compile Include="CodeGeneration\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeInformation.cs" />
     <Compile Include="CodeGeneration\SerializerExtensions.cs" />
-    <Compile Include="UnserializableException.cs" />
-    <Compile Include="NoSuchEndPointException.cs" />
-    <Compile Include="NoSuchServantException.cs" />
-    <Compile Include="NotConnectedException.cs" />
-    <Compile Include="PeerEndPoint.cs" />
+    <Compile Include="Exceptions\ConnectionLostException.cs" />
+    <Compile Include="Exceptions\UnserializableException.cs" />
+    <Compile Include="Exceptions\NoSuchEndPointException.cs" />
+    <Compile Include="Exceptions\NoSuchServantException.cs" />
+    <Compile Include="Exceptions\NotConnectedException.cs" />
+    <Compile Include="RemotingEndPoint.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializer.cs" />
     <Compile Include="CodeGeneration\ServantCompiler.cs" />
     <Compile Include="CodeGeneration\ServantCreator.cs" />
-    <Compile Include="IEndpoint.cs" />
+    <Compile Include="IRemotingEndPoint.cs" />
     <Compile Include="IEndpointChannel.cs" />
     <Compile Include="CodeGeneration\ProxyCompiler.cs" />
     <Compile Include="IGrain.cs" />
@@ -60,7 +61,7 @@
     <Compile Include="IServant.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CodeGeneration\ProxyCreator.cs" />
-    <Compile Include="RemotingException.cs" />
+    <Compile Include="Exceptions\RemotingException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

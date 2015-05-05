@@ -1,0 +1,199 @@
+﻿using System;
+using System.Net;
+using FluentAssertions;
+using Moq;
+using NUnit.Framework;
+using SharpRemote.Test.CodeGeneration.Types.Interfaces;
+
+namespace SharpRemote.Test.Remoting
+{
+	[TestFixture]
+	public sealed class EndPointTest
+	{
+		[Test]
+		[Description("Verifies that Connect() can establish a connection with an endpoint in the same process")]
+		public void TestConnect1()
+		{
+			using (var rep1 = new RemotingEndPoint(IPAddress.Loopback, "Rep#1"))
+			using (var rep2 = new RemotingEndPoint(IPAddress.Loopback, "Rep#2"))
+			{
+				rep1.IsConnected.Should().BeFalse();
+				rep1.RemoteAddress.Should().BeNull();
+
+				rep2.IsConnected.Should().BeFalse();
+				rep2.RemoteAddress.Should().BeNull();
+
+// ReSharper disable AccessToDisposedClosure
+				new Action(() => rep1.Connect(rep2.Address, TimeSpan.FromSeconds(1)))
+// ReSharper restore AccessToDisposedClosure
+					.ShouldNotThrow();
+
+				rep1.IsConnected.Should().BeTrue();
+				rep1.RemoteAddress.Should().Be(rep2.Address);
+
+				rep2.IsConnected.Should().BeTrue();
+				rep2.RemoteAddress.Should().Be(rep1.Address);
+			}
+		}
+
+		[Test]
+		[Description(
+			"Verifies that Connect() cannot establish a connection with a non-existant endpoint and returns in the specified timeout"
+			)]
+		public void TestConnect2()
+		{
+			using (var rep = new RemotingEndPoint(IPAddress.Loopback))
+			{
+				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
+				new Action(() => new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 50012), timeout))
+					                 .ShouldThrow<NoSuchEndPointException>()
+									 .WithMessage("Unable to establish a connection with the given endpoint: 127.0.0.1:50012"))
+					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
+
+				const string reason = "because no successfull connection could be established";
+				rep.IsConnected.Should().BeFalse(reason);
+				rep.RemoteAddress.Should().BeNull(reason);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() cannot establish a connection with itself")]
+		public void TestConnect3()
+		{
+			using (var rep = new RemotingEndPoint(IPAddress.Loopback))
+			{
+				var timeout = TimeSpan.FromMilliseconds(100);
+				const string message = "A remote endpoint cannot be connected to itself\r\nParameter name: endPoint";
+				new Action(() => rep.Connect(rep.Address, timeout))
+					.ShouldThrow<ArgumentException>()
+					.WithMessage(message);
+
+				const string reason = "because no successfull connection could be established";
+				rep.IsConnected.Should().BeFalse(reason);
+				rep.RemoteAddress.Should().BeNull(reason);
+
+				new Action(() => rep.Connect(new IPEndPoint(rep.Address.Address, rep.Address.Port), timeout))
+					.ShouldThrow<ArgumentException>()
+					.WithMessage(message);
+
+				rep.IsConnected.Should().BeFalse(reason);
+				rep.RemoteAddress.Should().BeNull(reason);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
+		public void TestConnect4()
+		{
+			using (var rep1 = new RemotingEndPoint(IPAddress.Loopback, "Rep#1"))
+			using (var rep2 = new RemotingEndPoint(IPAddress.Loopback, "Rep#2"))
+			using (var rep3 = new RemotingEndPoint(IPAddress.Loopback, "Rep#3"))
+			{
+				var timeout = TimeSpan.FromSeconds(1);
+				rep1.Connect(rep2.Address, timeout);
+				rep1.IsConnected.Should().BeTrue();
+				rep1.RemoteAddress.Should().Be(rep2.Address);
+
+				new Action(() => rep1.Connect(rep3.Address, timeout))
+					.ShouldThrow<InvalidOperationException>();
+				rep1.IsConnected.Should().BeTrue();
+				rep1.RemoteAddress.Should().Be(rep2.Address);
+
+				rep3.IsConnected.Should().BeFalse();
+				rep3.RemoteAddress.Should().BeNull();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() throws when a null address is given")]
+		public void TestConnect5()
+		{
+			using (var rep = new RemotingEndPoint(IPAddress.Loopback))
+			{
+				new Action(() => rep.Connect(null, TimeSpan.FromSeconds(1)))
+					.ShouldThrow<ArgumentNullException>()
+					.WithMessage("Value cannot be null.\r\nParameter name: endPoint");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() throws when a zero timeout is given")]
+		public void TestConnect6()
+		{
+			using (var rep = new RemotingEndPoint(IPAddress.Loopback))
+			{
+				new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 12345), TimeSpan.FromSeconds(0)))
+					.ShouldThrow<ArgumentOutOfRangeException>()
+					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() throws when a negative timeout is given")]
+		public void TestConnect7()
+		{
+			using (var rep = new RemotingEndPoint(IPAddress.Loopback))
+			{
+				new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 12345), TimeSpan.FromSeconds(-1)))
+					.ShouldThrow<ArgumentOutOfRangeException>()
+					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that creating a peer-endpoint without specifying a port works and assigns a free port")]
+		public void TestCtor1()
+		{
+			IPAddress address = IPAddress.Loopback;
+			using (var rep = new RemotingEndPoint(address))
+			{
+				rep.Address.Should().NotBeNull();
+				rep.Address.Address.Should().Be(address);
+				rep.Address.Port.Should()
+				   .BeInRange(49152, 65535,
+				              "because an automatically chosen port should be in the range of private/dynamic port numbers");
+				rep.RemoteAddress.Should().BeNull();
+				rep.IsConnected.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that a proxy on an unconnected endpoint can be created")]
+		public void TestCreateProxy1()
+		{
+			using (var rep = new RemotingEndPoint(IPAddress.Loopback))
+			{
+				IDisposable proxy = null;
+
+				const string reason =
+					"because a proxy can always be created - its usage may however not work depending on the endpoint's connection status";
+				new Action(() => proxy = rep.CreateProxy<IDisposable>(0))
+					.ShouldNotThrow(reason);
+				proxy.Should().NotBeNull(reason);
+
+				new Action(() => proxy.Dispose())
+					.ShouldThrow<NotConnectedException>("because the endpoint is not connected to any other endpoint and thus there cannot be a subject on which the method can ever be executed");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that a servant on an unconnected endpoint can be created")]
+		public void TestCreateServant1()
+		{
+			using (var rep = new RemotingEndPoint(IPAddress.Loopback))
+			{
+				var subject = new Mock<IEventInt32>();
+				IServant servant = null;
+
+				const string reason =
+					"because a servant can always be created - its usage may however not work depending on the endpoint's connection status";
+				new Action(() => servant = rep.CreateServant(0, subject.Object))
+					.ShouldNotThrow(reason);
+				servant.Should().NotBeNull(reason);
+
+				new Action(() => subject.Raise(x => x.Foobar += null, 42))
+					.ShouldThrow<NotConnectedException>("because the endpoint is not connected to any other endpoint and thus there cannot be a proxy on which the event can ever be executed");
+			}
+		}
+	}
+}

@@ -12,19 +12,15 @@ namespace SharpRemote.Test.Remoting
 	[TestFixture]
 	public sealed class EndpointAcceptanceTest
 	{
-		private PeerEndPoint _server;
-		private PeerEndPoint _client;
+		private RemotingEndPoint _server;
+		private RemotingEndPoint _client;
 
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			_server = new PeerEndPoint("Server", IPAddress.Loopback);
-			_server.Start();
-
-			_client = new PeerEndPoint("Client", IPAddress.Loopback);
-			_client.Start();
-
-			_client.Connect(_server.Address);
+			_server = new RemotingEndPoint(IPAddress.Loopback, "Server");
+			_client = new RemotingEndPoint(IPAddress.Loopback, "Client");
+			_client.Connect(_server.Address, TimeSpan.FromMinutes(1));
 		}
 
 		[Test]

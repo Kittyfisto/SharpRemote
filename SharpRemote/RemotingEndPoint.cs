@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -13,9 +12,9 @@ using SharpRemote.CodeGeneration;
 
 namespace SharpRemote
 {
-	public sealed class PeerEndPoint
-		: IEndPoint
-		, IEndPointChannel
+	public sealed class RemotingEndPoint
+		: IRemotingEndPoint
+		  , IEndPointChannel
 	{
 		#region Tokens
 
@@ -31,31 +30,41 @@ namespace SharpRemote
 
 		private readonly CancellationTokenSource _cancel;
 		private readonly NetPeerConfiguration _configuration;
-		private readonly Dictionary<IPEndPoint, NetConnection> _connections;
-		private readonly Dictionary<ulong, IServant> _servants;
-		private readonly Dictionary<ulong, IProxy> _proxies;
+		private readonly string _name;
+		private readonly IPEndPoint _localAddress;
 		private readonly NetPeer _peer;
+		private readonly Dictionary<ulong, IProxy> _proxies;
 		private readonly ProxyCreator _proxyCreator;
 		private readonly ServantCreator _servantCreator;
+		private readonly Dictionary<ulong, IServant> _servants;
 		private readonly Task _task;
-		private IPEndPoint _localAddress;
 		private long _nextRpcId;
-		private readonly string _endPointName;
+
+		#region Connection
+
+		private NetConnection _connection;
+		private IPEndPoint _remoteAddress;
+
+		#endregion
 
 		#region Pending Methods
+
 		private readonly Dictionary<long, Action<string, MemoryStream>> _pendingCalls;
 		private readonly Dictionary<IPEndPoint, Action<NetIncomingMessage>> _pendingConnects;
 		private readonly ISerializer _serializer;
 
 		#endregion
 
-		public PeerEndPoint(string endPointName, IPAddress localAddress)
+		/// <summary>
+		/// Creates a new endpoint on the given address, a randomly chosen port and with the given name.
+		/// </summary>
+		/// <param name="localAddress"></param>
+		/// <param name="endPointName">The name of this endpoint, used only for logging to increase readability</param>
+		public RemotingEndPoint(IPAddress localAddress, string endPointName = null)
 		{
-			if (endPointName == null) throw new ArgumentNullException("endPointName");
 			if (localAddress == null) throw new ArgumentNullException("localAddress");
 
-			_endPointName = endPointName;
-
+			_name = endPointName ?? "<Unnamed>";
 			_configuration = new NetPeerConfiguration("Test")
 				{
 					LocalAddress = localAddress
@@ -80,7 +89,6 @@ namespace SharpRemote
 			_task = new Task(ReceiveMessage, TaskCreationOptions.LongRunning);
 
 			_cancel = new CancellationTokenSource();
-			_connections = new Dictionary<IPEndPoint, NetConnection>();
 
 			_servants = new Dictionary<ulong, IServant>();
 			_proxies = new Dictionary<ulong, IProxy>();
@@ -91,6 +99,17 @@ namespace SharpRemote
 
 			_pendingCalls = new Dictionary<long, Action<string, MemoryStream>>();
 			_pendingConnects = new Dictionary<IPEndPoint, Action<NetIncomingMessage>>();
+
+			_peer.Start();
+			_task.Start();
+			_localAddress = new IPEndPoint(_configuration.LocalAddress, _peer.Port);
+		}
+
+		#region IRemotingEndPoint interface
+
+		public string Name
+		{
+			get { return _name; }
 		}
 
 		public IPEndPoint Address
@@ -98,8 +117,120 @@ namespace SharpRemote
 			get { return _localAddress; }
 		}
 
+		public IPEndPoint RemoteAddress
+		{
+			get { return _remoteAddress; }
+		}
+
+		public bool IsConnected
+		{
+			get { return _remoteAddress != null; }
+		}
+
+		public void Connect(IPEndPoint endPoint, TimeSpan timeout)
+		{
+			if (endPoint == null) throw new ArgumentNullException("endPoint");
+			if (Equals(endPoint, _localAddress)) throw new ArgumentException("A remote endpoint cannot be connected to itself", "endPoint");
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+			if (IsConnected) throw new InvalidOperationException("This endpoint is already connected to another endpoint and cannot establish any more connections");
+
+			var handle = new ManualResetEvent(false);
+			try
+			{
+				lock (_pendingConnects)
+				{
+					_pendingConnects.Add(endPoint, msg => handle.Set());
+				}
+
+				var tmpConnection = _peer.Connect(endPoint);
+
+				if (!handle.WaitOne(timeout))
+					throw new NoSuchEndPointException(endPoint);
+
+				_connection = tmpConnection;
+				_remoteAddress = endPoint;
+			}
+			finally
+			{
+				handle.Dispose();
+
+				lock (_pendingConnects)
+				{
+					_pendingConnects.Remove(endPoint);
+				}
+			}
+		}
+
+		public T CreateProxy<T>(ulong objectId) where T : class
+		{
+			lock (_proxies)
+			{
+				var proxy = _proxyCreator.CreateProxy<T>(objectId);
+				_proxies.Add(objectId, (IProxy) proxy);
+				return proxy;
+			}
+		}
+
+		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
+		{
+			IServant servant = _servantCreator.CreateServant(objectId, subject);
+			lock (_servants)
+			{
+				_servants.Add(objectId, servant);
+			}
+			return servant;
+		}
+
 		public void Dispose()
 		{
+		}
+
+		#endregion
+
+		MemoryStream IEndPointChannel.CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments)
+		{
+			NetConnection con = _connection;
+			if (con == null)
+				throw new NotConnectedException(_name);
+
+			NetOutgoingMessage msg = _peer.CreateMessage();
+			long rpcId = Interlocked.Increment(ref _nextRpcId);
+			msg.Write(RequestToken);
+			msg.Write(rpcId);
+			msg.Write(servantId);
+			msg.Write(methodName);
+			if (arguments != null)
+			{
+				var length = (int)arguments.Length;
+				msg.Write(length);
+				msg.Write(arguments.GetBuffer(), 0, length);
+			}
+			else
+			{
+				const int length = 0;
+				msg.Write(length);
+			}
+
+			MemoryStream message;
+			string responseToken;
+			SendAndWaitFor(con, rpcId, msg, out responseToken, out message);
+
+			switch (responseToken)
+			{
+				case ResponseSuccessToken:
+					return message;
+
+				case ResponseExceptionToken:
+					using (var reader = new BinaryReader(message, Encoding.UTF8))
+					{
+						var formatter = new BinaryFormatter();
+						var e = (Exception)formatter.Deserialize(reader.BaseStream);
+						throw e;
+					}
+
+				default:
+					throw new NotImplementedException(string.Format("Unexpected token: {0}", responseToken));
+			}
 		}
 
 		private void ReceiveMessage()
@@ -115,8 +246,8 @@ namespace SharpRemote
 						switch (msg.MessageType)
 						{
 							case NetIncomingMessageType.StatusChanged:
-								var connection = msg.SenderConnection;
-								Console.WriteLine("{0}: Status changed to {1}", _endPointName, connection.Status);
+								NetConnection connection = msg.SenderConnection;
+								Console.WriteLine("{0}: Status changed to {1}", _name, connection.Status);
 								if (connection.Status == NetConnectionStatus.Connected)
 								{
 									NotifySuccessfulConnection(msg);
@@ -124,40 +255,41 @@ namespace SharpRemote
 								break;
 
 							case NetIncomingMessageType.DebugMessage:
-								Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
+								Console.WriteLine("{0}: DEBUG {1}", _name, msg.ReadString());
 								break;
 
 							case NetIncomingMessageType.VerboseDebugMessage:
-								Console.WriteLine("{0}: DEBUG {1}", _endPointName, msg.ReadString());
+								Console.WriteLine("{0}: DEBUG {1}", _name, msg.ReadString());
 								break;
 
 							case NetIncomingMessageType.WarningMessage:
-								Console.WriteLine("{0}: WARN {1}", _endPointName, msg.ReadString());
+								Console.WriteLine("{0}: WARN {1}", _name, msg.ReadString());
 								break;
 
 							case NetIncomingMessageType.Error:
-								Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
+								Console.WriteLine("{0}: ERROR {1}", _name, msg.ReadString());
 								break;
 
 							case NetIncomingMessageType.ErrorMessage:
-								Console.WriteLine("{0}: ERROR {1}", _endPointName, msg.ReadString());
+								Console.WriteLine("{0}: ERROR {1}", _name, msg.ReadString());
 								break;
 
 							case NetIncomingMessageType.ConnectionApproval:
-								Console.WriteLine("{0}: Incoming connection from '{1}', approving it...", _endPointName, msg.SenderEndPoint);
+								Console.WriteLine("{0}: Incoming connection from '{1}', approving it...", _name, msg.SenderEndPoint);
 								msg.SenderConnection.Approve();
-								_connections.Add(msg.SenderEndPoint, msg.SenderConnection);
+								_connection = msg.SenderConnection;
+								_remoteAddress = msg.SenderEndPoint;
 								break;
 
 							case NetIncomingMessageType.Data:
-								Console.WriteLine("{0}: Data received from {1}", _endPointName, msg.SenderEndPoint);
+								Console.WriteLine("{0}: Data received from {1}", _name, msg.SenderEndPoint);
 								HandleMessage(msg);
 								break;
 						}
 					}
 					catch (Exception e)
 					{
-						Console.WriteLine("{0}: Caught exception while handling msg - {1}", _endPointName, e);
+						Console.WriteLine("{0}: Caught exception while handling msg - {1}", _name, e);
 					}
 					finally
 					{
@@ -174,10 +306,10 @@ namespace SharpRemote
 
 		private void HandleMessage(NetIncomingMessage msg)
 		{
-			var type = msg.ReadString();
-			var messageId = msg.ReadInt64();
+			string type = msg.ReadString();
+			long messageId = msg.ReadInt64();
 
-			switch(type)
+			switch (type)
 			{
 				case RequestToken:
 					HandleRequest(messageId, msg);
@@ -194,10 +326,12 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Handles an RPC request (e.g. the call itself) by forwarding the call to the desired <see cref="IServant"/>.
+		///     Handles an RPC request (e.g. the call itself) by forwarding the call to the desired <see cref="IServant" />.
 		/// </summary>
 		/// <param name="rpcId">The ID of the remote procedure call, uniquely identifying this call amonst all other pending ones</param>
-		/// <param name="msg">The incoming message to forward to the <see cref="IServant"/></param>
+		/// <param name="msg">
+		///     The incoming message to forward to the <see cref="IServant" />
+		/// </param>
 		private void HandleRequest(long rpcId, NetIncomingMessage msg)
 		{
 			ulong id = msg.ReadUInt64();
@@ -209,7 +343,7 @@ namespace SharpRemote
 				msg.ReadBytes(data, 0, length);
 			}
 
-			var encoding = Encoding.UTF8;
+			Encoding encoding = Encoding.UTF8;
 
 			using (var input = new MemoryStream(data))
 			using (var reader = new BinaryReader(input, encoding))
@@ -266,7 +400,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Sends a response for the given RPC (<paramref name="rpcId"/>) to the client that fired it in the first place.
+		///     Sends a response for the given RPC (<paramref name="rpcId" />) to the client that fired it in the first place.
 		/// </summary>
 		/// <param name="rpcId"></param>
 		/// <param name="connection"></param>
@@ -274,7 +408,7 @@ namespace SharpRemote
 		/// <param name="output"></param>
 		private void SendRpcResponse(long rpcId, NetConnection connection, bool success, MemoryStream output)
 		{
-			var responseMsg = _peer.CreateMessage();
+			NetOutgoingMessage responseMsg = _peer.CreateMessage();
 			responseMsg.Write(ResponseToken);
 			responseMsg.Write(rpcId);
 			responseMsg.Write(success ? ResponseSuccessToken : ResponseExceptionToken);
@@ -323,7 +457,7 @@ namespace SharpRemote
 				Action<NetIncomingMessage> fn;
 				if (_pendingConnects.TryGetValue(msg.SenderEndPoint, out fn))
 				{
-					Console.WriteLine("{0}: Pending connection to '{1}' approved", _endPointName, msg.SenderEndPoint);
+					Console.WriteLine("{0}: Pending connection to '{1}' approved", _name, msg.SenderEndPoint);
 
 					fn(msg);
 				}
@@ -334,119 +468,8 @@ namespace SharpRemote
 			}
 		}
 
-		public void Start()
-		{
-			_peer.Start();
-			_task.Start();
-			_localAddress = new IPEndPoint(_configuration.LocalAddress, _peer.Port);
-		}
-
-		/// <summary>
-		///     Creates a new object of type T.
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="objectId"></param>
-		/// <returns></returns>
-		public T CreateProxy<T>(ulong objectId) where T : class
-		{
-			lock (_proxies)
-			{
-				var proxy = _proxyCreator.CreateProxy<T>(objectId);
-				_proxies.Add(objectId, (IProxy) proxy);
-				return proxy;
-			}
-		}
-
-		/// <summary>
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="objectId"></param>
-		/// <param name="subject"></param>
-		/// <returns></returns>
-		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
-		{
-			var servant = _servantCreator.CreateServant(objectId, subject);
-			lock (_servants)
-			{
-				_servants.Add(objectId, servant);
-			}
-			return servant;
-		}
-
-		public void Connect(IPEndPoint address)
-		{
-			var handle = new ManualResetEvent(false);
-			try
-			{
-				lock (_pendingConnects)
-				{
-					_pendingConnects.Add(address, msg =>
-						{
-							handle.Set();
-						});
-				}
-
-				NetConnection connection = _peer.Connect(address);
-				_connections.Add(address, connection);
-
-				if (!handle.WaitOne(TimeSpan.FromMinutes(1)))
-					throw new NotConnectedException();
-			}
-			finally
-			{
-				handle.Dispose();
-
-				lock (_pendingConnects)
-				{
-					_pendingConnects.Remove(address);
-				}
-			}
-		}
-
-		MemoryStream IEndPointChannel.CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments)
-		{
-			var con = _connections.First().Value;
-			var msg = _peer.CreateMessage();
-			var rpcId = Interlocked.Increment(ref _nextRpcId);
-			msg.Write(RequestToken);
-			msg.Write(rpcId);
-			msg.Write(servantId);
-			msg.Write(methodName);
-			if (arguments != null)
-			{
-				var length = (int) arguments.Length;
-				msg.Write(length);
-				msg.Write(arguments.GetBuffer(), 0, length);
-			}
-			else
-			{
-				const int length = 0;
-				msg.Write(length);
-			}
-
-			MemoryStream message;
-			string responseToken;
-			SendAndWaitFor(con, rpcId, msg, out responseToken, out message);
-
-			switch (responseToken)
-			{
-				case ResponseSuccessToken:
-					return message;
-
-				case ResponseExceptionToken:
-					using (var reader = new BinaryReader(message, Encoding.UTF8))
-					{
-						var formatter = new BinaryFormatter();
-						var e = (Exception)formatter.Deserialize(reader.BaseStream);
-						throw e;
-					}
-
-				default:
-					throw new NotImplementedException(string.Format("Unexpected token: {0}", responseToken));
-			}
-		}
-
-		private void SendAndWaitFor(NetConnection con, long rpcId, NetOutgoingMessage msg, out string responseToken, out MemoryStream response)
+		private void SendAndWaitFor(NetConnection con, long rpcId, NetOutgoingMessage msg, out string responseToken,
+		                            out MemoryStream response)
 		{
 			var handle = new ManualResetEvent(false);
 			try
@@ -479,8 +502,8 @@ namespace SharpRemote
 
 		private void WriteException(BinaryWriter writer, Exception e)
 		{
-			var stream = writer.BaseStream;
-			var start = stream.Position;
+			Stream stream = writer.BaseStream;
+			long start = stream.Position;
 			var formatter = new BinaryFormatter();
 
 			try

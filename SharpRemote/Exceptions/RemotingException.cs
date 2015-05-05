@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	[Serializable]
 	public class RemotingException

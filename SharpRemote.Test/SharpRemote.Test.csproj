@@ -96,8 +96,8 @@
     <Compile Include="CodeGeneration\Types\Structs\ReadOnlyDataMemberFieldStruct.cs" />
     <Compile Include="CodeGeneration\Types\Structs\StaticDataMemberFieldStruct.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Remoting\EndpointAcceptanceTest.cs" />
-    <Compile Include="Remoting\EndPointTest.cs" />
+    <Compile Include="Remoting\RemotingEndpointAcceptanceTest.cs" />
+    <Compile Include="Remoting\RemotingEndPointTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

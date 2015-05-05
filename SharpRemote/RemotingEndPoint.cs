@@ -56,7 +56,7 @@ namespace SharpRemote
 		#endregion
 
 		/// <summary>
-		/// Creates a new endpoint on the given address, a randomly chosen port and with the given name.
+		/// Creates a new endpoint on the given address, a randomly chosen but available port and with the given name.
 		/// </summary>
 		/// <param name="localAddress"></param>
 		/// <param name="endPointName">The name of this endpoint, used only for logging to increase readability</param>
@@ -161,6 +161,19 @@ namespace SharpRemote
 			}
 		}
 
+		public void Disconnect()
+		{
+			var con = _connection;
+			if (con == null)
+				return;
+
+			_connection = null;
+			_remoteAddress = null;
+
+			con.Disconnect("Screw you, I'll build my own connection, with black jack & hookers");
+			InterruptOngoingCalls();
+		}
+
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
 			lock (_proxies)
@@ -251,6 +264,10 @@ namespace SharpRemote
 								if (connection.Status == NetConnectionStatus.Connected)
 								{
 									NotifySuccessfulConnection(msg);
+								}
+								else if (connection.Status == NetConnectionStatus.Disconnected)
+								{
+									Disconnect();
 								}
 								break;
 
@@ -516,6 +533,23 @@ namespace SharpRemote
 				writer.Flush();
 				stream.Position = start;
 				formatter.Serialize(stream, new UnserializableException(e));
+			}
+		}
+
+		private void InterruptOngoingCalls()
+		{
+			lock (_pendingCalls)
+			{
+				var stream = new MemoryStream();
+				var writer = new BinaryWriter(stream);
+				WriteException(writer, new ConnectionLostException());
+
+				foreach (var call in _pendingCalls.Values)
+				{
+					stream.Position = 0;
+					call(ResponseExceptionToken, stream);
+				}
+				_pendingCalls.Clear();
 			}
 		}
 	}

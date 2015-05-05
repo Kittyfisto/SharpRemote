@@ -4,11 +4,12 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.Test.CodeGeneration.Types.Interfaces;
+using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
-	public sealed class EndPointTest
+	public sealed class RemotingEndPointTest
 	{
 		[Test]
 		[Description("Verifies that Connect() can establish a connection with an endpoint in the same process")]
@@ -141,6 +142,52 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Description("Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null")]
+		public void TestDisconnect1()
+		{
+			using (var rep1 = new RemotingEndPoint(IPAddress.Loopback, "Rep#1"))
+			using (var rep2 = new RemotingEndPoint(IPAddress.Loopback, "Rep#2"))
+			{
+				rep1.Connect(rep2.Address, TimeSpan.FromSeconds(1));
+
+				rep1.IsConnected.Should().BeTrue();
+				rep1.RemoteAddress.Should().Be(rep2.Address);
+
+				// Disconnecting from the endpoint that established the connection in the first place
+				rep1.Disconnect();
+
+				rep1.IsConnected.Should().BeFalse();
+				rep1.RemoteAddress.Should().BeNull();
+
+				// Unfortunately, for now, Disconnect() does not wait for approval of the remot endpoint and therefore we can't
+				// immediately assert that rep2 is disconnected as well...
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null")]
+		public void TestDisconnect2()
+		{
+			using (var rep1 = new RemotingEndPoint(IPAddress.Loopback, "Rep#1"))
+			using (var rep2 = new RemotingEndPoint(IPAddress.Loopback, "Rep#2"))
+			{
+				rep1.Connect(rep2.Address, TimeSpan.FromSeconds(1));
+
+				rep1.IsConnected.Should().BeTrue();
+				rep1.RemoteAddress.Should().Be(rep2.Address);
+
+				// Disconnecting from the other endpoint
+				rep2.Disconnect();
+
+				rep2.IsConnected.Should().BeFalse();
+				rep2.RemoteAddress.Should().BeNull();
+
+				// Unfortunately, for now, Disconnect() does not wait for approval of the remot endpoint and therefore we can't
+				// immediately assert that rep1 is disconnected as well...
+			}
+		}
+
+		[Test]
 		[Description("Verifies that creating a peer-endpoint without specifying a port works and assigns a free port")]
 		public void TestCtor1()
 		{
@@ -193,6 +240,60 @@ namespace SharpRemote.Test.Remoting
 
 				new Action(() => subject.Raise(x => x.Foobar += null, 42))
 					.ShouldThrow<NotConnectedException>("because the endpoint is not connected to any other endpoint and thus there cannot be a proxy on which the event can ever be executed");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that when the connection between two endpoints is interrupted from the calling end, any ongoing synchronous method call is stopped and an exception is thrown on the calling thread")]
+		public void TestCallMethod1()
+		{
+			using (var rep1 = new RemotingEndPoint(IPAddress.Loopback, "Rep#1"))
+			using (var rep2 = new RemotingEndPoint(IPAddress.Loopback, "Rep#2"))
+			{
+				rep1.Connect(rep2.Address, TimeSpan.FromSeconds(1));
+
+				var subject = new Mock<IGetDoubleProperty>();
+				subject.Setup(x => x.Value).Returns(() =>
+					{
+						// We interrupt the connection from the calling endpoint itself
+						rep1.Disconnect();
+						return 42;
+					});
+
+				const int id = 1;
+				rep2.CreateServant(id, subject.Object);
+				var proxy = rep1.CreateProxy<IGetDoubleProperty>(id);
+
+				new Action(() => { var unused = proxy.Value; })
+					.ShouldThrow<ConnectionLostException>()
+					.WithMessage("The connection to the remote endpoint has been lost");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that when the connection between two endpoints is interrupted from the called end, any ongoing synchronous method call is stopped and an exception is thrown on the calling thread")]
+		public void TestCallMethod2()
+		{
+			using (var rep1 = new RemotingEndPoint(IPAddress.Loopback, "Rep#1"))
+			using (var rep2 = new RemotingEndPoint(IPAddress.Loopback, "Rep#2"))
+			{
+				rep1.Connect(rep2.Address, TimeSpan.FromSeconds(1));
+
+				var subject = new Mock<IGetDoubleProperty>();
+				subject.Setup(x => x.Value).Returns(() =>
+				{
+					// We interrupt the connection from the called endpoint
+					rep2.Disconnect();
+					return 42;
+				});
+
+				const int id = 1;
+				rep2.CreateServant(id, subject.Object);
+				var proxy = rep1.CreateProxy<IGetDoubleProperty>(id);
+
+				new Action(() => { var unused = proxy.Value; })
+					.ShouldThrow<ConnectionLostException>()
+					.WithMessage("The connection to the remote endpoint has been lost");
 			}
 		}
 	}

@@ -10,7 +10,8 @@ using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
 namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
-	public sealed class EndpointAcceptanceTest
+	[Description("Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour")]
+	public sealed class RemotingEndpointAcceptanceTest
 	{
 		private RemotingEndPoint _server;
 		private RemotingEndPoint _client;

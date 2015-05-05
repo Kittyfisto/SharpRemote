@@ -7,7 +7,7 @@ namespace SharpRemote
 {
 	[Serializable]
 	public class NotConnectedException
-		: RemotingException
+		: InvalidOperationException
 	{
 		public readonly string EndPointName;
 

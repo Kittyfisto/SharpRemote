@@ -1,4 +1,7 @@
-﻿// ReSharper disable CheckNamespace
+﻿using System;
+using System.Runtime.Serialization;
+
+// ReSharper disable CheckNamespace
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
@@ -6,9 +9,16 @@ namespace SharpRemote
 	/// This exception is thrown when a synchronous method on the proxy, or an event on the servant, is called and the connection
 	/// has been interrupted while the call was ongoing.
 	/// </summary>
+	[Serializable]
 	public class ConnectionLostException
-		: RemotingException
+		: OperationCanceledException
 	{
-		
+		public ConnectionLostException(SerializationInfo info, StreamingContext context)
+			: base(info, context)
+		{}
+
+		public ConnectionLostException()
+			: base("The connection to the remote endpoint has been lost")
+		{}
 	}
 }

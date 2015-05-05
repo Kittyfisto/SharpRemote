@@ -14,7 +14,7 @@ namespace SharpRemote
 		: IDisposable
 	{
 		/// <summary>
-		/// The name of this endpoint, only used for debugging.
+		///     The name of this endpoint, only used for debugging.
 		/// </summary>
 		string Name { get; }
 
@@ -51,6 +51,14 @@ namespace SharpRemote
 		void Connect(IPEndPoint endPoint, TimeSpan timeout);
 
 		/// <summary>
+		///     Disconnects this endpoint from its remote endpoint.
+		/// </summary>
+		/// <remarks>
+		///     When this endpoint is not connected to a remot endpoint in the first place, then this method does nothing.
+		/// </remarks>
+		void Disconnect();
+
+		/// <summary>
 		///     Creates and registers an object that implements the given interface <typeparamref name="T" />.
 		///     Calls to properties / methods of the given interface are marshalled to connected endpoint, if an appropriate
 		///     servant of the same interface an <paramref name="objectId" /> has been created using <see cref="CreateServant{T}" />.
@@ -61,12 +69,11 @@ namespace SharpRemote
 		/// </remarks>
 		/// <remarks>
 		///     Every method / property on the given object is now capable of throwing an additional set of exceptions, in addition
-		///     to whatever exceptions it usually throws:
-		///     - <see cref="NoSuchServantException" />
-		///     - <see cref="NotConnectedException" />
-		///     - <see cref="ConnectionLostException" />
-		///     - <see cref="UnserializableException" />
-		///     Each of these exceptions inherit from <see cref="RemotingException" /> for your convenience.
+		///     to whatever exceptions any implementation already throws:
+		///     - <see cref="NoSuchServantException" />: There's no servant with the id of the proxy and therefore no subject on which the method could possibly be executed
+		///     - <see cref="NotConnectedException" />: At the time of calling the proxy's method, no connection to a remote end point was available
+		///     - <see cref="ConnectionLostException" />: The method call was cancelled because the connection between proxy and servant was interrupted / lost / disconnected
+		///     - <see cref="UnserializableException" />: The remote method was executed, threw an exception, but the exception could not be serialized
 		/// </remarks>
 		/// <remarks>
 		///     This method is thread-safe.

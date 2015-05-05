@@ -33,6 +33,7 @@ namespace SharpRemote
 		private readonly NetPeerConfiguration _configuration;
 		private readonly Dictionary<IPEndPoint, NetConnection> _connections;
 		private readonly Dictionary<ulong, IServant> _servants;
+		private readonly Dictionary<ulong, IProxy> _proxies;
 		private readonly NetPeer _peer;
 		private readonly ProxyCreator _proxyCreator;
 		private readonly ServantCreator _servantCreator;
@@ -80,7 +81,9 @@ namespace SharpRemote
 
 			_cancel = new CancellationTokenSource();
 			_connections = new Dictionary<IPEndPoint, NetConnection>();
+
 			_servants = new Dictionary<ulong, IServant>();
+			_proxies = new Dictionary<ulong, IProxy>();
 
 			_servantCreator = new ServantCreator(this);
 			_serializer = _servantCreator.Serializer;
@@ -197,20 +200,13 @@ namespace SharpRemote
 		/// <param name="msg">The incoming message to forward to the <see cref="IServant"/></param>
 		private void HandleRequest(long rpcId, NetIncomingMessage msg)
 		{
-			ulong servantId = msg.ReadUInt64();
+			ulong id = msg.ReadUInt64();
 			string methodName = msg.ReadString();
 			int length = msg.ReadInt32();
 			var data = new byte[length];
 			if (length > 0)
 			{
 				msg.ReadBytes(data, 0, length);
-			}
-
-			IServant servant;
-			lock (_servants)
-			{
-				if (!_servants.TryGetValue(servantId, out servant))
-					return;
 			}
 
 			var encoding = Encoding.UTF8;
@@ -224,14 +220,20 @@ namespace SharpRemote
 
 				try
 				{
-					servant.InvokeMethod(methodName, reader, writer);
+					IServant servant;
+					IProxy proxy;
+					TryGetProxyOrServant(id, out servant, out proxy);
+
+					if (servant != null)
+						servant.InvokeMethod(methodName, reader, writer);
+					else if (proxy != null)
+						proxy.InvokeEvent(methodName, reader, writer);
+
 					success = true;
 				}
 				catch (Exception e)
 				{
 					success = false;
-
-					
 
 					WriteException(writer, e);
 				}
@@ -241,23 +243,26 @@ namespace SharpRemote
 			}
 		}
 
-		private void WriteException(BinaryWriter writer, Exception e)
+		private bool TryGetProxyOrServant(ulong id, out IServant servant, out IProxy proxy)
 		{
-			var stream = writer.BaseStream;
-			var start = stream.Position;
-			var formatter = new BinaryFormatter();
+			lock (_servants)
+			{
+				if (_servants.TryGetValue(id, out servant))
+				{
+					proxy = null;
+					return true;
+				}
+			}
 
-			try
+			lock (_proxies)
 			{
-				formatter.Serialize(stream, e);
+				if (_proxies.TryGetValue(id, out proxy))
+				{
+					return true;
+				}
 			}
-			catch (SerializationException)
-			{
-				// TODO: Log this..
-				writer.Flush();
-				stream.Position = start;
-				formatter.Serialize(stream, new UnserializableException(e));
-			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -344,7 +349,12 @@ namespace SharpRemote
 		/// <returns></returns>
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
-			return _proxyCreator.CreateProxy<T>(objectId);
+			lock (_proxies)
+			{
+				var proxy = _proxyCreator.CreateProxy<T>(objectId);
+				_proxies.Add(objectId, (IProxy) proxy);
+				return proxy;
+			}
 		}
 
 		/// <summary>
@@ -464,6 +474,25 @@ namespace SharpRemote
 			{
 				handle.Dispose();
 				_pendingCalls.Remove(rpcId);
+			}
+		}
+
+		private void WriteException(BinaryWriter writer, Exception e)
+		{
+			var stream = writer.BaseStream;
+			var start = stream.Position;
+			var formatter = new BinaryFormatter();
+
+			try
+			{
+				formatter.Serialize(stream, e);
+			}
+			catch (SerializationException)
+			{
+				// TODO: Log this..
+				writer.Flush();
+				stream.Position = start;
+				formatter.Serialize(stream, new UnserializableException(e));
 			}
 		}
 	}

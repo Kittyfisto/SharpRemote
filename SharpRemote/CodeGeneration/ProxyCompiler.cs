@@ -114,7 +114,10 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateMethods()
 		{
-			var allMethods = _interfaceType.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public);
+			var allMethods = _interfaceType
+				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+				.OrderBy(x => x.Name)
+				.ToArray();
 			foreach (var method in allMethods)
 			{
 				if (method.IsSpecialName)

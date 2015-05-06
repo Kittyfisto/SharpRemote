@@ -62,6 +62,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo DelegateCombine;
 		public static readonly MethodInfo DelegateRemove;
 		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
+		public static readonly MethodInfo CreateTypeFromName;
 
 		static Methods()
 		{
@@ -131,6 +132,8 @@ namespace SharpRemote.CodeGeneration
 
 			InterlockedCompareExchangeGeneric =
 				typeof (Interlocked).GetMethods().First(x => x.Name == "CompareExchange" && x.IsGenericMethod);
+
+			CreateTypeFromName = typeof(Type).GetMethod("GetType", new []{typeof(string)});
 		}
 
 		public static bool EmitReadPod(this ILGenerator gen, Type valueType)
@@ -138,71 +141,82 @@ namespace SharpRemote.CodeGeneration
 			return EmitReadPod(gen, () => { }, valueType);
 		}
 
-		public static bool EmitReadPod(this ILGenerator gen, Action loadWriter, Type valueType)
+		public static bool EmitReadPod(this ILGenerator gen, Action loadReader, Type valueType)
 		{
-			if (valueType == typeof(float))
+			if (valueType == typeof (bool))
 			{
-				loadWriter();
+				loadReader();
+				gen.Emit(OpCodes.Call, ReadBool);
+			}
+			else if (valueType == typeof(float))
+			{
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadSingle);
 			}
 			else if (valueType == typeof(double))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadDouble);
 			}
 			else if (valueType == typeof(ulong))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadULong);
 			}
 			else if (valueType == typeof(long))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadLong);
 			}
 			else if (valueType == typeof(uint))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadUInt);
 			}
 			else if (valueType == typeof(int))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadInt);
 			}
 			else if (valueType == typeof(ushort))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadUShort);
 			}
 			else if (valueType == typeof(short))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadShort);
 			}
 			else if (valueType == typeof(sbyte))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadSByte);
 			}
 			else if (valueType == typeof(byte))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadByte);
 			}
 			else if (valueType == typeof(string))
 			{
-				loadWriter();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadString);
 			}
 			else if (valueType == typeof (IPAddress))
 			{
 				// new IPAddress(writer.ReadBytes(writer.ReadInt()));
-				loadWriter();
-				loadWriter();
+				loadReader();
+				loadReader();
 				gen.Emit(OpCodes.Call, ReadInt);
 				gen.Emit(OpCodes.Call, ReadBytes);
 				gen.Emit(OpCodes.Newobj, IPAddressFromBytes);
+			}
+			else if (valueType == typeof (Type))
+			{
+				loadReader();
+				gen.Emit(OpCodes.Call, ReadString);
+				gen.Emit(OpCodes.Call, CreateTypeFromName);
 			}
 			else
 			{
@@ -219,7 +233,13 @@ namespace SharpRemote.CodeGeneration
 
 		public static bool EmitWritePodToWriter(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType)
 		{
-			if (valueType == typeof(float))
+			if (valueType == typeof (bool))
+			{
+				loadWriter();
+				loadValue();
+				gen.Emit(OpCodes.Call, WriteBool);
+			}
+			else if (valueType == typeof(float))
 			{
 				loadWriter();
 				loadValue();
@@ -302,6 +322,13 @@ namespace SharpRemote.CodeGeneration
 				loadWriter();
 				gen.Emit(OpCodes.Ldloc, data);
 				gen.Emit(OpCodes.Call, WriteBytes);
+			}
+			else if (valueType == typeof (Type))
+			{
+				loadWriter();
+				loadValue();
+				gen.Emit(OpCodes.Callvirt, TypeGetAssemblyQualifiedName);
+				gen.Emit(OpCodes.Call, WriteString);
 			}
 			else
 			{

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
@@ -110,12 +109,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 				RegisterType(type, out method, out unused);
 				return method.ValueMethod;
 			}
-			else
-			{
-				// We don't know the true type of the parameter until we inspect it's actual value.
-				// Thus we're forced to do a dynamic dispatch.
-				throw new NotImplementedException();
-			}
+
+			// We don't know the true type of the parameter until we inspect it's actual value.
+			// Thus we're forced to do a dynamic dispatch.
+			throw new NotImplementedException();
 		}
 
 		private Action<BinaryWriter, object, ISerializer> GetWriteObjectDelegate(Type type)
@@ -123,7 +120,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			WriteMethod method;
 			ReadMethod unused;
 			RegisterType(type, out method, out unused);
-
 			return method.WriteDelegate;
 		}
 
@@ -439,16 +435,23 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		public void RegisterType(Type type)
 		{
-			if (!_typeToWriteMethods.ContainsKey(type))
-			{
-				WriteMethod unused1;
-				ReadMethod unused2;
-				RegisterType(type, out unused1, out unused2);
-			}
+			WriteMethod unused1;
+			ReadMethod unused2;
+			RegisterType(type, out unused1, out unused2);
+		}
+
+		[Pure]
+		private Type PatchType(Type type)
+		{
+			if (type.Is(typeof (Type)))
+				return typeof (Type);
+
+			return type;
 		}
 
 		private void RegisterType(Type type, out WriteMethod writeMethod, out ReadMethod readMethod)
 		{
+			type = PatchType(type);
 			TypeInformation typeInfo = null;
 			if (!_typeToWriteMethods.TryGetValue(type, out writeMethod))
 			{

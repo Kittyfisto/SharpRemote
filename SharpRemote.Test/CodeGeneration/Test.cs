@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces;
 
 namespace SharpRemote.Test.CodeGeneration
 {

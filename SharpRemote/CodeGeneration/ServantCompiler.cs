@@ -148,7 +148,11 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldloc, name);
 			gen.Emit(OpCodes.Brfalse_S, @throw);
 
-			var allMethods = _interfaceType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
+			var allMethods = _interfaceType
+				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+				.Concat(_interfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
+				.OrderBy(x => x.Name)
+				.ToArray();
 			var labels = new Label[allMethods.Length];
 			int index = 0;
 			foreach (var methodInfo in allMethods)

@@ -40,13 +40,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CodeGeneration\Compiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\TypeExtensions.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeInformation.cs" />
     <Compile Include="CodeGeneration\SerializerExtensions.cs" />
+    <Compile Include="DisposableExtensions.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />
     <Compile Include="Exceptions\NotConnectedException.cs" />
+    <Compile Include="Hosting\InProcessRemotingSilo.cs" />
+    <Compile Include="Hosting\InProcessSilo.cs" />
+    <Compile Include="Hosting\ISilo.cs" />
+    <Compile Include="Hosting\ISubjectHost.cs" />
+    <Compile Include="Hosting\ProcessSilo.cs" />
+    <Compile Include="Hosting\SubjectHost.cs" />
     <Compile Include="RemotingEndPoint.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />

@@ -23,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C54CC6
 		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpRemote.Host", "SharpRemote.Host\SharpRemote.Host.csproj", "{21218E92-3815-4E5E-9761-C3FB0709F532}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,14 +39,19 @@ Global
 		{377C04C5-EE8C-4159-BDDC-37F1A8372705}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{377C04C5-EE8C-4159-BDDC-37F1A8372705}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{377C04C5-EE8C-4159-BDDC-37F1A8372705}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21218E92-3815-4E5E-9761-C3FB0709F532}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21218E92-3815-4E5E-9761-C3FB0709F532}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21218E92-3815-4E5E-9761-C3FB0709F532}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21218E92-3815-4E5E-9761-C3FB0709F532}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{E624D4D5-6EF9-4DCE-B5FC-C7DB6F387760} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
 		{1B908B3A-2F3B-47B8-B69F-3827B8829586} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
 		{FEBCB651-C5D8-4374-BF9C-20D6FE6AC60E} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
-		{E624D4D5-6EF9-4DCE-B5FC-C7DB6F387760} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
+		{21218E92-3815-4E5E-9761-C3FB0709F532} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
 		{377C04C5-EE8C-4159-BDDC-37F1A8372705} = {E624D4D5-6EF9-4DCE-B5FC-C7DB6F387760}
 	EndGlobalSection
 EndGlobal

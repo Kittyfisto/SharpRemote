@@ -44,6 +44,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			if (type == typeof (IPAddress))
 				return false;
 
+			if (type.Is(typeof (Type)))
+				return false;
+
 			if (type.IsValueType)
 				return false;
 
@@ -63,6 +66,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 				return true;
 
 			if (type == typeof (IPAddress))
+				return true;
+
+			if (type.Is(typeof(Type)))
 				return true;
 
 			return false;

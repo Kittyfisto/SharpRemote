@@ -6,7 +6,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
 using SharpRemote.CodeGeneration.Serialization;
-using SharpRemote.Test.CodeGeneration.Types.Structs;
+using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
@@ -51,6 +51,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		{
 			_serializer.RegisterType<byte>();
 			_serializer.RoundtripObject((byte)255).Should().Be((byte)255);
+		}
+
+		[Test]
+		public void TestRoundtripBool()
+		{
+			_serializer.RegisterType<bool>();
+			_serializer.RoundtripObject(true).Should().Be(true);
+			_serializer.RoundtripObject(false).Should().Be(false);
 		}
 
 		[Test]
@@ -108,6 +116,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer.RegisterType<IPAddress>();
 			_serializer.RoundtripObject(IPAddress.Parse("192.168.0.87")).Should().Be(IPAddress.Parse("192.168.0.87"));
 			_serializer.RoundtripObject(IPAddress.IPv6Loopback).Should().Be(IPAddress.IPv6Loopback);
+		}
+
+		[Test]
+		public void TestRoundtripType()
+		{
+			_serializer.RegisterType<Type>();
+			_serializer.RoundtripObject(typeof (int));
 		}
 
 		[Test]

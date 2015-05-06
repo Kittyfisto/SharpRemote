@@ -3,8 +3,8 @@ using System.Net;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
+using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Remoting
 {

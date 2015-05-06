@@ -4,11 +4,11 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces.Classes;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces.NativeTypes;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
-using SharpRemote.Test.CodeGeneration.Types.Structs;
+using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.Classes;
+using SharpRemote.Test.Types.Interfaces.NativeTypes;
+using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
+using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Remoting
 {

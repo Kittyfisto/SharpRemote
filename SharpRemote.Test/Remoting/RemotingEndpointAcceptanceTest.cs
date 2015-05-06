@@ -3,9 +3,10 @@ using System.Net;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.Test.CodeGeneration.Types.Exceptions;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
+using SharpRemote.Test.Types;
+using SharpRemote.Test.Types.Exceptions;
+using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Remoting
 {
@@ -170,6 +171,28 @@ namespace SharpRemote.Test.Remoting
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
+		}
+
+		[Test]
+		[Description("Verifies that an interface which itself implements another interface works")]
+		public void TestMultipleInterfaces()
+		{
+			var subject = new Mock<ICalculator>();
+			bool isDisposed = false;
+			subject.Setup(x => x.IsDisposed).Returns(() => isDisposed);
+			subject.Setup(x => x.Dispose()).Callback(() => isDisposed = true);
+			subject.Setup(x => x.Add(It.IsAny<double>(), It.IsAny<double>()))
+			       .Returns((double x, double y) => x + y);
+
+			const int servantId = 9;
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<ICalculator>(servantId);
+
+			proxy.Add(1, 2).Should().Be(3);
+			proxy.Add(5, 42).Should().Be(47);
+			proxy.IsDisposed.Should().BeFalse();
+			proxy.Dispose();
+			proxy.IsDisposed.Should().BeTrue();
 		}
 	}
 }

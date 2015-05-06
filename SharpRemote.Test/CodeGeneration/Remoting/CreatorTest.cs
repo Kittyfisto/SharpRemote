@@ -4,7 +4,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
-using SharpRemote.Test.CodeGeneration.Types.Interfaces.PrimitiveTypes;
+using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.CodeGeneration.Remoting
 {

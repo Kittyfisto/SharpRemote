@@ -59,6 +59,8 @@
     <Compile Include="Hosting\GetStringPropertyImplementation.cs" />
     <Compile Include="Hosting\InProcessSiloAcceptanceTest.cs" />
     <Compile Include="Hosting\InProcessRemotingSiloAcceptanceTest.cs" />
+    <Compile Include="Hosting\ProcessSiloAcceptanceTest.cs" />
+    <Compile Include="Hosting\ProcessSiloTest.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="Types\ICalculator.cs" />

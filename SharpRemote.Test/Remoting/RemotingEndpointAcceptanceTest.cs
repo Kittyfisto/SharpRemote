@@ -3,6 +3,8 @@ using System.Net;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.Hosting;
+using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types;
 using SharpRemote.Test.Types.Exceptions;
 using SharpRemote.Test.Types.Interfaces;
@@ -193,6 +195,33 @@ namespace SharpRemote.Test.Remoting
 			proxy.IsDisposed.Should().BeFalse();
 			proxy.Dispose();
 			proxy.IsDisposed.Should().BeTrue();
+		}
+
+		[Test]
+		public void TestCreateSubject()
+		{
+			var subject = new Mock<ISubjectHost>();
+
+			Type type = null;
+			Type @interface = null;
+			const int id = 42;
+
+			subject.Setup(x => x.CreateSubject(It.IsAny<Type>(), It.IsAny<Type>()))
+			       .Returns((Type a, Type b) =>
+				       {
+					       type = a;
+					       @interface = b;
+					       return id;
+				       });
+
+			const int servantId = 10;
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<ISubjectHost>(servantId);
+
+			var actualId = proxy.CreateSubject(typeof (GetStringPropertyImplementation), typeof (IGetStringProperty));
+			actualId.Should().Be(42);
+			type.Should().Be<GetStringPropertyImplementation>();
+			@interface.Should().Be<IGetStringProperty>();
 		}
 	}
 }

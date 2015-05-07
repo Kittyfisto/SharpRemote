@@ -55,7 +55,7 @@ namespace SharpRemote.Host
 			using (var endpoint = new RemotingEndPoint(IPAddress.Loopback))
 			using (var host = new SubjectHost(endpoint, firstServantId, OnSubjectHostDisposed))
 			{
-				endpoint.CreateServant(subjectHostId, (ISubjectHost) host);
+				var servant = endpoint.CreateServant(subjectHostId, (ISubjectHost) host);
 
 				Console.WriteLine(endpoint.Address.Port);
 				Console.WriteLine(ProcessSilo.Constants.ReadyMessage);

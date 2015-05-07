@@ -133,7 +133,12 @@ namespace SharpRemote.CodeGeneration
 			InterlockedCompareExchangeGeneric =
 				typeof (Interlocked).GetMethods().First(x => x.Name == "CompareExchange" && x.IsGenericMethod);
 
-			CreateTypeFromName = typeof(Type).GetMethod("GetType", new []{typeof(string)});
+			CreateTypeFromName = typeof(Methods).GetMethod("GetType", new []{typeof(string)});
+		}
+
+		public static Type GetType(string name)
+		{
+			return Type.GetType(name);
 		}
 
 		public static bool EmitReadPod(this ILGenerator gen, Type valueType)

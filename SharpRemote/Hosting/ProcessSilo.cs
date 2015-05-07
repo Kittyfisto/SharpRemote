@@ -63,7 +63,7 @@ namespace SharpRemote.Hosting
 							Arguments = string.Format("{0}", Process.GetCurrentProcess().Id),
 							UseShellExecute = false,
 							RedirectStandardOutput = true,
-							CreateNoWindow = false,
+							CreateNoWindow = true,
 						}
 				};
 			_process.Exited += ProcessOnExited;

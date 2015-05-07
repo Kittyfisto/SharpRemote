@@ -195,7 +195,9 @@ namespace SharpRemote.CodeGeneration
 
 		private new void ExtractArgumentsAndCallMethod(ILGenerator gen, MethodInfo methodInfo)
 		{
-			gen.Emit(OpCodes.Ldarg_3);
+			if (methodInfo.ReturnType != typeof(void))
+				gen.Emit(OpCodes.Ldarg_3);
+
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
 			base.ExtractArgumentsAndCallMethod(gen, methodInfo);

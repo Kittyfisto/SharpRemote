@@ -10,9 +10,14 @@ using System.Threading.Tasks;
 using Lidgren.Network;
 using SharpRemote.CodeGeneration;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
-	public sealed class RemotingEndPoint
+	/// <summary>
+	/// No longer maintained, DO NOT USE
+	/// </summary>
+	public sealed class LidgrenEndPoint
 		: IRemotingEndPoint
 		  , IEndPointChannel
 	{
@@ -31,11 +36,11 @@ namespace SharpRemote
 		private readonly CancellationTokenSource _cancel;
 		private readonly NetPeerConfiguration _configuration;
 		private readonly string _name;
-		private readonly IPEndPoint _localAddress;
+		private readonly IPEndPoint _localEndPoint;
 		private readonly NetPeer _peer;
-		private readonly Dictionary<ulong, IProxy> _proxies;
 		private readonly ProxyCreator _proxyCreator;
 		private readonly ServantCreator _servantCreator;
+		private readonly Dictionary<ulong, IProxy> _proxies;
 		private readonly Dictionary<ulong, IServant> _servants;
 		private readonly Task _task;
 		private long _nextRpcId;
@@ -43,7 +48,7 @@ namespace SharpRemote
 		#region Connection
 
 		private NetConnection _connection;
-		private IPEndPoint _remoteAddress;
+		private IPEndPoint _remoteEndPoint;
 
 		#endregion
 
@@ -51,7 +56,6 @@ namespace SharpRemote
 
 		private readonly Dictionary<long, Action<string, MemoryStream>> _pendingCalls;
 		private readonly Dictionary<IPEndPoint, Action<NetIncomingMessage>> _pendingConnects;
-		private readonly ISerializer _serializer;
 
 		#endregion
 
@@ -60,7 +64,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="localAddress"></param>
 		/// <param name="endPointName">The name of this endpoint, used only for logging to increase readability</param>
-		public RemotingEndPoint(IPAddress localAddress, string endPointName = null)
+		public LidgrenEndPoint(IPAddress localAddress, string endPointName = null)
 		{
 			if (localAddress == null) throw new ArgumentNullException("localAddress");
 
@@ -94,7 +98,6 @@ namespace SharpRemote
 			_proxies = new Dictionary<ulong, IProxy>();
 
 			_servantCreator = new ServantCreator(this);
-			_serializer = _servantCreator.Serializer;
 			_proxyCreator = new ProxyCreator(this);
 
 			_pendingCalls = new Dictionary<long, Action<string, MemoryStream>>();
@@ -102,7 +105,7 @@ namespace SharpRemote
 
 			_peer.Start();
 			_task.Start();
-			_localAddress = new IPEndPoint(_configuration.LocalAddress, _peer.Port);
+			_localEndPoint = new IPEndPoint(_configuration.LocalAddress, _peer.Port);
 		}
 
 		#region IRemotingEndPoint interface
@@ -112,25 +115,25 @@ namespace SharpRemote
 			get { return _name; }
 		}
 
-		public IPEndPoint Address
+		public IPEndPoint LocalEndPoint
 		{
-			get { return _localAddress; }
+			get { return _localEndPoint; }
 		}
 
-		public IPEndPoint RemoteAddress
+		public IPEndPoint RemoteEndPoint
 		{
-			get { return _remoteAddress; }
+			get { return _remoteEndPoint; }
 		}
 
 		public bool IsConnected
 		{
-			get { return _remoteAddress != null; }
+			get { return _remoteEndPoint != null; }
 		}
 
 		public void Connect(IPEndPoint endPoint, TimeSpan timeout)
 		{
 			if (endPoint == null) throw new ArgumentNullException("endPoint");
-			if (Equals(endPoint, _localAddress)) throw new ArgumentException("A remote endpoint cannot be connected to itself", "endPoint");
+			if (Equals(endPoint, _localEndPoint)) throw new ArgumentException("A remote endpoint cannot be connected to itself", "endPoint");
 			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
 			if (IsConnected) throw new InvalidOperationException("This endpoint is already connected to another endpoint and cannot establish any more connections");
 
@@ -148,7 +151,7 @@ namespace SharpRemote
 					throw new NoSuchEndPointException(endPoint);
 
 				_connection = tmpConnection;
-				_remoteAddress = endPoint;
+				_remoteEndPoint = endPoint;
 			}
 			finally
 			{
@@ -168,7 +171,7 @@ namespace SharpRemote
 				return;
 
 			_connection = null;
-			_remoteAddress = null;
+			_remoteEndPoint = null;
 
 			con.Disconnect("Screw you, I'll build my own connection, with black jack & hookers");
 			InterruptOngoingCalls();
@@ -295,7 +298,7 @@ namespace SharpRemote
 								Console.WriteLine("{0}: Incoming connection from '{1}', approving it...", _name, msg.SenderEndPoint);
 								msg.SenderConnection.Approve();
 								_connection = msg.SenderConnection;
-								_remoteAddress = msg.SenderEndPoint;
+								_remoteEndPoint = msg.SenderEndPoint;
 								break;
 
 							case NetIncomingMessageType.Data:

@@ -52,12 +52,12 @@ namespace SharpRemote.Host
 			const ulong subjectHostId = ProcessSilo.Constants.SubjectHostId;
 			const ulong firstServantId = subjectHostId + 1;
 
-			using (var endpoint = new RemotingEndPoint(IPAddress.Loopback))
+			using (var endpoint = new LidgrenEndPoint(IPAddress.Loopback))
 			using (var host = new SubjectHost(endpoint, firstServantId, OnSubjectHostDisposed))
 			{
 				var servant = endpoint.CreateServant(subjectHostId, (ISubjectHost) host);
 
-				Console.WriteLine(endpoint.Address.Port);
+				Console.WriteLine(endpoint.LocalEndPoint.Port);
 				Console.WriteLine(ProcessSilo.Constants.ReadyMessage);
 
 				_waitHandle.WaitOne();

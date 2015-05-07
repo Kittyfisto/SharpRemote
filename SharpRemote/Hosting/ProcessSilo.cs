@@ -34,7 +34,7 @@ namespace SharpRemote.Hosting
 			public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(1);
 		}
 
-		private readonly RemotingEndPoint _endPoint;
+		private readonly LidgrenEndPoint _endPoint;
 		private readonly Process _process;
 		private readonly ISubjectHost _subjectHost;
 		private readonly ManualResetEvent _waitHandle;
@@ -52,7 +52,7 @@ namespace SharpRemote.Hosting
 
 		public ProcessSilo()
 		{
-			_endPoint = new RemotingEndPoint(IPAddress.Loopback);
+			_endPoint = new LidgrenEndPoint(IPAddress.Loopback);
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 			_waitHandle = new ManualResetEvent(false);
 

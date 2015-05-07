@@ -14,17 +14,19 @@ namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
 	[Description("Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour")]
-	public sealed class RemotingEndpointAcceptanceTest
+	public abstract class EndPointAcceptanceTest
 	{
-		private RemotingEndPoint _server;
-		private RemotingEndPoint _client;
+		private IRemotingEndPoint _server;
+		private IRemotingEndPoint _client;
+
+		protected abstract IRemotingEndPoint CreateEndPoint(IPAddress address, string name = null);
 
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
-			_server = new RemotingEndPoint(IPAddress.Loopback, "Server");
-			_client = new RemotingEndPoint(IPAddress.Loopback, "Client");
-			_client.Connect(_server.Address, TimeSpan.FromMinutes(1));
+			_server = CreateEndPoint(IPAddress.Loopback, "Server");
+			_client = CreateEndPoint(IPAddress.Loopback, "Client");
+			_client.Connect(_server.LocalEndPoint, TimeSpan.FromMinutes(1));
 		}
 
 		[Test]

@@ -44,6 +44,7 @@
     <Compile Include="CodeGeneration\Serialization\TypeInformation.cs" />
     <Compile Include="CodeGeneration\SerializerExtensions.cs" />
     <Compile Include="DisposableExtensions.cs" />
+    <Compile Include="EndPoints\SocketEndPoint.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
@@ -55,7 +56,7 @@
     <Compile Include="Hosting\ISubjectHost.cs" />
     <Compile Include="Hosting\ProcessSilo.cs" />
     <Compile Include="Hosting\SubjectHost.cs" />
-    <Compile Include="RemotingEndPoint.cs" />
+    <Compile Include="EndPoints\LidgrenEndPoint.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializer.cs" />

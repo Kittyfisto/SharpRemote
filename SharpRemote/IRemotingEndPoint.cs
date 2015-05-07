@@ -21,12 +21,12 @@ namespace SharpRemote
 		/// <summary>
 		///     The address of this endpoint.
 		/// </summary>
-		IPEndPoint Address { get; }
+		IPEndPoint LocalEndPoint { get; }
 
 		/// <summary>
 		///     The address of the remote endpoint or null when this one is not connected to one.
 		/// </summary>
-		IPEndPoint RemoteAddress { get; }
+		IPEndPoint RemoteEndPoint { get; }
 
 		/// <summary>
 		///     Whether or not this endpoint is connected to another one.

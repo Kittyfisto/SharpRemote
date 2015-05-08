@@ -44,6 +44,7 @@
     <Compile Include="CodeGeneration\Serialization\TypeInformation.cs" />
     <Compile Include="CodeGeneration\SerializerExtensions.cs" />
     <Compile Include="DisposableExtensions.cs" />
+    <Compile Include="EndPoints\AbstractEndPoint.cs" />
     <Compile Include="EndPoints\SocketEndPoint.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />

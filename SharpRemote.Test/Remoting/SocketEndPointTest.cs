@@ -1,10 +1,8 @@
 ﻿using System.Net;
 using NUnit.Framework;
-using SharpRemote.EndPoints;
 
 namespace SharpRemote.Test.Remoting
 {
-	[Ignore]
 	[TestFixture]
 	public sealed class SocketEndPointTest
 		: EndPointTest

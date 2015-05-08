@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
@@ -18,7 +17,8 @@ namespace SharpRemote
 	/// No longer maintained, DO NOT USE
 	/// </summary>
 	public sealed class LidgrenEndPoint
-		: IRemotingEndPoint
+		: AbstractEndPoint
+		, IRemotingEndPoint
 		  , IEndPointChannel
 	{
 		#region Tokens
@@ -517,25 +517,6 @@ namespace SharpRemote
 			{
 				handle.Dispose();
 				_pendingCalls.Remove(rpcId);
-			}
-		}
-
-		private void WriteException(BinaryWriter writer, Exception e)
-		{
-			Stream stream = writer.BaseStream;
-			long start = stream.Position;
-			var formatter = new BinaryFormatter();
-
-			try
-			{
-				formatter.Serialize(stream, e);
-			}
-			catch (SerializationException)
-			{
-				// TODO: Log this..
-				writer.Flush();
-				stream.Position = start;
-				formatter.Serialize(stream, new UnserializableException(e));
 			}
 		}
 

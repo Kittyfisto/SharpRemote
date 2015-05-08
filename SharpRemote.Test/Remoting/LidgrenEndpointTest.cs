@@ -3,6 +3,7 @@ using NUnit.Framework;
 
 namespace SharpRemote.Test.Remoting
 {
+	[Ignore]
 	[TestFixture]
 	public sealed class LidgrenEndpointTest
 		: EndPointTest

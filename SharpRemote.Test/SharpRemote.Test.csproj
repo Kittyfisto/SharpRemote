@@ -37,6 +37,9 @@
     <Reference Include="FluentAssertions.Core">
       <HintPath>..\packages\FluentAssertions.3.3.0\lib\net45\FluentAssertions.Core.dll</HintPath>
     </Reference>
+    <Reference Include="log4net">
+      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="Moq, Version=4.2.1502.911, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Moq.4.2.1502.0911\lib\net40\Moq.dll</HintPath>
@@ -64,6 +67,7 @@
     <Compile Include="Remoting\LidgrenEndpointAcceptanceTest.cs" />
     <Compile Include="Remoting\LidgrenEndpointTest.cs" />
     <Compile Include="Remoting\SocketEndPointTest.cs" />
+    <Compile Include="TestLogger.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="Types\ICalculator.cs" />

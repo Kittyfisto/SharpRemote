@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.CodeGeneration;
+using log4net;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -18,6 +20,8 @@ namespace SharpRemote
 		, IRemotingEndPoint
 		, IEndPointChannel
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private readonly object _syncRoot;
 		private readonly IPEndPoint _localEndPoint;
 		private readonly string _name;
@@ -42,15 +46,19 @@ namespace SharpRemote
 			Exception = 0x4,
 		}
 
-		public SocketEndPoint(IPAddress localAddress, string name)
+		public SocketEndPoint(IPAddress localAddress, string name = null)
 		{
 			if (localAddress == null) throw new ArgumentNullException("localAddress");
 
 			_syncRoot = new object();
 
+			_name = name ?? "<Unnamed>";
+
 			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out _localEndPoint);
 			_serverSocket.Listen(1);
 			_serverSocket.BeginAccept(OnIncomingConnection, null);
+
+			Log.InfoFormat("Socket '{0}' listening on {1}", _name, _localEndPoint);
 
 			_servants = new Dictionary<ulong, IServant>();
 			_proxies = new Dictionary<ulong, IProxy>();
@@ -60,8 +68,6 @@ namespace SharpRemote
 			_servantCreator = new ServantCreator(this);
 			_proxyCreator = new ProxyCreator(this);
 			_pendingCalls = new Dictionary<long, Action<BinaryReader>>();
-
-			_name = name;
 		}
 
 		private void Read(object sock)
@@ -76,7 +82,7 @@ namespace SharpRemote
 				while (!token.IsCancellationRequested)
 				{
 					SocketError err;
-					if (socket.Receive(size, 0, size.Length, SocketFlags.None, out err) != size.Length)
+					if (SynchronizedRead(socket, size, out err) != size.Length)
 					{
 						if (!HandleError(socket, err))
 							break;
@@ -86,7 +92,7 @@ namespace SharpRemote
 					if (length >= 8)
 					{
 						var buffer = new byte[length];
-						if (socket.Receive(buffer, 0, buffer.Length, SocketFlags.None, out err) != buffer.Length)
+						if (SynchronizedRead(socket, buffer, out err) != buffer.Length)
 						{
 							if (!HandleError(socket, err))
 								break;
@@ -98,7 +104,7 @@ namespace SharpRemote
 						var response = HandleMessage(rpcId, reader);
 						if (response != null)
 						{
-							if (socket.Send(response, 0, response.Length, SocketFlags.None, out err) != response.Length)
+							if (SynchronizedWrite(socket, response, out err) != response.Length)
 							{
 								if (!HandleError(socket, err))
 									break;
@@ -113,10 +119,34 @@ namespace SharpRemote
 			}
 			catch (Exception e)
 			{
+				Log.ErrorFormat("Caught exception while reading/handling messages: {0}", e);
 			}
 
 			Disconnect();
 		}
+
+		#region Reading from / Writing to socket
+
+		private int SynchronizedWrite(Socket socket, byte[] response, out SocketError err)
+		{
+			lock (_syncRoot)
+			{
+				if (!socket.Connected)
+				{
+					err = SocketError.NotConnected;
+					return -1;
+				}
+
+				return socket.Send(response, 0, response.Length, SocketFlags.None, out err);
+			}
+		}
+
+		private int SynchronizedRead(Socket socket, byte[] size, out SocketError err)
+		{
+			return socket.Receive(size, 0, size.Length, SocketFlags.None, out err);
+		}
+
+		#endregion
 
 		private bool HandleError(Socket socket, SocketError err)
 		{
@@ -127,7 +157,9 @@ namespace SharpRemote
 					try
 					{
 						if (socket.Poll(1, SelectMode.SelectRead) && socket.Available == 0)
+						{
 							return false;
+						}
 
 						return true;
 					}
@@ -136,7 +168,12 @@ namespace SharpRemote
 						return false;
 					}
 
+				case SocketError.NotConnected:
 				case SocketError.Interrupted:
+					return false;
+
+				case SocketError.ConnectionAborted:
+					Log.InfoFormat("Socket '{0}' connection aborted by the other end", _name);
 					return false;
 
 				default:
@@ -148,9 +185,7 @@ namespace SharpRemote
 		{
 			try
 			{
-				_socket = _serverSocket.EndAccept(ar);
-				_remoteEndPoint = (IPEndPoint)_socket.RemoteEndPoint;
-				StartReading();
+				OnConnected(_serverSocket.EndAccept(ar));
 			}
 			catch (Exception)
 			{
@@ -158,10 +193,16 @@ namespace SharpRemote
 			}
 		}
 
-		private void StartReading()
+		private void OnConnected(Socket socket)
 		{
-			_readTask = new Task(Read, new KeyValuePair<Socket, CancellationToken>(_socket, _cancellationTokenSource.Token));
-			_readTask.Start();
+			lock (_syncRoot)
+			{
+				_socket = socket;
+				_remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
+				_readTask = new Task(Read, new KeyValuePair<Socket, CancellationToken>(_socket, _cancellationTokenSource.Token));
+				_readTask.Start();
+				Log.InfoFormat("{0}: Connected to {1}", _name, _remoteEndPoint);
+			}
 		}
 
 		private Socket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
@@ -258,9 +299,7 @@ namespace SharpRemote
 					if (!handle.WaitOne(timeout))
 						throw new NoSuchEndPointException(endPoint);
 
-					_socket = socket;
-					_remoteEndPoint = endPoint;
-					StartReading();
+					OnConnected(socket);
 				}
 			}
 			catch (Exception)
@@ -300,18 +339,25 @@ namespace SharpRemote
 		{
 			lock (_syncRoot)
 			{
-				InterruptOngoingCalls();
-
-				_cancellationTokenSource.Cancel();
-
 				if (_socket != null)
 				{
-					_socket.Disconnect(false);
+					Log.InfoFormat("Disconnecting socket '{0}' from {1}", _name, _remoteEndPoint);
+
+					InterruptOngoingCalls();
+
+					_cancellationTokenSource.Cancel();
+
+					try
+					{
+						_socket.Disconnect(false);
+					}
+					catch (SocketException)
+					{}
+
 					_socket.Dispose();
 					_socket = null;
+					_remoteEndPoint = null;
 				}
-
-				_remoteEndPoint = null;
 			}
 		}
 
@@ -342,8 +388,17 @@ namespace SharpRemote
 				throw new NotConnectedException(_name);
 
 			var rpcId = Interlocked.Increment(ref _nextRpcId);
-
 			var message = CreateMessage(servantId, methodName, arguments, rpcId);
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
+					_localEndPoint,
+					_remoteEndPoint,
+					rpcId,
+					servantId,
+					methodName);
+			}
 
 			try
 			{
@@ -359,7 +414,11 @@ namespace SharpRemote
 						});
 					}
 
-					socket.Send(message);
+					lock (_syncRoot)
+					{
+						socket.Send(message);
+					}
+
 					if (!handle.WaitOne())
 						throw new NotImplementedException();
 
@@ -382,11 +441,16 @@ namespace SharpRemote
 			}
 			catch (SocketException e)
 			{
+				Log.ErrorFormat("Caught exception while sending RPC message: {0}", e);
+
 				throw new ConnectionLostException();
 			}
 			finally
 			{
-				_pendingCalls.Remove(rpcId);
+				lock (_pendingCalls)
+				{
+					_pendingCalls.Remove(rpcId);
+				}
 			}
 		}
 
@@ -402,10 +466,8 @@ namespace SharpRemote
 				HandleResponse(rpcId, reader);
 				return null;
 			}
-			else
-			{
-				throw new NotImplementedException();
-			}
+
+			throw new NotImplementedException();
 		}
 
 		private byte[] HandleRequest(long rpcId, BinaryReader reader)
@@ -417,7 +479,6 @@ namespace SharpRemote
 			var writer = new BinaryWriter(response, Encoding.UTF8);
 			try
 			{
-
 				IServant servant;
 				lock (_servants)
 				{

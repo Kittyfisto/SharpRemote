@@ -22,8 +22,8 @@ namespace SharpRemote
 			}
 		}
 
-		public NoSuchEndPointException(IPEndPoint endPoint)
-			: base(string.Format("Unable to establish a connection with the given endpoint: {0}", endPoint))
+		public NoSuchEndPointException(IPEndPoint endPoint, Exception e = null)
+			: base(string.Format("Unable to establish a connection with the given endpoint: {0}", endPoint), e)
 		{
 			EndPoint = endPoint;
 		}

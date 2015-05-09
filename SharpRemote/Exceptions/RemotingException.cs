@@ -16,8 +16,8 @@ namespace SharpRemote
 			: base(info, context)
 		{}
 
-		public RemotingException(string message)
-			: base(message)
+		public RemotingException(string message, Exception e = null)
+			: base(message, e)
 		{}
 	}
 }

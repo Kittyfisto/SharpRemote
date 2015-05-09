@@ -328,14 +328,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Stloc, result);
 			gen.Emit(OpCodes.Ldloc, result);
-			gen.Emit(OpCodes.Brtrue_S, @true);
+			gen.Emit(OpCodes.Brtrue, @true);
 
 			// { writer.WriteString(string.Empty); }
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldsfld, Methods.StringEmpty);
 			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
 			var @end = gen.DefineLabel();
-			gen.Emit(OpCodes.Br_S, @end);
+			gen.Emit(OpCodes.Br, @end);
 
 			// else { writer.WriteString(object.GetType().AssemblyQualifiedName);
 			gen.MarkLabel(@true);
@@ -381,7 +381,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Stloc, result);
 			gen.Emit(OpCodes.Ldloc, result);
-			gen.Emit(OpCodes.Brtrue_S, @true);
+			gen.Emit(OpCodes.Brtrue, @true);
 
 			// { writer.Write(false); }
 			gen.Emit(OpCodes.Ldarg_0);
@@ -389,7 +389,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Call, Methods.WriteBool);
 
 			var @end = gen.DefineLabel();
-			gen.Emit(OpCodes.Br_S, @end);
+			gen.Emit(OpCodes.Br, @end);
 
 			// else { writer.Write(true); <Serialize Fields> }
 			gen.MarkLabel(@true);

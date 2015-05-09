@@ -146,7 +146,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Stloc, name);
 			gen.Emit(OpCodes.Ldloc, name);
-			gen.Emit(OpCodes.Brfalse_S, @throw);
+			gen.Emit(OpCodes.Brfalse, @throw);
 
 			var allMethods = _interfaceType
 				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
@@ -163,10 +163,10 @@ namespace SharpRemote.CodeGeneration
 
 				var @true = gen.DefineLabel();
 				labels[index++] = @true;
-				gen.Emit(OpCodes.Brtrue_S, @true);
+				gen.Emit(OpCodes.Brtrue, @true);
 			}
 
-			gen.Emit(OpCodes.Br_S, @throw);
+			gen.Emit(OpCodes.Br, @throw);
 
 			for (int i = 0; i < allMethods.Length; ++i)
 			{
@@ -175,7 +175,7 @@ namespace SharpRemote.CodeGeneration
 
 				gen.MarkLabel(label);
 				ExtractArgumentsAndCallMethod(gen, methodInfo);
-				gen.Emit(OpCodes.Br_S, @ret);
+				gen.Emit(OpCodes.Br, @ret);
 			}
 
 			gen.MarkLabel(@throw);

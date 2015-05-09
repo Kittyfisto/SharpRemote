@@ -192,7 +192,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Stloc, l3);
 			gen.Emit(OpCodes.Ldloc, l3);
-			gen.Emit(OpCodes.Brtrue_S, startAllOver);
+			gen.Emit(OpCodes.Brtrue, startAllOver);
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, originalMethod);
@@ -242,7 +242,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Stloc_3);
 			gen.Emit(OpCodes.Ldloc_3);
-			gen.Emit(OpCodes.Brtrue_S, startAllOver);
+			gen.Emit(OpCodes.Brtrue, startAllOver);
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, originalMethod);
@@ -291,7 +291,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Stloc, name);
 			gen.Emit(OpCodes.Ldloc, name);
-			gen.Emit(OpCodes.Brfalse_S, @throw);
+			gen.Emit(OpCodes.Brfalse, @throw);
 
 			var allEvents = _interfaceType.GetEvents();
 			var labels = new Label[allEvents.Length];
@@ -304,10 +304,10 @@ namespace SharpRemote.CodeGeneration
 
 				var @true = gen.DefineLabel();
 				labels[index++] = @true;
-				gen.Emit(OpCodes.Brtrue_S, @true);
+				gen.Emit(OpCodes.Brtrue, @true);
 			}
 
-			gen.Emit(OpCodes.Br_S, @throw);
+			gen.Emit(OpCodes.Br, @throw);
 
 			for (int i = 0; i < allEvents.Length; ++i)
 			{
@@ -316,7 +316,7 @@ namespace SharpRemote.CodeGeneration
 
 				gen.MarkLabel(label);
 				ExtractArgumentsAndInvokeEvent(gen, methodInfo);
-				gen.Emit(OpCodes.Br_S, @ret);
+				gen.Emit(OpCodes.Br, @ret);
 			}
 
 			gen.MarkLabel(@throw);
@@ -375,7 +375,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Stloc, result);
 			gen.Emit(OpCodes.Ldloc, result);
-			gen.Emit(OpCodes.Brtrue_S, dontInvoke);
+			gen.Emit(OpCodes.Brtrue, dontInvoke);
 			gen.Emit(OpCodes.Ldarg_3);
 			gen.Emit(OpCodes.Ldloc_0);
 			ExtractArgumentsAndCallMethod(gen, methodInfo);

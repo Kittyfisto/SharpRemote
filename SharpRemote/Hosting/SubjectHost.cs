@@ -33,6 +33,12 @@ namespace SharpRemote.Hosting
 			return servantId;
 		}
 
+		public ulong CreateSubject(string assemblyQualifiedTypeName, Type interfaceType)
+		{
+			var type = Type.GetType(assemblyQualifiedTypeName);
+			return CreateSubject(type, interfaceType);
+		}
+
 		public void Dispose()
 		{
 			if (_isDisposed)

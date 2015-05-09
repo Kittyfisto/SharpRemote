@@ -31,6 +31,11 @@ namespace SharpRemote.Hosting
 			
 		}
 
+		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName) where TInterface : class
+		{
+			return CreateGrain<TInterface>(Type.GetType(assemblyQualifiedTypeName));
+		}
+
 		public TInterface CreateGrain<TInterface>(Type implementation) where TInterface : class
 		{
 			var id = _subjectHost.CreateSubject(implementation, typeof (TInterface));

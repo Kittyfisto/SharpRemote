@@ -31,5 +31,12 @@ namespace SharpRemote.Test.Hosting
 			var subject = _silo.CreateGrain<IGetStringProperty>(typeof (GetStringPropertyImplementation));
 			subject.Value.Should().Be("Foobar");
 		}
+
+		[Test]
+		public void TestCreate2()
+		{
+			var subject = _silo.CreateGrain<IGetStringProperty>(typeof(GetStringPropertyImplementation).AssemblyQualifiedName);
+			subject.Value.Should().Be("Foobar");
+		}
 	}
 }

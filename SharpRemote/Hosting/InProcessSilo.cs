@@ -9,6 +9,11 @@ namespace SharpRemote.Hosting
 	public sealed class InProcessSilo
 		: ISilo
 	{
+		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName) where TInterface : class
+		{
+			return CreateGrain<TInterface>(Type.GetType(assemblyQualifiedTypeName));
+		}
+
 		public TInterface CreateGrain<TInterface>(Type implementation) where TInterface : class
 		{
 			object subject = Activator.CreateInstance(implementation);

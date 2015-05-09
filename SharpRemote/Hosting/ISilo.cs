@@ -18,7 +18,16 @@ namespace SharpRemote.Hosting
 		/// Creates a new instance of the given type and returns an interface to it.
 		/// </summary>
 		/// <typeparam name="TInterface"></typeparam>
-		/// <param name="implementation"></param>
+		/// <param name="assemblyQualifiedTypeName">The fully qualified typename of the type to instantiate</param>
+		/// <returns></returns>
+		TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName)
+			where TInterface : class;
+
+		/// <summary>
+		/// Creates a new instance of the given type and returns an interface to it.
+		/// </summary>
+		/// <typeparam name="TInterface"></typeparam>
+		/// <param name="implementation">The type to instantiate</param>
 		/// <returns></returns>
 		TInterface CreateGrain<TInterface>(Type implementation)
 			where TInterface : class;

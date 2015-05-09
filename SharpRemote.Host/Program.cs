@@ -12,10 +12,10 @@ namespace SharpRemote.Host
 		: IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly Process _parentProcess;
 
 		private readonly int? _parentProcessId;
 		private readonly ManualResetEvent _waitHandle;
-		private readonly Process _parentProcess;
 
 		private Program(string[] args)
 		{
@@ -29,6 +29,11 @@ namespace SharpRemote.Host
 			}
 
 			_waitHandle = new ManualResetEvent(false);
+		}
+
+		public void Dispose()
+		{
+			_waitHandle.Dispose();
 		}
 
 		private void ParentProcessOnExited(object sender, EventArgs eventArgs)
@@ -56,22 +61,24 @@ namespace SharpRemote.Host
 			const ulong subjectHostId = ProcessSilo.Constants.SubjectHostId;
 			const ulong firstServantId = subjectHostId + 1;
 
-			using (var endpoint = new SocketEndPoint(IPAddress.Loopback))
-			using (var host = new SubjectHost(endpoint, firstServantId, OnSubjectHostDisposed))
+			try
 			{
-				var servant = endpoint.CreateServant(subjectHostId, (ISubjectHost) host);
+				using (var endpoint = new SocketEndPoint(IPAddress.Loopback))
+				using (var host = new SubjectHost(endpoint, firstServantId, OnSubjectHostDisposed))
+				{
+					endpoint.CreateServant(subjectHostId, (ISubjectHost) host);
 
-				Console.WriteLine(endpoint.LocalEndPoint.Port);
-				Console.WriteLine(ProcessSilo.Constants.ReadyMessage);
+					Console.WriteLine(endpoint.LocalEndPoint.Port);
+					Console.WriteLine(ProcessSilo.Constants.ReadyMessage);
 
-				_waitHandle.WaitOne();
-				Console.WriteLine(ProcessSilo.Constants.ShutdownMessage);
+					_waitHandle.WaitOne();
+					Console.WriteLine(ProcessSilo.Constants.ShutdownMessage);
+				}
 			}
-		}
-
-		public void Dispose()
-		{
-			_waitHandle.Dispose();
+			catch (Exception e)
+			{
+				Console.WriteLine("Exception: {0}", e.Message);
+			}
 		}
 
 		private void OnSubjectHostDisposed()

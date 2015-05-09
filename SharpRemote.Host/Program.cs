@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using SharpRemote.Hosting;
+using log4net;
 
 namespace SharpRemote.Host
 {
 	internal class Program
 		: IDisposable
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private readonly int? _parentProcessId;
 		private readonly ManualResetEvent _waitHandle;
 		private readonly Process _parentProcess;
@@ -52,7 +56,7 @@ namespace SharpRemote.Host
 			const ulong subjectHostId = ProcessSilo.Constants.SubjectHostId;
 			const ulong firstServantId = subjectHostId + 1;
 
-			using (var endpoint = new LidgrenEndPoint(IPAddress.Loopback))
+			using (var endpoint = new SocketEndPoint(IPAddress.Loopback))
 			using (var host = new SubjectHost(endpoint, firstServantId, OnSubjectHostDisposed))
 			{
 				var servant = endpoint.CreateServant(subjectHostId, (ISubjectHost) host);

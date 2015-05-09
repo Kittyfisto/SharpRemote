@@ -9,18 +9,18 @@ namespace SharpRemote.Hosting
 	public sealed class InProcessRemotingSilo
 		: ISilo
 	{
-		private readonly LidgrenEndPoint _localEndPoint;
-		private readonly LidgrenEndPoint _remoteEndPoint;
+		private readonly SocketEndPoint _localEndPoint;
+		private readonly SocketEndPoint _remoteEndPoint;
 		private readonly ISubjectHost _subjectHost;
 
 		public InProcessRemotingSilo()
 		{
 			const int subjectHostId = 0;
 
-			_localEndPoint = new LidgrenEndPoint(IPAddress.Loopback);
+			_localEndPoint = new SocketEndPoint(IPAddress.Loopback);
 			_subjectHost = _localEndPoint.CreateProxy<ISubjectHost>(subjectHostId);
 
-			_remoteEndPoint = new LidgrenEndPoint(IPAddress.Loopback);
+			_remoteEndPoint = new SocketEndPoint(IPAddress.Loopback);
 			_remoteEndPoint.CreateServant(subjectHostId, (ISubjectHost)new SubjectHost(_remoteEndPoint, subjectHostId+1, OnSubjectHostDisposed));
 
 			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(1));

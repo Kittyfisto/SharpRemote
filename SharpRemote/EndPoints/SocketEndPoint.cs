@@ -36,7 +36,7 @@ namespace SharpRemote
 		private Socket _socket;
 		private long _nextRpcId;
 
-		private readonly Dictionary<long, Action<BinaryReader>> _pendingCalls;
+		private readonly Dictionary<long, Action<MessageType, BinaryReader>> _pendingCalls;
 
 		[Flags]
 		private enum MessageType : byte
@@ -67,7 +67,7 @@ namespace SharpRemote
 
 			_servantCreator = new ServantCreator(this);
 			_proxyCreator = new ProxyCreator(this);
-			_pendingCalls = new Dictionary<long, Action<BinaryReader>>();
+			_pendingCalls = new Dictionary<long, Action<MessageType, BinaryReader>>();
 		}
 
 		private void Read(object sock)
@@ -82,29 +82,25 @@ namespace SharpRemote
 				while (!token.IsCancellationRequested)
 				{
 					SocketError err;
-					if (SynchronizedRead(socket, size, out err) != size.Length)
-					{
-						if (!HandleError(socket, err))
-							break;
-					}
+					if (SynchronizedRead(socket, size, out err) != size.Length || !HandleError(socket, err))
+						break;
 
 					var length = BitConverter.ToInt32(size, 0);
 					if (length >= 8)
 					{
 						var buffer = new byte[length];
-						if (SynchronizedRead(socket, buffer, out err) != buffer.Length)
-						{
-							if (!HandleError(socket, err))
-								break;
-						}
+						if (SynchronizedRead(socket, buffer, out err) != buffer.Length || !HandleError(socket, err))
+							break;
 
 						var stream = new MemoryStream(buffer, false);
 						var reader = new BinaryReader(stream);
 						var rpcId = reader.ReadInt64();
-						var response = HandleMessage(rpcId, reader);
+						var type = (MessageType)reader.ReadByte();
+						int responseLength;
+						var response = HandleMessage(rpcId, type, reader, out responseLength);
 						if (response != null)
 						{
-							if (SynchronizedWrite(socket, response, out err) != response.Length)
+							if (SynchronizedWrite(socket, response, responseLength, out err) != responseLength)
 							{
 								if (!HandleError(socket, err))
 									break;
@@ -113,9 +109,9 @@ namespace SharpRemote
 					}
 				}
 			}
-			catch (OperationCanceledException e)
+			catch (OperationCanceledException)
 			{
-				// Okay...
+				
 			}
 			catch (Exception e)
 			{
@@ -126,8 +122,8 @@ namespace SharpRemote
 		}
 
 		#region Reading from / Writing to socket
-
-		private int SynchronizedWrite(Socket socket, byte[] response, out SocketError err)
+		
+		private int SynchronizedWrite(Socket socket, byte[] response, int length, out SocketError err)
 		{
 			lock (_syncRoot)
 			{
@@ -137,36 +133,45 @@ namespace SharpRemote
 					return -1;
 				}
 
-				return socket.Send(response, 0, response.Length, SocketFlags.None, out err);
+				return socket.Send(response, 0, length, SocketFlags.None, out err);
 			}
 		}
 
-		private int SynchronizedRead(Socket socket, byte[] size, out SocketError err)
+		private int SynchronizedRead(Socket socket, byte[] data, out SocketError err)
 		{
-			return socket.Receive(size, 0, size.Length, SocketFlags.None, out err);
+			var read = socket.Receive(data, 0, data.Length, SocketFlags.None, out err);
+			if (err != SocketError.Success || !IsSocketConnected(socket))
+				return -1;
+
+			return read;
 		}
 
 		#endregion
+
+		private static bool IsSocketConnected(Socket socket)
+		{
+			// let's find out of the socket was interrupted
+			try
+			{
+				if (socket.Poll(1, SelectMode.SelectRead) && socket.Available == 0)
+				{
+					return false;
+				}
+
+				return true;
+			}
+			catch (SocketException)
+			{
+				return false;
+			}
+		}
 
 		private bool HandleError(Socket socket, SocketError err)
 		{
 			switch (err)
 			{
 				case SocketError.Success:
-					// let's find out of the socket was interrupted
-					try
-					{
-						if (socket.Poll(1, SelectMode.SelectRead) && socket.Available == 0)
-						{
-							return false;
-						}
-
-						return true;
-					}
-					catch (SocketException)
-					{
-						return false;
-					}
+					return IsSocketConnected(socket);
 
 				case SocketError.NotConnected:
 				case SocketError.Interrupted:
@@ -177,7 +182,8 @@ namespace SharpRemote
 					return false;
 
 				default:
-					throw new NotImplementedException();
+					Log.ErrorFormat("Unexpected socket error '{0}' - disconnecting from other endpoint", err);
+					return false;
 			}
 		}
 
@@ -187,9 +193,10 @@ namespace SharpRemote
 			{
 				OnConnected(_serverSocket.EndAccept(ar));
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
-				
+				Log.ErrorFormat("Caught exception while accepting incoming connection - disconnecting again: {0}", e);
+				Disconnect();
 			}
 		}
 
@@ -287,12 +294,7 @@ namespace SharpRemote
 						catch (Exception)
 						{ }
 
-						try
-						{
-							handle.Set();
-						}
-						catch (Exception)
-						{}
+						handle.Set();
 
 					}, null);
 
@@ -316,19 +318,21 @@ namespace SharpRemote
 				if (_pendingCalls.Count > 0)
 				{
 					byte[] exceptionMessage;
+					int exceptionLength;
+
 					using (var stream = new MemoryStream())
 					using (var writer = new BinaryWriter(stream, Encoding.UTF8))
 					{
-						writer.Write((byte)(MessageType.Return | MessageType.Exception));
 						WriteException(writer, new ConnectionLostException());
 						exceptionMessage = stream.GetBuffer();
+						exceptionLength = (int)stream.Length;
 					}
 
 					foreach (var call in _pendingCalls.Values)
 					{
-						var stream = new MemoryStream(exceptionMessage);
+						var stream = new MemoryStream(exceptionMessage, 0, exceptionLength);
 						var reader = new BinaryReader(stream, Encoding.UTF8);
-						call(reader);
+						call(MessageType.Return | MessageType.Exception, reader);
 					}
 					_pendingCalls.Clear();
 				}
@@ -354,7 +358,6 @@ namespace SharpRemote
 					catch (SocketException)
 					{}
 
-					_socket.Dispose();
 					_socket = null;
 					_remoteEndPoint = null;
 				}
@@ -388,7 +391,8 @@ namespace SharpRemote
 				throw new NotConnectedException(_name);
 
 			var rpcId = Interlocked.Increment(ref _nextRpcId);
-			var message = CreateMessage(servantId, methodName, arguments, rpcId);
+			int messageLength;
+			var message = CreateMessage(servantId, methodName, arguments, rpcId, out messageLength);
 
 			if (Log.IsDebugEnabled)
 			{
@@ -405,29 +409,32 @@ namespace SharpRemote
 				using (var handle = new ManualResetEvent(false))
 				{
 					BinaryReader response = null;
+					var type = MessageType.Call;
 					lock (_pendingCalls)
 					{
-						_pendingCalls.Add(rpcId, r =>
+						_pendingCalls.Add(rpcId, (t, r) =>
 						{
+							type = t;
 							response = r;
 							handle.Set();
 						});
 					}
 
-					lock (_syncRoot)
+					SocketError err;
+					if (SynchronizedWrite(socket, message, messageLength, out err) != messageLength)
 					{
-						socket.Send(message);
+						Log.ErrorFormat("Error while sending message: {0}", err);
+						throw new ConnectionLostException();
 					}
 
 					if (!handle.WaitOne())
 						throw new NotImplementedException();
 
-					var messageType = (MessageType)response.ReadByte();
-					if (messageType == MessageType.Return)
+					if (type == MessageType.Return)
 					{
 						return (MemoryStream) response.BaseStream;
 					}
-					else if ((messageType & MessageType.Exception) != 0)
+					else if ((type & MessageType.Exception) != 0)
 					{
 						var formatter = new BinaryFormatter();
 						var e = (Exception)formatter.Deserialize(response.BaseStream);
@@ -439,12 +446,6 @@ namespace SharpRemote
 					}
 				}
 			}
-			catch (SocketException e)
-			{
-				Log.ErrorFormat("Caught exception while sending RPC message: {0}", e);
-
-				throw new ConnectionLostException();
-			}
 			finally
 			{
 				lock (_pendingCalls)
@@ -454,23 +455,23 @@ namespace SharpRemote
 			}
 		}
 
-		private byte[] HandleMessage(long rpcId, BinaryReader reader)
+		private byte[] HandleMessage(long rpcId, MessageType type, BinaryReader reader, out int responseLength)
 		{
-			var type = (MessageType)reader.ReadByte();
 			if (type == MessageType.Call)
 			{
-				return HandleRequest(rpcId, reader);
+				return HandleRequest(rpcId, reader, out responseLength);
 			}
 			if ((type & MessageType.Return) != 0)
 			{
-				HandleResponse(rpcId, reader);
+				HandleResponse(rpcId, type, reader);
+				responseLength = -1;
 				return null;
 			}
 
 			throw new NotImplementedException();
 		}
 
-		private byte[] HandleRequest(long rpcId, BinaryReader reader)
+		private byte[] HandleRequest(long rpcId, BinaryReader reader, out int responseLength)
 		{
 			var servantId = reader.ReadUInt64();
 			var methodName = reader.ReadString();
@@ -515,12 +516,13 @@ namespace SharpRemote
 				PatchResponseMessageLength(response, writer);
 			}
 
+			responseLength = (int) response.Length;
 			return response.GetBuffer();
 		}
 
 		private static void PatchResponseMessageLength(MemoryStream response, BinaryWriter writer)
 		{
-			var bufferSize = response.Length;
+			var bufferSize = (int)response.Length;
 			var messageSize = bufferSize - 4;
 			response.Position = 0;
 			writer.Write(messageSize);
@@ -534,21 +536,22 @@ namespace SharpRemote
 			writer.Write((byte) type);
 		}
 
-		private void HandleResponse(long rpcId, BinaryReader reader)
+		private void HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
 		{
-			Action<BinaryReader> fn;
+			Action<MessageType, BinaryReader> fn;
 			lock (_pendingCalls)
 			{
 				if (!_pendingCalls.TryGetValue(rpcId, out fn))
 					return;
 			}
 
-			fn(reader);
+			fn(messageType, reader);
 		}
 
-		private static byte[] CreateMessage(ulong servantId, string methodName, MemoryStream arguments, long rpcId)
+		private static byte[] CreateMessage(ulong servantId, string methodName, MemoryStream arguments, long rpcId, out int bufferSize)
 		{
-			var maxMessageSize = 1 + 8 + 8 + methodName.Length * 2;
+			var argumentSize = arguments != null ? (int)arguments.Length : 0;
+			var maxMessageSize = 1 + 8 + 8 + methodName.Length * 2 + argumentSize;
 			var maxBufferSize = 4 + maxMessageSize;
 			var buffer = new byte[maxBufferSize];
 			using (var stream = new MemoryStream(buffer, 0, buffer.Length, true, true))
@@ -563,18 +566,20 @@ namespace SharpRemote
 				if (arguments != null)
 				{
 					var data = arguments.GetBuffer();
-					writer.Write(data, 0, data.Length);
+					var dataLength = (int) arguments.Length;
+					writer.Write(data, 0, dataLength);
 				}
 
 				writer.Flush();
 
-				var actualBufferSize = (int)stream.Position;
-				if (actualBufferSize < maxBufferSize)
+				bufferSize = (int)stream.Position;
+				var messageSize = bufferSize - 4;
+				if (messageSize < maxMessageSize)
 				{
 					stream.Position = 0;
-					writer.Write(actualBufferSize - 4);
+					writer.Write(messageSize);
 				}
-				else if (actualBufferSize > maxBufferSize)
+				else if (messageSize > maxMessageSize)
 				{
 					throw new NotImplementedException("Buffer size miscalculation");
 				}

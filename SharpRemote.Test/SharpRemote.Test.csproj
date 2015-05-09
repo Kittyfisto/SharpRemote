@@ -64,7 +64,6 @@
     <Compile Include="Hosting\InProcessRemotingSiloAcceptanceTest.cs" />
     <Compile Include="Hosting\ProcessSiloAcceptanceTest.cs" />
     <Compile Include="Hosting\ProcessSiloTest.cs" />
-    <Compile Include="Remoting\SocketEndPointTest.cs" />
     <Compile Include="TestLogger.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />
@@ -108,13 +107,17 @@
     <Compile Include="Types\Structs\StaticDataMemberFieldStruct.cs" />
     <Compile Include="Hosting\AbstractSiloAcceptanceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Remoting\EndpointAcceptanceTest.cs" />
-    <Compile Include="Remoting\EndPointTest.cs" />
+    <Compile Include="Remoting\SocketEndPointAcceptanceTest.cs" />
+    <Compile Include="Remoting\SocketEndPointTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SharpRemote.Host\SharpRemote.Host.csproj">
+      <Project>{21218e92-3815-4e5e-9761-c3fb0709f532}</Project>
+      <Name>SharpRemote.Host</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SharpRemote\SharpRemote.csproj">
       <Project>{1b908b3a-2f3b-47b8-b69f-3827b8829586}</Project>
       <Name>SharpRemote</Name>

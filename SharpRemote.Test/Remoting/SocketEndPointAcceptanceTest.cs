@@ -9,24 +9,38 @@ using SharpRemote.Test.Types;
 using SharpRemote.Test.Types.Exceptions;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
+using log4net.Core;
 
 namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
 	[Description("Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour")]
-	public abstract class EndPointAcceptanceTest
+	public class SocketEndPointAcceptanceTest
 	{
 		private IRemotingEndPoint _server;
 		private IRemotingEndPoint _client;
 
-		protected abstract IRemotingEndPoint CreateEndPoint(IPAddress address, string name = null);
+		protected IRemotingEndPoint CreateEndPoint(IPAddress address, string name = null)
+		{
+			return new SocketEndPoint(address, name);
+		}
 
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
+			TestLogger.EnableConsoleLogging(Level.Error);
+			TestLogger.SetLevel<SocketEndPoint>(Level.Info);
+
 			_server = CreateEndPoint(IPAddress.Loopback, "Server");
 			_client = CreateEndPoint(IPAddress.Loopback, "Client");
 			_client.Connect(_server.LocalEndPoint, TimeSpan.FromMinutes(1));
+		}
+
+		[TestFixtureTearDown]
+		public void TearDown()
+		{
+			_server.TryDispose();
+			_client.TryDispose();
 		}
 
 		[Test]

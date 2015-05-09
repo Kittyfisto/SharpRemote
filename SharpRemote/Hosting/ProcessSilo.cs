@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Net;
 using System.Threading;
 
@@ -84,6 +85,12 @@ namespace SharpRemote.Hosting
 			_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
 		}
 
+		[Pure]
+		public bool IsProcessRunning
+		{
+			get { return !_process.HasExited; }
+		}
+
 		private void ProcessOnOutputDataReceived(object sender, DataReceivedEventArgs args)
 		{
 			var message = args.Data;
@@ -129,7 +136,7 @@ namespace SharpRemote.Hosting
 			_subjectHost.TryDispose();
 			_endPoint.TryDispose();
 
-			_process.Kill();
+			_process.TryKill();
 			_process.TryDispose();
 		}
 	}

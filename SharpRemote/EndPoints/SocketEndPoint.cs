@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -37,6 +38,7 @@ namespace SharpRemote
 		private long _nextRpcId;
 
 		private readonly Dictionary<long, Action<MessageType, BinaryReader>> _pendingCalls;
+		private readonly string _stacktrace;
 
 		[Flags]
 		private enum MessageType : byte
@@ -53,6 +55,7 @@ namespace SharpRemote
 			_syncRoot = new object();
 
 			_name = name ?? "<Unnamed>";
+			_stacktrace = new StackTrace().ToString();
 
 			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out _localEndPoint);
 			_serverSocket.Listen(1);
@@ -100,11 +103,8 @@ namespace SharpRemote
 						var response = HandleMessage(rpcId, type, reader, out responseLength);
 						if (response != null)
 						{
-							if (SynchronizedWrite(socket, response, responseLength, out err) != responseLength)
-							{
-								if (!HandleError(socket, err))
-									break;
-							}
+							if (SynchronizedWrite(socket, response, responseLength, out err) != responseLength || !HandleError(socket, err))
+								break;
 						}
 					}
 				}
@@ -171,14 +171,20 @@ namespace SharpRemote
 			switch (err)
 			{
 				case SocketError.Success:
-					return IsSocketConnected(socket);
+					if (!IsSocketConnected(socket))
+					{
+						Log.InfoFormat("Socket '{0}' connection aborted", _name);
+						return false;
+					}
+
+					return true;
 
 				case SocketError.NotConnected:
 				case SocketError.Interrupted:
 					return false;
 
 				case SocketError.ConnectionAborted:
-					Log.InfoFormat("Socket '{0}' connection aborted by the other end", _name);
+					Log.InfoFormat("Socket '{0}' connection aborted", _name);
 					return false;
 
 				default:
@@ -453,7 +459,12 @@ namespace SharpRemote
 			}
 			if ((type & MessageType.Return) != 0)
 			{
-				HandleResponse(rpcId, type, reader);
+				if (!HandleResponse(rpcId, type, reader))
+				{
+					Log.ErrorFormat("There is no pending RPC of id '{0}' - disconnecting...", rpcId);
+					Disconnect();
+				}
+
 				responseLength = -1;
 				return null;
 			}
@@ -526,16 +537,17 @@ namespace SharpRemote
 			writer.Write((byte) type);
 		}
 
-		private void HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
+		private bool HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
 		{
 			Action<MessageType, BinaryReader> fn;
 			lock (_pendingCalls)
 			{
 				if (!_pendingCalls.TryGetValue(rpcId, out fn))
-					return;
+					return false;
 			}
 
 			fn(messageType, reader);
+			return true;
 		}
 
 		private static byte[] CreateMessage(ulong servantId, string methodName, MemoryStream arguments, long rpcId, out int bufferSize)

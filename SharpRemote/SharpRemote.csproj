@@ -55,6 +55,7 @@
     <Compile Include="Hosting\InProcessSilo.cs" />
     <Compile Include="Hosting\ISilo.cs" />
     <Compile Include="Hosting\ISubjectHost.cs" />
+    <Compile Include="Hosting\ProcessExtensions.cs" />
     <Compile Include="Hosting\ProcessSilo.cs" />
     <Compile Include="Hosting\SubjectHost.cs" />
     <Compile Include="ISerializer.cs" />

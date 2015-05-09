@@ -283,26 +283,16 @@ namespace SharpRemote
 			var socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 			try
 			{
-				using (var handle = new ManualResetEvent(false))
-				{
-					socket.BeginConnect(endPoint, ar =>
-					{
-						try
-						{
-							socket.EndConnect(ar);
-						}
-						catch (Exception)
-						{ }
+				var task = new Task(() => socket.Connect(endPoint));
+				task.Start();
+				if (!task.Wait(timeout))
+					throw new NoSuchEndPointException(endPoint);
 
-						handle.Set();
-
-					}, null);
-
-					if (!handle.WaitOne(timeout))
-						throw new NoSuchEndPointException(endPoint);
-
-					OnConnected(socket);
-				}
+				OnConnected(socket);
+			}
+			catch (SocketException e)
+			{
+				throw new NoSuchEndPointException(endPoint, e);
 			}
 			catch (Exception)
 			{

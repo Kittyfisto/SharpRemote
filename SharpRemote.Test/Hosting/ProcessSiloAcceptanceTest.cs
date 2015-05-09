@@ -3,7 +3,6 @@ using SharpRemote.Hosting;
 
 namespace SharpRemote.Test.Hosting
 {
-	[Ignore]
 	[TestFixture]
 	public sealed class ProcessSiloAcceptanceTest
 		: AbstractSiloAcceptanceTest

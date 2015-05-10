@@ -6,9 +6,9 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
 
-namespace SharpRemote.CodeGeneration.Serialization
+namespace SharpRemote
 {
-	public sealed class TypeInformation
+	internal sealed class TypeInformation
 	{
 		private readonly Type _type;
 		private readonly ConstructorInfo _ctor;
@@ -77,7 +77,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			if (type.IsArray)
 			{
-				return IsNativelySupportedType(type.GetElementType());
+				return true;
 			}
 
 			return false;

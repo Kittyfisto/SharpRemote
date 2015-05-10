@@ -141,12 +141,7 @@ namespace SharpRemote.CodeGeneration
 			return Type.GetType(name);
 		}
 
-		public static bool EmitReadPod(this ILGenerator gen, Type valueType)
-		{
-			return EmitReadPod(gen, () => { }, valueType);
-		}
-
-		public static bool EmitReadPod(this ILGenerator gen, Action loadReader, Type valueType)
+		public static bool EmitReadNativeType(this ILGenerator gen, Action loadReader, Type valueType, bool valueCanBeNull = true)
 		{
 			if (valueType == typeof (bool))
 			{
@@ -207,16 +202,28 @@ namespace SharpRemote.CodeGeneration
 			{
 				gen.EmitReadNullableValue(
 					loadReader,
-					() => gen.Emit(OpCodes.Call, ReadString));
+					() =>
+						{
+							loadReader();
+							gen.Emit(OpCodes.Call, ReadString);
+						},
+					valueCanBeNull);
 			}
 			else if (valueType == typeof (IPAddress))
 			{
-				// new IPAddress(writer.ReadBytes(writer.ReadInt()));
-				loadReader();
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadInt);
-				gen.Emit(OpCodes.Call, ReadBytes);
-				gen.Emit(OpCodes.Newobj, IPAddressFromBytes);
+				gen.EmitReadNullableValue(
+					loadReader,
+					() =>
+						{
+							// new IPAddress(writer.ReadBytes(writer.ReadInt()));
+							loadReader();
+							loadReader();
+							gen.Emit(OpCodes.Call, ReadInt);
+							gen.Emit(OpCodes.Call, ReadBytes);
+							gen.Emit(OpCodes.Newobj, IPAddressFromBytes);
+						},
+					valueCanBeNull
+					);
 			}
 			else if (valueType == typeof (Type))
 			{
@@ -224,9 +231,11 @@ namespace SharpRemote.CodeGeneration
 					loadReader,
 					() =>
 						{
+							loadReader();
 							gen.Emit(OpCodes.Call, ReadString);
 							gen.Emit(OpCodes.Call, CreateTypeFromName);
-						}
+						},
+					valueCanBeNull
 					);
 			}
 			else
@@ -239,30 +248,32 @@ namespace SharpRemote.CodeGeneration
 
 		private static void EmitReadNullableValue(this ILGenerator gen,
 		                                          Action loadReader,
-		                                          Action loadValue)
+		                                          Action loadValue,
+			bool valueCanBeNull)
 		{
-			var read = gen.DefineLabel();
-			var end = gen.DefineLabel();
+			if (valueCanBeNull)
+			{
+				var read = gen.DefineLabel();
+				var end = gen.DefineLabel();
 
-			loadReader();
-			gen.Emit(OpCodes.Call, ReadBool);
-			gen.Emit(OpCodes.Brtrue, read);
-			gen.Emit(OpCodes.Ldnull);
-			gen.Emit(OpCodes.Br, end);
+				loadReader();
+				gen.Emit(OpCodes.Call, ReadBool);
+				gen.Emit(OpCodes.Brtrue, read);
+				gen.Emit(OpCodes.Ldnull);
+				gen.Emit(OpCodes.Br, end);
 
-			gen.MarkLabel(read);
-			loadReader();
-			loadValue();
+				gen.MarkLabel(read);
+				loadValue();
 
-			gen.MarkLabel(end);
+				gen.MarkLabel(end);
+			}
+			else
+			{
+				loadValue();
+			}
 		}
 
-		public static bool EmitWritePod(this ILGenerator gen, Type valueType)
-		{
-			return EmitWritePod(gen, () => { }, () => { }, valueType);
-		}
-
-		public static bool EmitWritePod(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType)
+		public static bool EmitWritePod(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType, bool valueCanBeNull = true)
 		{
 			if (valueType == typeof (bool))
 			{
@@ -335,26 +346,38 @@ namespace SharpRemote.CodeGeneration
 				gen.WriteNullableValue(
 					loadWriter,
 					loadValue,
-					() => gen.Emit(OpCodes.Call, WriteString)
-					);
+					() =>
+						{
+							loadWriter();
+							loadValue();
+							gen.Emit(OpCodes.Call, WriteString);
+						},
+					valueCanBeNull);
 			}
 			else if (valueType == typeof(IPAddress))
 			{
-				var data = gen.DeclareLocal(typeof(byte[]));
+				gen.WriteNullableValue(
+					loadWriter,
+					loadValue,
+					() =>
+						{
+							var data = gen.DeclareLocal(typeof (byte[]));
 
-				loadValue();
-				gen.Emit(OpCodes.Call, IPAddressGetAddressBytes);
-				gen.Emit(OpCodes.Stloc, data);
+							loadValue();
+							gen.Emit(OpCodes.Call, IPAddressGetAddressBytes);
+							gen.Emit(OpCodes.Stloc, data);
 
-				loadWriter();
-				gen.Emit(OpCodes.Ldloc, data);
-				gen.Emit(OpCodes.Call, ArrayGetLength);
+							loadWriter();
+							gen.Emit(OpCodes.Ldloc, data);
+							gen.Emit(OpCodes.Call, ArrayGetLength);
 
-				gen.Emit(OpCodes.Call, WriteInt);
+							gen.Emit(OpCodes.Call, WriteInt);
 
-				loadWriter();
-				gen.Emit(OpCodes.Ldloc, data);
-				gen.Emit(OpCodes.Call, WriteBytes);
+							loadWriter();
+							gen.Emit(OpCodes.Ldloc, data);
+							gen.Emit(OpCodes.Call, WriteBytes);
+						},
+					valueCanBeNull);
 			}
 			else if (valueType == typeof (Type))
 			{
@@ -363,10 +386,13 @@ namespace SharpRemote.CodeGeneration
 					loadValue,
 					() =>
 						{
+							loadWriter();
+							loadValue();
 							gen.Emit(OpCodes.Callvirt, TypeGetAssemblyQualifiedName);
 							gen.Emit(OpCodes.Call, WriteString);
 						}
-					);
+					,
+					valueCanBeNull);
 			}
 			else
 			{
@@ -379,38 +405,45 @@ namespace SharpRemote.CodeGeneration
 		private static void WriteNullableValue(this ILGenerator gen,
 		                                       Action loadWriter,
 		                                       Action loadValue,
-		                                       Action writeValue)
+		                                       Action writeValue,
+		                                       bool valueCanBeNull)
 		{
-			var write = gen.DefineLabel();
-			var end = gen.DefineLabel();
+			if (valueCanBeNull)
+			{
+				var write = gen.DefineLabel();
+				var end = gen.DefineLabel();
 
-			// if (value != null) goto write
-			loadValue();
-			gen.Emit(OpCodes.Ldnull);
-			gen.Emit(OpCodes.Ceq);
-			gen.Emit(OpCodes.Brfalse, write);
+				// if (value != null) goto write
+				loadValue();
+				gen.Emit(OpCodes.Ldnull);
+				gen.Emit(OpCodes.Ceq);
+				gen.Emit(OpCodes.Brfalse, write);
 
-			// writer.Write(true)
-			loadWriter();
-			gen.Emit(OpCodes.Ldc_I4_0);
-			gen.Emit(OpCodes.Call, WriteBool);
-			// goto end
-			gen.Emit(OpCodes.Br, end);
+				// writer.Write(true)
+				loadWriter();
+				gen.Emit(OpCodes.Ldc_I4_0);
+				gen.Emit(OpCodes.Call, WriteBool);
+				// goto end
+				gen.Emit(OpCodes.Br, end);
 
-			// write:
-			gen.MarkLabel(write);
-			// writer.Write(false);
-			loadWriter();
-			gen.Emit(OpCodes.Ldc_I4_1);
-			gen.Emit(OpCodes.Call, WriteBool);
+				// write:
+				gen.MarkLabel(write);
+				// writer.Write(false);
+				loadWriter();
+				gen.Emit(OpCodes.Ldc_I4_1);
+				gen.Emit(OpCodes.Call, WriteBool);
 
-			// writer.Write(value)
-			loadWriter();
-			loadValue();
-			writeValue();
+				// writer.Write(value)
+				writeValue();
 
-			// end:
-			gen.MarkLabel(end);
+				// end:
+				gen.MarkLabel(end);
+			}
+			else
+			{
+				// writer.Write(value)
+				writeValue();
+			}
 		}
 	}
 }

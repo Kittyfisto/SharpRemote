@@ -10,7 +10,7 @@ using System.Runtime.Serialization;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
-	public sealed class Serializer
+	public sealed partial class Serializer
 		: ISerializer
 	{
 		private readonly ModuleBuilder _module;
@@ -19,12 +19,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		sealed class ReadMethod
 		{
-			public readonly MethodInfo Info;
+			public readonly MethodInfo MethodInfo;
 			public Func<BinaryReader, ISerializer, object> ReadDelegate;
 
 			public ReadMethod(MethodBuilder method)
 			{
-				Info = method;
+				MethodInfo = method;
 			}
 		}
 
@@ -50,6 +50,19 @@ namespace SharpRemote.CodeGeneration.Serialization
 				ValueMethod = valueMethod;
 				ObjectMethod = objectMethod;
 			}
+		}
+
+		/// <summary>
+		/// Emits code to read a value of the given *compile-time* type from a <see cref="BinaryReader"/>.
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="loadSerializer">A function to push an <see cref="ISerializer"/> instance onto the top of the evaluation stack</param>
+		/// <param name="loadReader">A function to push an <see cref="BinaryReader"/> instance onto the top of the evaluation stack</param>
+		/// <param name="valueType">The compile-time type of the value to serialize</param>
+		/// <param name="valueCanBeNull">Whether or not the value can be null, by default all non-value types are assumed to be nullable and thus appropriate markers are placed in the binary stream - if the value can never be null, then this may be set to false in order to conserve memory</param>
+		public static void EmitReadValue(ILGenerator gen, Action loadSerializer, Action loadReader, Type valueType, bool valueCanBeNull = true)
+		{
+			
 		}
 
 		public Serializer()
@@ -159,7 +172,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				ReadArray(gen, typeInformation);
 			}
-			else if (gen.EmitReadPod(() => gen.Emit(OpCodes.Ldarg_0),
+			else if (gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0),
 					typeInformation.Type))
 			{
 				
@@ -243,7 +256,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ldloca, target);
 
 			var type = field.FieldType;
-			if (!gen.EmitReadPod(() => gen.Emit(OpCodes.Ldarg_0), type))
+			if (!gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0), type))
 			{
 				throw new NotImplementedException();
 			}
@@ -298,132 +311,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			m.WriteDelegate = (Action<BinaryWriter, object, ISerializer>)delegateMethod.CreateDelegate(typeof(Action<BinaryWriter, object, ISerializer>));
 
 			return m;
-		}
-
-		private void ReadArray(ILGenerator gen, TypeInformation typeInformation)
-		{
-			var elementType = typeInformation.ElementType;
-
-			var value = gen.DeclareLocal(typeInformation.Type);
-			var count = gen.DeclareLocal(typeof (int));
-			var i = gen.DeclareLocal(typeof (int));
-
-			// count = reader.ReadInt32()
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Call, Methods.ReadInt);
-			gen.Emit(OpCodes.Stloc, count);
-
-			// value = new XXX[count]
-			gen.Emit(OpCodes.Ldloc, count);
-			gen.Emit(OpCodes.Newarr, elementType);
-			gen.Emit(OpCodes.Stloc, value);
-
-			var loop = gen.DefineLabel();
-			var end = gen.DefineLabel();
-
-			// int i = 0
-			gen.Emit(OpCodes.Ldc_I4_0);
-			gen.Emit(OpCodes.Stloc, i);
-
-			// loop:
-			gen.MarkLabel(loop);
-			// if (i < count) goto end
-			gen.Emit(OpCodes.Ldloc, i);
-			gen.Emit(OpCodes.Ldloc, count);
-			gen.Emit(OpCodes.Clt);
-			gen.Emit(OpCodes.Brfalse, end);
-
-			// value[i] = <ReadValue>
-			gen.Emit(OpCodes.Ldloc, value);
-			gen.Emit(OpCodes.Ldloc, i);
-			if (gen.EmitReadPod(
-				() => gen.Emit(OpCodes.Ldarg_0),
-				elementType
-				))
-			{
-				
-			}
-			else
-			{
-				throw new NotImplementedException();
-			}
-
-			gen.Emit(OpCodes.Stelem, elementType);
-
-			// ++i
-			gen.Emit(OpCodes.Ldloc, i);
-			gen.Emit(OpCodes.Ldc_I4_1);
-			gen.Emit(OpCodes.Add);
-			gen.Emit(OpCodes.Stloc, i);
-			// goto loop
-			gen.Emit(OpCodes.Br, loop);
-
-			// end:
-			gen.MarkLabel(end);
-			gen.Emit(OpCodes.Ldloc, value);
-		}
-
-		private void WriteArray(ILGenerator gen, TypeInformation typeInformation)
-		{
-			var type = typeInformation.Type;
-			var elementType = typeInformation.ElementType;
-			var enumerableType = typeof (IEnumerable<>).MakeGenericType(elementType);
-			var enumeratorType = typeof(IEnumerator<>).MakeGenericType(elementType);
-			var getLength = type.GetProperty("Length").GetMethod;
-			var getEnumerator = enumerableType.GetMethod("GetEnumerator");
-			var moveNext = typeof(IEnumerator).GetMethod("MoveNext");
-			var getCurrent = enumeratorType.GetProperty("Current").GetMethod;
-
-			// writer.Write(value.Length) OR writer.Write(value.Count)
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Call, getLength);
-			gen.Emit(OpCodes.Call, Methods.WriteInt);
-
-			// var enumerator = value.GetEnumerator()
-			var enumerator = gen.DeclareLocal(enumeratorType);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Castclass, enumerableType);
-			gen.Emit(OpCodes.Callvirt, getEnumerator);
-			gen.Emit(OpCodes.Stloc, enumerator);
-
-			var loop = gen.DefineLabel();
-			var end = gen.DefineLabel();
-
-			// loop:
-			gen.MarkLabel(loop);
-			// if (!enumerator.MoveNext()) goto end
-			gen.Emit(OpCodes.Ldloc, enumerator);
-			gen.Emit(OpCodes.Callvirt, moveNext);
-			gen.Emit(OpCodes.Brfalse, end);
-
-			if (gen.EmitWritePod(
-				() => gen.Emit(OpCodes.Ldarg_0),
-				() =>
-					{
-						gen.Emit(OpCodes.Ldloc, enumerator);
-						gen.Emit(OpCodes.Callvirt, getCurrent);
-					},
-				elementType))
-			{
-				
-			}
-			else if (elementType.IsValueType)
-			{
-				WriteFields(gen, elementType);
-			}
-			else
-			{
-				throw new NotImplementedException();
-			}
-
-			// goto loop
-			gen.Emit(OpCodes.Br, loop);
-
-			// end:
-			gen.MarkLabel(end);
-			// return
-			gen.Emit(OpCodes.Ret);
 		}
 
 		private MethodInfo CreateWriteDelegate(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)

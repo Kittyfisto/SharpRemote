@@ -40,8 +40,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CodeGeneration\Compiler.cs" />
-    <Compile Include="CodeGeneration\Serialization\TypeExtensions.cs" />
-    <Compile Include="CodeGeneration\Serialization\TypeInformation.cs" />
+    <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
+    <Compile Include="TypeExtensions.cs" />
+    <Compile Include="TypeInformation.cs" />
     <Compile Include="CodeGeneration\SerializerExtensions.cs" />
     <Compile Include="DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />

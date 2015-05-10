@@ -26,7 +26,7 @@ namespace SharpRemote.CodeGeneration
 			var allParameters = methodInfo.GetParameters();
 			foreach (var parameter in allParameters)
 			{
-				gen.EmitReadPod(loadReader, parameter.ParameterType);
+				gen.EmitReadNativeType(loadReader, parameter.ParameterType);
 			}
 
 			var returnType = methodInfo.ReturnType;
@@ -121,7 +121,7 @@ namespace SharpRemote.CodeGeneration
 
 		private void DeserializeValue(ILGenerator gen, LocalBuilder binaryReader, Type propertyType)
 		{
-			if (!gen.EmitReadPod(() => gen.Emit(OpCodes.Ldloc, binaryReader), propertyType))
+			if (!gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldloc, binaryReader), propertyType))
 			{
 				throw new NotImplementedException();
 			}

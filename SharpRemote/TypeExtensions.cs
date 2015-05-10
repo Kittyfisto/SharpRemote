@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace SharpRemote.CodeGeneration.Serialization
+namespace SharpRemote
 {
 	public static class TypeExtensions
 	{

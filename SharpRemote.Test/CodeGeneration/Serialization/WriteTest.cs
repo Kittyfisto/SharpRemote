@@ -31,5 +31,17 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			reader.ReadBoolean().Should().BeTrue();
 			reader.ReadString().Should().Be(typeof (int).AssemblyQualifiedName);
 		}
+
+		[Test]
+		[Description("Verifies the binary output of serializing a null value")]
+		public void TestWriteNull()
+		{
+			var data = new MemoryStream();
+			var reader = new BinaryReader(data);
+			_serializer.WriteObject(new BinaryWriter(data), null);
+			data.Position = 0;
+
+			reader.ReadString().Should().Be("null");
+		}
 	}
 }

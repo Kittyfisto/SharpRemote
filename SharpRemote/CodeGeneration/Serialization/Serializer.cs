@@ -52,18 +52,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 		}
 
-		public Serializer()
-		{
-			var assemblyName = new AssemblyName("SharpRemote.CodeGeneration.Serializer");
-			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			var moduleName = assemblyName.Name + ".dll";
-			var module = assembly.DefineDynamicModule(moduleName);
-
-			_module = module;
-			_typeToWriteMethods = new Dictionary<Type, WriteMethod>();
-			_typeToReadMethods = new Dictionary<Type, ReadMethod>();
-		}
-
 		public Serializer(ModuleBuilder module)
 		{
 			if (module == null) throw new ArgumentNullException("module");
@@ -71,6 +59,19 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_module = module;
 			_typeToWriteMethods = new Dictionary<Type, WriteMethod>();
 			_typeToReadMethods = new Dictionary<Type, ReadMethod>();
+		}
+
+		public Serializer()
+			: this(CreateModule())
+		{}
+
+		private static ModuleBuilder CreateModule()
+		{
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
+			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			var moduleName = assemblyName.Name + ".dll";
+			var module = assembly.DefineDynamicModule(moduleName);
+			return module;
 		}
 
 		/// <summary>

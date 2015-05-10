@@ -5,11 +5,13 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.CodeGeneration;
+using SharpRemote.CodeGeneration.Serialization;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -32,6 +34,8 @@ namespace SharpRemote
 		private readonly ProxyCreator _proxyCreator;
 		private readonly ServantCreator _servantCreator;
 		private readonly CancellationTokenSource _cancellationTokenSource;
+		private readonly AssemblyBuilder _assembly;
+		private readonly ModuleBuilder _module;
 		private Task _readTask;
 		private IPEndPoint _remoteEndPoint;
 		private Socket _socket;
@@ -39,6 +43,7 @@ namespace SharpRemote
 
 		private readonly Dictionary<long, Action<MessageType, BinaryReader>> _pendingCalls;
 		private readonly string _stacktrace;
+		private readonly Serializer _serializer;
 
 		[Flags]
 		private enum MessageType : byte
@@ -68,8 +73,14 @@ namespace SharpRemote
 
 			_cancellationTokenSource = new CancellationTokenSource();
 
-			_servantCreator = new ServantCreator(this);
-			_proxyCreator = new ProxyCreator(this);
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
+			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			var moduleName = assemblyName.Name + ".dll";
+			_module = _assembly.DefineDynamicModule(moduleName);
+
+			_serializer = new Serializer(_module);
+			_servantCreator = new ServantCreator(_module, _serializer, this);
+			_proxyCreator = new ProxyCreator(_module, _serializer, this);
 			_pendingCalls = new Dictionary<long, Action<MessageType, BinaryReader>>();
 		}
 

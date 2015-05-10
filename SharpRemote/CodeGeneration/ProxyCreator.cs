@@ -11,22 +11,37 @@ namespace SharpRemote.CodeGeneration
 		private readonly Serializer _serializer;
 		private readonly IEndPointChannel _channel;
 		private readonly Dictionary<Type, Type> _interfaceToProxy;
-		private readonly AssemblyBuilder _assembly;
-		private readonly string _moduleName;
+		private readonly ModuleBuilder _module;
 
-		public ProxyCreator(IEndPointChannel channel)
+		public ProxyCreator(ModuleBuilder module, Serializer serializer, IEndPointChannel channel)
 		{
+			if (module == null) throw new ArgumentNullException("module");
+			if (serializer == null) throw new ArgumentNullException("serializer");
 			if (channel == null) throw new ArgumentNullException("channel");
 
 			_channel = channel;
-
-			var assemblyName = new AssemblyName("SharpRemote.CodeGeneration.Proxies");
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			_moduleName = assemblyName.Name + ".dll";
-			var module = _assembly.DefineDynamicModule(_moduleName);
-			_serializer = new Serializer(module);
+			_module = module;
+			_serializer = serializer;
 
 			_interfaceToProxy = new Dictionary<Type, Type>();
+		}
+
+		public ProxyCreator(ModuleBuilder module, IEndPointChannel channel)
+			: this(module, new Serializer(module), channel)
+		{}
+
+		public ProxyCreator(IEndPointChannel channel)
+			: this (CreateModule(), channel)
+		{
+		}
+
+		private static ModuleBuilder CreateModule()
+		{
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Proxies");
+			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			var moduleName = assemblyName.Name + ".dll";
+			var module = assembly.DefineDynamicModule(moduleName);
+			return module;
 		}
 
 		public Type GenerateProxy<T>()
@@ -44,11 +59,8 @@ namespace SharpRemote.CodeGeneration
 				throw new NotImplementedException();
 			}
 
-			var generator = new ProxyCompiler(_serializer, assemblyName, proxyTypeName, interfaceType);
+			var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
 			var proxyType = generator.Generate();
-
-			//generator.Save();
-			//_assembly.Save(_moduleName);
 
 			_interfaceToProxy.Add(interfaceType, proxyType);
 			return proxyType;

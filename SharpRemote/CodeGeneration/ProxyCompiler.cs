@@ -13,23 +13,23 @@ namespace SharpRemote.CodeGeneration
 		: Compiler
 	{
 		private readonly Type _interfaceType;
-		private readonly AssemblyBuilder _assembly;
 		private readonly ModuleBuilder _module;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly Dictionary<string, FieldBuilder> _fields;
-		private readonly string _moduleName;
 
 		#region Methods
 
 		#endregion
 
-		public ProxyCompiler(Serializer serializer, AssemblyName assemblyName, string proxyTypeName, Type interfaceType)
+		public ProxyCompiler(Serializer serializer, ModuleBuilder module, string proxyTypeName, Type interfaceType)
 			: base(serializer)
 		{
+			if (module == null) throw new ArgumentNullException("module");
+			if (proxyTypeName == null) throw new ArgumentNullException("proxyTypeName");
+			if (interfaceType == null) throw new ArgumentNullException("interfaceType");
+
 			_interfaceType = interfaceType;
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			_moduleName = assemblyName.Name + ".dll";
-			_module = _assembly.DefineDynamicModule(_moduleName);
+			_module = module;
 
 			_typeBuilder = _module.DefineType(proxyTypeName, TypeAttributes.Class, typeof (object), new[]
 				{
@@ -55,11 +55,6 @@ namespace SharpRemote.CodeGeneration
 
 			var proxyType = _typeBuilder.CreateType();
 			return proxyType;
-		}
-
-		public void Save()
-		{
-			_assembly.Save(_moduleName);
 		}
 
 		private void GenerateCtor()

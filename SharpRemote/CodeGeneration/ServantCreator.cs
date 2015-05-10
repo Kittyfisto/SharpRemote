@@ -10,21 +10,37 @@ namespace SharpRemote.CodeGeneration
 	{
 		private readonly IEndPointChannel _channel;
 		private readonly Serializer _serializer;
-		private readonly AssemblyBuilder _assembly;
-		private readonly string _moduleName;
 		private readonly Dictionary<Type, Type> _interfaceToSubject;
+		private readonly ModuleBuilder _module;
 
-		public ServantCreator(IEndPointChannel channel)
+		public ServantCreator(ModuleBuilder module, Serializer serializer, IEndPointChannel channel)
 		{
+			if (module == null) throw new ArgumentNullException("module");
+			if (serializer == null) throw new ArgumentNullException("serializer");
 			if (channel == null) throw new ArgumentNullException("channel");
 
 			_channel = channel;
-			var assemblyName = new AssemblyName("SharpRemote.CodeGeneration.Servants");
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			_moduleName = assemblyName.Name + ".dll";
-			var module = _assembly.DefineDynamicModule(_moduleName);
-			_serializer = new Serializer(module);
+			_module = module;
+			_serializer = serializer;
 			_interfaceToSubject= new Dictionary<Type, Type>();
+		}
+
+		public ServantCreator(ModuleBuilder module, IEndPointChannel channel)
+			: this(module, new Serializer(module), channel)
+		{}
+
+		public ServantCreator(IEndPointChannel channel)
+			: this(CreateModule(), channel)
+		{}
+
+		private static ModuleBuilder CreateModule()
+		{
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Servants");
+			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
+																		 AssemblyBuilderAccess.RunAndSave);
+			var moduleName = assembly.FullName + ".dll";
+			var module = assembly.DefineDynamicModule(moduleName);
+			return module;
 		}
 
 		public ISerializer Serializer
@@ -38,10 +54,9 @@ namespace SharpRemote.CodeGeneration
 			if (!interfaceType.IsInterface)
 				throw new ArgumentException(string.Format("Proxies can only be created for interfaces: {0} is not an interface", interfaceType));
 
-			var assemblyName = GetSubjectAssemblyName(interfaceType);
 			var proxyTypeName = GetSubjectTypeName(interfaceType);
 
-			var generator = new ServantCompiler(_serializer, assemblyName, proxyTypeName, interfaceType);
+			var generator = new ServantCompiler(_serializer, _module, proxyTypeName, interfaceType);
 			var proxyType = generator.Generate();
 
 			//generator.Save();
@@ -77,12 +92,6 @@ namespace SharpRemote.CodeGeneration
 					_serializer,
 					subject
 				});
-		}
-
-		private AssemblyName GetSubjectAssemblyName(Type interfaceType)
-		{
-			var fileName = string.Format("{0}.{1}.Servant", interfaceType.Namespace, interfaceType.Name);
-			return new AssemblyName(fileName);
 		}
 
 		private string GetSubjectTypeName(Type interfaceType)

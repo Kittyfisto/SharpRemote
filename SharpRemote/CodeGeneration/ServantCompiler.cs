@@ -11,24 +11,24 @@ namespace SharpRemote.CodeGeneration
 	public sealed class ServantCompiler
 		: Compiler
 	{
-		private readonly AssemblyBuilder _assembly;
 		private readonly Type _interfaceType;
 		private readonly ModuleBuilder _module;
-		private readonly string _moduleName;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly FieldBuilder _subject;
 		private readonly List<KeyValuePair<EventInfo, MethodInfo>> _eventInvocationMethods;
 
 		public ServantCompiler(Serializer serializer,
-		                       AssemblyName assemblyName,
+		                       ModuleBuilder module,
 		                       string subjectTypeName,
 		                       Type interfaceType)
 			: base(serializer)
 		{
+			if (module == null) throw new ArgumentNullException("module");
+			if (subjectTypeName == null) throw new ArgumentNullException("subjectTypeName");
+			if (interfaceType == null) throw new ArgumentNullException("interfaceType");
+
 			_interfaceType = interfaceType;
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			_moduleName = assemblyName.Name + ".dll";
-			_module = _assembly.DefineDynamicModule(_moduleName);
+			_module = module;
 
 			_typeBuilder = _module.DefineType(subjectTypeName, TypeAttributes.Class, typeof(object));
 			_typeBuilder.AddInterfaceImplementation(typeof(IServant));
@@ -276,11 +276,6 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldftn, onEventMethod);
 			gen.Emit(OpCodes.Newobj, ctor);
 			gen.Emit(OpCodes.Callvirt, eventAddMethod);
-		}
-
-		public void Save()
-		{
-			_assembly.Save(_moduleName);
 		}
 	}
 }

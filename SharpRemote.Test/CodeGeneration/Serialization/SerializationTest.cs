@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -107,7 +108,9 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestRoundtripString()
 		{
 			_serializer.RegisterType<string>();
+			_serializer.RoundtripObject(null).Should().Be(null);
 			_serializer.RoundtripObject("Foobar").Should().Be("Foobar");
+			_serializer.RoundtripObject(string.Empty).Should().Be(string.Empty);
 		}
 
 		[Test]
@@ -126,7 +129,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripFieldStruct()
+		public void TestRoundtripFieldStruct1()
 		{
 			_serializer.RegisterType<FieldStruct>();
 			var value = new FieldStruct
@@ -136,6 +139,37 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					C = "Foobar"
 				};
 			_serializer.RoundtripObject(value).Should().Be(value);
+		}
+
+		[Test]
+		public void TestRoundtripFieldStruct2()
+		{
+			_serializer.RegisterType<FieldStruct>();
+			var value = new FieldStruct
+			{
+				A = double.MinValue,
+				B = int.MaxValue,
+				C = null
+			};
+			_serializer.RoundtripObject(value).Should().Be(value);
+		}
+
+		[Test]
+		public void TestRoundtripIntArray()
+		{
+			_serializer.RegisterType<int[]>();
+			_serializer.RoundtripValue(new[] { 42 }).Should().Equal(new[] { 42 });
+			_serializer.RoundtripValue(new[] { int.MinValue, int.MaxValue }).Should().Equal(new[] { int.MinValue, int.MaxValue });
+			_serializer.RoundtripValue(new[] { -1, 0, 42, 9001 }).Should().Equal(new[] { -1, 0, 42, 9001 });
+		}
+
+		[Test]
+		public void TestRoundtripStringArray()
+		{
+			_serializer.RegisterType<string[]>();
+			_serializer.RoundtripValue(new[] { "Foobar" }).Should().Equal(new[] { "Foobar" });
+			_serializer.RoundtripValue(new[] { "a", "b" }).Should().Equal(new[] { "a", "b" });
+			_serializer.RoundtripValue(new[] { "a", null, "b" }).Should().Equal(new[] { "a", null, "b" });
 		}
 	}
 }

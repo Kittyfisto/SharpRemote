@@ -31,14 +31,14 @@ namespace SharpRemote.Hosting
 			
 		}
 
-		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName) where TInterface : class
+		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class
 		{
-			return CreateGrain<TInterface>(Type.GetType(assemblyQualifiedTypeName));
+			return CreateGrain<TInterface>(Type.GetType(assemblyQualifiedTypeName), parameters);
 		}
 
-		public TInterface CreateGrain<TInterface>(Type implementation) where TInterface : class
+		public TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters) where TInterface : class
 		{
-			var id = _subjectHost.CreateSubject(implementation, typeof (TInterface));
+			var id = _subjectHost.CreateSubject1(implementation, typeof (TInterface));
 			var proxy = _localEndPoint.CreateProxy<TInterface>(id);
 			return proxy;
 		}

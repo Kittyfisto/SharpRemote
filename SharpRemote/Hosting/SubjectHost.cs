@@ -23,7 +23,7 @@ namespace SharpRemote.Hosting
 			_subjects = new Dictionary<ulong, object>();
 		}
 
-		public ulong CreateSubject(Type type, Type interfaceType)
+		public ulong CreateSubject1(Type type, Type interfaceType)
 		{
 			var servantId = _nextServantId++;
 			var subject = Activator.CreateInstance(type);
@@ -33,10 +33,10 @@ namespace SharpRemote.Hosting
 			return servantId;
 		}
 
-		public ulong CreateSubject(string assemblyQualifiedTypeName, Type interfaceType)
+		public ulong CreateSubject2(string assemblyQualifiedTypeName, Type interfaceType)
 		{
 			var type = Type.GetType(assemblyQualifiedTypeName);
-			return CreateSubject(type, interfaceType);
+			return CreateSubject1(type, interfaceType);
 		}
 
 		public void Dispose()

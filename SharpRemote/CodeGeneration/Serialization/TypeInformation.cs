@@ -14,6 +14,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		private readonly ConstructorInfo _ctor;
 		private readonly FieldInfo[] _fields;
 		private readonly PropertyInfo[] _properties;
+		private readonly Type _elementType;
 
 		[Pure]
 		public static bool CanBeSerialized(TypeInformation typeInformation)
@@ -53,6 +54,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			if (type.IsAbstract)
 				return false;
 
+			if (type.IsArray)
+				return false;
+
 			return true;
 		}
 
@@ -70,6 +74,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			if (type.Is(typeof(Type)))
 				return true;
+
+			if (type.IsArray)
+			{
+				return IsNativelySupportedType(type.GetElementType());
+			}
 
 			return false;
 		}
@@ -102,6 +111,16 @@ namespace SharpRemote.CodeGeneration.Serialization
 				if (_ctor == null)
 					throw new ArgumentException(string.Format("Type '{0}' is missing a parameterless constructor", type));
 			}
+
+			if (type.IsArray)
+			{
+				_elementType = type.GetElementType();
+			}
+		}
+
+		public Type ElementType
+		{
+			get { return _elementType; }
 		}
 
 		private void ThrowIfConstraintsAreViolated(IEnumerable<PropertyInfo> properties)
@@ -186,6 +205,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 			get { return _type.IsPrimitive; }
 		}
 
+		public bool IsCollection
+		{
+			get { return _type.IsArray; }
+		}
+
 		public bool IsValueType
 		{
 			get { return _type.IsValueType; }
@@ -199,6 +223,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 		public ConstructorInfo Constructor
 		{
 			get { return _ctor; }
+		}
+
+		public bool IsArray
+		{
+			get { return _type.IsArray; }
 		}
 
 		public override string ToString()

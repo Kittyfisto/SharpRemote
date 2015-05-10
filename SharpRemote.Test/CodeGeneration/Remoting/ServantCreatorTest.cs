@@ -4,7 +4,10 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
+using SharpRemote.Hosting;
+using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.CodeGeneration.Remoting
@@ -71,6 +74,66 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		{
 			var subject = new Mock<IEmpty>();
 			var servant = TestGenerate(subject.Object);
+		}
+
+		[Test]
+		public void TestVoidMethodTypeParameter()
+		{
+			var subject = new Mock<IVoidMethodTypeParameter>();
+			Type actualType = null;
+			subject.Setup(x => x.Do(It.IsAny<Type>())).Callback((Type t) =>
+				{
+					actualType = t;
+				});
+
+			var servant = TestGenerate(subject.Object);
+
+			var arguments = new MemoryStream();
+			var writer = new BinaryWriter(arguments);
+			writer.Write(true);
+			writer.Write(typeof(string).AssemblyQualifiedName);
+			arguments.Position = 0;
+
+			servant.InvokeMethod("Do", new BinaryReader(arguments), new BinaryWriter(new MemoryStream()));
+			actualType.Should().Be<string>();
+		}
+
+		[Test]
+		public void TestIntMethodTypeParameters()
+		{
+			var subject = new Mock<ISubjectHost>();
+
+			bool disposed = false;
+			subject.Setup(x => x.Dispose())
+			       .Callback(() => disposed = true);
+
+			Type @interface = null;
+			Type @impl = null;
+			subject.Setup(x => x.CreateSubject1(It.IsAny<Type>(), It.IsAny<Type>()))
+			       .Returns((Type a, Type b) =>
+				       {
+					       @interface = a;
+					       @impl = b;
+					       return 42;
+				       });
+
+			var servant = TestGenerate(subject.Object);
+
+			var arguments = new MemoryStream();
+			var writer = new BinaryWriter(arguments);
+			writer.Write(true);
+			writer.Write(typeof(IGetStringProperty).AssemblyQualifiedName);
+			writer.Write(true);
+			writer.Write(typeof(GetStringPropertyImplementation).AssemblyQualifiedName);
+			arguments.Position = 0;
+
+			var output = new MemoryStream();
+			servant.InvokeMethod("CreateSubject1", new BinaryReader(arguments), new BinaryWriter(output));
+			@interface.Should().Be<IGetStringProperty>();
+			@impl.Should().Be<GetStringPropertyImplementation>();
+
+			servant.InvokeMethod("Dispose", null, new BinaryWriter(new MemoryStream()));
+			disposed.Should().BeTrue();
 		}
 
 		[Test]

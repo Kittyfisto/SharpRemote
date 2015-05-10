@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
@@ -77,19 +78,25 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// second to top on the evaluation stack.
 		/// </summary>
 		/// <param name="gen"></param>
+		/// <param name="loadWriter"></param>
+		/// <param name="loadValue"></param>
 		/// <param name="valueType"></param>
 		/// <param name="serializer"></param>
-		public void WriteValue(ILGenerator gen, Type valueType, FieldBuilder serializer)
+		public void WriteValue(ILGenerator gen,
+			Action loadWriter,
+			Action loadValue,
+			Type valueType,
+			FieldBuilder serializer)
 		{
-			if (!gen.EmitWritePodToWriter(valueType))
+			if (!gen.EmitWritePod(loadWriter, loadValue, valueType))
 			{
 				var writeObject = GetWriteObjectMethodInfo(valueType);
 
-				//gen.EmitWriteLine("Pre-WriteObject()");
-
+				// Serializer.Serialize(writer, value, this.serializer)
+				loadWriter();
+				loadValue();
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, serializer);
-
 				gen.Emit(OpCodes.Call, writeObject);
 			}
 		}
@@ -148,8 +155,16 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_typeToReadMethods.Add(typeInformation.Type, m);
 
 			var gen = method.GetILGenerator();
-			if (gen.EmitReadPod(() => gen.Emit(OpCodes.Ldarg_0),
+			if (typeInformation.IsArray)
+			{
+				ReadArray(gen, typeInformation);
+			}
+			else if (gen.EmitReadPod(() => gen.Emit(OpCodes.Ldarg_0),
 					typeInformation.Type))
+			{
+				
+			}
+			else if (typeInformation.IsArray)
 			{
 				
 			}
@@ -226,10 +241,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			// tmp.<Field> = writer.ReadXYZ();
 
 			gen.Emit(OpCodes.Ldloca, target);
-			gen.Emit(OpCodes.Ldarg_0);
 
 			var type = field.FieldType;
-			if (!gen.EmitReadPod(type))
+			if (!gen.EmitReadPod(() => gen.Emit(OpCodes.Ldarg_0), type))
 			{
 				throw new NotImplementedException();
 			}
@@ -254,11 +268,16 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			var gen = valueMethod.GetILGenerator();
 
-			if (gen.EmitWritePodToWriter(
+			if (typeInformation.IsArray)
+			{
+				WriteArray(gen, typeInformation);
+			}
+			else if (gen.EmitWritePod(
 				() => gen.Emit(OpCodes.Ldarg_0),
 				() => gen.Emit(OpCodes.Ldarg_1),
 				typeInformation.Type))
 			{
+				gen.Emit(OpCodes.Ret);
 			}
 			else if (typeInformation.IsValueType)
 			{
@@ -279,6 +298,132 @@ namespace SharpRemote.CodeGeneration.Serialization
 			m.WriteDelegate = (Action<BinaryWriter, object, ISerializer>)delegateMethod.CreateDelegate(typeof(Action<BinaryWriter, object, ISerializer>));
 
 			return m;
+		}
+
+		private void ReadArray(ILGenerator gen, TypeInformation typeInformation)
+		{
+			var elementType = typeInformation.ElementType;
+
+			var value = gen.DeclareLocal(typeInformation.Type);
+			var count = gen.DeclareLocal(typeof (int));
+			var i = gen.DeclareLocal(typeof (int));
+
+			// count = reader.ReadInt32()
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, Methods.ReadInt);
+			gen.Emit(OpCodes.Stloc, count);
+
+			// value = new XXX[count]
+			gen.Emit(OpCodes.Ldloc, count);
+			gen.Emit(OpCodes.Newarr, elementType);
+			gen.Emit(OpCodes.Stloc, value);
+
+			var loop = gen.DefineLabel();
+			var end = gen.DefineLabel();
+
+			// int i = 0
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Stloc, i);
+
+			// loop:
+			gen.MarkLabel(loop);
+			// if (i < count) goto end
+			gen.Emit(OpCodes.Ldloc, i);
+			gen.Emit(OpCodes.Ldloc, count);
+			gen.Emit(OpCodes.Clt);
+			gen.Emit(OpCodes.Brfalse, end);
+
+			// value[i] = <ReadValue>
+			gen.Emit(OpCodes.Ldloc, value);
+			gen.Emit(OpCodes.Ldloc, i);
+			if (gen.EmitReadPod(
+				() => gen.Emit(OpCodes.Ldarg_0),
+				elementType
+				))
+			{
+				
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
+
+			gen.Emit(OpCodes.Stelem, elementType);
+
+			// ++i
+			gen.Emit(OpCodes.Ldloc, i);
+			gen.Emit(OpCodes.Ldc_I4_1);
+			gen.Emit(OpCodes.Add);
+			gen.Emit(OpCodes.Stloc, i);
+			// goto loop
+			gen.Emit(OpCodes.Br, loop);
+
+			// end:
+			gen.MarkLabel(end);
+			gen.Emit(OpCodes.Ldloc, value);
+		}
+
+		private void WriteArray(ILGenerator gen, TypeInformation typeInformation)
+		{
+			var type = typeInformation.Type;
+			var elementType = typeInformation.ElementType;
+			var enumerableType = typeof (IEnumerable<>).MakeGenericType(elementType);
+			var enumeratorType = typeof(IEnumerator<>).MakeGenericType(elementType);
+			var getLength = type.GetProperty("Length").GetMethod;
+			var getEnumerator = enumerableType.GetMethod("GetEnumerator");
+			var moveNext = typeof(IEnumerator).GetMethod("MoveNext");
+			var getCurrent = enumeratorType.GetProperty("Current").GetMethod;
+
+			// writer.Write(value.Length) OR writer.Write(value.Count)
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, getLength);
+			gen.Emit(OpCodes.Call, Methods.WriteInt);
+
+			// var enumerator = value.GetEnumerator()
+			var enumerator = gen.DeclareLocal(enumeratorType);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Castclass, enumerableType);
+			gen.Emit(OpCodes.Callvirt, getEnumerator);
+			gen.Emit(OpCodes.Stloc, enumerator);
+
+			var loop = gen.DefineLabel();
+			var end = gen.DefineLabel();
+
+			// loop:
+			gen.MarkLabel(loop);
+			// if (!enumerator.MoveNext()) goto end
+			gen.Emit(OpCodes.Ldloc, enumerator);
+			gen.Emit(OpCodes.Callvirt, moveNext);
+			gen.Emit(OpCodes.Brfalse, end);
+
+			if (gen.EmitWritePod(
+				() => gen.Emit(OpCodes.Ldarg_0),
+				() =>
+					{
+						gen.Emit(OpCodes.Ldloc, enumerator);
+						gen.Emit(OpCodes.Callvirt, getCurrent);
+					},
+				elementType))
+			{
+				
+			}
+			else if (elementType.IsValueType)
+			{
+				WriteFields(gen, elementType);
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
+
+			// goto loop
+			gen.Emit(OpCodes.Br, loop);
+
+			// end:
+			gen.MarkLabel(end);
+			// return
+			gen.Emit(OpCodes.Ret);
 		}
 
 		private MethodInfo CreateWriteDelegate(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
@@ -313,6 +458,15 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return method;
 		}
 
+		private void WriteTypeInformation(ILGenerator gen)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Callvirt, Methods.ObjectGetType);
+			gen.Emit(OpCodes.Callvirt, Methods.TypeGetAssemblyQualifiedName);
+			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
+		}
+
 		private void WriteTypeInformationOrNull(ILGenerator gen, Type type, Action emitSerializationCode)
 		{
 			//gen.EmitWriteLine("writing type info");
@@ -340,11 +494,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			// else { writer.WriteString(object.GetType().AssemblyQualifiedName);
 			gen.MarkLabel(@true);
 			//gen.EmitWriteLine("writer.WriteString(object.GetType().AssemblyQualifiedName)");
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Callvirt, Methods.ObjectGetType);
-			gen.Emit(OpCodes.Callvirt, Methods.TypeGetAssemblyQualifiedName);
-			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
+			WriteTypeInformation(gen);
 
 			emitSerializationCode();
 
@@ -411,19 +561,27 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			foreach (var field in allFields)
 			{
-				gen.Emit(OpCodes.Ldarg_0);
-
-				if (type.IsValueType)
+				if (!gen.EmitWritePod(() => gen.Emit(OpCodes.Ldarg_0),
+				                              () =>
+					                              {
+						                              if (type.IsValueType)
+						                              {
+							                              gen.Emit(OpCodes.Ldarga, 1);
+						                              }
+						                              else
+						                              {
+							                              gen.Emit(OpCodes.Ldarg_1);
+						                              }
+						                              gen.Emit(OpCodes.Ldfld, field);
+					                              }, field.FieldType))
 				{
-					gen.Emit(OpCodes.Ldarga, 1);
-				}
-				else
-				{
-					gen.Emit(OpCodes.Ldarg_1);
-				}
-				gen.Emit(OpCodes.Ldfld, field);
+					var writeObject = GetWriteObjectMethodInfo(field.FieldType);
 
-				WriteValue(gen, field.FieldType, null);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldarg_2);
+
+					gen.Emit(OpCodes.Call, writeObject);
+				}
 			}
 		}
 

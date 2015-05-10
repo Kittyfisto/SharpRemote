@@ -2,47 +2,18 @@
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Net;
+using System.Reflection;
 using System.Threading;
+using log4net;
 
 namespace SharpRemote.Hosting
 {
 	/// <summary>
-	/// All requested objects are hosted in another process than the calling one, but on the same computer.
+	///     All requested objects are hosted in another process than the calling one, but on the same computer.
 	/// </summary>
 	public sealed class ProcessSilo
 		: ISilo
 	{
-		public static class Constants
-		{
-			/// <summary>
-			/// The id of the grain that is used to instantiate further subjects.
-			/// </summary>
-			public const ulong SubjectHostId = 0;
-
-			public const string BootingMessage = "booting";
-			public const string ReadyMessage = "ready";
-			public const string ShutdownMessage = "goodbye";
-
-			/// <summary>
-			/// The maximum amount of time the host process has to send the "ready" message before it is assumed
-			/// to be dead / crashed / broken.
-			/// </summary>
-			public static readonly TimeSpan ProcessReadyTimeout = TimeSpan.FromSeconds(10);
-
-			/// <summary>
-			/// 
-			/// </summary>
-			public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(1);
-		}
-
-		private readonly SocketEndPoint _endPoint;
-		private readonly Process _process;
-		private readonly ISubjectHost _subjectHost;
-		private readonly ManualResetEvent _waitHandle;
-		private HostState _hostState;
-
-		private int? _remotePort;
-
 		public enum HostState
 		{
 			None,
@@ -52,17 +23,28 @@ namespace SharpRemote.Hosting
 			ShuttingDown,
 		}
 
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		private readonly SocketEndPoint _endPoint;
+		private readonly Process _process;
+		private readonly ISubjectHost _subjectHost;
+		private readonly ManualResetEvent _waitHandle;
+		private HostState _hostState;
+
+		private int? _remotePort;
+
 		public ProcessSilo()
 		{
 			_endPoint = new SocketEndPoint(IPAddress.Loopback);
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 			_waitHandle = new ManualResetEvent(false);
 
+			int parentPid = Process.GetCurrentProcess().Id;
 			_process = new Process
 				{
 					StartInfo = new ProcessStartInfo("SharpRemote.Host.exe")
 						{
-							Arguments = string.Format("{0}", Process.GetCurrentProcess().Id),
+							Arguments = string.Format("{0}", parentPid),
 							UseShellExecute = false,
 							RedirectStandardOutput = true,
 							CreateNoWindow = true,
@@ -70,6 +52,11 @@ namespace SharpRemote.Hosting
 				};
 			_process.Exited += ProcessOnExited;
 			_process.OutputDataReceived += ProcessOnOutputDataReceived;
+
+			Log.InfoFormat("Starting host '{0}' for parent process (PID: {1})",
+			               _process.StartInfo.FileName,
+			               parentPid);
+
 			if (!_process.Start())
 				throw new NotImplementedException();
 
@@ -78,7 +65,7 @@ namespace SharpRemote.Hosting
 			if (!_waitHandle.WaitOne(Constants.ProcessReadyTimeout))
 				throw new NotImplementedException();
 
-			var port = _remotePort;
+			int? port = _remotePort;
 			if (port == null)
 				throw new NotImplementedException();
 
@@ -91,9 +78,35 @@ namespace SharpRemote.Hosting
 			get { return !_process.HasExited; }
 		}
 
+		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class
+		{
+			Type interfaceType = typeof (TInterface);
+			ulong id = _subjectHost.CreateSubject2(assemblyQualifiedTypeName, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			return proxy;
+		}
+
+		public TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters)
+			where TInterface : class
+		{
+			Type interfaceType = typeof (TInterface);
+			ulong id = _subjectHost.CreateSubject1(implementation, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			return proxy;
+		}
+
+		public void Dispose()
+		{
+			_subjectHost.TryDispose();
+			_endPoint.TryDispose();
+
+			_process.TryKill();
+			_process.TryDispose();
+		}
+
 		private void ProcessOnOutputDataReceived(object sender, DataReceivedEventArgs args)
 		{
-			var message = args.Data;
+			string message = args.Data;
 			switch (message)
 			{
 				case Constants.BootingMessage:
@@ -119,33 +132,28 @@ namespace SharpRemote.Hosting
 
 		private void ProcessOnExited(object sender, EventArgs args)
 		{
-			
 		}
 
-		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName) where TInterface : class
+		public static class Constants
 		{
-			var interfaceType = typeof(TInterface);
-			var id = _subjectHost.CreateSubject(assemblyQualifiedTypeName, interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
-			return proxy;
-		}
+			/// <summary>
+			///     The id of the grain that is used to instantiate further subjects.
+			/// </summary>
+			public const ulong SubjectHostId = 0;
 
-		public TInterface CreateGrain<TInterface>(Type implementation)
-			where TInterface : class
-		{
-			var interfaceType = typeof (TInterface);
-			var id = _subjectHost.CreateSubject(implementation, interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
-			return proxy;
-		}
+			public const string BootingMessage = "booting";
+			public const string ReadyMessage = "ready";
+			public const string ShutdownMessage = "goodbye";
 
-		public void Dispose()
-		{
-			_subjectHost.TryDispose();
-			_endPoint.TryDispose();
+			/// <summary>
+			///     The maximum amount of time the host process has to send the "ready" message before it is assumed
+			///     to be dead / crashed / broken.
+			/// </summary>
+			public static readonly TimeSpan ProcessReadyTimeout = TimeSpan.FromSeconds(10);
 
-			_process.TryKill();
-			_process.TryDispose();
+			/// <summary>
+			/// </summary>
+			public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(1);
 		}
 	}
 }

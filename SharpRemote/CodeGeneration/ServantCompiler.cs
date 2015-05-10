@@ -172,9 +172,14 @@ namespace SharpRemote.CodeGeneration
 			{
 				var methodInfo = allMethods[i];
 				var label = labels[i];
+				var extractingMethod = CompileExtractingMethod(methodInfo);
 
 				gen.MarkLabel(label);
-				ExtractArgumentsAndCallMethod(gen, methodInfo);
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldarg_2);
+				gen.Emit(OpCodes.Ldarg_3);
+				gen.Emit(OpCodes.Call, extractingMethod);
+			
 				gen.Emit(OpCodes.Br, @ret);
 			}
 
@@ -193,14 +198,27 @@ namespace SharpRemote.CodeGeneration
 			_typeBuilder.DefineMethodOverride(method, Methods.ServantInvokeMethod);
 		}
 
-		private new void ExtractArgumentsAndCallMethod(ILGenerator gen, MethodInfo methodInfo)
+		private MethodInfo CompileExtractingMethod(MethodInfo originalMethod)
 		{
-			if (methodInfo.ReturnType != typeof(void))
-				gen.Emit(OpCodes.Ldarg_3);
+			var method = _typeBuilder.DefineMethod(originalMethod.Name, MethodAttributes.Private,
+			                          typeof (void),
+			                          new[]
+				                          {
+					                          typeof (BinaryReader),
+					                          typeof (BinaryWriter)
+				                          });
+
+			var gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
-			base.ExtractArgumentsAndCallMethod(gen, methodInfo);
+			ExtractArgumentsAndCallMethod(gen,
+				originalMethod,
+				() => gen.Emit(OpCodes.Ldarg_1),
+				() => gen.Emit(OpCodes.Ldarg_2));
+
+			gen.Emit(OpCodes.Ret);
+			return method;
 		}
 
 		private void GenerateCtor()

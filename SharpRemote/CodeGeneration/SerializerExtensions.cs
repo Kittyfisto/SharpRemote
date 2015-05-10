@@ -19,5 +19,11 @@ namespace SharpRemote.CodeGeneration
 				return actualValue;
 			}
 		}
+
+		public static T RoundtripValue<T>(this ISerializer serializer, T value)
+		{
+			var actualValue = serializer.RoundtripObject(value);
+			return (T) actualValue;
+		}
 	}
 }

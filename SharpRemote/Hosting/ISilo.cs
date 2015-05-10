@@ -19,8 +19,9 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		/// <typeparam name="TInterface"></typeparam>
 		/// <param name="assemblyQualifiedTypeName">The fully qualified typename of the type to instantiate</param>
+		/// <param name="parameters"></param>
 		/// <returns></returns>
-		TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName)
+		TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters)
 			where TInterface : class;
 
 		/// <summary>
@@ -28,8 +29,9 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		/// <typeparam name="TInterface"></typeparam>
 		/// <param name="implementation">The type to instantiate</param>
+		/// <param name="parameters"></param>
 		/// <returns></returns>
-		TInterface CreateGrain<TInterface>(Type implementation)
+		TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters)
 			where TInterface : class;
 	}
 }

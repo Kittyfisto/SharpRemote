@@ -82,6 +82,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 						var outStream = new MemoryStream();
 						var outWriter = new BinaryWriter(outStream);
+						outWriter.Write(true);
 						outWriter.Write("Lorem Ipsum");
 						outStream.Position = 0;
 						return outStream;
@@ -584,8 +585,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						methodName.Should().Be("Do");
 						stream.Should().NotBeNull();
 						var reader = new BinaryReader(stream);
-						var value = reader.ReadString();
-						value.Should().Be("Foobar");
+						reader.ReadBoolean().Should().BeTrue();
+						reader.ReadString().Should().Be("Foobar");
 
 						doCalled = true;
 						return null;
@@ -607,14 +608,12 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
 						methodName.Should().Be("Do");
 						stream.Should().NotBeNull();
-						stream.Length.Should().Be(19);
+						stream.Length.Should().Be(20);
 						var reader = new BinaryReader(stream);
-						var value1 = reader.ReadDouble();
-						var value2 = reader.ReadInt32();
-						var value3 = reader.ReadString();
-						value1.Should().BeApproximately(Math.PI, 0);
-						value2.Should().Be(42);
-						value3.Should().Be("Foobar");
+						reader.ReadDouble().Should().BeApproximately(Math.PI, 0);
+						reader.ReadInt32().Should().Be(42);
+						reader.ReadBoolean().Should().BeTrue();
+						reader.ReadString().Should().Be("Foobar");
 
 						doCalled = true;
 						return null;
@@ -641,16 +640,14 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
 						methodName.Should().Be("Do");
 						stream.Should().NotBeNull();
-						stream.Length.Should().Be(20);
+						stream.Length.Should().Be(21);
 						var reader = new BinaryReader(stream);
 						var value0 = reader.ReadBoolean();
 						value0.Should().BeTrue();
-						var value1 = reader.ReadDouble();
-						var value2 = reader.ReadInt32();
-						var value3 = reader.ReadString();
-						value1.Should().BeApproximately(Math.PI, 0);
-						value2.Should().Be(42);
-						value3.Should().Be("Foobar");
+						reader.ReadDouble().Should().BeApproximately(Math.PI, 0);
+						reader.ReadInt32().Should().Be(42);
+						reader.ReadBoolean().Should().BeTrue();
+						reader.ReadString().Should().Be("Foobar");
 
 						doCalled = true;
 						return null;
@@ -695,7 +692,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		{
 			var proxy = TestGenerate<IEventInt32>();
 			int actualValue = 0;
-			Action<int> tmp = value => actualValue = value;
+			Action<int> tmp = value =>
+				{
+					actualValue = value;
+				};
 			proxy.Foobar += tmp;
 
 			var input = new MemoryStream();

@@ -378,7 +378,9 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Brtrue, dontInvoke);
 			gen.Emit(OpCodes.Ldarg_3);
 			gen.Emit(OpCodes.Ldloc_0);
-			ExtractArgumentsAndCallMethod(gen, methodInfo);
+			ExtractArgumentsAndCallMethod(gen, methodInfo,
+				() => gen.Emit(OpCodes.Ldarg_2),
+				() => gen.Emit(OpCodes.Ldarg_3));
 
 			gen.MarkLabel(dontInvoke);
 			gen.Emit(OpCodes.Ret);

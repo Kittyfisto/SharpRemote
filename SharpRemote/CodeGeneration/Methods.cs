@@ -205,8 +205,9 @@ namespace SharpRemote.CodeGeneration
 			}
 			else if (valueType == typeof(string))
 			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadString);
+				gen.EmitReadNullableValue(
+					loadReader,
+					() => gen.Emit(OpCodes.Call, ReadString));
 			}
 			else if (valueType == typeof (IPAddress))
 			{
@@ -219,9 +220,14 @@ namespace SharpRemote.CodeGeneration
 			}
 			else if (valueType == typeof (Type))
 			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadString);
-				gen.Emit(OpCodes.Call, CreateTypeFromName);
+				gen.EmitReadNullableValue(
+					loadReader,
+					() =>
+						{
+							gen.Emit(OpCodes.Call, ReadString);
+							gen.Emit(OpCodes.Call, CreateTypeFromName);
+						}
+					);
 			}
 			else
 			{
@@ -231,12 +237,32 @@ namespace SharpRemote.CodeGeneration
 			return true;
 		}
 
-		public static bool EmitWritePodToWriter(this ILGenerator gen, Type valueType)
+		private static void EmitReadNullableValue(this ILGenerator gen,
+		                                          Action loadReader,
+		                                          Action loadValue)
 		{
-			return EmitWritePodToWriter(gen, () => { }, () => { }, valueType);
+			var read = gen.DefineLabel();
+			var end = gen.DefineLabel();
+
+			loadReader();
+			gen.Emit(OpCodes.Call, ReadBool);
+			gen.Emit(OpCodes.Brtrue, read);
+			gen.Emit(OpCodes.Ldnull);
+			gen.Emit(OpCodes.Br, end);
+
+			gen.MarkLabel(read);
+			loadReader();
+			loadValue();
+
+			gen.MarkLabel(end);
 		}
 
-		public static bool EmitWritePodToWriter(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType)
+		public static bool EmitWritePod(this ILGenerator gen, Type valueType)
+		{
+			return EmitWritePod(gen, () => { }, () => { }, valueType);
+		}
+
+		public static bool EmitWritePod(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType)
 		{
 			if (valueType == typeof (bool))
 			{
@@ -306,9 +332,11 @@ namespace SharpRemote.CodeGeneration
 			}
 			else if (valueType == typeof (string))
 			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteString);
+				gen.WriteNullableValue(
+					loadWriter,
+					loadValue,
+					() => gen.Emit(OpCodes.Call, WriteString)
+					);
 			}
 			else if (valueType == typeof(IPAddress))
 			{
@@ -330,10 +358,15 @@ namespace SharpRemote.CodeGeneration
 			}
 			else if (valueType == typeof (Type))
 			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Callvirt, TypeGetAssemblyQualifiedName);
-				gen.Emit(OpCodes.Call, WriteString);
+				gen.WriteNullableValue(
+					loadWriter,
+					loadValue,
+					() =>
+						{
+							gen.Emit(OpCodes.Callvirt, TypeGetAssemblyQualifiedName);
+							gen.Emit(OpCodes.Call, WriteString);
+						}
+					);
 			}
 			else
 			{
@@ -341,6 +374,43 @@ namespace SharpRemote.CodeGeneration
 			}
 
 			return true;
+		}
+
+		private static void WriteNullableValue(this ILGenerator gen,
+		                                       Action loadWriter,
+		                                       Action loadValue,
+		                                       Action writeValue)
+		{
+			var write = gen.DefineLabel();
+			var end = gen.DefineLabel();
+
+			// if (value != null) goto write
+			loadValue();
+			gen.Emit(OpCodes.Ldnull);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Brfalse, write);
+
+			// writer.Write(true)
+			loadWriter();
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Call, WriteBool);
+			// goto end
+			gen.Emit(OpCodes.Br, end);
+
+			// write:
+			gen.MarkLabel(write);
+			// writer.Write(false);
+			loadWriter();
+			gen.Emit(OpCodes.Ldc_I4_1);
+			gen.Emit(OpCodes.Call, WriteBool);
+
+			// writer.Write(value)
+			loadWriter();
+			loadValue();
+			writeValue();
+
+			// end:
+			gen.MarkLabel(end);
 		}
 	}
 }

@@ -18,11 +18,12 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		public void TestCreateGrain()
+		public void TestCreateGrain1()
 		{
 			using (var silo = new ProcessSilo())
 			{
-				silo.CreateGrain<IGetStringProperty>(typeof (GetStringPropertyImplementation));
+				var proxy = silo.CreateGrain<IGetStringProperty>(typeof (GetStringPropertyImplementation));
+				proxy.Value.Should().Be("Foobar");
 			}
 		}
 	}

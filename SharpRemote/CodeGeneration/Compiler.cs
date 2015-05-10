@@ -19,18 +19,33 @@ namespace SharpRemote.CodeGeneration
 		}
 
 		protected void ExtractArgumentsAndCallMethod(ILGenerator gen,
-			MethodInfo methodInfo)
+			MethodInfo methodInfo,
+			Action loadReader,
+			Action loadWriter)
 		{
 			var allParameters = methodInfo.GetParameters();
 			foreach (var parameter in allParameters)
 			{
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.EmitReadPod(parameter.ParameterType);
+				gen.EmitReadPod(loadReader, parameter.ParameterType);
 			}
 
-			gen.Emit(OpCodes.Callvirt, methodInfo);
-			if (methodInfo.ReturnType != typeof(void))
-				_serializerCompiler.WriteValue(gen, methodInfo.ReturnType, Serializer);
+			var returnType = methodInfo.ReturnType;
+			if (returnType != typeof (void))
+			{
+				var tmp = gen.DeclareLocal(returnType);
+				gen.Emit(OpCodes.Callvirt, methodInfo);
+				gen.Emit(OpCodes.Stloc, tmp);
+
+				_serializerCompiler.WriteValue(gen,
+				                               loadWriter,
+				                               () => gen.Emit(OpCodes.Ldloc, tmp),
+				                               returnType,
+				                               Serializer);
+			}
+			else
+			{
+				gen.Emit(OpCodes.Callvirt, methodInfo);
+			}
 		}
 
 		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, Type[] parameterTypes, Type returnType)
@@ -56,9 +71,11 @@ namespace SharpRemote.CodeGeneration
 				for (int i = 0; i < parameterTypes.Length; ++i)
 				{
 					//WriteXXX(_serializer, arg[y], binaryWriter);
-					gen.Emit(OpCodes.Ldloc, binaryWriter);
-					gen.Emit(OpCodes.Ldarg, ++index);
-					_serializerCompiler.WriteValue(gen, parameterTypes[i], Serializer);
+					int currentIndex = ++index;
+					_serializerCompiler.WriteValue(gen,
+						() => gen.Emit(OpCodes.Ldloc, binaryWriter),
+						() => gen.Emit(OpCodes.Ldarg, currentIndex),
+						parameterTypes[i], Serializer);
 				}
 
 				// binaryWriter.Flush()
@@ -104,9 +121,7 @@ namespace SharpRemote.CodeGeneration
 
 		private void DeserializeValue(ILGenerator gen, LocalBuilder binaryReader, Type propertyType)
 		{
-			gen.Emit(OpCodes.Ldloc, binaryReader);
-
-			if (!gen.EmitReadPod(propertyType))
+			if (!gen.EmitReadPod(() => gen.Emit(OpCodes.Ldloc, binaryReader), propertyType))
 			{
 				throw new NotImplementedException();
 			}

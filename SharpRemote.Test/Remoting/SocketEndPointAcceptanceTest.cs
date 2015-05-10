@@ -222,7 +222,7 @@ namespace SharpRemote.Test.Remoting
 			Type @interface = null;
 			const int id = 42;
 
-			subject.Setup(x => x.CreateSubject(It.IsAny<Type>(), It.IsAny<Type>()))
+			subject.Setup(x => x.CreateSubject1(It.IsAny<Type>(), It.IsAny<Type>()))
 			       .Returns((Type a, Type b) =>
 				       {
 					       type = a;
@@ -234,7 +234,7 @@ namespace SharpRemote.Test.Remoting
 			var servant = _server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<ISubjectHost>(servantId);
 
-			var actualId = proxy.CreateSubject(typeof (GetStringPropertyImplementation), typeof (IGetStringProperty));
+			var actualId = proxy.CreateSubject1(typeof (GetStringPropertyImplementation), typeof (IGetStringProperty));
 			actualId.Should().Be(42);
 			type.Should().Be<GetStringPropertyImplementation>();
 			@interface.Should().Be<IGetStringProperty>();

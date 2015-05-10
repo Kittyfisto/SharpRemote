@@ -18,7 +18,8 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="..\bin\Release\SharpRemote.dll" target="lib\net45\" />
-    <file src="..\bin\Release\SharpRemote.pdb" target="lib\net45\" />
+    <file src="..\bin\Release\SharpRemote.pdb" target="lib\net451\" />
+    <file src="..\bin\Release\SharpRemote.Host.exe" target="lib\net451\" />
+    <file src="..\bin\Release\SharpRemote.Host.pdb" target="lib\net451\" />
   </files>
 </package>

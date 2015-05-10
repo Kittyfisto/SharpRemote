@@ -36,7 +36,7 @@ namespace SharpRemote.CodeGeneration
 				gen.Emit(OpCodes.Callvirt, methodInfo);
 				gen.Emit(OpCodes.Stloc, tmp);
 
-				_serializerCompiler.WriteValue(gen,
+				_serializerCompiler.EmitWriteValue(gen,
 				                               loadWriter,
 				                               () => gen.Emit(OpCodes.Ldloc, tmp),
 				                               returnType,
@@ -72,7 +72,7 @@ namespace SharpRemote.CodeGeneration
 				{
 					//WriteXXX(_serializer, arg[y], binaryWriter);
 					int currentIndex = ++index;
-					_serializerCompiler.WriteValue(gen,
+					_serializerCompiler.EmitWriteValue(gen,
 						() => gen.Emit(OpCodes.Ldloc, binaryWriter),
 						() => gen.Emit(OpCodes.Ldarg, currentIndex),
 						parameterTypes[i], Serializer);

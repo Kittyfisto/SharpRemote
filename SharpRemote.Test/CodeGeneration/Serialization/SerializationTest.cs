@@ -30,7 +30,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[TestFixtureTearDown]
 		public void TestFixtureTearDown()
 		{
-			_assembly.Save(_moduleName);
+			//_assembly.Save(_moduleName);
 		}
 
 		[Test]

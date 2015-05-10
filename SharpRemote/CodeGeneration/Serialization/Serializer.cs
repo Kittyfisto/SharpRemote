@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
@@ -7,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
+using SharpRemote.CodeGeneration.Serialization.Serializers;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
@@ -52,19 +52,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 		}
 
-		/// <summary>
-		/// Emits code to read a value of the given *compile-time* type from a <see cref="BinaryReader"/>.
-		/// </summary>
-		/// <param name="gen"></param>
-		/// <param name="loadSerializer">A function to push an <see cref="ISerializer"/> instance onto the top of the evaluation stack</param>
-		/// <param name="loadReader">A function to push an <see cref="BinaryReader"/> instance onto the top of the evaluation stack</param>
-		/// <param name="valueType">The compile-time type of the value to serialize</param>
-		/// <param name="valueCanBeNull">Whether or not the value can be null, by default all non-value types are assumed to be nullable and thus appropriate markers are placed in the binary stream - if the value can never be null, then this may be set to false in order to conserve memory</param>
-		public static void EmitReadValue(ILGenerator gen, Action loadSerializer, Action loadReader, Type valueType, bool valueCanBeNull = true)
-		{
-			
-		}
-
 		public Serializer()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.CodeGeneration.Serializer");
@@ -95,7 +82,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="loadValue"></param>
 		/// <param name="valueType"></param>
 		/// <param name="serializer"></param>
-		public void WriteValue(ILGenerator gen,
+		public void EmitWriteValue(ILGenerator gen,
 			Action loadWriter,
 			Action loadValue,
 			Type valueType,
@@ -103,7 +90,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		{
 			if (!gen.EmitWritePod(loadWriter, loadValue, valueType))
 			{
-				var writeObject = GetWriteObjectMethodInfo(valueType);
+				var writeObject = GetWriteValueMethodInfo(valueType);
 
 				// Serializer.Serialize(writer, value, this.serializer)
 				loadWriter();
@@ -116,11 +103,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		/// <summary>
 		///     Returns the method to write a value of the given type to a writer.
-		///     Signature: WriteSealed(ISerializer serializer, BinaryWriter writer, object value)
+		///     Signature: WriteSealed(BinaryWriter writer, T value, ISerializer serializer)
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		public MethodInfo GetWriteObjectMethodInfo(Type type)
+		public MethodInfo GetWriteValueMethodInfo(Type type)
 		{
 			if (type.IsValueType || type.IsSealed)
 			{
@@ -290,12 +277,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 				() => gen.Emit(OpCodes.Ldarg_1),
 				typeInformation.Type))
 			{
-				gen.Emit(OpCodes.Ret);
 			}
 			else if (typeInformation.IsValueType)
 			{
 				WriteFields(gen, typeInformation.Type);
-				gen.Emit(OpCodes.Ret);
 			}
 			else if (typeInformation.IsSealed)
 			{
@@ -305,6 +290,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				WriteUnsealedObject(gen, typeInformation.Type);
 			}
+
+			gen.Emit(OpCodes.Ret);
 
 			var serializerType = typeBuilder.CreateType();
 			var delegateMethod = serializerType.GetMethod("WriteObject", new[] { typeof(BinaryWriter), typeof(object), typeof(ISerializer) });
@@ -324,7 +311,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				                                       });
 			var gen = method.GetILGenerator();
 
-			WriteTypeInformationOrNull(gen, type, () =>
+			EmitWriteTypeInformationOrNull(gen, () =>
 			{
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldarg_1);
@@ -345,16 +332,16 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return method;
 		}
 
-		private void WriteTypeInformation(ILGenerator gen)
+		private void EmitWriteTypeInformation(ILGenerator gen)
 		{
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Callvirt, Methods.ObjectGetType);
-			gen.Emit(OpCodes.Callvirt, Methods.TypeGetAssemblyQualifiedName);
+			gen.Emit(OpCodes.Callvirt, TypeSerializationCompiler.GetAssemblyQualifiedName);
 			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
 		}
 
-		private void WriteTypeInformationOrNull(ILGenerator gen, Type type, Action emitSerializationCode)
+		private void EmitWriteTypeInformationOrNull(ILGenerator gen, Action writeValue)
 		{
 			//gen.EmitWriteLine("writing type info");
 
@@ -381,95 +368,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 			// else { writer.WriteString(object.GetType().AssemblyQualifiedName);
 			gen.MarkLabel(@true);
 			//gen.EmitWriteLine("writer.WriteString(object.GetType().AssemblyQualifiedName)");
-			WriteTypeInformation(gen);
+			EmitWriteTypeInformation(gen);
 
-			emitSerializationCode();
+			writeValue();
 
 			gen.MarkLabel(@end);
 			gen.Emit(OpCodes.Ret);
 
 			//gen.EmitWriteLine("Type info written");
-		}
-
-		private void WriteUnsealedObject(ILGenerator gen, Type type)
-		{
-			WriteTypeInformationOrNull(gen, type, () =>
-				{
-					// _serializer.WriteObject(writer, object); }
-					WriteFields(gen, type);
-				});
-		}
-
-		/// <summary>
-		/// Write an object who's property-type is sealed (and thus the final type is known at compile time).
-		/// </summary>
-		/// <param name="gen"></param>
-		/// <param name="type"></param>
-		private void WriteSealedObject(ILGenerator gen, Type type)
-		{
-			var result = gen.DeclareLocal(typeof(int));
-
-			// if (object == null)
-			var @true = gen.DefineLabel();
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Ldnull);
-			gen.Emit(OpCodes.Ceq);
-			gen.Emit(OpCodes.Ldc_I4_0);
-			gen.Emit(OpCodes.Ceq);
-			gen.Emit(OpCodes.Stloc, result);
-			gen.Emit(OpCodes.Ldloc, result);
-			gen.Emit(OpCodes.Brtrue, @true);
-
-			// { writer.Write(false); }
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldc_I4_0);
-			gen.Emit(OpCodes.Call, Methods.WriteBool);
-
-			var @end = gen.DefineLabel();
-			gen.Emit(OpCodes.Br, @end);
-
-			// else { writer.Write(true); <Serialize Fields> }
-			gen.MarkLabel(@true);
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldc_I4_1);
-			gen.Emit(OpCodes.Call, Methods.WriteBool);
-			WriteFields(gen, type);
-
-			gen.MarkLabel(@end);
-			gen.Emit(OpCodes.Ret);
-		}
-
-		private void WriteFields(ILGenerator gen, Type type)
-		{
-			var allFields =
-				type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-				    .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
-				    .ToArray();
-
-			foreach (var field in allFields)
-			{
-				if (!gen.EmitWritePod(() => gen.Emit(OpCodes.Ldarg_0),
-				                              () =>
-					                              {
-						                              if (type.IsValueType)
-						                              {
-							                              gen.Emit(OpCodes.Ldarga, 1);
-						                              }
-						                              else
-						                              {
-							                              gen.Emit(OpCodes.Ldarg_1);
-						                              }
-						                              gen.Emit(OpCodes.Ldfld, field);
-					                              }, field.FieldType))
-				{
-					var writeObject = GetWriteObjectMethodInfo(field.FieldType);
-
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldarg_2);
-
-					gen.Emit(OpCodes.Call, writeObject);
-				}
-			}
 		}
 
 		public void RegisterType<T>()

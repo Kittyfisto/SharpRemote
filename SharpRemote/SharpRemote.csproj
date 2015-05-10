@@ -41,6 +41,13 @@
   <ItemGroup>
     <Compile Include="CodeGeneration\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\CustomClassSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\ISerializationCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\IPAddressSerializationCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\IPEndPointSerializationCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\StringSerializationCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\TypeSerializationCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\AbstractSerializationCompiler.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="TypeInformation.cs" />
     <Compile Include="CodeGeneration\SerializerExtensions.cs" />

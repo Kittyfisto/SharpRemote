@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
+using SharpRemote.CodeGeneration.Serialization;
+using SharpRemote.CodeGeneration.Serialization.Serializers;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -17,7 +20,6 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo ObjectCtor;
 		public static readonly ConstructorInfo MemoryStreamCtor;
 		public static readonly ConstructorInfo BinaryWriterCtor;
-		public static readonly ConstructorInfo IPAddressFromBytes;
 		public static readonly MethodInfo WriteBytes;
 		public static readonly MethodInfo WriteString;
 		public static readonly MethodInfo BinaryWriterFlush;
@@ -36,7 +38,6 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo WriteObject;
 		public static readonly MethodInfo StreamSetPosition;
 		public static readonly MethodInfo ObjectGetType;
-		public static readonly MethodInfo TypeGetAssemblyQualifiedName;
 		public static readonly FieldInfo StringEmpty;
 		public static readonly MethodInfo ServantInvokeMethod;
 		public static readonly MethodInfo ProxyInvokeEvent;
@@ -57,12 +58,12 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo ArgumentExceptionCtor;
 		public static readonly MethodInfo ServantGetSubject;
 		public static readonly MethodInfo StringFormat;
-		public static readonly MethodInfo IPAddressGetAddressBytes;
 		public static readonly MethodInfo ArrayGetLength;
 		public static readonly MethodInfo DelegateCombine;
 		public static readonly MethodInfo DelegateRemove;
 		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
-		public static readonly MethodInfo CreateTypeFromName;
+
+		private static readonly Dictionary<Type, ISerializationCompiler> Serializers;
 
 		static Methods()
 		{
@@ -113,7 +114,6 @@ namespace SharpRemote.CodeGeneration
 			                                             new[] {typeof (BinaryWriter), typeof (object)});
 
 			ObjectGetType = typeof (object).GetMethod("GetType");
-			TypeGetAssemblyQualifiedName = typeof (Type).GetProperty("AssemblyQualifiedName").GetGetMethod();
 
 			StringEmpty = typeof (string).GetField("Empty", BindingFlags.Public | BindingFlags.Static);
 			StringEquality = typeof (string).GetMethod("op_Equality", new[] {typeof (string), typeof (string)});
@@ -121,9 +121,6 @@ namespace SharpRemote.CodeGeneration
 
 			NotImplementedCtor = typeof (NotImplementedException).GetConstructor(new Type[0]);
 			ArgumentExceptionCtor = typeof (ArgumentException).GetConstructor(new[] {typeof (string)});
-
-			IPAddressGetAddressBytes = typeof (IPAddress).GetMethod("GetAddressBytes");
-			IPAddressFromBytes = typeof (IPAddress).GetConstructor(new[] {typeof(byte[])});
 
 			ArrayGetLength = typeof (byte[]).GetProperty("Length").GetMethod;
 
@@ -133,12 +130,12 @@ namespace SharpRemote.CodeGeneration
 			InterlockedCompareExchangeGeneric =
 				typeof (Interlocked).GetMethods().First(x => x.Name == "CompareExchange" && x.IsGenericMethod);
 
-			CreateTypeFromName = typeof(Methods).GetMethod("GetType", new []{typeof(string)});
-		}
-
-		public static Type GetType(string name)
-		{
-			return Type.GetType(name);
+			Serializers = new Dictionary<Type, ISerializationCompiler>
+				{
+					{typeof (IPAddress), new IPAddressSerializationCompiler()},
+					{typeof (Type), new TypeSerializationCompiler()},
+					{typeof (string), new StringSerializationCompiler()}
+				};
 		}
 
 		public static bool EmitReadNativeType(this ILGenerator gen, Action loadReader, Type valueType, bool valueCanBeNull = true)
@@ -198,79 +195,16 @@ namespace SharpRemote.CodeGeneration
 				loadReader();
 				gen.Emit(OpCodes.Call, ReadByte);
 			}
-			else if (valueType == typeof(string))
-			{
-				gen.EmitReadNullableValue(
-					loadReader,
-					() =>
-						{
-							loadReader();
-							gen.Emit(OpCodes.Call, ReadString);
-						},
-					valueCanBeNull);
-			}
-			else if (valueType == typeof (IPAddress))
-			{
-				gen.EmitReadNullableValue(
-					loadReader,
-					() =>
-						{
-							// new IPAddress(writer.ReadBytes(writer.ReadInt()));
-							loadReader();
-							loadReader();
-							gen.Emit(OpCodes.Call, ReadInt);
-							gen.Emit(OpCodes.Call, ReadBytes);
-							gen.Emit(OpCodes.Newobj, IPAddressFromBytes);
-						},
-					valueCanBeNull
-					);
-			}
-			else if (valueType == typeof (Type))
-			{
-				gen.EmitReadNullableValue(
-					loadReader,
-					() =>
-						{
-							loadReader();
-							gen.Emit(OpCodes.Call, ReadString);
-							gen.Emit(OpCodes.Call, CreateTypeFromName);
-						},
-					valueCanBeNull
-					);
-			}
 			else
 			{
-				return false;
+				ISerializationCompiler serializer;
+				if (!Serializers.TryGetValue(valueType, out serializer))
+					return false;
+
+				serializer.EmitReadValue(gen, loadReader, valueCanBeNull);
 			}
 
 			return true;
-		}
-
-		private static void EmitReadNullableValue(this ILGenerator gen,
-		                                          Action loadReader,
-		                                          Action loadValue,
-			bool valueCanBeNull)
-		{
-			if (valueCanBeNull)
-			{
-				var read = gen.DefineLabel();
-				var end = gen.DefineLabel();
-
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadBool);
-				gen.Emit(OpCodes.Brtrue, read);
-				gen.Emit(OpCodes.Ldnull);
-				gen.Emit(OpCodes.Br, end);
-
-				gen.MarkLabel(read);
-				loadValue();
-
-				gen.MarkLabel(end);
-			}
-			else
-			{
-				loadValue();
-			}
 		}
 
 		public static bool EmitWritePod(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType, bool valueCanBeNull = true)
@@ -341,109 +275,16 @@ namespace SharpRemote.CodeGeneration
 				loadValue();
 				gen.Emit(OpCodes.Call, WriteByte);
 			}
-			else if (valueType == typeof (string))
-			{
-				gen.WriteNullableValue(
-					loadWriter,
-					loadValue,
-					() =>
-						{
-							loadWriter();
-							loadValue();
-							gen.Emit(OpCodes.Call, WriteString);
-						},
-					valueCanBeNull);
-			}
-			else if (valueType == typeof(IPAddress))
-			{
-				gen.WriteNullableValue(
-					loadWriter,
-					loadValue,
-					() =>
-						{
-							var data = gen.DeclareLocal(typeof (byte[]));
-
-							loadValue();
-							gen.Emit(OpCodes.Call, IPAddressGetAddressBytes);
-							gen.Emit(OpCodes.Stloc, data);
-
-							loadWriter();
-							gen.Emit(OpCodes.Ldloc, data);
-							gen.Emit(OpCodes.Call, ArrayGetLength);
-
-							gen.Emit(OpCodes.Call, WriteInt);
-
-							loadWriter();
-							gen.Emit(OpCodes.Ldloc, data);
-							gen.Emit(OpCodes.Call, WriteBytes);
-						},
-					valueCanBeNull);
-			}
-			else if (valueType == typeof (Type))
-			{
-				gen.WriteNullableValue(
-					loadWriter,
-					loadValue,
-					() =>
-						{
-							loadWriter();
-							loadValue();
-							gen.Emit(OpCodes.Callvirt, TypeGetAssemblyQualifiedName);
-							gen.Emit(OpCodes.Call, WriteString);
-						}
-					,
-					valueCanBeNull);
-			}
 			else
 			{
-				return false;
+				ISerializationCompiler serializer;
+				if (!Serializers.TryGetValue(valueType, out serializer))
+					return false;
+
+				serializer.EmitWriteValue(gen, loadWriter, loadValue, valueCanBeNull);
 			}
 
 			return true;
-		}
-
-		private static void WriteNullableValue(this ILGenerator gen,
-		                                       Action loadWriter,
-		                                       Action loadValue,
-		                                       Action writeValue,
-		                                       bool valueCanBeNull)
-		{
-			if (valueCanBeNull)
-			{
-				var write = gen.DefineLabel();
-				var end = gen.DefineLabel();
-
-				// if (value != null) goto write
-				loadValue();
-				gen.Emit(OpCodes.Ldnull);
-				gen.Emit(OpCodes.Ceq);
-				gen.Emit(OpCodes.Brfalse, write);
-
-				// writer.Write(true)
-				loadWriter();
-				gen.Emit(OpCodes.Ldc_I4_0);
-				gen.Emit(OpCodes.Call, WriteBool);
-				// goto end
-				gen.Emit(OpCodes.Br, end);
-
-				// write:
-				gen.MarkLabel(write);
-				// writer.Write(false);
-				loadWriter();
-				gen.Emit(OpCodes.Ldc_I4_1);
-				gen.Emit(OpCodes.Call, WriteBool);
-
-				// writer.Write(value)
-				writeValue();
-
-				// end:
-				gen.MarkLabel(end);
-			}
-			else
-			{
-				// writer.Write(value)
-				writeValue();
-			}
 		}
 	}
 }

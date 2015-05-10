@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using SharpRemote.CodeGeneration;
 using SharpRemote.Hosting;
@@ -11,7 +12,7 @@ namespace SharpRemote.Test
 
 		public void CreateSubject(BinaryReader reader, BinaryWriter writer)
 		{
-			writer.Write(_subject.CreateSubject1(Methods.GetType(reader.ReadString()), Methods.GetType(reader.ReadString())));
+			writer.Write(_subject.CreateSubject1(Type.GetType(reader.ReadString()), Type.GetType(reader.ReadString())));
 		}
 
 		public static void Write(BinaryWriter writer, string value)

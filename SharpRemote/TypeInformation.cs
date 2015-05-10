@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
+using SharpRemote.CodeGeneration;
 
 namespace SharpRemote
 {
@@ -39,13 +40,7 @@ namespace SharpRemote
 			if (type.IsPrimitive)
 				return false;
 
-			if (type == typeof (string))
-				return false;
-
-			if (type == typeof (IPAddress))
-				return false;
-
-			if (type.Is(typeof (Type)))
+			if (Methods.HasSerializer(type))
 				return false;
 
 			if (type.IsValueType)
@@ -66,13 +61,7 @@ namespace SharpRemote
 			if (type.IsPrimitive)
 				return true;
 
-			if (type == typeof (string))
-				return true;
-
-			if (type == typeof (IPAddress))
-				return true;
-
-			if (type.Is(typeof(Type)))
+			if (Methods.HasSerializer(type))
 				return true;
 
 			if (type.IsArray)

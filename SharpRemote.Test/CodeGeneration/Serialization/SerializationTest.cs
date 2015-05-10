@@ -121,6 +121,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestRoundtripIPEndPoint()
+		{
+			var ep = new IPEndPoint(IPAddress.Parse("192.168.0.87"), 80);
+			_serializer.RoundtripObject(ep).Should().Be(ep);
+
+			ep = new IPEndPoint(IPAddress.IPv6Loopback, 55980);
+			_serializer.RoundtripObject(ep).Should().Be(ep);
+		}
+
+		[Test]
 		public void TestRoundtripType()
 		{
 			_serializer.RegisterType<Type>();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -132,10 +133,17 @@ namespace SharpRemote.CodeGeneration
 
 			Serializers = new Dictionary<Type, ISerializationCompiler>
 				{
+					{typeof (IPEndPoint), new IPEndPointSerializationCompiler()},
 					{typeof (IPAddress), new IPAddressSerializationCompiler()},
 					{typeof (Type), new TypeSerializationCompiler()},
 					{typeof (string), new StringSerializationCompiler()}
 				};
+		}
+
+		[Pure]
+		public static bool HasSerializer(Type type)
+		{
+			return Serializers.ContainsKey(type);
 		}
 
 		public static bool EmitReadNativeType(this ILGenerator gen, Action loadReader, Type valueType, bool valueCanBeNull = true)

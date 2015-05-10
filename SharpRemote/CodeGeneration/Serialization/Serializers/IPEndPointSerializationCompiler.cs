@@ -10,11 +10,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 	{
 		private static readonly MethodInfo GetAddress;
 		private static readonly MethodInfo GetPort;
+		private static readonly ConstructorInfo Ctor;
+		private static readonly IPAddressSerializationCompiler IPAddressSerializer;
 
 		static IPEndPointSerializationCompiler()
 		{
 			GetAddress = typeof (IPEndPoint).GetProperty("Address").GetMethod;
 			GetPort = typeof (IPEndPoint).GetProperty("Port").GetMethod;
+			Ctor = typeof (IPEndPoint).GetConstructor(new[] {typeof (IPAddress), typeof (int)});
+			IPAddressSerializer = new IPAddressSerializationCompiler();
 		}
 
 		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)
@@ -24,7 +28,18 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			                       loadValue,
 			                       () =>
 				                       {
+					                       var addr = gen.DeclareLocal(typeof (IPAddress));
+					                       loadValue();
+										   gen.Emit(OpCodes.Callvirt, GetAddress);
+										   gen.Emit(OpCodes.Stloc, addr);
+					                       IPAddressSerializer.EmitWriteValue(gen, loadWriter,
+					                                                          () => gen.Emit(OpCodes.Ldloc, addr),
+																			  false);
 
+					                       loadWriter();
+					                       loadValue();
+										   gen.Emit(OpCodes.Callvirt, GetPort);
+										   gen.Emit(OpCodes.Call, Methods.WriteInt);
 				                       },
 			                       valueCanBeNull);
 		}
@@ -33,7 +48,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		{
 			EmitReadNullableValue(gen, loadReader, () =>
 				{
+					IPAddressSerializer.EmitReadValue(gen,
+					                                  loadReader,
+													  false);
 
+					loadReader();
+					gen.Emit(OpCodes.Call, Methods.ReadInt);
+
+					gen.Emit(OpCodes.Newobj, Ctor);
 				},
 			                      valueCanBeNull);
 		}

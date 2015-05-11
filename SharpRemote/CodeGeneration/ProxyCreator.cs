@@ -50,19 +50,16 @@ namespace SharpRemote.CodeGeneration
 			if (!interfaceType.IsInterface)
 				throw new ArgumentException(string.Format("Proxies can only be created for interfaces: {0} is not an interface", interfaceType));
 
-			var assemblyName = GetProxyAssemblyName(interfaceType);
-			var proxyTypeName = GetProxyTypeName(interfaceType);
-
-			Assembly proxyAssembly;
-			if (TryLoadAssembly(assemblyName, out proxyAssembly))
+			Type proxyType;
+			if (!_interfaceToProxy.TryGetValue(interfaceType, out proxyType))
 			{
-				throw new NotImplementedException();
+				var proxyTypeName = GetProxyTypeName(interfaceType);
+
+				var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
+				proxyType = generator.Generate();
+
+				_interfaceToProxy.Add(interfaceType, proxyType);
 			}
-
-			var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
-			var proxyType = generator.Generate();
-
-			_interfaceToProxy.Add(interfaceType, proxyType);
 			return proxyType;
 		}
 
@@ -95,12 +92,6 @@ namespace SharpRemote.CodeGeneration
 		private string GetProxyTypeName(Type interfaceType)
 		{
 			return string.Format("Corba.{0}.Proxy", interfaceType.Name);
-		}
-
-		private bool TryLoadAssembly(AssemblyName assemblyName, out Assembly proxyAssembly)
-		{
-			proxyAssembly = null;
-			return false;
 		}
 
 		private AssemblyName GetProxyAssemblyName(Type type)

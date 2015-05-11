@@ -56,11 +56,11 @@
   <ItemGroup>
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\ArrayTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\DynamicDispatchTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationConstraintsTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationTest.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\WriteTest.cs" />
-    <Compile Include="CodeGeneration\Test.cs" />
     <Compile Include="Hosting\GetStringPropertyImplementation.cs" />
     <Compile Include="Hosting\InProcessSiloAcceptanceTest.cs" />
     <Compile Include="Hosting\InProcessRemotingSiloAcceptanceTest.cs" />
@@ -103,11 +103,13 @@
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethodUInt8Parameter.cs" />
     <Compile Include="Types\Classes\BaseClass.cs" />
     <Compile Include="Types\Classes\Birke.cs" />
+    <Compile Include="Types\Structs\FieldObjectStruct.cs" />
     <Compile Include="Types\Structs\FieldStruct.cs" />
     <Compile Include="CodeGeneration\Remoting\ProxyCreatorTest.cs" />
     <Compile Include="Types\Classes\FieldSealedClass.cs" />
     <Compile Include="Types\Classes\Tree.cs" />
     <Compile Include="Types\Structs\MissingDataContractStruct.cs" />
+    <Compile Include="Types\Structs\NestedFieldStruct.cs" />
     <Compile Include="Types\Structs\PropertyStruct.cs" />
     <Compile Include="Types\Structs\ReadOnlyDataMemberFieldStruct.cs" />
     <Compile Include="Types\Structs\StaticDataMemberFieldStruct.cs" />

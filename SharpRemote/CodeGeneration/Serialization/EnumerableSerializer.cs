@@ -40,33 +40,15 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Callvirt, moveNext);
 			gen.Emit(OpCodes.Brfalse, end);
 
-			if (gen.EmitWritePod(
+			EmitWriteValue(gen,
 				() => gen.Emit(OpCodes.Ldarg_0),
 				() =>
 				{
 					gen.Emit(OpCodes.Ldloc, enumerator);
 					gen.Emit(OpCodes.Callvirt, getCurrent);
 				},
-				elementType))
-			{
-			}
-			else if (elementType.IsValueType || elementType.IsSealed)
-			{
-				WriteMethod write;
-				ReadMethod unused;
-				RegisterType(elementType, out write, out unused);
-				MethodInfo writeMethod = write.ValueMethod;
-
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldloc, enumerator);
-				gen.Emit(OpCodes.Callvirt, getCurrent);
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.Emit(OpCodes.Call, writeMethod);
-			}
-			else
-			{
-				throw new NotImplementedException();
-			}
+				() => gen.Emit(OpCodes.Ldarg_2),
+				elementType);
 
 			// goto loop
 			gen.Emit(OpCodes.Br, loop);

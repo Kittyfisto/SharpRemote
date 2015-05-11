@@ -63,6 +63,8 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo DelegateCombine;
 		public static readonly MethodInfo DelegateRemove;
 		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
+		public static readonly MethodInfo SerializerWriteObject;
+		public static readonly MethodInfo SerializerReadObject;
 
 		private static readonly Dictionary<Type, ITypeSerializer> Serializers;
 
@@ -131,8 +133,12 @@ namespace SharpRemote.CodeGeneration
 			InterlockedCompareExchangeGeneric =
 				typeof (Interlocked).GetMethods().First(x => x.Name == "CompareExchange" && x.IsGenericMethod);
 
+			SerializerWriteObject = typeof (ISerializer).GetMethod("WriteObject", new[]{typeof(BinaryWriter), typeof(object)});
+			SerializerReadObject = typeof (ISerializer).GetMethod("ReadObject", new[] {typeof (BinaryReader)});
+
 			Serializers = new Dictionary<Type, ITypeSerializer>
 				{
+					{typeof (Int32), new Int32Serializer()},
 					{typeof (IPEndPoint), new IPEndPointSerializer()},
 					{typeof (IPAddress), new IPAddressSerializer()},
 					{typeof (Type), new TypeSerializer()},
@@ -178,11 +184,6 @@ namespace SharpRemote.CodeGeneration
 				loadReader();
 				gen.Emit(OpCodes.Call, ReadUInt);
 			}
-			else if (valueType == typeof(int))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadInt);
-			}
 			else if (valueType == typeof(ushort))
 			{
 				loadReader();
@@ -215,7 +216,7 @@ namespace SharpRemote.CodeGeneration
 			return true;
 		}
 
-		public static bool EmitWritePod(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType, bool valueCanBeNull = true)
+		public static bool EmitWriteNativeType(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType, bool valueCanBeNull = true)
 		{
 			if (valueType == typeof (bool))
 			{
@@ -252,12 +253,6 @@ namespace SharpRemote.CodeGeneration
 				loadWriter();
 				loadValue();
 				gen.Emit(OpCodes.Call, WriteUInt);
-			}
-			else if (valueType == typeof(int))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteInt);
 			}
 			else if (valueType == typeof(short))
 			{

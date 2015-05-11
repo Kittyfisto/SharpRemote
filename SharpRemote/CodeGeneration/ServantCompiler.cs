@@ -72,8 +72,8 @@ namespace SharpRemote.CodeGeneration
 			GenerateGetObjectId();
 			GenerateGetSerializer();
 			GenerateGetSubject();
-			GenerateDispatchMethod();
 			GenerateEvents();
+			GenerateDispatchMethod();
 			GenerateCtor();
 
 			var proxyType = _typeBuilder.CreateType();
@@ -148,11 +148,18 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldloc, name);
 			gen.Emit(OpCodes.Brfalse, @throw);
 
+			var allEventMethods =
+				_interfaceType.GetEvents(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+				              .SelectMany(x => new[] {x.AddMethod, x.RemoveMethod})
+				              .ToArray();
+
 			var allMethods = _interfaceType
 				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
 				.Concat(_interfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
+				.Where(x => !allEventMethods.Contains(x))
 				.OrderBy(x => x.Name)
 				.ToArray();
+
 			var labels = new Label[allMethods.Length];
 			int index = 0;
 			foreach (var methodInfo in allMethods)

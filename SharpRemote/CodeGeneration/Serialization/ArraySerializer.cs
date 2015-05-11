@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Reflection.Emit;
+﻿using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
@@ -57,28 +54,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 			// value[i] = <ReadValue>
 			gen.Emit(OpCodes.Ldloc, value);
 			gen.Emit(OpCodes.Ldloc, i);
-			if (gen.EmitReadNativeType(
+
+			EmitReadValue(gen,
 				() => gen.Emit(OpCodes.Ldarg_0),
-				elementType
-				))
-			{
-
-			}
-			else if (elementType.IsValueType || elementType.IsSealed)
-			{
-				WriteMethod unused;
-				ReadMethod read;
-				RegisterType(elementType, out unused, out read);
-				var readMethod = read.MethodInfo;
-
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldarg_1);
-				gen.Emit(OpCodes.Call, readMethod);
-			}
-			else
-			{
-				throw new NotImplementedException();
-			}
+				() => gen.Emit(OpCodes.Ldarg_1),
+				elementType);
 
 			gen.Emit(OpCodes.Stelem, elementType);
 

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
+using System.Reflection.Emit;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -19,15 +21,28 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private Mock<IEndPointChannel> _channel;
 		private Random _random;
 		private ulong _objectId;
+		private AssemblyBuilder _assembly;
+		private string _moduleName;
 
-		[SetUp]
+		[TestFixtureSetUp]
 		public void SetUp()
 		{
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Proxies");
+			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_moduleName = assemblyName.Name + ".dll";
+			var module = _assembly.DefineDynamicModule(_moduleName);
+
 			var seed = (int) (DateTime.Now.Ticks%Int32.MaxValue);
 			Console.WriteLine("Seed: {0}", seed);
 			_random = new Random(seed);
 			_channel = new Mock<IEndPointChannel>();
-			_creator = new ProxyCreator(_channel.Object);
+			_creator = new ProxyCreator(module, _channel.Object);
+		}
+
+		[TestFixtureTearDown]
+		public void TearDown()
+		{
+			//_assembly.Save(_moduleName);
 		}
 
 		private T TestGenerate<T>()
@@ -283,7 +298,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		[Test]
 		public void TestGetÍnt8Property()
 		{
-			var proxy = TestGenerate<IGetUInt8Property>();
+			var proxy = TestGenerate<IGetInt8Property>();
 			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 					.Returns((ulong objectId, string methodName, Stream stream) =>
 					{

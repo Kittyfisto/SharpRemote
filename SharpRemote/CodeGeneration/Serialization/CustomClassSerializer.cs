@@ -75,7 +75,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			foreach (var property in allProperties)
 			{
-				if (!gen.EmitWritePod(() => gen.Emit(OpCodes.Ldarg_0),
+				EmitWriteValue(gen,
+					() => gen.Emit(OpCodes.Ldarg_0),
 					() =>
 					{
 						if (type.IsValueType)
@@ -88,15 +89,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 						}
 
 						gen.Emit(OpCodes.Call, property.GetMethod);
-					}, property.PropertyType))
-				{
-					MethodInfo writeObject = GetWriteValueMethodInfo(property.PropertyType);
-
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldarg_2);
-
-					gen.Emit(OpCodes.Call, writeObject);
-				}
+					},
+					() => gen.Emit(OpCodes.Ldarg_2),
+					property.PropertyType
+					);
 			}
 		}
 
@@ -105,7 +101,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="type"></param>
-		private void EmitWriteFields(ILGenerator gen, Type type)
+		public void EmitWriteFields(ILGenerator gen, Type type)
 		{
 			FieldInfo[] allFields =
 				type.GetFields(BindingFlags.Public | BindingFlags.Instance)
@@ -114,7 +110,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			foreach (var field in allFields)
 			{
-				if (!gen.EmitWritePod(() => gen.Emit(OpCodes.Ldarg_0),
+				EmitWriteValue(gen,
+					() => gen.Emit(OpCodes.Ldarg_0),
 					() =>
 					{
 						if (type.IsValueType)
@@ -126,15 +123,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 							gen.Emit(OpCodes.Ldarg_1);
 						}
 						gen.Emit(OpCodes.Ldfld, field);
-					}, field.FieldType))
-				{
-					MethodInfo writeObject = GetWriteValueMethodInfo(field.FieldType);
-
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldarg_2);
-
-					gen.Emit(OpCodes.Call, writeObject);
-				}
+					},
+					() => gen.Emit(OpCodes.Ldarg_2),
+					field.FieldType
+					);
 			}
 		}
 
@@ -149,9 +141,77 @@ namespace SharpRemote.CodeGeneration.Serialization
 			EmitWriteProperties(gen, type);
 		}
 
+		/// <summary>
+		/// Emits the code necessary to write a value of the given compile-time type to
+		/// a <see cref="BinaryWriter"/>.
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="loadWriter"></param>
+		/// <param name="loadValue"></param>
+		/// <param name="loadSerializer"></param>
+		/// <param name="valueType"></param>
+		public void EmitWriteValue(ILGenerator gen,
+			Action loadWriter,
+			Action loadValue,
+			Action loadSerializer,
+			Type valueType)
+		{
+			// For now, let's inline everything that the Methods class can write and everything
+			// else is delegated through a method...
+			if (gen.EmitWriteNativeType(loadWriter, loadValue, valueType))
+			{
+				// Nothing to do...
+			}
+			else
+			{
+				var method = GetWriteValueMethodInfo(valueType);
+				if (method.IsStatic) //< Signature: void Write(BinaryWriter, T, ISerializer)
+				{
+					loadWriter();
+					loadValue();
+					loadSerializer();
+					gen.Emit(OpCodes.Call, method);
+				}
+				else //< Signature: ISerializer.WriteObject(BinaryWriter, object)
+				{
+					loadSerializer();
+					loadWriter();
+					loadValue();
+					gen.Emit(OpCodes.Callvirt, method);
+				}
+			}
+		}
+
 		#endregion
 
 		#region Reading
+
+		public void EmitReadValue(ILGenerator gen,
+			Action loadReader,
+			Action loadSerializer,
+			Type valueType)
+		{
+			if (gen.EmitReadNativeType(loadReader, valueType))
+			{
+				// Nothing to do...
+			}
+			else
+			{
+				var method = GetReadValueMethodInfo(valueType);
+				if (method.IsStatic) //< Signature: T Read(BinaryReader, ISerializer
+				{
+					loadReader();
+					loadSerializer();
+					gen.Emit(OpCodes.Call, method);
+				}
+				else //< Signature: T ISerializer.Read(BinaryReader)
+				{
+					loadSerializer();
+					loadReader();
+					gen.Emit(OpCodes.Callvirt, method);
+				}
+			}
+		}
 
 		private void EmitReadValueType(ILGenerator gen, TypeInformation type, LocalBuilder local)
 		{
@@ -220,10 +280,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				gen.Emit(type.IsValueType ? OpCodes.Ldloca : OpCodes.Ldloc, target);
 				Type propertyType = property.PropertyType;
-				if (!gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0), propertyType))
-				{
-					throw new NotImplementedException();
-				}
+				EmitReadValue(gen,
+					() => gen.Emit(OpCodes.Ldarg_0),
+					() => gen.Emit(OpCodes.Ldarg_1),
+					propertyType);
+
 				gen.Emit(OpCodes.Call, property.SetMethod);
 			}
 		}
@@ -240,10 +301,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 				gen.Emit(type.IsValueType ? OpCodes.Ldloca : OpCodes.Ldloc, target);
 
 				Type fieldType = field.FieldType;
-				if (!gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0), fieldType))
-				{
-					throw new NotImplementedException();
-				}
+				EmitReadValue(gen,
+					() => gen.Emit(OpCodes.Ldarg_0),
+					() => gen.Emit(OpCodes.Ldarg_1),
+					fieldType);
 
 				gen.Emit(OpCodes.Stfld, field);
 			}

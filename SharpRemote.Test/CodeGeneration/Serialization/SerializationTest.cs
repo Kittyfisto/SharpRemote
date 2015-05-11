@@ -21,7 +21,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
 		{
-			var assemblyName = new AssemblyName("SharpRemote.CodeGeneration.Serializer");
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
 			var module = _assembly.DefineDynamicModule(_moduleName);
@@ -188,6 +188,28 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				Value2 = -342131231,
 				Value3 = Math.PI
 			};
+			_serializer.RoundtripObject(value).Should().Be(value);
+		}
+
+		[Test]
+		public void TestNestedFieldStruct()
+		{
+			var value = new NestedFieldStruct
+			{
+				N1 = new PropertySealedClass
+				{
+					Value1 = "Bs",
+					Value2 = 80793,
+					Value3 = 30987.12234
+				},
+				N2 = new FieldStruct
+				{
+					A = -897761.1232,
+					B = -3214312,
+					C = "Blubba\r\ndawawd\tdddD"
+				}
+			};
+
 			_serializer.RoundtripObject(value).Should().Be(value);
 		}
 	}

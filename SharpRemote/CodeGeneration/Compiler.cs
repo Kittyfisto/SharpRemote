@@ -8,14 +8,14 @@ namespace SharpRemote.CodeGeneration
 {
 	public abstract class Compiler
 	{
-		protected readonly Serializer _serializerCompiler;
+		protected readonly Serializer SerializerCompiler;
 		protected FieldBuilder Serializer;
 		protected FieldBuilder Channel;
 		protected FieldBuilder ObjectId;
 
 		protected Compiler(Serializer serializer)
 		{
-			_serializerCompiler = serializer;
+			SerializerCompiler = serializer;
 		}
 
 		protected void ExtractArgumentsAndCallMethod(ILGenerator gen,
@@ -26,7 +26,16 @@ namespace SharpRemote.CodeGeneration
 			var allParameters = methodInfo.GetParameters();
 			foreach (var parameter in allParameters)
 			{
-				gen.EmitReadNativeType(loadReader, parameter.ParameterType);
+				SerializerCompiler.EmitReadValue(
+					gen,
+					loadReader,
+					() =>
+					{
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, Serializer);
+					},
+					parameter.ParameterType
+					);
 			}
 
 			var returnType = methodInfo.ReturnType;
@@ -36,11 +45,11 @@ namespace SharpRemote.CodeGeneration
 				gen.Emit(OpCodes.Callvirt, methodInfo);
 				gen.Emit(OpCodes.Stloc, tmp);
 
-				_serializerCompiler.EmitWriteValue(gen,
-				                               loadWriter,
-				                               () => gen.Emit(OpCodes.Ldloc, tmp),
-				                               returnType,
-				                               Serializer);
+				SerializerCompiler.EmitWriteValue(gen,
+					loadWriter,
+					() => gen.Emit(OpCodes.Ldloc, tmp),
+					() => gen.Emit(OpCodes.Ldfld, Serializer),
+					returnType);
 			}
 			else
 			{
@@ -72,10 +81,16 @@ namespace SharpRemote.CodeGeneration
 				{
 					//WriteXXX(_serializer, arg[y], binaryWriter);
 					int currentIndex = ++index;
-					_serializerCompiler.EmitWriteValue(gen,
+					SerializerCompiler.EmitWriteValue(
+						gen,
 						() => gen.Emit(OpCodes.Ldloc, binaryWriter),
 						() => gen.Emit(OpCodes.Ldarg, currentIndex),
-						parameterTypes[i], Serializer);
+						() =>
+						{
+							gen.Emit(OpCodes.Ldarg_0);
+							gen.Emit(OpCodes.Ldfld, Serializer);
+						},
+						parameterTypes[i]);
 				}
 
 				// binaryWriter.Flush()
@@ -113,18 +128,19 @@ namespace SharpRemote.CodeGeneration
 				gen.Emit(OpCodes.Stloc, binaryReader);
 
 				// return _serializer.DeserializeXXX(reader);
-				DeserializeValue(gen, binaryReader, returnType);
+				SerializerCompiler.EmitReadValue(
+					gen,
+					() => gen.Emit(OpCodes.Ldloc, binaryReader),
+					() =>
+					{
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, Serializer);
+					},
+					returnType
+					);
 			}
 
 			gen.Emit(OpCodes.Ret);
-		}
-
-		private void DeserializeValue(ILGenerator gen, LocalBuilder binaryReader, Type propertyType)
-		{
-			if (!gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldloc, binaryReader), propertyType))
-			{
-				throw new NotImplementedException();
-			}
 		}
 	}
 }

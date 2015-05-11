@@ -17,12 +17,13 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		sealed class ReadMethod
 		{
-			public readonly MethodInfo MethodInfo;
-			public Func<BinaryReader, ISerializer, object> ReadDelegate;
+			public readonly MethodInfo ReadValueMethod;
+			public Func<BinaryReader, ISerializer, object> ReadObjectDelegate;
+			public MethodInfo ReadObjectMethod;
 
-			public ReadMethod(MethodBuilder method)
+			public ReadMethod(MethodBuilder readValueMethod)
 			{
-				MethodInfo = method;
+				ReadValueMethod = readValueMethod;
 			}
 		}
 
@@ -72,6 +73,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return module;
 		}
 
+		/*
 		/// <summary>
 		/// Writes the current value on top of the evaluation stack onto the binary writer that's
 		/// second to top on the evaluation stack.
@@ -87,7 +89,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			Type valueType,
 			FieldBuilder serializer)
 		{
-			if (!gen.EmitWritePod(loadWriter, loadValue, valueType))
+			if (!gen.EmitWriteNativeType(loadWriter, loadValue, valueType))
 			{
 				var writeObject = GetWriteValueMethodInfo(valueType);
 
@@ -98,7 +100,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				gen.Emit(OpCodes.Ldfld, serializer);
 				gen.Emit(OpCodes.Call, writeObject);
 			}
-		}
+		}*/
 
 		/// <summary>
 		///     Returns the method to write a value of the given type to a writer.
@@ -118,7 +120,28 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			// We don't know the true type of the parameter until we inspect it's actual value.
 			// Thus we're forced to do a dynamic dispatch.
-			throw new NotImplementedException();
+			return Methods.SerializerWriteObject;
+		}
+
+		/// <summary>
+		///     Returns the method to write a value of the given type to a writer.
+		///     Signature: ReadSealed(BinaryReader reader, ISerializer serializer)
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		public MethodInfo GetReadValueMethodInfo(Type type)
+		{
+			if (type.IsValueType || type.IsSealed)
+			{
+				WriteMethod unused;
+				ReadMethod method;
+				RegisterType(type, out unused, out method);
+				return method.ReadValueMethod;
+			}
+
+			// We don't know the true type of the parameter until we inspect it's actual value.
+			// Thus we're forced to do a dynamic dispatch.
+			return Methods.SerializerReadObject;
 		}
 
 		private Action<BinaryWriter, object, ISerializer> GetWriteObjectDelegate(Type type)
@@ -135,7 +158,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			ReadMethod method;
 			RegisterType(type, out unused, out method);
 
-			return method.ReadDelegate;
+			return method.ReadObjectDelegate;
 		}
 
 		private ReadMethod CompileReadMethod(TypeInformation typeInformation)
@@ -181,8 +204,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ret);
 
 			var serializerType = typeBuilder.CreateType();
-			var delegateMethod = serializerType.GetMethod("ReadObject", new[] { typeof(BinaryReader), typeof(ISerializer) });
-			m.ReadDelegate = (Func<BinaryReader, ISerializer, object>)delegateMethod.CreateDelegate(typeof(Func<BinaryReader, ISerializer, object>));
+			m.ReadObjectMethod = serializerType.GetMethod("ReadObject", new[] { typeof(BinaryReader), typeof(ISerializer) });
+			m.ReadObjectDelegate = (Func<BinaryReader, ISerializer, object>)m.ReadObjectMethod.CreateDelegate(typeof(Func<BinaryReader, ISerializer, object>));
 
 			return m;
 		}
@@ -236,7 +259,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				EmitWriteArray(gen, typeInformation);
 			}
-			else if (gen.EmitWritePod(
+			else if (gen.EmitWriteNativeType(
 				() => gen.Emit(OpCodes.Ldarg_0),
 				() => gen.Emit(OpCodes.Ldarg_1),
 				typeInformation.Type))

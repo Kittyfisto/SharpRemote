@@ -11,7 +11,17 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	public partial class SerializationTest
 	{
 		[Test]
-		public void TestRoundtripIntArray()
+		public void TestByteArray()
+		{
+			_serializer.RegisterType<byte[]>();
+			_serializer.RoundtripValue(new byte[0]);
+			_serializer.RoundtripValue(new byte[] { 42 }).Should().Equal(new byte[] { 42 });
+			_serializer.RoundtripValue(new[] { byte.MinValue, byte.MaxValue }).Should().Equal(new[] { byte.MinValue, byte.MaxValue });
+			_serializer.RoundtripValue(new byte[] { 1, 0, 42, 244 }).Should().Equal(new byte[] { 1, 0, 42, 244 });
+		}
+
+		[Test]
+		public void TestIntArray()
 		{
 			_serializer.RegisterType<int[]>();
 			_serializer.RoundtripValue(new int[0]);
@@ -21,7 +31,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripStringArray()
+		public void TestStringArray()
 		{
 			_serializer.RegisterType<string[]>();
 			_serializer.RoundtripValue(new string[0]);
@@ -31,7 +41,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripPropertySealedClassArray()
+		public void TestPropertySealedClassArray()
 		{
 			_serializer.RegisterType<PropertySealedClass[]>();
 
@@ -57,7 +67,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripFieldStructArray()
+		public void TestFieldStructArray()
 		{
 			_serializer.RegisterType<FieldStruct[]>();
 

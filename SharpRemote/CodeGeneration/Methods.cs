@@ -142,7 +142,8 @@ namespace SharpRemote.CodeGeneration
 					{typeof (IPEndPoint), new IPEndPointSerializer()},
 					{typeof (IPAddress), new IPAddressSerializer()},
 					{typeof (Type), new TypeSerializer()},
-					{typeof (string), new StringSerializer()}
+					{typeof (string), new StringSerializer()},
+					{typeof(byte[]), new ByteArraySerializer()}
 				};
 		}
 

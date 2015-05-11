@@ -150,14 +150,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_typeToReadMethods.Add(typeInformation.Type, m);
 
 			ILGenerator gen = readValueNotNull.GetILGenerator();
-			if (typeInformation.IsArray)
-			{
-				EmitReadArray(gen, typeInformation);
-			}
-			else if (gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0),
+			if (gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0),
 			                                typeInformation.Type,
 			                                false))
 			{
+			}
+			else if (typeInformation.IsArray)
+			{
+				EmitReadArray(gen, typeInformation);
 			}
 			else if (typeInformation.IsValueType || typeInformation.IsSealed)
 			{
@@ -262,18 +262,18 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			ILGenerator gen = valueNotNullMethod.GetILGenerator();
 
-			if (typeInformation.IsArray)
-			{
-				EmitWriteArray(gen, typeInformation);
-			}
-			else if (gen.EmitWriteNativeType(
+			if (gen.EmitWriteNativeType(
 				() => gen.Emit(OpCodes.Ldarg_0),
 				() => gen.Emit(OpCodes.Ldarg_1),
 				typeInformation.Type,
 				false))
 			{
 			}
-			else
+			else if (typeInformation.IsArray)
+			{
+				EmitWriteArray(gen, typeInformation);
+			}
+			else 
 			{
 				WriteCustomType(gen, typeInformation.Type);
 			}

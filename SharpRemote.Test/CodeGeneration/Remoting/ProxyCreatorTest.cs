@@ -727,7 +727,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
-		[Ignore("TBD")]
 		public void TestVoidMethodBaseClassParameter1()
 		{
 			var proxy = TestGenerate<IVoidMethodBaseClassParameter>();
@@ -739,9 +738,16 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
 						methodName.Should().Be("Do");
 						stream.Should().NotBeNull();
-						//stream.Length.Should().Be(19);
+						stream.Length.Should().Be(237);
 						var reader = new BinaryReader(stream);
-						var value1 = reader.ReadString();
+						reader.ReadString().Should().Be(typeof(Birke).AssemblyQualifiedName);
+						// Due to a design flaw, the assembly name is written twice, for now
+						reader.ReadString().Should().Be(typeof(Birke).AssemblyQualifiedName);
+
+						reader.ReadBoolean().Should().BeTrue();
+						reader.ReadString().Should().Be("Foobar");
+						reader.ReadByte().Should().Be(42);
+						reader.ReadDouble().Should().Be(Math.PI);
 
 						doCalled = true;
 						return null;
@@ -757,7 +763,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
-		[Ignore("TBD")]
 		public void TestVoidMethodBaseClassParameter2()
 		{
 			var proxy = TestGenerate<IVoidMethodBaseClassParameter>();
@@ -769,10 +774,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
 						methodName.Should().Be("Do");
 						stream.Should().NotBeNull();
-						//stream.Length.Should().Be(19);
+						stream.Length.Should().Be(5);
 						var reader = new BinaryReader(stream);
 						var value1 = reader.ReadString();
-						value1.Should().Be(string.Empty);
+						value1.Should().Be("null");
 
 						doCalled = true;
 						return null;

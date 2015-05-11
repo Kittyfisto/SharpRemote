@@ -198,7 +198,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 			else
 			{
-				throw new NotImplementedException();
+				EmitReadValue(gen,
+					() => gen.Emit(OpCodes.Ldarg_0),
+					() => gen.Emit(OpCodes.Ldarg_1),
+					typeInformation.Type);
 			}
 
 			gen.Emit(OpCodes.Ret);

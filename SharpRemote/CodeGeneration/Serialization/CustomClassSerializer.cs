@@ -19,7 +19,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="type"></param>
 		private void WriteUnsealedObject(ILGenerator gen, Type type)
 		{
-			throw new NotImplementedException();
+			EmitWriteTypeInformationOrNull(gen, () => EmitWriteAllFieldsAndProperties(gen, type));
 		}
 
 		/// <summary>

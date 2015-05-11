@@ -4,15 +4,15 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class TypeSerializationCompiler
-		: AbstractSerializationCompiler<Type>
+	public sealed class TypeSerializer
+		: AbstractTypeSerializer<Type>
 	{
 		public static readonly MethodInfo CreateTypeFromName;
 		public static readonly MethodInfo GetAssemblyQualifiedName;
 
-		static TypeSerializationCompiler()
+		static TypeSerializer()
 		{
-			CreateTypeFromName = typeof(TypeSerializationCompiler).GetMethod("GetType", new[] { typeof(string) });
+			CreateTypeFromName = typeof(TypeSerializer).GetMethod("GetType", new[] { typeof(string) });
 			GetAssemblyQualifiedName = typeof(Type).GetProperty("AssemblyQualifiedName").GetGetMethod();
 		}
 

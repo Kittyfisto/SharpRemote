@@ -3,8 +3,8 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class StringSerializationCompiler
-		: AbstractSerializationCompiler<string>
+	public sealed class StringSerializer
+		: AbstractTypeSerializer<string>
 	{
 		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)
 		{

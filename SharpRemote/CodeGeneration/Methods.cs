@@ -64,7 +64,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo DelegateRemove;
 		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
 
-		private static readonly Dictionary<Type, ISerializationCompiler> Serializers;
+		private static readonly Dictionary<Type, ITypeSerializer> Serializers;
 
 		static Methods()
 		{
@@ -131,12 +131,12 @@ namespace SharpRemote.CodeGeneration
 			InterlockedCompareExchangeGeneric =
 				typeof (Interlocked).GetMethods().First(x => x.Name == "CompareExchange" && x.IsGenericMethod);
 
-			Serializers = new Dictionary<Type, ISerializationCompiler>
+			Serializers = new Dictionary<Type, ITypeSerializer>
 				{
-					{typeof (IPEndPoint), new IPEndPointSerializationCompiler()},
-					{typeof (IPAddress), new IPAddressSerializationCompiler()},
-					{typeof (Type), new TypeSerializationCompiler()},
-					{typeof (string), new StringSerializationCompiler()}
+					{typeof (IPEndPoint), new IPEndPointSerializer()},
+					{typeof (IPAddress), new IPAddressSerializer()},
+					{typeof (Type), new TypeSerializer()},
+					{typeof (string), new StringSerializer()}
 				};
 		}
 
@@ -205,7 +205,7 @@ namespace SharpRemote.CodeGeneration
 			}
 			else
 			{
-				ISerializationCompiler serializer;
+				ITypeSerializer serializer;
 				if (!Serializers.TryGetValue(valueType, out serializer))
 					return false;
 
@@ -285,7 +285,7 @@ namespace SharpRemote.CodeGeneration
 			}
 			else
 			{
-				ISerializationCompiler serializer;
+				ITypeSerializer serializer;
 				if (!Serializers.TryGetValue(valueType, out serializer))
 					return false;
 

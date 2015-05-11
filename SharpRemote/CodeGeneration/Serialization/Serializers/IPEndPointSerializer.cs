@@ -5,20 +5,20 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class IPEndPointSerializationCompiler
-		: AbstractSerializationCompiler<IPEndPoint>
+	public sealed class IPEndPointSerializer
+		: AbstractTypeSerializer<IPEndPoint>
 	{
 		private static readonly MethodInfo GetAddress;
 		private static readonly MethodInfo GetPort;
 		private static readonly ConstructorInfo Ctor;
-		private static readonly IPAddressSerializationCompiler IPAddressSerializer;
+		private static readonly IPAddressSerializer IPAddressSerializer;
 
-		static IPEndPointSerializationCompiler()
+		static IPEndPointSerializer()
 		{
 			GetAddress = typeof (IPEndPoint).GetProperty("Address").GetMethod;
 			GetPort = typeof (IPEndPoint).GetProperty("Port").GetMethod;
 			Ctor = typeof (IPEndPoint).GetConstructor(new[] {typeof (IPAddress), typeof (int)});
-			IPAddressSerializer = new IPAddressSerializationCompiler();
+			IPAddressSerializer = new IPAddressSerializer();
 		}
 
 		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)

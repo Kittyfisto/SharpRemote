@@ -5,9 +5,9 @@ using System.Reflection.Emit;
 namespace SharpRemote.CodeGeneration.Serialization
 {
 	/// <summary>
-	/// Responsible for providing the IL-code to serialize a value of the given type <see cref="ISerializationCompiler.Type"/>.
+	/// Responsible for providing the IL-code to serialize a value of the given type <see cref="ITypeSerializer.Type"/>.
 	/// </summary>
-	public interface ISerializationCompiler
+	public interface ITypeSerializer
 	{
 		/// <summary>
 		/// 

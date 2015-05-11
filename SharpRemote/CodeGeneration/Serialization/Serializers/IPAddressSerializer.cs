@@ -5,13 +5,13 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public class IPAddressSerializationCompiler
-		: AbstractSerializationCompiler<IPAddress>
+	public class IPAddressSerializer
+		: AbstractTypeSerializer<IPAddress>
 	{
 		private readonly MethodInfo _ipAddressGetAddressBytes;
 		private readonly ConstructorInfo _ipAddressFromBytes;
 
-		public IPAddressSerializationCompiler()
+		public IPAddressSerializer()
 		{
 			_ipAddressGetAddressBytes = typeof(IPAddress).GetMethod("GetAddressBytes");
 			_ipAddressFromBytes = typeof(IPAddress).GetConstructor(new[] { typeof(byte[]) });

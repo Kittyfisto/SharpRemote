@@ -338,7 +338,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Callvirt, Methods.ObjectGetType);
-			gen.Emit(OpCodes.Callvirt, TypeSerializationCompiler.GetAssemblyQualifiedName);
+			gen.Emit(OpCodes.Callvirt, TypeSerializer.GetAssemblyQualifiedName);
 			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
 		}
 

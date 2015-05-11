@@ -35,27 +35,27 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripNull()
+		public void TestNull()
 		{
 			_serializer.RoundtripObject(null).Should().BeNull();
 		}
 
 		[Test]
-		public void TestRoundtripInt8()
+		public void TestInt8()
 		{
 			_serializer.RegisterType<sbyte>();
 			_serializer.RoundtripObject((sbyte)(-128)).Should().Be((sbyte)(-128));
 		}
 
 		[Test]
-		public void TestRoundtripUInt8()
+		public void TestUInt8()
 		{
 			_serializer.RegisterType<byte>();
 			_serializer.RoundtripObject((byte)255).Should().Be((byte)255);
 		}
 
 		[Test]
-		public void TestRoundtripBool()
+		public void TestBool()
 		{
 			_serializer.RegisterType<bool>();
 			_serializer.RoundtripObject(true).Should().Be(true);
@@ -63,49 +63,49 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripInt16()
+		public void TestInt16()
 		{
 			_serializer.RegisterType<Int16>();
 			_serializer.RoundtripObject((Int16)(-31187)).Should().Be((Int16)(-31187));
 		}
 
 		[Test]
-		public void TestRoundtripUInt16()
+		public void TestUInt16()
 		{
 			_serializer.RegisterType<UInt16>();
 			_serializer.RoundtripObject((UInt16)56178).Should().Be((UInt16)56178);
 		}
 
 		[Test]
-		public void TestRoundtripInt32()
+		public void TestInt32()
 		{
 			_serializer.RegisterType<Int32>();
 			_serializer.RoundtripObject(42).Should().Be(42);
 		}
 
 		[Test]
-		public void TestRoundtripUInt32()
+		public void TestUInt32()
 		{
 			_serializer.RegisterType<UInt32>();
 			_serializer.RoundtripObject(42u).Should().Be(42u);
 		}
 
 		[Test]
-		public void TestRoundtripInt64()
+		public void TestInt64()
 		{
 			_serializer.RegisterType<Int64>();
 			_serializer.RoundtripObject(-345442343232423).Should().Be(-345442343232423);
 		}
 
 		[Test]
-		public void TestRoundtripUInt64()
+		public void TestUInt64()
 		{
 			_serializer.RegisterType<UInt64>();
 			_serializer.RoundtripObject(9899045442343232423).Should().Be(9899045442343232423);
 		}
 
 		[Test]
-		public void TestRoundtripString()
+		public void TestString()
 		{
 			_serializer.RegisterType<string>();
 			_serializer.RoundtripObject(null).Should().Be(null);
@@ -114,7 +114,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripIPAddress()
+		public void TestIPAddress()
 		{
 			_serializer.RegisterType<IPAddress>();
 			_serializer.RoundtripObject(IPAddress.Parse("192.168.0.87")).Should().Be(IPAddress.Parse("192.168.0.87"));
@@ -122,7 +122,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripIPEndPoint()
+		public void TestIPEndPoint()
 		{
 			var ep = new IPEndPoint(IPAddress.Parse("192.168.0.87"), 80);
 			_serializer.RoundtripObject(ep).Should().Be(ep);
@@ -132,14 +132,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripType()
+		public void TestType()
 		{
 			_serializer.RegisterType<Type>();
 			_serializer.RoundtripObject(typeof (int));
 		}
 
 		[Test]
-		public void TestRoundtripFieldStruct()
+		public void TestFieldStruct()
 		{
 			_serializer.RegisterType<FieldStruct>();
 			var value = new FieldStruct
@@ -160,7 +160,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripFieldSealedClass()
+		public void TestFieldSealedClass()
 		{
 			_serializer.RegisterType<FieldSealedClass>();
 			var value = new FieldSealedClass
@@ -173,14 +173,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripPropertyStruct()
+		public void TestPropertyStruct()
 		{
 			var value = new PropertyStruct {Value = "Execute Order 66"};
 			_serializer.RoundtripObject(value).Should().Be(value);
 		}
 
 		[Test]
-		public void TestRoundtripPropertySealedClass()
+		public void TestPropertySealedClass()
 		{
 			var value = new PropertySealedClass
 			{
@@ -196,21 +196,43 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		{
 			var value = new NestedFieldStruct
 			{
-				/*N1 = new PropertySealedClass
+				N1 = new PropertySealedClass
 				{
 					Value1 = "Bs",
 					Value2 = 80793,
 					Value3 = 30987.12234
-				},*/
-				/*N2 = new FieldStruct
+				},
+				N2 = new FieldStruct
 				{
 					A = -897761.1232,
 					B = -3214312,
 					C = "Blubba\r\ndawawd\tdddD"
-				}*/
+				}
 			};
 
 			_serializer.RoundtripObject(value).Should().Be(value);
+		}
+
+		[Test]
+		public void TestBinaryTree()
+		{
+			var tree = new BinaryTreeNode
+				{
+					Value = 0,
+					Left = new BinaryTreeNode
+						{
+							Value = -1
+						},
+					Right = new BinaryTreeNode
+						{
+							Value = 1,
+							Left = new BinaryTreeNode
+								{
+									Value = 0.5
+								}
+						}
+				};
+			_serializer.RoundtripObject(tree).Should().Be(tree);
 		}
 	}
 }

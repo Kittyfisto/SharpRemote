@@ -68,6 +68,7 @@
     <Compile Include="Hosting\ProcessSiloTest.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="TestLogger.cs" />
+    <Compile Include="Types\Classes\BinaryTreeNode.cs" />
     <Compile Include="Types\Classes\PropertySealedClass.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />

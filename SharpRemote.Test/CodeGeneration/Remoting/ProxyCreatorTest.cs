@@ -738,7 +738,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
 						methodName.Should().Be("Do");
 						stream.Should().NotBeNull();
-						stream.Length.Should().Be(127);
 						var reader = new BinaryReader(stream);
 						reader.ReadString().Should().Be(typeof(Birke).AssemblyQualifiedName);
 
@@ -746,7 +745,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						reader.ReadString().Should().Be("Foobar");
 						reader.ReadByte().Should().Be(42);
 						reader.ReadDouble().Should().Be(Math.PI);
-						stream.Position.Should().Be(127);
+						stream.Position.Should().Be(stream.Length);
 
 						doCalled = true;
 						return null;

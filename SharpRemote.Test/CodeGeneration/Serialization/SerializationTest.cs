@@ -6,6 +6,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
 using SharpRemote.CodeGeneration.Serialization;
+using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
@@ -30,7 +31,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[TestFixtureTearDown]
 		public void TestFixtureTearDown()
 		{
-			//_assembly.Save(_moduleName);
+			_assembly.Save(_moduleName);
 		}
 
 		[Test]
@@ -179,6 +180,19 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestRoundtripFieldSealedClass()
+		{
+			_serializer.RegisterType<FieldSealedClass>();
+			var value = new FieldSealedClass
+			{
+				A = 1321331.21312,
+				B = 322132312,
+				C = "Rise, lord Vader!"
+			};
+			_serializer.RoundtripObject(value).Should().Be(value);
+		}
+
+		[Test]
 		public void TestRoundtripFieldStructArray()
 		{
 			_serializer.RegisterType<FieldStruct[]>();
@@ -194,6 +208,25 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 						}
 				};
 			_serializer.RoundtripValue(values).Should().Equal(values);
+		}
+
+		[Test]
+		public void TestRoundtripPropertyStruct()
+		{
+			var value = new PropertyStruct {Value = "Execute Order 66"};
+			_serializer.RoundtripObject(value).Should().Be(value);
+		}
+
+		[Test]
+		public void TestRoundtripPropertySealedClass()
+		{
+			var value = new PropertySealedClass
+			{
+				Value1 = "Execute Order 66",
+				Value2 = -342131231,
+				Value3 = Math.PI
+			};
+			_serializer.RoundtripObject(value).Should().Be(value);
 		}
 	}
 }

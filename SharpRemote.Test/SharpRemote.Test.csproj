@@ -67,6 +67,7 @@
     <Compile Include="Hosting\ProcessSiloTest.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="TestLogger.cs" />
+    <Compile Include="Types\Classes\PropertySealedClass.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="Types\ICalculator.cs" />
@@ -99,13 +100,14 @@
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethodUInt32Parameter.cs" />
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethodUInt64Parameter.cs" />
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethodUInt8Parameter.cs" />
-    <Compile Include="Types\Interfaces\Classes\BaseClass.cs" />
-    <Compile Include="Types\Interfaces\Classes\Birke.cs" />
+    <Compile Include="Types\Classes\BaseClass.cs" />
+    <Compile Include="Types\Classes\Birke.cs" />
     <Compile Include="Types\Structs\FieldStruct.cs" />
     <Compile Include="CodeGeneration\Remoting\ProxyCreatorTest.cs" />
-    <Compile Include="Types\Interfaces\Classes\FieldSealedClass.cs" />
-    <Compile Include="Types\Interfaces\Classes\Tree.cs" />
+    <Compile Include="Types\Classes\FieldSealedClass.cs" />
+    <Compile Include="Types\Classes\Tree.cs" />
     <Compile Include="Types\Structs\MissingDataContractStruct.cs" />
+    <Compile Include="Types\Structs\PropertyStruct.cs" />
     <Compile Include="Types\Structs\ReadOnlyDataMemberFieldStruct.cs" />
     <Compile Include="Types\Structs\StaticDataMemberFieldStruct.cs" />
     <Compile Include="Hosting\AbstractSiloAcceptanceTest.cs" />

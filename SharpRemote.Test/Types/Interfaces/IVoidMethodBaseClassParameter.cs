@@ -1,4 +1,4 @@
-﻿using SharpRemote.Test.Types.Interfaces.Classes;
+﻿using SharpRemote.Test.Types.Classes;
 
 namespace SharpRemote.Test.Types.Interfaces
 {

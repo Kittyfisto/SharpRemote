@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.Serialization;
 using SharpRemote.CodeGeneration.Serialization.Serializers;
 
 namespace SharpRemote.CodeGeneration.Serialization
@@ -165,27 +163,19 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				
 			}
-			else if (typeInformation.IsArray)
+			else if (typeInformation.IsValueType)
 			{
-				
+				var value = gen.DeclareLocal(typeInformation.Type);
+				EmitReadValueType(gen, typeInformation, value);
+			}
+			else if (typeInformation.IsSealed)
+			{
+				var value = gen.DeclareLocal(typeInformation.Type);
+				EmitReadSealedClass(gen, typeInformation, value);
 			}
 			else
 			{
-				var tmp = gen.DeclareLocal(typeInformation.Type);
-				if (typeInformation.Constructor == null)
-				{
-					gen.Emit(OpCodes.Ldloca, tmp);
-					gen.Emit(OpCodes.Initobj, typeInformation.Type);
-				}
-				else
-				{
-					gen.Emit(OpCodes.Newobj, typeInformation.Constructor);
-					gen.Emit(OpCodes.Stloc, tmp);
-				}
-
-				ReadFields(gen, tmp, typeInformation.Type);
-
-				gen.Emit(OpCodes.Ldloc, tmp);
+				throw new NotImplementedException();
 			}
 
 			gen.Emit(OpCodes.Ret);
@@ -225,33 +215,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ret);
 		}
 
-		private void ReadFields(ILGenerator gen, LocalBuilder target, Type type)
-		{
-			var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-			                 .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
-			                 .ToArray();
-
-			foreach (var field in fields)
-			{
-				ReadField(gen, target, field);
-			}
-		}
-
-		private void ReadField(ILGenerator gen, LocalBuilder target, FieldInfo field)
-		{
-			// tmp.<Field> = writer.ReadXYZ();
-
-			gen.Emit(OpCodes.Ldloca, target);
-
-			var type = field.FieldType;
-			if (!gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0), type))
-			{
-				throw new NotImplementedException();
-			}
-
-			gen.Emit(OpCodes.Stfld, field);
-		}
-
 		private WriteMethod CompileWriteMethod(TypeInformation typeInformation)
 		{
 			var typeName = string.Format("Write.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
@@ -281,7 +244,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 			else if (typeInformation.IsValueType)
 			{
-				WriteFields(gen, typeInformation.Type);
+				WriteValueType(gen, typeInformation);
 			}
 			else if (typeInformation.IsSealed)
 			{

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace SharpRemote.Test.Types.Interfaces.Classes
+namespace SharpRemote.Test.Types.Classes
 {
 	[DataContract]
 	public abstract class BaseClass

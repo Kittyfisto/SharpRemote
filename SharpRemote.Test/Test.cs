@@ -1,14 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using SharpRemote.CodeGeneration;
 using SharpRemote.Hosting;
+using SharpRemote.Test.Types.Classes;
 
 namespace SharpRemote.Test
 {
 	internal class Test
 	{
 		private ISubjectHost _subject;
+
+		public FieldSealedClass Read(BinaryReader reader)
+		{
+			var tmp = new FieldSealedClass();
+			tmp.A = reader.ReadDouble();
+			return tmp;
+		}
 
 		public void CreateSubject(BinaryReader reader, BinaryWriter writer)
 		{

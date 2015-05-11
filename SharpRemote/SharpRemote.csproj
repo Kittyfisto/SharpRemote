@@ -42,6 +42,8 @@
     <Compile Include="CodeGeneration\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomClassSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\CollectionSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\EnumerableSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\ITypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\IPAddressSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\IPEndPointSerializer.cs" />

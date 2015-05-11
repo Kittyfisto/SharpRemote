@@ -12,7 +12,7 @@ using SharpRemote.Test.Types.Structs;
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
 	[TestFixture]
-	public sealed class SerializationTest
+	public sealed partial class SerializationTest
 	{
 		private Serializer _serializer;
 		private AssemblyBuilder _assembly;
@@ -160,26 +160,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestRoundtripIntArray()
-		{
-			_serializer.RegisterType<int[]>();
-			_serializer.RoundtripValue(new int[0]);
-			_serializer.RoundtripValue(new[] { 42 }).Should().Equal(new[] { 42 });
-			_serializer.RoundtripValue(new[] { int.MinValue, int.MaxValue }).Should().Equal(new[] { int.MinValue, int.MaxValue });
-			_serializer.RoundtripValue(new[] { -1, 0, 42, 9001 }).Should().Equal(new[] { -1, 0, 42, 9001 });
-		}
-
-		[Test]
-		public void TestRoundtripStringArray()
-		{
-			_serializer.RegisterType<string[]>();
-			_serializer.RoundtripValue(new string[0]);
-			_serializer.RoundtripValue(new[] { "Foobar" }).Should().Equal(new[] { "Foobar" });
-			_serializer.RoundtripValue(new[] { "a", "b" }).Should().Equal(new[] { "a", "b" });
-			_serializer.RoundtripValue(new[] { "a", null, "b" }).Should().Equal(new[] { "a", null, "b" });
-		}
-
-		[Test]
 		public void TestRoundtripFieldSealedClass()
 		{
 			_serializer.RegisterType<FieldSealedClass>();
@@ -190,24 +170,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				C = "Rise, lord Vader!"
 			};
 			_serializer.RoundtripObject(value).Should().Be(value);
-		}
-
-		[Test]
-		public void TestRoundtripFieldStructArray()
-		{
-			_serializer.RegisterType<FieldStruct[]>();
-
-			_serializer.RoundtripValue(new FieldStruct[0]).Should().Equal(new FieldStruct[0]);
-			var values = new[]
-				{
-					new FieldStruct
-						{
-							A = 42,
-							B = -1223112,
-							C = "Sunday!"
-						}
-				};
-			_serializer.RoundtripValue(values).Should().Equal(values);
 		}
 
 		[Test]

@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\ArrayTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationConstraintsTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationTest.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCreatorTest.cs" />

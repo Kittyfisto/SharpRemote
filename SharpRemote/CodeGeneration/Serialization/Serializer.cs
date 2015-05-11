@@ -156,7 +156,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			var gen = method.GetILGenerator();
 			if (typeInformation.IsArray)
 			{
-				ReadArray(gen, typeInformation);
+				EmitReadArray(gen, typeInformation);
 			}
 			else if (gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0),
 					typeInformation.Type))
@@ -234,7 +234,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			if (typeInformation.IsArray)
 			{
-				WriteArray(gen, typeInformation);
+				EmitWriteArray(gen, typeInformation);
 			}
 			else if (gen.EmitWritePod(
 				() => gen.Emit(OpCodes.Ldarg_0),

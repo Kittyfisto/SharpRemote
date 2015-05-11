@@ -7,79 +7,21 @@ namespace SharpRemote.CodeGeneration.Serialization
 {
 	public partial class Serializer
 	{
-		private void WriteArray(ILGenerator gen, TypeInformation typeInformation)
+		private void EmitWriteArray(ILGenerator gen, TypeInformation typeInformation)
 		{
 			var type = typeInformation.Type;
-			var elementType = typeInformation.ElementType;
-			var enumerableType = typeof(IEnumerable<>).MakeGenericType(elementType);
-			var enumeratorType = typeof(IEnumerator<>).MakeGenericType(elementType);
 			var getLength = type.GetProperty("Length").GetMethod;
-			var getEnumerator = enumerableType.GetMethod("GetEnumerator");
-			var moveNext = typeof(IEnumerator).GetMethod("MoveNext");
-			var getCurrent = enumeratorType.GetProperty("Current").GetMethod;
 
-			// writer.Write(value.Length) OR writer.Write(value.Count)
+			// writer.Write(value.Length)
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Call, getLength);
 			gen.Emit(OpCodes.Call, Methods.WriteInt);
 
-			// var enumerator = value.GetEnumerator()
-			var enumerator = gen.DeclareLocal(enumeratorType);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Castclass, enumerableType);
-			gen.Emit(OpCodes.Callvirt, getEnumerator);
-			gen.Emit(OpCodes.Stloc, enumerator);
-
-			var loop = gen.DefineLabel();
-			var end = gen.DefineLabel();
-
-			// loop:
-			gen.MarkLabel(loop);
-			// if (!enumerator.MoveNext()) goto end
-			gen.Emit(OpCodes.Ldloc, enumerator);
-			gen.Emit(OpCodes.Callvirt, moveNext);
-			gen.Emit(OpCodes.Brfalse, end);
-
-			if (gen.EmitWritePod(
-				() => gen.Emit(OpCodes.Ldarg_0),
-				() =>
-				{
-					gen.Emit(OpCodes.Ldloc, enumerator);
-					gen.Emit(OpCodes.Callvirt, getCurrent);
-				},
-				elementType))
-			{
-
-			}
-			else if (elementType.IsValueType)
-			{
-				WriteMethod write;
-				ReadMethod unused;
-				RegisterType(elementType, out write, out unused);
-				var writeMethod = write.ValueMethod;
-
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldloc, enumerator);
-				gen.Emit(OpCodes.Callvirt, getCurrent);
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.Emit(OpCodes.Call, writeMethod);
-			}
-			else
-			{
-				throw new NotImplementedException();
-			}
-
-			// goto loop
-			gen.Emit(OpCodes.Br, loop);
-
-			// end:
-			gen.MarkLabel(end);
-			// return
-			gen.Emit(OpCodes.Ret);
+			EmitWriteEnumeration(gen, typeInformation);
 		}
 
-		private void ReadArray(ILGenerator gen, TypeInformation typeInformation)
+		private void EmitReadArray(ILGenerator gen, TypeInformation typeInformation)
 		{
 			var elementType = typeInformation.ElementType;
 
@@ -122,7 +64,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 
 			}
-			else if (elementType.IsValueType)
+			else if (elementType.IsValueType || elementType.IsSealed)
 			{
 				WriteMethod unused;
 				ReadMethod read;

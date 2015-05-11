@@ -42,7 +42,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		[TestFixtureTearDown]
 		public void TearDown()
 		{
-			//_assembly.Save(_moduleName);
+			_assembly.Save(_moduleName);
 		}
 
 		private T TestGenerate<T>()
@@ -738,16 +738,15 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						objectId.Should().Be(((IProxy)proxy).ObjectId);
 						methodName.Should().Be("Do");
 						stream.Should().NotBeNull();
-						stream.Length.Should().Be(237);
+						stream.Length.Should().Be(127);
 						var reader = new BinaryReader(stream);
-						reader.ReadString().Should().Be(typeof(Birke).AssemblyQualifiedName);
-						// Due to a design flaw, the assembly name is written twice, for now
 						reader.ReadString().Should().Be(typeof(Birke).AssemblyQualifiedName);
 
 						reader.ReadBoolean().Should().BeTrue();
 						reader.ReadString().Should().Be("Foobar");
 						reader.ReadByte().Should().Be(42);
 						reader.ReadDouble().Should().Be(Math.PI);
+						stream.Position.Should().Be(127);
 
 						doCalled = true;
 						return null;

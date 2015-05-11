@@ -196,18 +196,18 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		{
 			var value = new NestedFieldStruct
 			{
-				N1 = new PropertySealedClass
+				/*N1 = new PropertySealedClass
 				{
 					Value1 = "Bs",
 					Value2 = 80793,
 					Value3 = 30987.12234
-				},
-				N2 = new FieldStruct
+				},*/
+				/*N2 = new FieldStruct
 				{
 					A = -897761.1232,
 					B = -3214312,
 					C = "Blubba\r\ndawawd\tdddD"
-				}
+				}*/
 			};
 
 			_serializer.RoundtripObject(value).Should().Be(value);

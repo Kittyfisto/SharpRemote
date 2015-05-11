@@ -12,95 +12,65 @@ namespace SharpRemote.CodeGeneration.Serialization
 		: ISerializer
 	{
 		private readonly ModuleBuilder _module;
-		private readonly Dictionary<Type, WriteMethod> _typeToWriteMethods;
 		private readonly Dictionary<Type, ReadMethod> _typeToReadMethods;
-
-		sealed class ReadMethod
-		{
-			public readonly MethodInfo ReadValueMethod;
-			public Func<BinaryReader, ISerializer, object> ReadObjectDelegate;
-			public MethodInfo ReadObjectMethod;
-
-			public ReadMethod(MethodBuilder readValueMethod)
-			{
-				ReadValueMethod = readValueMethod;
-			}
-		}
-
-		sealed class WriteMethod
-		{
-			/// <summary>
-			/// The method that takes a parameter of the actual type in question.
-			/// </summary>
-			public readonly MethodInfo ValueMethod;
-
-			/// <summary>
-			/// The method that takes an object parameter.
-			/// </summary>
-			public readonly MethodInfo ObjectMethod;
-
-			public Action<BinaryWriter, object, ISerializer> WriteDelegate;
-
-			public WriteMethod(MethodBuilder valueMethod, MethodInfo objectMethod)
-			{
-				if (valueMethod == null) throw new ArgumentNullException("valueMethod");
-				if (objectMethod == null) throw new ArgumentNullException("objectMethod");
-
-				ValueMethod = valueMethod;
-				ObjectMethod = objectMethod;
-			}
-		}
+		private readonly Dictionary<Type, WriteMethods> _typeToWriteMethods;
 
 		public Serializer(ModuleBuilder module)
 		{
 			if (module == null) throw new ArgumentNullException("module");
 
 			_module = module;
-			_typeToWriteMethods = new Dictionary<Type, WriteMethod>();
+			_typeToWriteMethods = new Dictionary<Type, WriteMethods>();
 			_typeToReadMethods = new Dictionary<Type, ReadMethod>();
 		}
 
 		public Serializer()
 			: this(CreateModule())
-		{}
+		{
+		}
+
+		public void RegisterType<T>()
+		{
+			Type type = typeof (T);
+			RegisterType(type);
+		}
+
+		public void WriteObject(BinaryWriter writer, object value)
+		{
+			if (value == null)
+			{
+				writer.Write("null");
+			}
+			else
+			{
+				Type type = value.GetType();
+				Action<BinaryWriter, object, ISerializer> fn = GetWriteObjectDelegate(type);
+				fn(writer, value, this);
+			}
+		}
+
+		public object ReadObject(BinaryReader reader)
+		{
+			string typeName = reader.ReadString();
+			if (typeName != "null")
+			{
+				Type type = Type.GetType(typeName);
+				Func<BinaryReader, ISerializer, object> fn = GetReadObjectDelegate(type);
+				return fn(reader, this);
+			}
+
+			return null;
+		}
 
 		private static ModuleBuilder CreateModule()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
-			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			var moduleName = assemblyName.Name + ".dll";
-			var module = assembly.DefineDynamicModule(moduleName);
+			AssemblyBuilder assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
+			                                                                         AssemblyBuilderAccess.RunAndSave);
+			string moduleName = assemblyName.Name + ".dll";
+			ModuleBuilder module = assembly.DefineDynamicModule(moduleName);
 			return module;
 		}
-
-		/*
-		/// <summary>
-		/// Writes the current value on top of the evaluation stack onto the binary writer that's
-		/// second to top on the evaluation stack.
-		/// </summary>
-		/// <param name="gen"></param>
-		/// <param name="loadWriter"></param>
-		/// <param name="loadValue"></param>
-		/// <param name="valueType"></param>
-		/// <param name="serializer"></param>
-		public void EmitWriteValue(ILGenerator gen,
-			Action loadWriter,
-			Action loadValue,
-			Type valueType,
-			FieldBuilder serializer)
-		{
-			if (!gen.EmitWriteNativeType(loadWriter, loadValue, valueType))
-			{
-				var writeObject = GetWriteValueMethodInfo(valueType);
-
-				// Serializer.Serialize(writer, value, this.serializer)
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldfld, serializer);
-				gen.Emit(OpCodes.Call, writeObject);
-			}
-		}*/
 
 		/// <summary>
 		///     Returns the method to write a value of the given type to a writer.
@@ -112,10 +82,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		{
 			if (type.IsValueType || type.IsSealed)
 			{
-				WriteMethod method;
+				WriteMethods methods;
 				ReadMethod unused;
-				RegisterType(type, out method, out unused);
-				return method.ValueMethod;
+				RegisterType(type, out methods, out unused);
+				return methods.WriteValueMethod;
 			}
 
 			// We don't know the true type of the parameter until we inspect it's actual value.
@@ -133,7 +103,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		{
 			if (type.IsValueType || type.IsSealed)
 			{
-				WriteMethod unused;
+				WriteMethods unused;
 				ReadMethod method;
 				RegisterType(type, out unused, out method);
 				return method.ReadValueMethod;
@@ -146,84 +116,118 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		private Action<BinaryWriter, object, ISerializer> GetWriteObjectDelegate(Type type)
 		{
-			WriteMethod method;
+			WriteMethods methods;
 			ReadMethod unused;
-			RegisterType(type, out method, out unused);
-			return method.WriteDelegate;
+			RegisterType(type, out methods, out unused);
+			return methods.WriteDelegate;
 		}
 
 		private Func<BinaryReader, ISerializer, object> GetReadObjectDelegate(Type type)
 		{
-			WriteMethod unused;
+			WriteMethods unused;
 			ReadMethod method;
 			RegisterType(type, out unused, out method);
 
 			return method.ReadObjectDelegate;
 		}
 
-		private ReadMethod CompileReadMethod(TypeInformation typeInformation)
+		private ReadMethod CreateReadMethods(TypeInformation typeInformation)
 		{
-			var typeName = string.Format("Read.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
-			var typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
-			var method = typeBuilder.DefineMethod("ReadValue", MethodAttributes.Public | MethodAttributes.Static,
-												   CallingConventions.Standard, typeInformation.Type, new[]
-				                                       {
-														   typeof(BinaryReader),
-														   typeof (ISerializer)
-				                                       });
+			string typeName = string.Format("Read.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
+			TypeBuilder typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
+			MethodBuilder readValueNotNull = typeBuilder.DefineMethod("ReadValueNotNull",
+			                                                          MethodAttributes.Public | MethodAttributes.Static,
+			                                                          CallingConventions.Standard, typeInformation.Type, new[]
+				                                                          {
+					                                                          typeof (BinaryReader),
+					                                                          typeof (ISerializer)
+				                                                          });
 
-			CreateReadDelegate(typeBuilder, method, typeInformation.Type);
-			var m = new ReadMethod(method);
+			MethodInfo readObject = CreateReadObject(typeBuilder, readValueNotNull, typeInformation.Type);
+			MethodInfo readValue = CreateReadValue(typeBuilder, readValueNotNull, typeInformation.Type);
+
+			var m = new ReadMethod(readObject, readValue, readValueNotNull);
 			_typeToReadMethods.Add(typeInformation.Type, m);
 
-			var gen = method.GetILGenerator();
+			ILGenerator gen = readValueNotNull.GetILGenerator();
 			if (typeInformation.IsArray)
 			{
 				EmitReadArray(gen, typeInformation);
 			}
 			else if (gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0),
-					typeInformation.Type))
+			                                typeInformation.Type,
+			                                false))
 			{
-				
 			}
-			else if (typeInformation.IsValueType)
+			else if (typeInformation.IsValueType || typeInformation.IsSealed)
 			{
-				var value = gen.DeclareLocal(typeInformation.Type);
-				EmitReadValueType(gen, typeInformation, value);
-			}
-			else if (typeInformation.IsSealed)
-			{
-				var value = gen.DeclareLocal(typeInformation.Type);
-				EmitReadSealedClass(gen, typeInformation, value);
+				LocalBuilder value = gen.DeclareLocal(typeInformation.Type);
+				EmitReadCustomType(gen, typeInformation, value);
 			}
 			else
 			{
 				EmitReadValue(gen,
-					() => gen.Emit(OpCodes.Ldarg_0),
-					() => gen.Emit(OpCodes.Ldarg_1),
-					typeInformation.Type);
+				              () => gen.Emit(OpCodes.Ldarg_0),
+				              () => gen.Emit(OpCodes.Ldarg_1),
+				              typeInformation.Type);
 			}
 
 			gen.Emit(OpCodes.Ret);
 
-			var serializerType = typeBuilder.CreateType();
-			m.ReadObjectMethod = serializerType.GetMethod("ReadObject", new[] { typeof(BinaryReader), typeof(ISerializer) });
-			m.ReadObjectDelegate = (Func<BinaryReader, ISerializer, object>)m.ReadObjectMethod.CreateDelegate(typeof(Func<BinaryReader, ISerializer, object>));
+			typeBuilder.CreateType();
+			MethodInfo readObjectMethod = typeBuilder.GetMethod("ReadObject");
+			m. ReadObjectDelegate =
+				(Func<BinaryReader, ISerializer, object>)
+				readObjectMethod.CreateDelegate(typeof (Func<BinaryReader, ISerializer, object>));
 
 			return m;
 		}
 
-		private void CreateReadDelegate(TypeBuilder typeBuilder, MethodBuilder methodInfo, Type type)
+		private MethodInfo CreateReadValue(TypeBuilder typeBuilder, MethodBuilder readValueNotNull, Type type)
 		{
-			var method = typeBuilder.DefineMethod("ReadObject", MethodAttributes.Public | MethodAttributes.Static,
-												   CallingConventions.Standard, typeof(object), new[]
-				                                       {
-														   typeof (BinaryReader),
-														   typeof (ISerializer)
-				                                       });
+			if (type.IsValueType)
+				return readValueNotNull;
+
+			MethodBuilder method = typeBuilder.DefineMethod("ReadValue", MethodAttributes.Public | MethodAttributes.Static,
+			                                                CallingConventions.Standard, type, new[]
+				                                                {
+					                                                typeof (BinaryReader),
+					                                                typeof (ISerializer)
+				                                                });
+
+			ILGenerator gen = method.GetILGenerator();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, Methods.ReadBool);
+			Label end = gen.DefineLabel();
+			Label @null = gen.DefineLabel();
+			gen.Emit(OpCodes.Brfalse, @null);
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, readValueNotNull);
+			gen.Emit(OpCodes.Br_S, end);
+
+			gen.MarkLabel(@null);
+			gen.Emit(OpCodes.Ldnull);
+
+			gen.MarkLabel(end);
+			gen.Emit(OpCodes.Ret);
+
+			return method;
+		}
+
+		private MethodInfo CreateReadObject(TypeBuilder typeBuilder, MethodBuilder methodInfo, Type type)
+		{
+			MethodBuilder method = typeBuilder.DefineMethod("ReadObject", MethodAttributes.Public | MethodAttributes.Static,
+			                                                CallingConventions.Standard, typeof (object), new[]
+				                                                {
+					                                                typeof (BinaryReader),
+					                                                typeof (ISerializer)
+				                                                });
 
 			bool requiresBoxing = type.IsPrimitive || type.IsValueType;
-			var gen = method.GetILGenerator();
+			ILGenerator gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
@@ -233,30 +237,30 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				gen.Emit(OpCodes.Box, type);
 			}
-			else
-			{
-				gen.Emit(OpCodes.Castclass, type);
-			}
 
 			gen.Emit(OpCodes.Ret);
+
+			return method;
 		}
 
-		private WriteMethod CompileWriteMethod(TypeInformation typeInformation)
+		private WriteMethods CreateWriteMethods(TypeInformation typeInformation)
 		{
-			var typeName = string.Format("Write.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
-			var typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
-			var valueMethod = typeBuilder.DefineMethod("WriteValue", MethodAttributes.Public | MethodAttributes.Static,
-			                                       CallingConventions.Standard, typeof (void), new[]
-				                                       {
-														   typeof(BinaryWriter),
-					                                       typeInformation.Type,
-														   typeof (ISerializer)
-				                                       });
-			var objectMethod = CreateWriteDelegate(typeBuilder, valueMethod, typeInformation.Type);
-			var m = new WriteMethod(valueMethod, objectMethod);
+			string typeName = string.Format("Write.{0}.{1}", typeInformation.Namespace, typeInformation.Name);
+			TypeBuilder typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
+			MethodBuilder valueNotNullMethod = typeBuilder.DefineMethod("WriteValueNotNull",
+			                                                            MethodAttributes.Public | MethodAttributes.Static,
+			                                                            CallingConventions.Standard, typeof (void), new[]
+				                                                            {
+					                                                            typeof (BinaryWriter),
+					                                                            typeInformation.Type,
+					                                                            typeof (ISerializer)
+				                                                            });
+			MethodInfo objectMethod = CreateWriteValueWithTypeInformation(typeBuilder, valueNotNullMethod, typeInformation.Type);
+			MethodInfo valueMethod = CreateWriteValue(typeBuilder, valueNotNullMethod, typeInformation.Type);
+			var m = new WriteMethods(objectMethod, valueMethod, valueNotNullMethod);
 			_typeToWriteMethods.Add(typeInformation.Type, m);
 
-			var gen = valueMethod.GetILGenerator();
+			ILGenerator gen = valueNotNullMethod.GetILGenerator();
 
 			if (typeInformation.IsArray)
 			{
@@ -265,59 +269,108 @@ namespace SharpRemote.CodeGeneration.Serialization
 			else if (gen.EmitWriteNativeType(
 				() => gen.Emit(OpCodes.Ldarg_0),
 				() => gen.Emit(OpCodes.Ldarg_1),
-				typeInformation.Type))
+				typeInformation.Type,
+				false))
 			{
-			}
-			else if (typeInformation.IsValueType)
-			{
-				WriteValueType(gen, typeInformation);
-			}
-			else if (typeInformation.IsSealed)
-			{
-				WriteSealedObject(gen, typeInformation.Type);
 			}
 			else
 			{
-				WriteUnsealedObject(gen, typeInformation.Type);
+				WriteCustomType(gen, typeInformation.Type);
 			}
 
 			gen.Emit(OpCodes.Ret);
 
-			var serializerType = typeBuilder.CreateType();
-			var delegateMethod = serializerType.GetMethod("WriteObject", new[] { typeof(BinaryWriter), typeof(object), typeof(ISerializer) });
-			m.WriteDelegate = (Action<BinaryWriter, object, ISerializer>)delegateMethod.CreateDelegate(typeof(Action<BinaryWriter, object, ISerializer>));
+			typeBuilder.CreateType();
+			MethodInfo writeObjectMethod = typeBuilder.GetMethod("WriteObject");
+			m.WriteDelegate =
+				(Action<BinaryWriter, object, ISerializer>)
+				writeObjectMethod.CreateDelegate(typeof (Action<BinaryWriter, object, ISerializer>));
 
 			return m;
 		}
 
-		private MethodInfo CreateWriteDelegate(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
+		private MethodInfo CreateWriteValue(TypeBuilder typeBuilder, MethodBuilder valueNotNullMethod, Type type)
 		{
-			var method = typeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
-												   CallingConventions.Standard, typeof(void), new[]
-				                                       {
-														   typeof(BinaryWriter),
-					                                       typeof(object),
-														   typeof (ISerializer)
-				                                       });
-			var gen = method.GetILGenerator();
+			if (type.IsValueType)
+				return valueNotNullMethod;
+
+			MethodBuilder method = typeBuilder.DefineMethod("WriteValue", MethodAttributes.Public | MethodAttributes.Static,
+			                                                CallingConventions.Standard, typeof (void), new[]
+				                                                {
+					                                                typeof (BinaryWriter),
+					                                                type,
+					                                                typeof (ISerializer)
+				                                                });
+
+			ILGenerator gen = method.GetILGenerator();
+
+			LocalBuilder result = gen.DeclareLocal(type);
+
+			// if (object == null)
+			Label @true = gen.DefineLabel();
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Ldnull);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Ceq);
+			gen.Emit(OpCodes.Stloc, result);
+			gen.Emit(OpCodes.Ldloc, result);
+			gen.Emit(OpCodes.Brtrue, @true);
+
+			// { writer.Write(false); }
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Call, Methods.WriteBool);
+
+			Label @end = gen.DefineLabel();
+			gen.Emit(OpCodes.Br, @end);
+
+			// else { writer.Write(true); <Serialize Fields> }
+			gen.MarkLabel(@true);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldc_I4_1);
+			gen.Emit(OpCodes.Call, Methods.WriteBool);
+
+			// WriteValueNotNull(writer, value, serializer)
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Ldarg_2);
+			gen.Emit(OpCodes.Call, valueNotNullMethod);
+
+			gen.MarkLabel(@end);
+			gen.Emit(OpCodes.Ret);
+
+			return method;
+		}
+
+		private MethodInfo CreateWriteValueWithTypeInformation(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
+		{
+			MethodBuilder method = typeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
+			                                                CallingConventions.Standard, typeof (void), new[]
+				                                                {
+					                                                typeof (BinaryWriter),
+					                                                typeof (object),
+					                                                typeof (ISerializer)
+				                                                });
+			ILGenerator gen = method.GetILGenerator();
 
 			EmitWriteTypeInformationOrNull(gen, () =>
-			{
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldarg_1);
-
-				if (type.IsPrimitive || type.IsValueType)
 				{
-					gen.Emit(OpCodes.Unbox_Any, type);
-				}
-				else
-				{
-					gen.Emit(OpCodes.Castclass, type);
-				}
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldarg_1);
 
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.Emit(OpCodes.Call, methodInfo);
-			});
+					if (type.IsPrimitive || type.IsValueType)
+					{
+						gen.Emit(OpCodes.Unbox_Any, type);
+					}
+					else
+					{
+						gen.Emit(OpCodes.Castclass, type);
+					}
+
+					gen.Emit(OpCodes.Ldarg_2);
+					gen.Emit(OpCodes.Call, methodInfo);
+				});
 
 			return method;
 		}
@@ -335,10 +388,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		{
 			//gen.EmitWriteLine("writing type info");
 
-			var result = gen.DeclareLocal(typeof(bool));
+			LocalBuilder result = gen.DeclareLocal(typeof (bool));
 
 			// if (object == null)
-			var @true = gen.DefineLabel();
+			Label @true = gen.DefineLabel();
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Ldnull);
 			gen.Emit(OpCodes.Ceq);
@@ -352,7 +405,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldsfld, Methods.StringEmpty);
 			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
-			var @end = gen.DefineLabel();
+			Label @end = gen.DefineLabel();
 			gen.Emit(OpCodes.Br, @end);
 
 			// else { writer.WriteString(object.GetType().AssemblyQualifiedName);
@@ -368,15 +421,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			//gen.EmitWriteLine("Type info written");
 		}
 
-		public void RegisterType<T>()
-		{
-			var type = typeof (T);
-			RegisterType(type);
-		}
-
 		public void RegisterType(Type type)
 		{
-			WriteMethod unused1;
+			WriteMethods unused1;
 			ReadMethod unused2;
 			RegisterType(type, out unused1, out unused2);
 		}
@@ -390,14 +437,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return type;
 		}
 
-		private void RegisterType(Type type, out WriteMethod writeMethod, out ReadMethod readMethod)
+		private void RegisterType(Type type, out WriteMethods writeMethods, out ReadMethod readMethod)
 		{
 			type = PatchType(type);
 			TypeInformation typeInfo = null;
-			if (!_typeToWriteMethods.TryGetValue(type, out writeMethod))
+			if (!_typeToWriteMethods.TryGetValue(type, out writeMethods))
 			{
 				typeInfo = new TypeInformation(type);
-				writeMethod = CompileWriteMethod(typeInfo);
+				writeMethods = CreateWriteMethods(typeInfo);
 			}
 
 			if (!_typeToReadMethods.TryGetValue(type, out readMethod))
@@ -405,35 +452,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				if (typeInfo == null)
 					typeInfo = new TypeInformation(type);
 
-				readMethod = CompileReadMethod(typeInfo);
+				readMethod = CreateReadMethods(typeInfo);
 			}
-		}
-
-		public void WriteObject(BinaryWriter writer, object value)
-		{
-			if (value == null)
-			{
-				writer.Write("null");
-			}
-			else
-			{
-				var type = value.GetType();
-				var fn = GetWriteObjectDelegate(type);
-				fn(writer, value, this);
-			}
-		}
-
-		public object ReadObject(BinaryReader reader)
-		{
-			var typeName = reader.ReadString();
-			if (typeName != "null")
-			{
-				var type = Type.GetType(typeName);
-				var fn = GetReadObjectDelegate(type);
-				return fn(reader, this);
-			}
-
-			return null;
 		}
 
 		[Pure]
@@ -448,6 +468,56 @@ namespace SharpRemote.CodeGeneration.Serialization
 			if (type == null) throw new ArgumentNullException("type");
 
 			return _typeToReadMethods.ContainsKey(type);
+		}
+
+		private sealed class ReadMethod
+		{
+			public readonly MethodInfo ReadObjectMethod;
+			public readonly MethodInfo ReadValueMethod;
+			public readonly MethodInfo ReadValueNotNullMethod;
+			public Func<BinaryReader, ISerializer, object> ReadObjectDelegate;
+
+			public ReadMethod(MethodInfo readObjectMethod, MethodInfo readValueMethod, MethodInfo readValueNotNullMethod)
+			{
+				if (readObjectMethod == null) throw new ArgumentNullException("readObjectMethod");
+				if (readValueMethod == null) throw new ArgumentNullException("readValueMethod");
+				if (readValueNotNullMethod == null) throw new ArgumentNullException("readValueNotNullMethod");
+
+				ReadObjectMethod = readObjectMethod;
+				ReadValueMethod = readValueMethod;
+				ReadValueNotNullMethod = readValueNotNullMethod;
+			}
+		}
+
+		private sealed class WriteMethods
+		{
+			/// <summary>
+			///     Writes a value that can be null and requires embedded object information.
+			/// </summary>
+			public readonly MethodInfo WriteObjectMethod;
+
+			/// <summary>
+			///     Writes a value that can be null.
+			/// </summary>
+			public readonly MethodInfo WriteValueMethod;
+
+			/// <summary>
+			///     Writes a value that can never be null.
+			/// </summary>
+			public readonly MethodInfo WriteValueNotNullMethod;
+
+			public Action<BinaryWriter, object, ISerializer> WriteDelegate;
+
+			public WriteMethods(MethodInfo writeObjectMethod, MethodInfo writeValueMethod, MethodBuilder writeValueNotNullMethod)
+			{
+				if (writeObjectMethod == null) throw new ArgumentNullException("writeObjectMethod");
+				if (writeValueMethod == null) throw new ArgumentNullException("writeValueMethod");
+				if (writeValueNotNullMethod == null) throw new ArgumentNullException("writeValueNotNullMethod");
+
+				WriteObjectMethod = writeObjectMethod;
+				WriteValueMethod = writeValueMethod;
+				WriteValueNotNullMethod = writeValueNotNullMethod;
+			}
 		}
 	}
 }

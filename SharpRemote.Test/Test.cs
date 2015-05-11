@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Types.Classes;
+using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test
 {
@@ -15,6 +16,39 @@ namespace SharpRemote.Test
 			var tmp = new FieldSealedClass();
 			tmp.A = reader.ReadDouble();
 			return tmp;
+		}
+
+		public static void WriteValue(BinaryWriter writer, FieldStruct value, ISerializer serializer)
+		{
+			
+		}
+
+		public static void WriteValue(BinaryWriter writer, PropertySealedClass value, ISerializer serializer)
+		{
+			
+		}
+
+		public static FieldObjectStruct ReadValueNotNull(BinaryReader reader, ISerializer serializer)
+		{
+			var tmp = new FieldObjectStruct();
+			tmp.Value = serializer.ReadObject(reader);
+			return tmp;
+		}
+
+		public static void WriteValueNotNull(BinaryWriter writer, NestedFieldStruct value, ISerializer serializer)
+		{
+			//WriteValue(writer, value.N1, serializer);
+			//WriteValue(writer, value.N2, serializer);
+		}
+
+		public static void WriteValueNotNull(BinaryWriter writer, FieldStruct[] value, ISerializer serializer)
+		{
+			writer.Write(value.Length);
+			var it = ((IEnumerable<FieldStruct>) value).GetEnumerator();
+			while (it.MoveNext())
+			{
+				WriteValue(writer, it.Current, serializer);
+			}
 		}
 
 		public void CreateSubject(BinaryReader reader, BinaryWriter writer)

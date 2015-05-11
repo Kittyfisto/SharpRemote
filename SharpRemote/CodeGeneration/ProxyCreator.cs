@@ -91,13 +91,7 @@ namespace SharpRemote.CodeGeneration
 
 		private string GetProxyTypeName(Type interfaceType)
 		{
-			return string.Format("Corba.{0}.Proxy", interfaceType.Name);
-		}
-
-		private AssemblyName GetProxyAssemblyName(Type type)
-		{
-			var fileName = string.Format("{0}.{1}.Proxy", type.Namespace, type.Name);
-			return new AssemblyName(fileName);
+			return string.Format("{0}.{1}.Proxy", interfaceType.Namespace, interfaceType.Name);
 		}
 	}
 }

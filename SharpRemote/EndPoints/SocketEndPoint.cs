@@ -96,14 +96,14 @@ namespace SharpRemote
 				while (!token.IsCancellationRequested)
 				{
 					SocketError err;
-					if (SynchronizedRead(socket, size, out err) != size.Length || !HandleError(socket, err))
+					if (!SynchronizedRead(socket, size, out err) || !HandleError(socket, err))
 						break;
 
 					var length = BitConverter.ToInt32(size, 0);
 					if (length >= 8)
 					{
 						var buffer = new byte[length];
-						if (SynchronizedRead(socket, buffer, out err) != buffer.Length || !HandleError(socket, err))
+						if (!SynchronizedRead(socket, buffer, out err) || !HandleError(socket, err))
 							break;
 
 						var stream = new MemoryStream(buffer, false);
@@ -114,7 +114,8 @@ namespace SharpRemote
 						var response = HandleMessage(rpcId, type, reader, out responseLength);
 						if (response != null)
 						{
-							if (SynchronizedWrite(socket, response, responseLength, out err) != responseLength || !HandleError(socket, err))
+							if (!SynchronizedWrite(socket, response, responseLength, out err) ||
+								!HandleError(socket, err))
 								break;
 						}
 					}
@@ -133,28 +134,47 @@ namespace SharpRemote
 		}
 
 		#region Reading from / Writing to socket
-		
-		private int SynchronizedWrite(Socket socket, byte[] response, int length, out SocketError err)
+
+		private bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
 		{
 			lock (_syncRoot)
 			{
 				if (!socket.Connected)
 				{
 					err = SocketError.NotConnected;
-					return -1;
+					return false;
 				}
 
-				return socket.Send(response, 0, length, SocketFlags.None, out err);
+				int written = socket.Send(data, 0, length, SocketFlags.None, out err);
+				if (written != length)
+				{
+					Log.ErrorFormat("Error while writing to socket: {0} out of {1} written, socket status: {2}", written, data.Length, err);
+					return false;
+				}
+
+				return true;
 			}
 		}
 
-		private int SynchronizedRead(Socket socket, byte[] data, out SocketError err)
+		private bool SynchronizedRead(Socket socket, byte[] data, out SocketError err)
 		{
-			var read = socket.Receive(data, 0, data.Length, SocketFlags.None, out err);
-			if (err != SocketError.Success || !IsSocketConnected(socket))
-				return -1;
+			err = SocketError.Success;
 
-			return read;
+			int index = 0;
+			int toRead;
+			while ((toRead = data.Length - index) > 0)
+			{
+				var read = socket.Receive(data, index, toRead, SocketFlags.None, out err);
+				index += read;
+
+				if (err != SocketError.Success || !IsSocketConnected(socket))
+				{
+					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, socket status: {2}", read, data.Length, err);
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		#endregion
@@ -428,7 +448,7 @@ namespace SharpRemote
 					}
 
 					SocketError err;
-					if (SynchronizedWrite(socket, message, messageLength, out err) != messageLength)
+					if (!SynchronizedWrite(socket, message, messageLength, out err))
 					{
 						Log.ErrorFormat("Error while sending message: {0}", err);
 						throw new ConnectionLostException();

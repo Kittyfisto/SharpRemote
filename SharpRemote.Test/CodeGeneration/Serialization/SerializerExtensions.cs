@@ -67,6 +67,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					actualValue.Should().BeNull();
 				}
 
+				stream.Length.Should().BeGreaterThan(0, "because something must have been written to the stream");
 				stream.Position.Should()
 				      .Be(stream.Length,
 					      "because reading the object again should've consumed everything that was written - not a single byte less");

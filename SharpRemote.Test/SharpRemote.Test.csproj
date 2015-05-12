@@ -56,8 +56,8 @@
   <ItemGroup>
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\ArrayTest.cs" />
-    <Compile Include="CodeGeneration\Serialization\CollectionTest.cs" />
     <Compile Include="CodeGeneration\Serialization\DynamicDispatchTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\FrameworkTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationPerformanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationConstraintsTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationTest.cs" />

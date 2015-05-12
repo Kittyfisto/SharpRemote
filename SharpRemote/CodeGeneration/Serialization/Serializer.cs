@@ -31,7 +31,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 				new TypeSerializer(),
 				new StringSerializer(),
 				new ByteArraySerializer(),
-				new KeyValuePairSerializer()
+				new KeyValuePairSerializer(),
+				new TimeSpanSerializer(),
+				new DateTimeSerializer(),
+				new VersionSerializer(),
+				new ApplicationIdSerializer()
 			};
 		}
 

@@ -113,38 +113,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestIPAddress()
-		{
-			_serializer.RegisterType<IPAddress>();
-			_serializer.ShouldRoundtrip(IPAddress.Parse("192.168.0.87"));
-			_serializer.ShouldRoundtrip(IPAddress.IPv6Loopback);
-		}
-
-		[Test]
-		public void TestIPEndPoint()
-		{
-			var ep = new IPEndPoint(IPAddress.Parse("192.168.0.87"), 80);
-			_serializer.ShouldRoundtrip(ep);
-
-			ep = new IPEndPoint(IPAddress.IPv6Loopback, 55980);
-			_serializer.ShouldRoundtrip(ep);
-		}
-
-		[Test]
-		public void TestKeyValuePair()
-		{
-			_serializer.ShouldRoundtrip(new KeyValuePair<int, string>(42, "FOobar"));
-			_serializer.ShouldRoundtrip(new KeyValuePair<int, KeyValuePair<string, object>>(42, new KeyValuePair<string, object>("Foobar", typeof(int))));
-		}
-
-		[Test]
-		public void TestType()
-		{
-			_serializer.RegisterType<Type>();
-			_serializer.ShouldRoundtrip(typeof (int));
-		}
-
-		[Test]
 		public void TestFieldStruct()
 		{
 			_serializer.RegisterType<FieldStruct>();

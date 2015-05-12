@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
 	public sealed class TypeSerializer
-		: AbstractTypeSerializer<Type>
+		: AbstractTypeSerializer
 	{
 		public static readonly MethodInfo CreateTypeFromName;
 		public static readonly MethodInfo GetAssemblyQualifiedName;
@@ -21,7 +21,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return Type.GetType(name);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)
+		public override bool Supports(Type type)
+		{
+			return type == typeof (Type);
+		}
+
+		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitWriteNullableValue(
 				gen,
@@ -38,7 +43,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 				valueCanBeNull);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Action loadReader, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitReadNullableValue(
 				gen,

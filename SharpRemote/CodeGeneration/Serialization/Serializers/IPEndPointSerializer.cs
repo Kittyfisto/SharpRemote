@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
 	public sealed class IPEndPointSerializer
-		: AbstractTypeSerializer<IPEndPoint>
+		: AbstractTypeSerializer
 	{
 		private static readonly MethodInfo GetAddress;
 		private static readonly MethodInfo GetPort;
@@ -21,7 +21,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			IPAddressSerializer = new IPAddressSerializer();
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)
+		public override bool Supports(Type type)
+		{
+			return type == typeof (IPEndPoint);
+		}
+
+		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitWriteNullableValue(gen,
 			                       loadWriter,
@@ -32,9 +37,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					                       loadValue();
 										   gen.Emit(OpCodes.Callvirt, GetAddress);
 										   gen.Emit(OpCodes.Stloc, addr);
-					                       IPAddressSerializer.EmitWriteValue(gen, loadWriter,
-					                                                          () => gen.Emit(OpCodes.Ldloc, addr),
-																			  false);
+					                       IPAddressSerializer.EmitWriteValue(gen,
+						                       serializerCompiler, loadWriter,
+						                       () => gen.Emit(OpCodes.Ldloc, addr), loadValueAddress, loadSerializer, type,
+						                       valueCanBeNull: false);
 
 					                       loadWriter();
 					                       loadValue();
@@ -44,16 +50,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			                       valueCanBeNull);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Action loadReader, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitReadNullableValue(gen, loadReader, () =>
 				{
-					IPAddressSerializer.EmitReadValue(gen,
-					                                  loadReader,
-													  false);
+					IPAddressSerializer.EmitReadValue(gen, serializerCompiler,
+					                                  loadReader, loadSerializer, type,
+													  valueCanBeNull: false);
 
 					loadReader();
-					gen.Emit(OpCodes.Call, Methods.ReadInt);
+					gen.Emit(OpCodes.Call, Methods.ReadInt32);
 
 					gen.Emit(OpCodes.Newobj, Ctor);
 				},

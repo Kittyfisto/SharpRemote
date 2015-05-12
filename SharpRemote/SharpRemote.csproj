@@ -45,6 +45,8 @@
     <Compile Include="CodeGeneration\Serialization\CollectionSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\EnumerableSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\ITypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\NativeTypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\KeyValuePairSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\ByteArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\Int32Serializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\IPAddressSerializer.cs" />
@@ -54,7 +56,6 @@
     <Compile Include="CodeGeneration\Serialization\AbstractTypeSerializer.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="TypeInformation.cs" />
-    <Compile Include="CodeGeneration\SerializerExtensions.cs" />
     <Compile Include="DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />
     <Compile Include="EndPoints\SocketEndPoint.cs" />

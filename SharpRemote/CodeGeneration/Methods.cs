@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Threading;
-using SharpRemote.CodeGeneration.Serialization;
-using SharpRemote.CodeGeneration.Serialization.Serializers;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -48,7 +42,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo ReadSingle;
 		public static readonly MethodInfo ReadLong;
 		public static readonly MethodInfo ReadULong;
-		public static readonly MethodInfo ReadInt;
+		public static readonly MethodInfo ReadInt32;
 		public static readonly MethodInfo ReadUInt;
 		public static readonly MethodInfo ReadShort;
 		public static readonly MethodInfo ReadUShort;
@@ -65,8 +59,6 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
 		public static readonly MethodInfo SerializerWriteObject;
 		public static readonly MethodInfo SerializerReadObject;
-
-		private static readonly Dictionary<Type, ITypeSerializer> Serializers;
 
 		static Methods()
 		{
@@ -92,7 +84,7 @@ namespace SharpRemote.CodeGeneration
 			ReadSingle = typeof(BinaryReader).GetMethod("ReadSingle");
 			ReadLong = typeof(BinaryReader).GetMethod("ReadInt64");
 			ReadULong = typeof(BinaryReader).GetMethod("ReadUInt64");
-			ReadInt = typeof(BinaryReader).GetMethod("ReadInt32");
+			ReadInt32 = typeof(BinaryReader).GetMethod("ReadInt32");
 			ReadUInt = typeof(BinaryReader).GetMethod("ReadUInt32");
 			ReadShort = typeof(BinaryReader).GetMethod("ReadInt16");
 			ReadUShort = typeof(BinaryReader).GetMethod("ReadUInt16");
@@ -135,160 +127,6 @@ namespace SharpRemote.CodeGeneration
 
 			SerializerWriteObject = typeof (ISerializer).GetMethod("WriteObject", new[]{typeof(BinaryWriter), typeof(object)});
 			SerializerReadObject = typeof (ISerializer).GetMethod("ReadObject", new[] {typeof (BinaryReader)});
-
-			Serializers = new Dictionary<Type, ITypeSerializer>
-				{
-					{typeof (Int32), new Int32Serializer()},
-					{typeof (IPEndPoint), new IPEndPointSerializer()},
-					{typeof (IPAddress), new IPAddressSerializer()},
-					{typeof (Type), new TypeSerializer()},
-					{typeof (string), new StringSerializer()},
-					{typeof(byte[]), new ByteArraySerializer()}
-				};
-		}
-
-		[Pure]
-		public static bool HasSerializer(Type type)
-		{
-			return Serializers.ContainsKey(type);
-		}
-
-		public static bool EmitReadNativeType(this ILGenerator gen, Action loadReader, Type valueType, bool valueCanBeNull = true)
-		{
-			if (valueType == typeof (bool))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadBool);
-			}
-			else if (valueType == typeof(float))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadSingle);
-			}
-			else if (valueType == typeof(double))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadDouble);
-			}
-			else if (valueType == typeof(ulong))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadULong);
-			}
-			else if (valueType == typeof(long))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadLong);
-			}
-			else if (valueType == typeof(uint))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadUInt);
-			}
-			else if (valueType == typeof(ushort))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadUShort);
-			}
-			else if (valueType == typeof(short))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadShort);
-			}
-			else if (valueType == typeof(sbyte))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadSByte);
-			}
-			else if (valueType == typeof(byte))
-			{
-				loadReader();
-				gen.Emit(OpCodes.Call, ReadByte);
-			}
-			else
-			{
-				ITypeSerializer serializer;
-				if (!Serializers.TryGetValue(valueType, out serializer))
-					return false;
-
-				serializer.EmitReadValue(gen, loadReader, valueCanBeNull);
-			}
-
-			return true;
-		}
-
-		public static bool EmitWriteNativeType(this ILGenerator gen, Action loadWriter, Action loadValue, Type valueType, bool valueCanBeNull = true)
-		{
-			if (valueType == typeof (bool))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteBool);
-			}
-			else if (valueType == typeof(float))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteSingle);
-			}
-			else if (valueType == typeof(double))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteDouble);
-			}
-			else if (valueType == typeof(ulong))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteULong);
-			}
-			else if (valueType == typeof(long))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteLong);
-			}
-			else if (valueType == typeof(uint))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteUInt);
-			}
-			else if (valueType == typeof(short))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteShort);
-			}
-			else if (valueType == typeof(ushort))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteUShort);
-			}
-			else if (valueType == typeof(sbyte))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteSByte);
-			}
-			else if (valueType == typeof(byte))
-			{
-				loadWriter();
-				loadValue();
-				gen.Emit(OpCodes.Call, WriteByte);
-			}
-			else
-			{
-				ITypeSerializer serializer;
-				if (!Serializers.TryGetValue(valueType, out serializer))
-					return false;
-
-				serializer.EmitWriteValue(gen, loadWriter, loadValue, valueCanBeNull);
-			}
-
-			return true;
 		}
 	}
 }

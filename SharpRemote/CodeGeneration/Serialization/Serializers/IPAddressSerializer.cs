@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
 	public class IPAddressSerializer
-		: AbstractTypeSerializer<IPAddress>
+		: AbstractTypeSerializer
 	{
 		private readonly MethodInfo _ipAddressGetAddressBytes;
 		private readonly ConstructorInfo _ipAddressFromBytes;
@@ -17,7 +17,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			_ipAddressFromBytes = typeof(IPAddress).GetConstructor(new[] { typeof(byte[]) });
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)
+		public override bool Supports(Type type)
+		{
+			return type == typeof (IPAddress);
+		}
+
+		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitWriteNullableValue(
 				gen,
@@ -44,7 +49,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					   valueCanBeNull);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Action loadReader, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitReadNullableValue(
 				gen,
@@ -54,7 +59,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					// new IPAddress(writer.ReadBytes(writer.ReadInt()));
 					loadReader();
 					loadReader();
-					gen.Emit(OpCodes.Call, Methods.ReadInt);
+					gen.Emit(OpCodes.Call, Methods.ReadInt32);
 					gen.Emit(OpCodes.Call, Methods.ReadBytes);
 					gen.Emit(OpCodes.Newobj, _ipAddressFromBytes);
 				},

@@ -4,9 +4,14 @@ using System.Reflection.Emit;
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
 	public sealed class ByteArraySerializer
-		: AbstractTypeSerializer<byte[]>
+		: AbstractTypeSerializer
 	{
-		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)
+		public override bool Supports(Type type)
+		{
+			return type == typeof (byte[]);
+		}
+
+		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitWriteNullableValue(gen, loadWriter, loadValue, () =>
 				{
@@ -23,13 +28,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			                       valueCanBeNull);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Action loadReader, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			EmitReadNullableValue(gen, loadReader, () =>
 				{
 					loadReader();
 					loadReader();
-					gen.Emit(OpCodes.Call, Methods.ReadInt);
+					gen.Emit(OpCodes.Call, Methods.ReadInt32);
 					gen.Emit(OpCodes.Call, Methods.ReadBytes);
 				},
 				valueCanBeNull);

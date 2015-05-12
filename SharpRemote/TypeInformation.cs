@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
 using SharpRemote.CodeGeneration;
@@ -11,11 +10,7 @@ namespace SharpRemote
 {
 	internal sealed class TypeInformation
 	{
-		private readonly Type _type;
-		private readonly ConstructorInfo _ctor;
-		private readonly FieldInfo[] _fields;
-		private readonly PropertyInfo[] _properties;
-		private readonly Type _elementType;
+		#region Static Methods
 
 		[Pure]
 		public static bool CanBeSerialized(TypeInformation typeInformation)
@@ -35,71 +30,33 @@ namespace SharpRemote
 			return false;
 		}
 
-		public static bool RequiresConstructor(Type type)
-		{
-			if (type.IsPrimitive)
-				return false;
+		#endregion
 
-			if (Methods.HasSerializer(type))
-				return false;
-
-			if (type.IsValueType)
-				return false;
-
-			if (type.IsAbstract)
-				return false;
-
-			if (type.IsArray)
-				return false;
-
-			return true;
-		}
-
-		[Pure]
-		public static bool IsNativelySupportedType(Type type)
-		{
-			if (type.IsPrimitive)
-				return true;
-
-			if (Methods.HasSerializer(type))
-				return true;
-
-			if (type.IsArray)
-			{
-				return true;
-			}
-
-			return false;
-		}
+		private readonly Type _elementType;
+		private readonly FieldInfo[] _fields;
+		private readonly PropertyInfo[] _properties;
+		private readonly Type _type;
+		private readonly Type _collectionType;
 
 		public TypeInformation(Type type)
 		{
 			if (type == null) throw new ArgumentNullException("type");
 
-			if (!IsNativelySupportedType(type) && type.GetCustomAttribute<DataContractAttribute>() == null)
-				throw new ArgumentException(string.Format("The type '{0}.{1}' is missing the [DataContract] attribute - this is not supported", type.Namespace, type.Name));
-
+			_collectionType = GetCollectionInterface(type, out _elementType);
 			_type = type;
 			_fields =
 				type.GetFields()
-					.Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
-					.ToArray();
+				    .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
+				    .ToArray();
 
 			ThrowIfConstraintsAreViolated(_fields);
 
 			_properties =
 				type.GetProperties()
-					.Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
-					.ToArray();
+				    .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
+				    .ToArray();
 
 			ThrowIfConstraintsAreViolated(_properties);
-
-			if (RequiresConstructor(type))
-			{
-				_ctor = type.GetConstructor(new Type[0]);
-				if (_ctor == null)
-					throw new ArgumentException(string.Format("Type '{0}' is missing a parameterless constructor", type));
-			}
 
 			if (type.IsArray)
 			{
@@ -107,61 +64,30 @@ namespace SharpRemote
 			}
 		}
 
+		private static Type GetCollectionInterface(Type type, out Type elementType)
+		{
+			var ifaces = type.GetInterfaces().Where(
+				x => x.IsGenericType &&
+					x.GetGenericTypeDefinition() == typeof (ICollection<>))
+			    .ToList();
+
+			if (ifaces.Count == 0)
+			{
+				elementType = null;
+				return null;
+			}
+
+			if (ifaces.Count > 1)
+				throw new ArgumentException(string.Format("The type '{0}' implements multiple ICollection<> interfaces, this is not supported by default - you have to register a custom serializer"));
+
+			var collectionType = ifaces[0];
+			elementType = collectionType.GetGenericArguments()[0]; //< We have a specific ICollection<> Type, hence there's always exactly one argument
+			return collectionType;
+		}
+
 		public Type ElementType
 		{
 			get { return _elementType; }
-		}
-
-		private void ThrowIfConstraintsAreViolated(IEnumerable<PropertyInfo> properties)
-		{
-			foreach (var property in properties)
-			{
-				var type = property.DeclaringType;
-				if (!property.CanRead)
-				{
-					throw new ArgumentException(string.Format("The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no getter - this is not supported", type.Namespace, type.Name, property.Name));
-				}
-				if (!property.CanWrite)
-				{
-					throw new ArgumentException(string.Format("The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no setter - this is not supported", type.Namespace, type.Name, property.Name));
-				}
-				if (!property.GetMethod.IsPublic)
-				{
-					throw new ArgumentException(string.Format("The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public getter - this is not supported", type.Namespace, type.Name, property.Name));
-				}
-				if (!property.SetMethod.IsPublic)
-				{
-					throw new ArgumentException(string.Format("The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public setter - this is not supported", type.Namespace, type.Name, property.Name));
-				}
-				if (property.GetMethod.IsStatic)
-				{
-					throw new ArgumentException(string.Format("The property '{0}.{1}.{2}' is marked with the [DataMember] has a static getter - this is not supported", type.Namespace, type.Name, property.Name));
-				}
-				if (property.SetMethod.IsStatic)
-				{
-					throw new ArgumentException(string.Format("The property '{0}.{1}.{2}' is marked with the [DataMember] has a static setter - this is not supported", type.Namespace, type.Name, property.Name));
-				}
-			}
-		}
-
-		private void ThrowIfConstraintsAreViolated(IEnumerable<FieldInfo> fields)
-		{
-			foreach (var field in fields)
-			{
-				var type = field.DeclaringType;
-				if (field.IsStatic)
-				{
-					throw new ArgumentException(string.Format("The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is static - this is not supported", type.Namespace, type.Name, field.Name));
-				}
-				if (!field.IsPublic)
-				{
-					throw new ArgumentException(string.Format("The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is not public - this is not supported", type.Namespace, type.Name, field.Name));
-				}
-				if (field.IsInitOnly)
-				{
-					throw new ArgumentException(string.Format("The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is readonly - this is not supported", type.Namespace, type.Name, field.Name));
-				}
-			}
 		}
 
 		public Type Type
@@ -196,7 +122,12 @@ namespace SharpRemote
 
 		public bool IsCollection
 		{
-			get { return _type.IsArray; }
+			get { return _collectionType != null; }
+		}
+
+		public Type CollectionType
+		{
+			get { return _collectionType; }
 		}
 
 		public bool IsValueType
@@ -209,19 +140,97 @@ namespace SharpRemote
 			get { return _type.IsSealed; }
 		}
 
-		public ConstructorInfo Constructor
-		{
-			get { return _ctor; }
-		}
-
 		public bool IsArray
 		{
 			get { return _type.IsArray; }
 		}
 
+		#region Public Methods
+
 		public override string ToString()
 		{
 			return _type.ToString();
+		}
+
+		#endregion
+
+		private void ThrowIfConstraintsAreViolated(IEnumerable<PropertyInfo> properties)
+		{
+			foreach (var property in properties)
+			{
+				Type type = property.DeclaringType;
+				if (!property.CanRead)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no getter - this is not supported",
+							type.Namespace, type.Name, property.Name));
+				}
+				if (!property.CanWrite)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no setter - this is not supported",
+							type.Namespace, type.Name, property.Name));
+				}
+				if (!property.GetMethod.IsPublic)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public getter - this is not supported",
+							type.Namespace, type.Name, property.Name));
+				}
+				if (!property.SetMethod.IsPublic)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public setter - this is not supported",
+							type.Namespace, type.Name, property.Name));
+				}
+				if (property.GetMethod.IsStatic)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a static getter - this is not supported",
+							type.Namespace, type.Name, property.Name));
+				}
+				if (property.SetMethod.IsStatic)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a static setter - this is not supported",
+							type.Namespace, type.Name, property.Name));
+				}
+			}
+		}
+
+		private void ThrowIfConstraintsAreViolated(IEnumerable<FieldInfo> fields)
+		{
+			foreach (var field in fields)
+			{
+				Type type = field.DeclaringType;
+				if (field.IsStatic)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is static - this is not supported",
+							type.Namespace, type.Name, field.Name));
+				}
+				if (!field.IsPublic)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is not public - this is not supported",
+							type.Namespace, type.Name, field.Name));
+				}
+				if (field.IsInitOnly)
+				{
+					throw new ArgumentException(
+						string.Format(
+							"The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is readonly - this is not supported",
+							type.Namespace, type.Name, field.Name));
+				}
+			}
 		}
 	}
 }

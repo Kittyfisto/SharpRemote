@@ -21,7 +21,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[Description("Verifies that registering a type without a [DataContract] attribute is not allowed")]
 		public void TestNoDataContractStruct()
 		{
-			TestFailRegister<MissingDataContractStruct>("The type 'SharpRemote.Test.Types.Structs.MissingDataContractStruct' is missing the [DataContract] attribute - this is not supported");
+			TestFailRegister<MissingDataContractStruct>("The type 'SharpRemote.Test.Types.Structs.MissingDataContractStruct' is missing the [DataContract] attribute, nor is there a custom-serializer available for this type");
 		}
 
 		[Test]

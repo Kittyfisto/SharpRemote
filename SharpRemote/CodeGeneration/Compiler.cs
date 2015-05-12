@@ -48,6 +48,7 @@ namespace SharpRemote.CodeGeneration
 				SerializerCompiler.EmitWriteValue(gen,
 					loadWriter,
 					() => gen.Emit(OpCodes.Ldloc, tmp),
+					() => gen.Emit(OpCodes.Ldloca, tmp),
 					() => gen.Emit(OpCodes.Ldfld, Serializer),
 					returnType);
 			}
@@ -76,20 +77,28 @@ namespace SharpRemote.CodeGeneration
 				gen.Emit(OpCodes.Newobj, Methods.BinaryWriterCtor);
 				gen.Emit(OpCodes.Stloc, binaryWriter);
 
+				Action loadWriter = () => gen.Emit(OpCodes.Ldloc, binaryWriter);
+				Action loadSerializer =
+					() =>
+					{
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, Serializer);
+					};
+
 				int index = 0;
 				for (int i = 0; i < parameterTypes.Length; ++i)
 				{
 					//WriteXXX(_serializer, arg[y], binaryWriter);
 					int currentIndex = ++index;
+					Action loadValue = () => gen.Emit(OpCodes.Ldarg, currentIndex);
+					Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, currentIndex);
+
 					SerializerCompiler.EmitWriteValue(
 						gen,
-						() => gen.Emit(OpCodes.Ldloc, binaryWriter),
-						() => gen.Emit(OpCodes.Ldarg, currentIndex),
-						() =>
-						{
-							gen.Emit(OpCodes.Ldarg_0);
-							gen.Emit(OpCodes.Ldfld, Serializer);
-						},
+						loadWriter,
+						loadValue,
+						loadValueAddress,
+						loadSerializer,
 						parameterTypes[i]);
 				}
 

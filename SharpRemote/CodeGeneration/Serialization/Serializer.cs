@@ -14,6 +14,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		private readonly ModuleBuilder _module;
 		private readonly Dictionary<Type, ReadMethod> _typeToReadMethods;
 		private readonly Dictionary<Type, WriteMethods> _typeToWriteMethods;
+		private readonly List<ITypeSerializer> _customSerializers;
 
 		public Serializer(ModuleBuilder module)
 		{
@@ -22,6 +23,17 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_module = module;
 			_typeToWriteMethods = new Dictionary<Type, WriteMethods>();
 			_typeToReadMethods = new Dictionary<Type, ReadMethod>();
+
+			_customSerializers = new List<ITypeSerializer>
+			{
+				new Int32Serializer(),
+				new IPEndPointSerializer(),
+				new IPAddressSerializer(),
+				new TypeSerializer(),
+				new StringSerializer(),
+				new ByteArraySerializer(),
+				new KeyValuePairSerializer()
+			};
 		}
 
 		public Serializer()
@@ -150,7 +162,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_typeToReadMethods.Add(typeInformation.Type, m);
 
 			ILGenerator gen = readValueNotNull.GetILGenerator();
-			if (gen.EmitReadNativeType(() => gen.Emit(OpCodes.Ldarg_0),
+			if (EmitReadNativeType(gen,
+				() => gen.Emit(OpCodes.Ldarg_0),
 			                                typeInformation.Type,
 			                                false))
 			{
@@ -158,6 +171,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			else if (typeInformation.IsArray)
 			{
 				EmitReadArray(gen, typeInformation);
+			}
+			else if (typeInformation.IsCollection)
+			{
+				EmitReadCollection(gen, typeInformation);
 			}
 			else if (typeInformation.IsValueType || typeInformation.IsSealed)
 			{
@@ -262,9 +279,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			ILGenerator gen = valueNotNullMethod.GetILGenerator();
 
-			if (gen.EmitWriteNativeType(
+			if (EmitWriteNativeType(
+				gen,
 				() => gen.Emit(OpCodes.Ldarg_0),
 				() => gen.Emit(OpCodes.Ldarg_1),
+				() => gen.Emit(OpCodes.Ldarga, 1),
 				typeInformation.Type,
 				false))
 			{
@@ -272,6 +291,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			else if (typeInformation.IsArray)
 			{
 				EmitWriteArray(gen, typeInformation);
+			}
+			else if (typeInformation.IsCollection)
+			{
+				EmitWriteCollection(gen, typeInformation);
 			}
 			else 
 			{
@@ -381,7 +404,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Callvirt, Methods.ObjectGetType);
 			gen.Emit(OpCodes.Callvirt, TypeSerializer.GetAssemblyQualifiedName);
-			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
+			gen.Emit(OpCodes.Call, Methods.WriteString);
 		}
 
 		private void EmitWriteTypeInformationOrNull(ILGenerator gen, Action writeValue)
@@ -404,7 +427,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			// { writer.WriteString(string.Empty); }
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldsfld, Methods.StringEmpty);
-			gen.Emit(OpCodes.Callvirt, Methods.WriteString);
+			gen.Emit(OpCodes.Call, Methods.WriteString);
 			Label @end = gen.DefineLabel();
 			gen.Emit(OpCodes.Br, @end);
 

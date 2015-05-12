@@ -1,10 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
-using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.CodeGeneration;
 using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Structs;
@@ -37,105 +36,112 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[Test]
 		public void TestNull()
 		{
-			_serializer.RoundtripObject(null).Should().BeNull();
+			_serializer.ShouldRoundtrip(null);
 		}
 
 		[Test]
 		public void TestInt8()
 		{
 			_serializer.RegisterType<sbyte>();
-			_serializer.RoundtripObject((sbyte)(-128)).Should().Be((sbyte)(-128));
+			_serializer.ShouldRoundtrip((sbyte) (-128));
 		}
 
 		[Test]
 		public void TestUInt8()
 		{
 			_serializer.RegisterType<byte>();
-			_serializer.RoundtripObject((byte)255).Should().Be((byte)255);
+			_serializer.ShouldRoundtrip((byte) 255);
 		}
 
 		[Test]
 		public void TestBool()
 		{
 			_serializer.RegisterType<bool>();
-			_serializer.RoundtripObject(true).Should().Be(true);
-			_serializer.RoundtripObject(false).Should().Be(false);
+			_serializer.ShouldRoundtrip(true);
+			_serializer.ShouldRoundtrip(false);
 		}
 
 		[Test]
 		public void TestInt16()
 		{
 			_serializer.RegisterType<Int16>();
-			_serializer.RoundtripObject((Int16)(-31187)).Should().Be((Int16)(-31187));
+			_serializer.ShouldRoundtrip((Int16) (-31187));
 		}
 
 		[Test]
 		public void TestUInt16()
 		{
 			_serializer.RegisterType<UInt16>();
-			_serializer.RoundtripObject((UInt16)56178).Should().Be((UInt16)56178);
+			_serializer.ShouldRoundtrip((UInt16) 56178);
 		}
 
 		[Test]
 		public void TestInt32()
 		{
 			_serializer.RegisterType<Int32>();
-			_serializer.RoundtripObject(42).Should().Be(42);
+			_serializer.ShouldRoundtrip(42);
 		}
 
 		[Test]
 		public void TestUInt32()
 		{
 			_serializer.RegisterType<UInt32>();
-			_serializer.RoundtripObject(42u).Should().Be(42u);
+			_serializer.ShouldRoundtrip(42u);
 		}
 
 		[Test]
 		public void TestInt64()
 		{
 			_serializer.RegisterType<Int64>();
-			_serializer.RoundtripObject(-345442343232423).Should().Be(-345442343232423);
+			_serializer.ShouldRoundtrip(-345442343232423);
 		}
 
 		[Test]
 		public void TestUInt64()
 		{
 			_serializer.RegisterType<UInt64>();
-			_serializer.RoundtripObject(9899045442343232423).Should().Be(9899045442343232423);
+			_serializer.ShouldRoundtrip(9899045442343232423);
 		}
 
 		[Test]
 		public void TestString()
 		{
 			_serializer.RegisterType<string>();
-			_serializer.RoundtripObject(null).Should().Be(null);
-			_serializer.RoundtripObject("Foobar").Should().Be("Foobar");
-			_serializer.RoundtripObject(string.Empty).Should().Be(string.Empty);
+			_serializer.ShouldRoundtrip(null);
+			_serializer.ShouldRoundtrip("Foobar");
+			_serializer.ShouldRoundtrip(string.Empty);
 		}
 
 		[Test]
 		public void TestIPAddress()
 		{
 			_serializer.RegisterType<IPAddress>();
-			_serializer.RoundtripObject(IPAddress.Parse("192.168.0.87")).Should().Be(IPAddress.Parse("192.168.0.87"));
-			_serializer.RoundtripObject(IPAddress.IPv6Loopback).Should().Be(IPAddress.IPv6Loopback);
+			_serializer.ShouldRoundtrip(IPAddress.Parse("192.168.0.87"));
+			_serializer.ShouldRoundtrip(IPAddress.IPv6Loopback);
 		}
 
 		[Test]
 		public void TestIPEndPoint()
 		{
 			var ep = new IPEndPoint(IPAddress.Parse("192.168.0.87"), 80);
-			_serializer.RoundtripObject(ep).Should().Be(ep);
+			_serializer.ShouldRoundtrip(ep);
 
 			ep = new IPEndPoint(IPAddress.IPv6Loopback, 55980);
-			_serializer.RoundtripObject(ep).Should().Be(ep);
+			_serializer.ShouldRoundtrip(ep);
+		}
+
+		[Test]
+		public void TestKeyValuePair()
+		{
+			_serializer.ShouldRoundtrip(new KeyValuePair<int, string>(42, "FOobar"));
+			//_serializer.ShouldRoundtrip(new KeyValuePair<int, KeyValuePair<string, object>>(42, new KeyValuePair<string, object>("Foobar", typeof(int))));
 		}
 
 		[Test]
 		public void TestType()
 		{
 			_serializer.RegisterType<Type>();
-			_serializer.RoundtripObject(typeof (int));
+			_serializer.ShouldRoundtrip(typeof (int));
 		}
 
 		[Test]
@@ -148,7 +154,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					B = 42,
 					C = "Foobar"
 				};
-			_serializer.RoundtripObject(value).Should().Be(value);
+			_serializer.ShouldRoundtrip(value);
 
 			value = new FieldStruct
 			{
@@ -156,7 +162,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				B = int.MaxValue,
 				C = null
 			};
-			_serializer.RoundtripObject(value).Should().Be(value);
+			_serializer.ShouldRoundtrip(value);
 		}
 
 		[Test]
@@ -169,14 +175,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				B = 322132312,
 				C = "Rise, lord Vader!"
 			};
-			_serializer.RoundtripObject(value).Should().Be(value);
+			_serializer.ShouldRoundtrip(value);
 		}
 
 		[Test]
 		public void TestPropertyStruct()
 		{
 			var value = new PropertyStruct {Value = "Execute Order 66"};
-			_serializer.RoundtripObject(value).Should().Be(value);
+			_serializer.ShouldRoundtrip(value);
 		}
 
 		[Test]
@@ -188,7 +194,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				Value2 = -342131231,
 				Value3 = Math.PI
 			};
-			_serializer.RoundtripObject(value).Should().Be(value);
+			_serializer.ShouldRoundtrip(value);
 		}
 
 		[Test]
@@ -210,7 +216,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				}
 			};
 
-			_serializer.RoundtripObject(value).Should().Be(value);
+			_serializer.ShouldRoundtrip(value);
 		}
 
 		[Test]
@@ -232,7 +238,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 								}
 						}
 				};
-			_serializer.RoundtripObject(tree).Should().Be(tree);
+			_serializer.ShouldRoundtrip(tree);
 		}
 	}
 }

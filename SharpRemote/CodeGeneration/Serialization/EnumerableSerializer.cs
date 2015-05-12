@@ -40,14 +40,31 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Callvirt, moveNext);
 			gen.Emit(OpCodes.Brfalse, end);
 
-			EmitWriteValue(gen,
-				() => gen.Emit(OpCodes.Ldarg_0),
-				() =>
+			Action loadWriter = () => gen.Emit(OpCodes.Ldarg_0);
+			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_2);
+
+			LocalBuilder current = null;
+			Action loadValue = () =>
+			{
+				gen.Emit(OpCodes.Ldloc, enumerator);
+				gen.Emit(OpCodes.Callvirt, getCurrent);
+			};
+			Action loadValueAddress = () =>
+			{
+				if (current == null)
 				{
-					gen.Emit(OpCodes.Ldloc, enumerator);
-					gen.Emit(OpCodes.Callvirt, getCurrent);
-				},
-				() => gen.Emit(OpCodes.Ldarg_2),
+					current = gen.DeclareLocal(elementType);
+					loadValue();
+					gen.Emit(OpCodes.Stloc, current);
+				}
+				gen.Emit(OpCodes.Ldloca, current);
+			};
+
+			EmitWriteValue(gen,
+				loadWriter,
+				loadValue,
+				loadValueAddress,
+				loadSerializer,
 				elementType);
 
 			// goto loop

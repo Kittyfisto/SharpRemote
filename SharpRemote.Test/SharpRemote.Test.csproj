@@ -56,11 +56,13 @@
   <ItemGroup>
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\ArrayTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\CollectionTest.cs" />
     <Compile Include="CodeGeneration\Serialization\DynamicDispatchTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationPerformanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationConstraintsTest.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationTest.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCreatorTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\SerializerExtensions.cs" />
     <Compile Include="CodeGeneration\Serialization\TestHelpers.cs" />
     <Compile Include="CodeGeneration\Serialization\WriteTest.cs" />
     <Compile Include="Hosting\GetStringPropertyImplementation.cs" />
@@ -71,6 +73,7 @@
     <Compile Include="PerformanceTestAttribute.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="TestLogger.cs" />
+    <Compile Include="TypeExtensionsTest.cs" />
     <Compile Include="Types\Classes\BinaryTreeNode.cs" />
     <Compile Include="Types\Classes\PropertySealedClass.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />

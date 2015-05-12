@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
-	public abstract class AbstractTypeSerializer<T>
+	public abstract class AbstractTypeSerializer
 		: ITypeSerializer
 	{
 		protected static void EmitReadNullableValue(ILGenerator gen,
@@ -77,12 +78,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 		}
 
-		public Type Type
-		{
-			get { return typeof (T); }
-		}
-
-		public abstract void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true);
-		public abstract void EmitReadValue(ILGenerator gen, Action loadReader, bool valueCanBeNull = true);
+		[Pure]
+		public abstract bool Supports(Type type);
+		public abstract void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true);
+		public abstract void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true);
 	}
 }

@@ -11,6 +11,25 @@ namespace SharpRemote.Test
 	{
 		private ISubjectHost _subject;
 
+		public KeyValuePair<int, string> Read()
+		{
+			return new KeyValuePair<int, string>(42, "foo");
+		}
+
+		public static void WriteValue(BinaryWriter writer, KeyValuePair<int, string> value, ISerializer serializer)
+		{
+			writer.Write(value.Key);
+			if (value.Value != null)
+			{
+				writer.Write(true);
+				writer.Write(value.Value);
+			}
+			else
+			{
+				writer.Write(false);
+			}
+		}
+
 		public FieldSealedClass Read(BinaryReader reader)
 		{
 			var tmp = new FieldSealedClass();

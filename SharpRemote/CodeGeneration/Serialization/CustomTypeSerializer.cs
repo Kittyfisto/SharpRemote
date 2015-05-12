@@ -18,6 +18,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="type"></param>
 		private void WriteCustomType(ILGenerator gen, Type type)
 		{
+			if (type.GetCustomAttribute<DataContractAttribute>() == null)
+				throw new ArgumentException(
+					string.Format("The type '{0}.{1}' is missing the [DataContract] attribute, nor is there a custom-serializer available for this type", type.Namespace,
+						type.Name));
+
 			EmitWriteFields(gen, type);
 			EmitWriteProperties(gen, type);
 		}
@@ -51,6 +56,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 						gen.Emit(OpCodes.Call, property.GetMethod);
 					},
+					null,
 					() => gen.Emit(OpCodes.Ldarg_2),
 					property.PropertyType
 					);
@@ -69,23 +75,38 @@ namespace SharpRemote.CodeGeneration.Serialization
 				    .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
 				    .ToArray();
 
+			Action loadWriter = () => gen.Emit(OpCodes.Ldarg_0);
+			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_2);
+			Action loadValue = () =>
+			{
+				if (type.IsValueType)
+				{
+					gen.Emit(OpCodes.Ldarga, 1);
+				}
+				else
+				{
+					gen.Emit(OpCodes.Ldarg_1);
+				}
+			};
+
 			foreach (var field in allFields)
 			{
+				Action loadField = () =>
+				{
+					loadValue();
+					gen.Emit(OpCodes.Ldfld, field);
+				};
+				Action loadFieldAddress = () =>
+				{
+					loadValue();
+					gen.Emit(OpCodes.Ldflda, field);
+				};
+
 				EmitWriteValue(gen,
-					() => gen.Emit(OpCodes.Ldarg_0),
-					() =>
-					{
-						if (type.IsValueType)
-						{
-							gen.Emit(OpCodes.Ldarga, 1);
-						}
-						else
-						{
-							gen.Emit(OpCodes.Ldarg_1);
-						}
-						gen.Emit(OpCodes.Ldfld, field);
-					},
-					() => gen.Emit(OpCodes.Ldarg_2),
+					loadWriter,
+					loadField,
+					loadFieldAddress,
+					loadSerializer,
 					field.FieldType
 					);
 			}
@@ -98,17 +119,23 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="gen"></param>
 		/// <param name="loadWriter"></param>
 		/// <param name="loadValue"></param>
+		/// <param name="loadValueAddress"></param>
 		/// <param name="loadSerializer"></param>
 		/// <param name="valueType"></param>
 		public void EmitWriteValue(ILGenerator gen,
 			Action loadWriter,
 			Action loadValue,
+			Action loadValueAddress,
 			Action loadSerializer,
 			Type valueType)
 		{
 			// For now, let's inline everything that the Methods class can write and everything
 			// else is delegated through a method...
-			if (gen.EmitWriteNativeType(loadWriter, loadValue, valueType))
+			if (EmitWriteNativeType(gen,
+				loadWriter,
+				loadValue,
+				loadValueAddress,
+				valueType))
 			{
 				// Nothing to do...
 			}
@@ -141,7 +168,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			Action loadSerializer,
 			Type valueType)
 		{
-			if (gen.EmitReadNativeType(loadReader, valueType))
+			if (EmitReadNativeType(gen, loadReader, valueType))
 			{
 				// Nothing to do...
 			}
@@ -179,14 +206,18 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="tmp"></param>
 		private static void CreateAndStoreNewInstance(ILGenerator gen, TypeInformation typeInformation, LocalBuilder tmp)
 		{
-			if (typeInformation.Constructor == null)
+			if (typeInformation.IsValueType)
 			{
 				gen.Emit(OpCodes.Ldloca, tmp);
 				gen.Emit(OpCodes.Initobj, typeInformation.Type);
 			}
 			else
 			{
-				gen.Emit(OpCodes.Newobj, typeInformation.Constructor);
+				var ctor = typeInformation.Type.GetConstructor(new Type[0]);
+				if (ctor == null)
+					throw new ArgumentException(string.Format("Type '{0}' is missing a parameterless constructor", typeInformation.Type));
+
+				gen.Emit(OpCodes.Newobj, ctor);
 				gen.Emit(OpCodes.Stloc, tmp);
 			}
 		}

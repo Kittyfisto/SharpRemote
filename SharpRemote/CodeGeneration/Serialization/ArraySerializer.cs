@@ -6,13 +6,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 	{
 		private void EmitWriteArray(ILGenerator gen, TypeInformation typeInformation)
 		{
-			var type = typeInformation.Type;
-			var getLength = type.GetProperty("Length").GetMethod;
-
 			// writer.Write(value.Length)
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Call, getLength);
+			gen.Emit(OpCodes.Ldlen);
 			gen.Emit(OpCodes.Call, Methods.WriteInt);
 
 			EmitWriteEnumeration(gen, typeInformation);
@@ -28,7 +25,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			// count = reader.ReadInt32()
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Call, Methods.ReadInt);
+			gen.Emit(OpCodes.Call, Methods.ReadInt32);
 			gen.Emit(OpCodes.Stloc, count);
 
 			// value = new XXX[count]

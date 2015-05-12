@@ -4,19 +4,24 @@ using System.Reflection.Emit;
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
 	public sealed class Int32Serializer
-		: AbstractTypeSerializer<Int32>
+		: AbstractTypeSerializer
 	{
-		public override void EmitWriteValue(ILGenerator gen, Action loadWriter, Action loadValue, bool valueCanBeNull = true)
+		public override bool Supports(Type type)
+		{
+			return type == typeof (Int32);
+		}
+
+		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			loadWriter();
 			loadValue();
 			gen.Emit(OpCodes.Call, Methods.WriteInt);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Action loadReader, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
 		{
 			loadReader();
-			gen.Emit(OpCodes.Call, Methods.ReadInt);
+			gen.Emit(OpCodes.Call, Methods.ReadInt32);
 		}
 	}
 }

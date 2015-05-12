@@ -145,6 +145,16 @@ namespace SharpRemote
 			get { return _type.IsArray; }
 		}
 
+		public bool IsGenericType
+		{
+			get { return _type.IsGenericType; }
+		}
+
+		public Type[] GenericArguments
+		{
+			get { return _type.GetGenericArguments(); }
+		}
+
 		#region Public Methods
 
 		public override string ToString()

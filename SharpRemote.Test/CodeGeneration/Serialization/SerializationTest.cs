@@ -134,7 +134,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestKeyValuePair()
 		{
 			_serializer.ShouldRoundtrip(new KeyValuePair<int, string>(42, "FOobar"));
-			//_serializer.ShouldRoundtrip(new KeyValuePair<int, KeyValuePair<string, object>>(42, new KeyValuePair<string, object>("Foobar", typeof(int))));
+			_serializer.ShouldRoundtrip(new KeyValuePair<int, KeyValuePair<string, object>>(42, new KeyValuePair<string, object>("Foobar", typeof(int))));
 		}
 
 		[Test]

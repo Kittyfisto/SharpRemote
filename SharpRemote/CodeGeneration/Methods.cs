@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using SharpRemote.CodeGeneration.Serialization.Serializers;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -59,6 +60,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
 		public static readonly MethodInfo SerializerWriteObject;
 		public static readonly MethodInfo SerializerReadObject;
+		public static readonly MethodInfo CreateTypeFromName;
 
 		static Methods()
 		{
@@ -126,7 +128,13 @@ namespace SharpRemote.CodeGeneration
 				typeof (Interlocked).GetMethods().First(x => x.Name == "CompareExchange" && x.IsGenericMethod);
 
 			SerializerWriteObject = typeof (ISerializer).GetMethod("WriteObject", new[]{typeof(BinaryWriter), typeof(object)});
-			SerializerReadObject = typeof (ISerializer).GetMethod("ReadObject", new[] {typeof (BinaryReader)});
+			SerializerReadObject = typeof(ISerializer).GetMethod("ReadObject", new[] { typeof(BinaryReader) });
+			CreateTypeFromName = typeof(Methods).GetMethod("GetType", new[] { typeof(string) });
+		}
+
+		public static Type GetType(string name)
+		{
+			return Type.GetType(name);
 		}
 	}
 }

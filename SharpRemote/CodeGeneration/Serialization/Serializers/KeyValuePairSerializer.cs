@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class KeyValuePairSerializer
+	internal sealed class KeyValuePairSerializer
 		: AbstractTypeSerializer
 	{
 		#region Public Methods

@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class ApplicationIdSerializer
+	internal sealed class ApplicationIdSerializer
 		: AbstractTypeSerializer
 	{
 		private readonly ConstructorInfo _ctor;

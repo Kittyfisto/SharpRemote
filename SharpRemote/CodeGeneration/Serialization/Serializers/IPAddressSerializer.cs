@@ -5,7 +5,7 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public class IPAddressSerializer
+	internal sealed class IPAddressSerializer
 		: AbstractTypeSerializer
 	{
 		private readonly MethodInfo _ipAddressGetAddressBytes;

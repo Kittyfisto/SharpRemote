@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class DateTimeSerializer
+	internal sealed class DateTimeSerializer
 		: AbstractTypeSerializer
 	{
 		private readonly ConstructorInfo _ctor;

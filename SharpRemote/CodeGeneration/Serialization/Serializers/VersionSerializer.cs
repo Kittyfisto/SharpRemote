@@ -4,14 +4,14 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class VersionSerializer
+	internal sealed class VersionSerializer
 		: AbstractTypeSerializer
 	{
-		private ConstructorInfo _ctor;
-		private MethodInfo _getMajor;
-		private MethodInfo _getMinor;
-		private MethodInfo _getBuild;
-		private MethodInfo _getRevision;
+		private readonly ConstructorInfo _ctor;
+		private readonly MethodInfo _getMajor;
+		private readonly MethodInfo _getMinor;
+		private readonly MethodInfo _getBuild;
+		private readonly MethodInfo _getRevision;
 
 		public VersionSerializer()
 		{

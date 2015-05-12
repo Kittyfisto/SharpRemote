@@ -48,7 +48,10 @@
     <Compile Include="CodeGeneration\Serialization\NativeTypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\QueueSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\ApplicationIdSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\DateTimeOffsetSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\DateTimeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\EnumSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\GuidSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\KeyValuePairSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\ByteArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\Int32Serializer.cs" />
@@ -58,6 +61,7 @@
     <Compile Include="CodeGeneration\Serialization\Serializers\TimeSpanSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\TypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractTypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\UriSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\VersionSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
     <Compile Include="TypeExtensions.cs" />

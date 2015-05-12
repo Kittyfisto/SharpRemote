@@ -31,11 +31,17 @@ namespace SharpRemote.CodeGeneration.Serialization
 				new TypeSerializer(),
 				new StringSerializer(),
 				new ByteArraySerializer(),
-				new KeyValuePairSerializer(),
 				new TimeSpanSerializer(),
 				new DateTimeSerializer(),
+				new DateTimeOffsetSerializer(),
 				new VersionSerializer(),
-				new ApplicationIdSerializer()
+				new ApplicationIdSerializer(),
+				new UriSerializer(),
+				new GuidSerializer(),
+
+				// These serializers provide support for more than one type (for example generics)...
+				new EnumSerializer(),
+				new KeyValuePairSerializer(),
 			};
 		}
 

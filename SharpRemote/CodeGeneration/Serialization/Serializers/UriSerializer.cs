@@ -4,21 +4,21 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	internal sealed class TimeSpanSerializer
+	internal sealed class UriSerializer
 		: AbstractTypeSerializer
 	{
-		private readonly MethodInfo _getTicks;
 		private readonly ConstructorInfo _ctor;
+		private readonly MethodInfo _getOriginalString;
 
-		public TimeSpanSerializer()
+		public UriSerializer()
 		{
-			_getTicks = typeof(TimeSpan).GetProperty("Ticks").GetMethod;
-			_ctor = typeof(TimeSpan).GetConstructor(new[] { typeof(long) });
+			_ctor = typeof (Uri).GetConstructor(new[] {typeof(string), typeof(UriKind)});
+			_getOriginalString = typeof (Uri).GetProperty("OriginalString").GetMethod;
 		}
 
 		public override bool Supports(Type type)
 		{
-			return type == typeof (TimeSpan);
+			return type == typeof (Uri);
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
@@ -30,10 +30,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
-			loadWriter();
-			loadValueAddress();
-			gen.Emit(OpCodes.Call, _getTicks);
-			gen.Emit(OpCodes.Call, Methods.WriteLong);
+			serializerCompiler.EmitWriteValue(gen,
+				loadWriter,
+				() =>
+					{
+						loadValue();
+						gen.Emit(OpCodes.Call, _getOriginalString);
+					},
+					null,
+					loadSerializer,
+					typeof(string));
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
@@ -43,8 +49,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
-			loadReader();
-			gen.Emit(OpCodes.Call, Methods.ReadLong);
+			serializerCompiler.EmitReadValue(gen,
+				loadReader,
+				loadSerializer,
+				typeof(string));
+			gen.Emit(OpCodes.Ldc_I4, (int)UriKind.RelativeOrAbsolute);
 			gen.Emit(OpCodes.Newobj, _ctor);
 		}
 	}

@@ -3,7 +3,7 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
-	public sealed class Int32Serializer
+	internal sealed class Int32Serializer
 		: AbstractTypeSerializer
 	{
 		public override bool Supports(Type type)

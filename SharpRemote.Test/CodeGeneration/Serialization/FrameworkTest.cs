@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net;
 using NUnit.Framework;
+using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
@@ -85,6 +86,30 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer.ShouldRoundtrip(new Version(4, 0, 3211, 45063));
 			_serializer.ShouldRoundtrip(new Version(0, 0, 0, 0));
 			_serializer.ShouldRoundtrip(new Version(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue));
+		}
+
+		[Test]
+		public void TestNullable()
+		{
+			_serializer.ShouldRoundtrip(new NullableFieldStruct { Value = null });
+			_serializer.ShouldRoundtrip(new NullableFieldStruct { Value = 42 });
+			_serializer.ShouldRoundtrip(new NullableFieldStruct { Value = 9001 });
+
+			_serializer.ShouldRoundtripEnumeration(new int?[]
+				{
+					1,
+					2,
+					null,
+					9001,
+					null,
+					40000
+				});
+
+			_serializer.ShouldRoundtrip(new int?());
+			_serializer.ShouldRoundtrip((int?)42);
+
+			_serializer.ShouldRoundtrip(new bool?());
+			_serializer.ShouldRoundtrip((bool?)false);
 		}
 
 		[Test]

@@ -16,6 +16,23 @@ namespace SharpRemote.Test
 			return new KeyValuePair<int, string>(42, "foo");
 		}
 
+		public static object ReadObject(BinaryReader reader)
+		{
+			return ReadValue(reader);
+		}
+
+		private static NullableFieldStruct ReadValue(BinaryReader reader)
+		{
+			var ret = new NullableFieldStruct();
+
+			if (reader.ReadBoolean())
+				ret.Value = reader.ReadInt32();
+			else
+				ret.Value = null;
+
+			return ret;
+		}
+
 		public static void WriteValue(BinaryWriter writer, KeyValuePair<int, string> value, ISerializer serializer)
 		{
 			writer.Write(value.Key);

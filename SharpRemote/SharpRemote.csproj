@@ -57,6 +57,7 @@
     <Compile Include="CodeGeneration\Serialization\Serializers\Int32Serializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\IPAddressSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\IPEndPointSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Serializers\NullableSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\StringSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\TimeSpanSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\TypeSerializer.cs" />

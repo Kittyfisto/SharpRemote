@@ -41,6 +41,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 				// These serializers provide support for more than one type (for example generics)...
 				new EnumSerializer(),
+				new NullableSerializer(),
 				new KeyValuePairSerializer(),
 			};
 		}

@@ -45,7 +45,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					                       loadWriter();
 					                       loadValue();
 										   gen.Emit(OpCodes.Callvirt, GetPort);
-										   gen.Emit(OpCodes.Call, Methods.WriteInt);
+										   gen.Emit(OpCodes.Call, Methods.WriteInt32);
 				                       },
 			                       valueCanBeNull);
 		}

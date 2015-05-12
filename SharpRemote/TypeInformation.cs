@@ -49,6 +49,11 @@ namespace SharpRemote
 				    .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
 				    .ToArray();
 
+			if (IsStack)
+			{
+				_elementType = _type.GetGenericArguments()[0];
+			}
+
 			ThrowIfConstraintsAreViolated(_fields);
 
 			_properties =
@@ -118,6 +123,11 @@ namespace SharpRemote
 		public bool IsPrimitive
 		{
 			get { return _type.IsPrimitive; }
+		}
+
+		public bool IsStack
+		{
+			get { return _type.IsGenericType && _type.GetGenericTypeDefinition() == typeof (Stack<>); }
 		}
 
 		public bool IsCollection

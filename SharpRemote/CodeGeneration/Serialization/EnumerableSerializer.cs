@@ -14,7 +14,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="typeInformation"></param>
-		private void EmitWriteEnumeration(ILGenerator gen, TypeInformation typeInformation)
+		/// <param name="loadWriter"></param>
+		/// <param name="loadValue"></param>
+		/// <param name="loadSerializer"></param>
+		private void EmitWriteEnumeration(ILGenerator gen,
+			TypeInformation typeInformation,
+			Action loadWriter,
+			Action loadValue,
+			Action loadSerializer)
 		{
 			Type elementType = typeInformation.ElementType;
 			Type enumerableType = typeof (IEnumerable<>).MakeGenericType(elementType);
@@ -25,7 +32,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			// var enumerator = value.GetEnumerator()
 			LocalBuilder enumerator = gen.DeclareLocal(enumeratorType);
-			gen.Emit(OpCodes.Ldarg_1);
+			loadValue();
 			gen.Emit(OpCodes.Castclass, enumerableType);
 			gen.Emit(OpCodes.Callvirt, getEnumerator);
 			gen.Emit(OpCodes.Stloc, enumerator);
@@ -40,21 +47,18 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Callvirt, moveNext);
 			gen.Emit(OpCodes.Brfalse, end);
 
-			Action loadWriter = () => gen.Emit(OpCodes.Ldarg_0);
-			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_2);
-
 			LocalBuilder current = null;
-			Action loadValue = () =>
+			Action loadCurrentValue = () =>
 			{
 				gen.Emit(OpCodes.Ldloc, enumerator);
 				gen.Emit(OpCodes.Callvirt, getCurrent);
 			};
-			Action loadValueAddress = () =>
+			Action loadCurrentValueAddress = () =>
 			{
 				if (current == null)
 				{
 					current = gen.DeclareLocal(elementType);
-					loadValue();
+					loadCurrentValue();
 					gen.Emit(OpCodes.Stloc, current);
 				}
 				gen.Emit(OpCodes.Ldloca, current);
@@ -62,8 +66,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			EmitWriteValue(gen,
 				loadWriter,
-				loadValue,
-				loadValueAddress,
+				loadCurrentValue,
+				loadCurrentValueAddress,
 				loadSerializer,
 				elementType);
 

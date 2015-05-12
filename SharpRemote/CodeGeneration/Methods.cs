@@ -22,7 +22,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo WriteDouble;
 		public static readonly MethodInfo WriteSingle;
 		public static readonly MethodInfo WriteUInt;
-		public static readonly MethodInfo WriteInt;
+		public static readonly MethodInfo WriteInt32;
 		public static readonly MethodInfo WriteULong;
 		public static readonly MethodInfo WriteLong;
 		public static readonly MethodInfo WriteUShort;
@@ -98,7 +98,7 @@ namespace SharpRemote.CodeGeneration
 			WriteSingle = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(Single)});
 			WriteLong = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(long)});
 			WriteULong = typeof(BinaryWriter).GetMethod("Write", new[] { typeof(ulong) });
-			WriteInt = typeof(BinaryWriter).GetMethod("Write", new[] { typeof(int) });
+			WriteInt32 = typeof(BinaryWriter).GetMethod("Write", new[] { typeof(int) });
 			WriteUInt = typeof(BinaryWriter).GetMethod("Write", new[] { typeof(uint) });
 			WriteShort = typeof(BinaryWriter).GetMethod("Write", new[] { typeof(short) });
 			WriteUShort = typeof(BinaryWriter).GetMethod("Write", new[] { typeof(ushort) });

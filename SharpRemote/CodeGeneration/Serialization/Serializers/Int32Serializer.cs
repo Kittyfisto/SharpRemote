@@ -15,7 +15,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		{
 			loadWriter();
 			loadValue();
-			gen.Emit(OpCodes.Call, Methods.WriteInt);
+			gen.Emit(OpCodes.Call, Methods.WriteInt32);
 		}
 
 		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)

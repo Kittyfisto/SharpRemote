@@ -40,7 +40,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 						   gen.Emit(OpCodes.Ldloc, data);
 						   gen.Emit(OpCodes.Call, Methods.ArrayGetLength);
 
-						   gen.Emit(OpCodes.Call, Methods.WriteInt);
+						   gen.Emit(OpCodes.Call, Methods.WriteInt32);
 
 						   loadWriter();
 						   gen.Emit(OpCodes.Ldloc, data);

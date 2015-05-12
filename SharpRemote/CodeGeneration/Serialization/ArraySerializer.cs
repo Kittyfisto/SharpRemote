@@ -1,18 +1,124 @@
-﻿using System.Reflection.Emit;
+﻿using System;
+using System.ComponentModel;
+using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
 	public partial class Serializer
 	{
-		private void EmitWriteArray(ILGenerator gen, TypeInformation typeInformation)
+		private enum ArrayOrder
 		{
-			// writer.Write(value.Length)
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Ldlen);
-			gen.Emit(OpCodes.Call, Methods.WriteInt);
+			Forward,
+			Reverse,
+		}
 
-			EmitWriteEnumeration(gen, typeInformation);
+		private void EmitWriteArray(ILGenerator gen,
+			TypeInformation typeInformation,
+			Action loadWriter,
+			Action loadValue,
+			Action loadSerializer,
+			ArrayOrder order = ArrayOrder.Forward)
+		{
+			var elementType = typeInformation.ElementType;
+			var length = gen.DeclareLocal(typeof (int));
+			var i = gen.DeclareLocal(typeof (int));
+			var loop = gen.DefineLabel();
+			var end = gen.DefineLabel();
+
+			// writer.Write(value.Length)
+			loadValue();
+			gen.Emit(OpCodes.Ldlen);
+			gen.Emit(OpCodes.Stloc, length);
+
+			loadWriter();
+			gen.Emit(OpCodes.Ldloc, length);
+			gen.Emit(OpCodes.Call, Methods.WriteInt32);
+
+			// i = 0
+			// OR
+			// i = length-1
+			switch (order)
+			{
+				case ArrayOrder.Forward:
+					gen.Emit(OpCodes.Ldc_I4_0);
+					gen.Emit(OpCodes.Stloc, i);
+					break;
+
+				case ArrayOrder.Reverse:
+					gen.Emit(OpCodes.Ldloc, length);
+					gen.Emit(OpCodes.Ldc_I4_1);
+					gen.Emit(OpCodes.Sub);
+					gen.Emit(OpCodes.Stloc, i);
+					break;
+
+				default:
+					throw new InvalidEnumArgumentException("order", (int)order, typeof(ArrayOrder));
+			}
+
+			gen.MarkLabel(loop);
+
+			// while i != length
+			// OR
+			// while i != -1
+
+			switch (order)
+			{
+				case ArrayOrder.Forward:
+					gen.Emit(OpCodes.Ldloc, length);
+					gen.Emit(OpCodes.Ldloc, i);
+					gen.Emit(OpCodes.Ceq);
+					gen.Emit(OpCodes.Brtrue, end);
+					break;
+
+				default:
+					gen.Emit(OpCodes.Ldc_I4_0);
+					gen.Emit(OpCodes.Ldloc, i);
+					gen.Emit(OpCodes.Cgt);
+					gen.Emit(OpCodes.Brtrue, end);
+					break;
+			}
+
+			Action loadCurrentValue = () =>
+			{
+				loadValue();
+				gen.Emit(OpCodes.Ldloc, i);
+				gen.Emit(OpCodes.Ldelem, elementType);
+			};
+			Action loadCurrentValueAddress = () =>
+			{
+				loadValue();
+				gen.Emit(OpCodes.Ldloc, i);
+				gen.Emit(OpCodes.Ldelema, elementType);
+			};
+
+			EmitWriteValue(gen,
+				loadWriter,
+				loadCurrentValue,
+				loadCurrentValueAddress,
+				loadSerializer,
+				elementType);
+
+			switch (order)
+			{
+				case ArrayOrder.Forward:
+					gen.Emit(OpCodes.Ldloc, i);
+					gen.Emit(OpCodes.Ldc_I4_1);
+					gen.Emit(OpCodes.Add);
+					gen.Emit(OpCodes.Stloc, i);
+					break;
+
+				default:
+					gen.Emit(OpCodes.Ldloc, i);
+					gen.Emit(OpCodes.Ldc_I4_1);
+					gen.Emit(OpCodes.Sub);
+					gen.Emit(OpCodes.Stloc, i);
+					break;
+			}
+
+			// goto loop
+			gen.Emit(OpCodes.Br, loop);
+
+			gen.MarkLabel(end);
 		}
 
 		private void EmitReadArray(ILGenerator gen, TypeInformation typeInformation)

@@ -5,7 +5,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 {
 	public partial class Serializer
 	{
-		private void EmitWriteCollection(ILGenerator gen, TypeInformation typeInformation)
+		private void EmitWriteCollection(ILGenerator gen,
+			TypeInformation typeInformation,
+			Action loadWriter,
+			Action loadValue,
+			Action loadSerializer)
 		{
 			var type = typeInformation.CollectionType;
 			var getCount = type.GetProperty("Count").GetMethod;
@@ -14,9 +18,13 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Callvirt, getCount);
-			gen.Emit(OpCodes.Call, Methods.WriteInt);
+			gen.Emit(OpCodes.Call, Methods.WriteInt32);
 
-			EmitWriteEnumeration(gen, typeInformation);
+			EmitWriteEnumeration(gen,
+				typeInformation,
+				loadWriter,
+				loadValue,
+				loadSerializer);
 		}
 
 		private void EmitReadCollection(ILGenerator gen, TypeInformation typeInformation)

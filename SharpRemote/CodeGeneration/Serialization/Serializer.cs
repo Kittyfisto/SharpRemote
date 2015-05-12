@@ -237,6 +237,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				EmitReadCollection(gen, typeInformation);
 			}
+			else if (typeInformation.IsStack)
+			{
+				EmitReadStack(gen, typeInformation);
+			}
 			else if (typeInformation.IsValueType || typeInformation.IsSealed)
 			{
 				LocalBuilder value = gen.DeclareLocal(typeInformation.Type);
@@ -315,22 +319,31 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		private void EmitWriteValueNotNullMethod(ILGenerator gen, TypeInformation typeInformation)
 		{
+			Action loadWriter = () => gen.Emit(OpCodes.Ldarg_0);
+			Action loadValue = () => gen.Emit(OpCodes.Ldarg_1);
+			Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, 1);
+			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_2);
+
 			if (EmitWriteNativeType(
 				gen,
-				() => gen.Emit(OpCodes.Ldarg_0),
-				() => gen.Emit(OpCodes.Ldarg_1),
-				() => gen.Emit(OpCodes.Ldarga, 1),
+				loadWriter,
+				loadValue,
+				loadValueAddress,
 				typeInformation.Type,
 				false))
 			{
 			}
 			else if (typeInformation.IsArray)
 			{
-				EmitWriteArray(gen, typeInformation);
+				EmitWriteArray(gen, typeInformation, loadWriter, loadValue, loadSerializer);
 			}
 			else if (typeInformation.IsCollection)
 			{
-				EmitWriteCollection(gen, typeInformation);
+				EmitWriteCollection(gen, typeInformation, loadWriter, loadValue, loadSerializer);
+			}
+			else if (typeInformation.IsStack)
+			{
+				EmitWriteStack(gen, typeInformation, loadWriter, loadValue, loadSerializer);
 			}
 			else 
 			{

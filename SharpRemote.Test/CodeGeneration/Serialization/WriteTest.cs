@@ -13,8 +13,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	public sealed class WriteTest
 	{
 		private ISerializer _serializer;
-		private AssemblyBuilder _assembly;
-		private string _moduleName;
 		private MemoryStream _data;
 		private BinaryReader _reader;
 		private BinaryWriter _writer;
@@ -22,17 +20,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
 		{
-			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			_moduleName = assemblyName.Name + ".dll";
-			var module = _assembly.DefineDynamicModule(_moduleName);
-			_serializer = new Serializer(module);
-		}
-
-		[TestFixtureTearDown]
-		public void TestFixtureTearDown()
-		{
-			_assembly.Save(_moduleName);
+			_serializer = new Serializer();
 		}
 
 		[SetUp]

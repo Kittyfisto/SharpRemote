@@ -19,7 +19,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					loadValue();
 					gen.Emit(OpCodes.Ldlen);
 					gen.Emit(OpCodes.Conv_I4);
-					gen.Emit(OpCodes.Call, Methods.WriteInt);
+					gen.Emit(OpCodes.Call, Methods.WriteInt32);
 
 					loadWriter();
 					loadValue();

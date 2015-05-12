@@ -54,6 +54,7 @@
     <Compile Include="CodeGeneration\Serialization\Serializers\StringSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\TypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractTypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="TypeInformation.cs" />
     <Compile Include="DisposableExtensions.cs" />

@@ -46,6 +46,7 @@
     <Compile Include="CodeGeneration\Serialization\EnumerableSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\ITypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\NativeTypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\QueueSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\KeyValuePairSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\ByteArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\Int32Serializer.cs" />

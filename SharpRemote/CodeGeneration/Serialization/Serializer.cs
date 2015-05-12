@@ -241,6 +241,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				EmitReadStack(gen, typeInformation);
 			}
+			else if (typeInformation.IsQueue)
+			{
+				EmitReadQueue(gen, typeInformation);
+			}
 			else if (typeInformation.IsValueType || typeInformation.IsSealed)
 			{
 				LocalBuilder value = gen.DeclareLocal(typeInformation.Type);
@@ -344,6 +348,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			else if (typeInformation.IsStack)
 			{
 				EmitWriteStack(gen, typeInformation, loadWriter, loadValue, loadSerializer);
+			}
+			else if (typeInformation.IsQueue)
+			{
+				EmitWriteQueue(gen, typeInformation, loadWriter, loadValue, loadSerializer);
 			}
 			else 
 			{

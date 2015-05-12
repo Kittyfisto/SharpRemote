@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
@@ -97,6 +96,31 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			values.Push(9001);
 
 			_serializer.ShouldRoundtripEnumeration(values);
+		}
+
+		[Test]
+		public void TestQueue()
+		{
+			_serializer.ShouldRoundtripEnumeration(new Queue<int>());
+
+			var values = new Queue<int>();
+			values.Enqueue(1);
+			values.Enqueue(5);
+			values.Enqueue(4);
+			values.Enqueue(1);
+			values.Enqueue(10);
+
+			_serializer.ShouldRoundtripEnumeration(values);
+		}
+
+		[Test]
+		public void TestSortedSet()
+		{
+			_serializer.ShouldRoundtripEnumeration(new SortedSet<string>());
+			_serializer.ShouldRoundtripEnumeration(new SortedSet<string>
+			{
+				"a", "b", "", "foobar", "wookie"
+			});
 		}
 
 		[Test]

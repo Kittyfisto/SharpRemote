@@ -4,7 +4,6 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using SharpRemote.CodeGeneration;
 
 namespace SharpRemote
 {
@@ -50,6 +49,10 @@ namespace SharpRemote
 				    .ToArray();
 
 			if (IsStack)
+			{
+				_elementType = _type.GetGenericArguments()[0];
+			}
+			else if (IsQueue)
 			{
 				_elementType = _type.GetGenericArguments()[0];
 			}
@@ -128,6 +131,11 @@ namespace SharpRemote
 		public bool IsStack
 		{
 			get { return _type.IsGenericType && _type.GetGenericTypeDefinition() == typeof (Stack<>); }
+		}
+
+		public bool IsQueue
+		{
+			get { return _type.IsGenericType && _type.GetGenericTypeDefinition() == typeof(Queue<>); }
 		}
 
 		public bool IsCollection

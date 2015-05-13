@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using NUnit.Framework;
@@ -146,6 +147,34 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				C = null
 			};
 			_serializer.ShouldRoundtrip(value);
+		}
+
+		[Test]
+		public void TestClassWithTypeHashSet()
+		{
+			_serializer.RegisterType<ClassWithTypeHashSet>();
+			var value = new ClassWithTypeHashSet
+				{
+					Values = new HashSet<Type>
+						{
+							typeof (int),
+							typeof (ClassWithTypeHashSet),
+							typeof (Type)
+						}
+				};
+			_serializer.ShouldRoundtrip(value);
+		}
+
+		[Test]
+		public void TestNonSealedClass()
+		{
+			_serializer.RegisterType<NonSealedClass>();
+			_serializer.ShouldRoundtrip(new NonSealedClass());
+			_serializer.ShouldRoundtrip(new NonSealedClass
+				{
+					Value1 = "FOobar",
+					Value2 = true
+				});
 		}
 
 		[Test]

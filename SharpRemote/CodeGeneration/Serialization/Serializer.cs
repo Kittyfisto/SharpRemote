@@ -264,17 +264,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				EmitReadQueue(gen, typeInformation);
 			}
-			else if (typeInformation.IsValueType || typeInformation.IsSealed)
+			else
 			{
 				LocalBuilder value = gen.DeclareLocal(typeInformation.Type);
 				EmitReadCustomType(gen, typeInformation, value);
-			}
-			else
-			{
-				EmitReadValue(gen,
-				              () => gen.Emit(OpCodes.Ldarg_0),
-				              () => gen.Emit(OpCodes.Ldarg_1),
-				              typeInformation.Type);
 			}
 
 			gen.Emit(OpCodes.Ret);

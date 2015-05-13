@@ -74,7 +74,10 @@
     <Compile Include="Test.cs" />
     <Compile Include="TestLogger.cs" />
     <Compile Include="Types\Classes\BinaryTreeNode.cs" />
+    <Compile Include="Types\Classes\ClassWithSingleton.cs" />
+    <Compile Include="Types\Classes\ClassWithTypeHashSet.cs" />
     <Compile Include="Types\Classes\PropertySealedClass.cs" />
+    <Compile Include="Types\Classes\Singleton.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="Types\ICalculator.cs" />

@@ -111,6 +111,23 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestSingleton()
+		{
+			_serializer.RegisterSingleton<Singleton>(typeof(Singleton).GetProperty("Instance").GetMethod);
+			_serializer.ShouldRoundtrip(Singleton.Instance);
+			_serializer.ShouldRoundtripEnumeration(new[]
+			{
+				null,
+				Singleton.Instance
+			});
+			_serializer.ShouldRoundtrip(new ClassWithSingleton());
+			_serializer.ShouldRoundtrip(new ClassWithSingleton
+			{
+				That = Singleton.Instance
+			});
+		}
+
+		[Test]
 		public void TestFieldStruct()
 		{
 			_serializer.RegisterType<FieldStruct>();

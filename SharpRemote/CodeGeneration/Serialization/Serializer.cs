@@ -15,6 +15,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		private readonly ModuleBuilder _module;
 		private readonly Dictionary<Type, SerializationMethods> _serializationMethods;
 		private readonly List<ITypeSerializer> _customSerializers;
+		private readonly Dictionary<Type, MethodInfo> _getSingletonInstance;
 
 		public Serializer(ModuleBuilder module)
 		{
@@ -44,6 +45,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				new NullableSerializer(),
 				new KeyValuePairSerializer(),
 			};
+
+			_getSingletonInstance = new Dictionary<Type, MethodInfo>();
 		}
 
 		public Serializer()
@@ -234,7 +237,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		private void EmitReadValueNotNullMethod(ILGenerator gen, TypeInformation typeInformation)
 		{
-			if (EmitReadNativeType(gen,
+			MethodInfo method;
+			if (IsSingleton(typeInformation, out method))
+			{
+				EmitReadSingleton(gen, typeInformation, method);
+			}
+			else if (EmitReadNativeType(gen,
 				() => gen.Emit(OpCodes.Ldarg_0),
 			                                typeInformation.Type,
 			                                false))
@@ -339,7 +347,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 			Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, 1);
 			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_2);
 
-			if (EmitWriteNativeType(
+			MethodInfo method;
+			if (IsSingleton(typeInformation, out method))
+			{
+				EmitwriteSingleton(method);
+			}
+			else if (EmitWriteNativeType(
 				gen,
 				loadWriter,
 				loadValue,

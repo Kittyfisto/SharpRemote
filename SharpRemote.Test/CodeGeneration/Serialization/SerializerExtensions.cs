@@ -3,6 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Text;
 using FluentAssertions;
+using SharpRemote.Test.Types.Classes;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
@@ -57,7 +58,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				if (value != null)
 				{
-					if (actualValue != string.Empty && !(actualValue is Type))
+					if (actualValue != string.Empty && !(actualValue is Type) && !(actualValue is Singleton))
 					{
 						actualValue.Should().NotBeSameAs(value, "because serialization should've created a deep copy");
 					}

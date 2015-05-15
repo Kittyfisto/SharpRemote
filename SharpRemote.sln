@@ -25,6 +25,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C54CC6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpRemote.Host", "SharpRemote.Host\SharpRemote.Host.csproj", "{21218E92-3815-4E5E-9761-C3FB0709F532}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleLibrary", "Samples\SampleLibrary\SampleLibrary.csproj", "{21331D8D-C95A-44AE-BB90-62F9CA0F1AB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{21218E92-3815-4E5E-9761-C3FB0709F532}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21218E92-3815-4E5E-9761-C3FB0709F532}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21218E92-3815-4E5E-9761-C3FB0709F532}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21331D8D-C95A-44AE-BB90-62F9CA0F1AB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21331D8D-C95A-44AE-BB90-62F9CA0F1AB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21331D8D-C95A-44AE-BB90-62F9CA0F1AB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21331D8D-C95A-44AE-BB90-62F9CA0F1AB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,5 +60,6 @@ Global
 		{21218E92-3815-4E5E-9761-C3FB0709F532} = {0DFD78EE-EFBE-4F42-8195-87BF371EAFDD}
 		{377C04C5-EE8C-4159-BDDC-37F1A8372705} = {E624D4D5-6EF9-4DCE-B5FC-C7DB6F387760}
 		{C54CC6BB-A650-475B-A07B-94FCA8BE71A3} = {4539F890-A585-4651-BE41-6D560801E44C}
+		{21331D8D-C95A-44AE-BB90-62F9CA0F1AB6} = {FEBCB651-C5D8-4374-BF9C-20D6FE6AC60E}
 	EndGlobalSection
 EndGlobal

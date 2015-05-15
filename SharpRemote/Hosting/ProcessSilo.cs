@@ -9,7 +9,7 @@ using log4net;
 namespace SharpRemote.Hosting
 {
 	/// <summary>
-	///     All requested objects are hosted in another process than the calling one, but on the same computer.
+	///     Represents a silo that is actually hosted in a completely different process.
 	/// </summary>
 	public sealed class ProcessSilo
 		: ISilo

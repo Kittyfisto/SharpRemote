@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
+using System.Reflection.Emit;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -19,15 +21,30 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private Random _random;
 		private ulong _objectId;
 		private Mock<IEndPointChannel> _channel;
+		private Mock<IRemotingEndPoint> _endPoint;
+		private AssemblyBuilder _assembly;
+		private string _moduleName;
 
 		[SetUp]
 		public void SetUp()
 		{
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Servants");
+			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_moduleName = assemblyName.Name + ".dll";
+			var module = _assembly.DefineDynamicModule(_moduleName);
+
 			var seed = (int)(DateTime.Now.Ticks % Int32.MaxValue);
 			Console.WriteLine("Seed: {0}", seed);
 			_random = new Random(seed);
+			_endPoint = new Mock<IRemotingEndPoint>();
 			_channel = new Mock<IEndPointChannel>();
-			_creator = new ServantCreator(_channel.Object);
+			_creator = new ServantCreator(module, _endPoint.Object, _channel.Object);
+		}
+
+		[TestFixtureTearDown]
+		public void TearDown()
+		{
+			_assembly.Save(_moduleName);
 		}
 
 		private IServant TestGenerate<T>(T subject)
@@ -151,6 +168,38 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			outStream.Position = 0;
 			var reader = new BinaryReader(outStream);
 			reader.ReadDouble().Should().BeApproximately(Math.PI, 0);
+		}
+
+		[Test]
+		public void TestByReferenceParameter()
+		{
+			IVoidMethodStringParameter actualListener = null;
+			var subject = new Mock<IByReferenceParemeterMethodInterface>();
+			subject.Setup(x => x.AddListener(It.IsAny<IVoidMethodStringParameter>()))
+				   .Callback((IVoidMethodStringParameter l) => actualListener = l);
+
+			var listener = new Mock<IVoidMethodStringParameter>();
+
+			var servant = _creator.CreateServant(1, subject.Object);
+
+			_endPoint.Setup(x => x.GetExistingOrCreateNewProxy<IVoidMethodStringParameter>(It.IsAny<ulong>()))
+			         .Returns((ulong objectId) =>
+				         {
+					         objectId.Should().Be(12345678912345678912);
+					         return listener.Object;
+				         });
+
+			var inStream = new MemoryStream();
+			var writer = new BinaryWriter(inStream);
+			writer.Write(12345678912345678912);
+
+			inStream.Position = 0;
+			var @in = new BinaryReader(inStream);
+
+			var outStream = new MemoryStream();
+			servant.InvokeMethod("AddListener", @in, new BinaryWriter(outStream));
+			actualListener.Should().BeSameAs(listener.Object, "because the compiled code should've retrieved the existing proxy by its id");
+			outStream.Length.Should().Be(0, "because nothing needed to be written to the outstream");
 		}
 	}
 }

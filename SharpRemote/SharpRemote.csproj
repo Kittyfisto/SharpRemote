@@ -39,6 +39,7 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ByReferenceAttribute.cs" />
     <Compile Include="CodeGeneration\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeSerializer.cs" />

@@ -61,6 +61,8 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo SerializerWriteObject;
 		public static readonly MethodInfo SerializerReadObject;
 		public static readonly MethodInfo CreateTypeFromName;
+		public static readonly MethodInfo RemotingEndPointGetOrCreateServant;
+		public static readonly MethodInfo RemotingEndPointGetOrCreateProxy;
 
 		static Methods()
 		{
@@ -129,6 +131,10 @@ namespace SharpRemote.CodeGeneration
 
 			SerializerWriteObject = typeof (ISerializer).GetMethod("WriteObject", new[]{typeof(BinaryWriter), typeof(object)});
 			SerializerReadObject = typeof(ISerializer).GetMethod("ReadObject", new[] { typeof(BinaryReader) });
+
+			RemotingEndPointGetOrCreateServant = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewServant");
+			RemotingEndPointGetOrCreateProxy = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy");
+
 			CreateTypeFromName = typeof(Methods).GetMethod("GetType", new[] { typeof(string) });
 		}
 

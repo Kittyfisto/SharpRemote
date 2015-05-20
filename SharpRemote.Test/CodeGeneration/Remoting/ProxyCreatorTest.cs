@@ -23,6 +23,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private ulong _objectId;
 		private AssemblyBuilder _assembly;
 		private string _moduleName;
+		private Mock<IRemotingEndPoint> _endPoint;
 
 		[TestFixtureSetUp]
 		public void SetUp()
@@ -35,8 +36,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var seed = (int) (DateTime.Now.Ticks%Int32.MaxValue);
 			Console.WriteLine("Seed: {0}", seed);
 			_random = new Random(seed);
+			_endPoint = new Mock<IRemotingEndPoint>();
+
 			_channel = new Mock<IEndPointChannel>();
-			_creator = new ProxyCreator(module, _channel.Object);
+			_creator = new ProxyCreator(module, _endPoint.Object, _channel.Object);
 		}
 
 		[TestFixtureTearDown]
@@ -783,6 +786,41 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			proxy.Do(null);
 			doCalled.Should().BeTrue();
+		}
+
+		[Test]
+		public void TestByReferenceParameter()
+		{
+			_endPoint.Setup(
+				x => x.GetExistingOrCreateNewServant(It.IsAny<IVoidMethodStringParameter>()))
+			         .Returns((IVoidMethodStringParameter subject) =>
+				         {
+					         var ret = new Mock<IServant>();
+					         ret.Setup(x => x.ObjectId).Returns(12345678912345678912);
+					         ret.Setup(x => x.Subject).Returns(subject);
+					         return ret.Object;
+				         });
+
+			var proxy = TestGenerate<IByReferenceParemeterMethodInterface>();
+			var listener = new Mock<IVoidMethodStringParameter>();
+
+			bool addListenerCalled = false;
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+					.Returns((ulong objectId, string methodName, Stream stream) =>
+					{
+						objectId.Should().Be(((IProxy)proxy).ObjectId);
+						methodName.Should().Be("AddListener");
+						stream.Should().NotBeNull();
+						stream.Length.Should().Be(8);
+						var reader = new BinaryReader(stream);
+						reader.ReadUInt64().Should().Be(12345678912345678912);
+
+						addListenerCalled = true;
+						return null;
+					});
+
+			proxy.AddListener(listener.Object);
+			addListenerCalled.Should().BeTrue();
 		}
 	}
 }

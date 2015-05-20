@@ -82,6 +82,7 @@
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="Types\ICalculator.cs" />
+    <Compile Include="Types\Interfaces\IByReferenceParemeterMethodInterface.cs" />
     <Compile Include="Types\Interfaces\IEmpty.cs" />
     <Compile Include="Types\Interfaces\IEventInt32.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IVoidMethodTypeParameter.cs" />

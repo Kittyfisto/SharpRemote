@@ -10,6 +10,7 @@ namespace SharpRemote.CodeGeneration
 	{
 		protected readonly Serializer SerializerCompiler;
 		protected FieldBuilder Serializer;
+		protected FieldBuilder EndPoint;
 		protected FieldBuilder Channel;
 		protected FieldBuilder ObjectId;
 
@@ -23,19 +24,38 @@ namespace SharpRemote.CodeGeneration
 			Action loadReader,
 			Action loadWriter)
 		{
+			Action loadSerializer = () =>
+				{
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, Serializer);
+				};
+
 			var allParameters = methodInfo.GetParameters();
 			foreach (var parameter in allParameters)
 			{
-				SerializerCompiler.EmitReadValue(
-					gen,
-					loadReader,
-					() =>
-					{
-						gen.Emit(OpCodes.Ldarg_0);
-						gen.Emit(OpCodes.Ldfld, Serializer);
-					},
-					parameter.ParameterType
-					);
+				var parameterType = parameter.ParameterType;
+
+				if (parameter.GetCustomAttribute<ByReferenceAttribute>() != null)
+				{
+					VerifyParameterConstraints(parameter);
+
+					// _endPoint.GetOrCreateProxy(reader.ReadUlong());
+					var getOrCreateProxy = Methods.RemotingEndPointGetOrCreateProxy.MakeGenericMethod(parameterType);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, EndPoint);
+					loadReader();
+					gen.Emit(OpCodes.Call, Methods.ReadULong);
+					gen.Emit(OpCodes.Callvirt, getOrCreateProxy);
+				}
+				else
+				{
+					SerializerCompiler.EmitReadValue(
+						gen,
+						loadReader,
+						loadSerializer,
+						parameterType
+						);
+				}
 			}
 
 			var returnType = methodInfo.ReturnType;
@@ -58,7 +78,7 @@ namespace SharpRemote.CodeGeneration
 			}
 		}
 
-		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, Type[] parameterTypes, Type returnType)
+		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters, Type returnType)
 		{
 			var gen = method.GetILGenerator();
 
@@ -66,7 +86,7 @@ namespace SharpRemote.CodeGeneration
 			var binaryWriter = gen.DeclareLocal(typeof(StreamWriter));
 			var binaryReader = gen.DeclareLocal(typeof(StreamReader));
 
-			if (parameterTypes.Length > 0)
+			if (parameters.Length > 0)
 			{
 				// var stream = new MemoryStream();
 				gen.Emit(OpCodes.Newobj, Methods.MemoryStreamCtor);
@@ -85,21 +105,46 @@ namespace SharpRemote.CodeGeneration
 						gen.Emit(OpCodes.Ldfld, Serializer);
 					};
 
-				int index = 0;
-				for (int i = 0; i < parameterTypes.Length; ++i)
+				for (int i = 0; i < parameters.Length; ++i)
 				{
-					//WriteXXX(_serializer, arg[y], binaryWriter);
-					int currentIndex = ++index;
-					Action loadValue = () => gen.Emit(OpCodes.Ldarg, currentIndex);
-					Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, currentIndex);
+					var parameter = parameters[i];
+					var parameterType = parameter.ParameterType;
+					int currentIndex = i+1;
 
-					SerializerCompiler.EmitWriteValue(
-						gen,
-						loadWriter,
-						loadValue,
-						loadValueAddress,
-						loadSerializer,
-						parameterTypes[i]);
+					Action loadValue = () => gen.Emit(OpCodes.Ldarg, currentIndex);
+
+					// If the parameter is attributed with [ByReference] then we don't want to serialize the object but ensure
+					// that there's a servant for it on this end-point and then only serialize its object id.
+					if (parameter.GetCustomAttribute<ByReferenceAttribute>() != null)
+					{
+						VerifyParameterConstraints(parameter);
+
+						gen.Emit(OpCodes.Ldloc, binaryWriter);
+
+						// _endPoint.GetOrCreateServant(arg[y])
+						var getOrCreateServant = Methods.RemotingEndPointGetOrCreateServant.MakeGenericMethod(parameterType);
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, EndPoint);
+						loadValue();
+						gen.Emit(OpCodes.Callvirt, getOrCreateServant);
+
+						// binaryWriter.Write(servant.ObjectId);
+						gen.Emit(OpCodes.Callvirt, Methods.GrainGetObjectId);
+						gen.Emit(OpCodes.Call, Methods.WriteULong);
+					}
+					else
+					{
+						Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, currentIndex);
+
+						//WriteXXX(_serializer, arg[y], binaryWriter);
+						SerializerCompiler.EmitWriteValue(
+							gen,
+							loadWriter,
+							loadValue,
+							loadValueAddress,
+							loadSerializer,
+							parameterType);
+					}
 				}
 
 				// binaryWriter.Flush()
@@ -150,6 +195,12 @@ namespace SharpRemote.CodeGeneration
 			}
 
 			gen.Emit(OpCodes.Ret);
+		}
+
+		private void VerifyParameterConstraints(ParameterInfo parameter)
+		{
+			if (parameter.ParameterType.IsValueType)
+				throw new ArgumentException(string.Format("The parameter '{0}' of method '{1}' is marked as [ByReference] but is a valuetype - this is not supported", parameter.Name, parameter.Member.Name));
 		}
 	}
 }

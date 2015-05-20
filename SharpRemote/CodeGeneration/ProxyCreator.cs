@@ -9,16 +9,19 @@ namespace SharpRemote.CodeGeneration
 	public sealed class ProxyCreator
 	{
 		private readonly Serializer _serializer;
+		private readonly IRemotingEndPoint _endPoint;
 		private readonly IEndPointChannel _channel;
 		private readonly Dictionary<Type, Type> _interfaceToProxy;
 		private readonly ModuleBuilder _module;
 
-		public ProxyCreator(ModuleBuilder module, Serializer serializer, IEndPointChannel channel)
+		public ProxyCreator(ModuleBuilder module, Serializer serializer, IRemotingEndPoint endPoint, IEndPointChannel channel)
 		{
 			if (module == null) throw new ArgumentNullException("module");
 			if (serializer == null) throw new ArgumentNullException("serializer");
+			if (endPoint == null) throw new ArgumentNullException("endPoint");
 			if (channel == null) throw new ArgumentNullException("channel");
 
+			_endPoint = endPoint;
 			_channel = channel;
 			_module = module;
 			_serializer = serializer;
@@ -26,12 +29,12 @@ namespace SharpRemote.CodeGeneration
 			_interfaceToProxy = new Dictionary<Type, Type>();
 		}
 
-		public ProxyCreator(ModuleBuilder module, IEndPointChannel channel)
-			: this(module, new Serializer(module), channel)
+		public ProxyCreator(ModuleBuilder module, IRemotingEndPoint endPoint, IEndPointChannel channel)
+			: this(module, new Serializer(module), endPoint, channel)
 		{}
 
-		public ProxyCreator(IEndPointChannel channel)
-			: this (CreateModule(), channel)
+		public ProxyCreator(IRemotingEndPoint endPoint, IEndPointChannel channel)
+			: this (CreateModule(), endPoint, channel)
 		{
 		}
 
@@ -53,11 +56,20 @@ namespace SharpRemote.CodeGeneration
 			Type proxyType;
 			if (!_interfaceToProxy.TryGetValue(interfaceType, out proxyType))
 			{
-				var proxyTypeName = GetProxyTypeName(interfaceType);
+				try
+				{
+					var proxyTypeName = GetProxyTypeName(interfaceType);
 
-				var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
-				proxyType = generator.Generate();
-
+					var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
+					proxyType = generator.Generate();
+				}
+				catch (Exception e)
+				{
+					var message = string.Format("Unable to create proxy for type '{0}': {1}",
+					                            interfaceType.Name,
+					                            e.Message);
+					throw new ArgumentException(message, e);
+				}
 				_interfaceToProxy.Add(interfaceType, proxyType);
 			}
 			return proxyType;
@@ -75,6 +87,7 @@ namespace SharpRemote.CodeGeneration
 			ConstructorInfo ctor = proxyType.GetConstructor(new[]
 				{
 					typeof(ulong),
+					typeof (IRemotingEndPoint),
 					typeof (IEndPointChannel),
 					typeof (ISerializer)
 				});
@@ -84,6 +97,7 @@ namespace SharpRemote.CodeGeneration
 			return (T)ctor.Invoke(new object[]
 				{
 					objectId,
+					_endPoint,
 					_channel,
 					_serializer
 				});

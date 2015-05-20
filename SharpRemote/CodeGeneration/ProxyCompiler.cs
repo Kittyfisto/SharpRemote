@@ -38,6 +38,8 @@ namespace SharpRemote.CodeGeneration
 			_typeBuilder.AddInterfaceImplementation(typeof(IProxy));
 
 			ObjectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
+			EndPoint = _typeBuilder.DefineField("_endPoint", typeof (IRemotingEndPoint),
+			                                    FieldAttributes.Private | FieldAttributes.InitOnly);
 			Channel = _typeBuilder.DefineField("_channel", typeof (IEndPointChannel),
 			                                    FieldAttributes.Private | FieldAttributes.InitOnly);
 			Serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
@@ -62,6 +64,7 @@ namespace SharpRemote.CodeGeneration
 			var builder = _typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[]
 				{
 					typeof (ulong),
+					typeof (IRemotingEndPoint),
 					typeof (IEndPointChannel),
 					typeof (ISerializer)
 				});
@@ -76,10 +79,14 @@ namespace SharpRemote.CodeGeneration
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_2);
-			gen.Emit(OpCodes.Stfld, Channel);
+			gen.Emit(OpCodes.Stfld, EndPoint);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_3);
+			gen.Emit(OpCodes.Stfld, Channel);
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg, 4);
 			gen.Emit(OpCodes.Stfld, Serializer);
 		}
 
@@ -391,14 +398,14 @@ namespace SharpRemote.CodeGeneration
 		private void GenerateMethodInvocation(MethodInfo remoteMethod)
 		{
 			var methodName = remoteMethod.Name;
-			var parameterTypes = remoteMethod.GetParameters().Select(x => x.ParameterType).ToArray();
+			var parameters = remoteMethod.GetParameters();
 			var method = _typeBuilder.DefineMethod(methodName,
 												   MethodAttributes.Public |
 													MethodAttributes.Virtual,
 													remoteMethod.ReturnType,
-													parameterTypes);
+													parameters.Select(x => x.ParameterType).ToArray());
 
-			GenerateMethodInvocation(method, methodName, parameterTypes, remoteMethod.ReturnType);
+			GenerateMethodInvocation(method, methodName, parameters, remoteMethod.ReturnType);
 
 			_typeBuilder.DefineMethodOverride(method, remoteMethod);
 		}

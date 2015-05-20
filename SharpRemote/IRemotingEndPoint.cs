@@ -90,6 +90,16 @@ namespace SharpRemote
 		T CreateProxy<T>(ulong objectId) where T : class;
 
 		/// <summary>
+		/// Returns the proxy that belongs to the given object-id.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentException">When there's no proxy with that id</exception>
+		/// <exception cref="ArgumentException">When there proxy's type does not match the given <typeparamref name="T"/> type parameter</exception>
+		T GetProxy<T>(ulong objectId) where T : class;
+
+		/// <summary>
 		///     Creates and registers an object for the given subject <paramref name="subject" /> and invokes its methods, when they
 		///     have been called on the corresponding proxy.
 		/// </summary>
@@ -105,5 +115,21 @@ namespace SharpRemote
 		/// <param name="subject"></param>
 		/// <returns></returns>
 		IServant CreateServant<T>(ulong objectId, T subject) where T : class;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId"></param>
+		/// <returns></returns>
+		T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="subject"></param>
+		/// <returns></returns>
+		IServant GetExistingOrCreateNewServant<T>(T subject) where T : class;
 	};
 }

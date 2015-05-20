@@ -37,6 +37,8 @@ namespace SharpRemote.CodeGeneration
 
 			_subject = _typeBuilder.DefineField("_subject", interfaceType, FieldAttributes.Private | FieldAttributes.InitOnly);
 			ObjectId = _typeBuilder.DefineField("_objectId", typeof(ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
+			EndPoint = _typeBuilder.DefineField("_endPoint", typeof(IRemotingEndPoint),
+									FieldAttributes.Private | FieldAttributes.InitOnly);
 			Channel = _typeBuilder.DefineField("_channel", typeof (IEndPointChannel),
 			                                   FieldAttributes.Private | FieldAttributes.InitOnly);
 			Serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
@@ -97,14 +99,14 @@ namespace SharpRemote.CodeGeneration
 			var methodInfo = delegateType.GetMethod("Invoke");
 
 			var methodName = string.Format("On{0}", @event.Name);
-			var parameterTypes = methodInfo.GetParameters().Select(x => x.ParameterType).ToArray();
+			var parameters = methodInfo.GetParameters();
 			var returnType = typeof (void);
 			var method = _typeBuilder.DefineMethod(methodName,
 												   MethodAttributes.Public,
 													returnType,
-													parameterTypes);
+													parameters.Select(x => x.ParameterType).ToArray());
 
-			GenerateMethodInvocation(method, @event.Name, parameterTypes, returnType);
+			GenerateMethodInvocation(method, @event.Name, parameters, returnType);
 
 			_eventInvocationMethods.Add(new KeyValuePair<EventInfo, MethodInfo>(@event, method));
 		}
@@ -233,6 +235,7 @@ namespace SharpRemote.CodeGeneration
 			var builder = _typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[]
 				{
 					typeof (ulong),
+					typeof (IRemotingEndPoint),
 					typeof (IEndPointChannel),
 					typeof (ISerializer),
 					_interfaceType
@@ -248,14 +251,18 @@ namespace SharpRemote.CodeGeneration
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_2);
-			gen.Emit(OpCodes.Stfld, Channel);
+			gen.Emit(OpCodes.Stfld, EndPoint);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_3);
-			gen.Emit(OpCodes.Stfld, Serializer);
+			gen.Emit(OpCodes.Stfld, Channel);
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg, 4);
+			gen.Emit(OpCodes.Stfld, Serializer);
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg, 5);
 			gen.Emit(OpCodes.Stfld, _subject);
 
 			foreach (var pair in _eventInvocationMethods)

@@ -40,10 +40,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NativeResource\IErrorListener.cs" />
     <Compile Include="NativeResource\UsesNativeResource.cs" />
     <Compile Include="NativeResource\IUsesNativeResource.cs" />
     <Compile Include="NativeResource\Metadata.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SharpRemote\SharpRemote.csproj">
+      <Project>{1B908B3A-2F3B-47B8-B69F-3827B8829586}</Project>
+      <Name>SharpRemote</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

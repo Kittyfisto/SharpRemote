@@ -34,5 +34,15 @@ namespace SampleLibrary.NativeResource
 		{
 			get { throw new NotImplementedException(); }
 		}
+
+		public void AddListener(IErrorListener listener)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void RemoveListener(IErrorListener listener)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

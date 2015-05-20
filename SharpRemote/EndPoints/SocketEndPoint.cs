@@ -79,8 +79,8 @@ namespace SharpRemote
 			_module = _assembly.DefineDynamicModule(moduleName);
 
 			_serializer = new Serializer(_module);
-			_servantCreator = new ServantCreator(_module, _serializer, this);
-			_proxyCreator = new ProxyCreator(_module, _serializer, this);
+			_servantCreator = new ServantCreator(_module, _serializer, this, this);
+			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
 			_pendingCalls = new Dictionary<long, Action<MessageType, BinaryReader>>();
 		}
 
@@ -401,6 +401,21 @@ namespace SharpRemote
 			}
 		}
 
+		public T GetProxy<T>(ulong objectId) where T : class
+		{
+			IProxy proxy;
+			if (!_proxies.TryGetValue(objectId, out proxy))
+				throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
+
+			if (!(proxy is T))
+				throw new ArgumentException(string.Format("The proxy '{0}', {1} is not related to interface: {2}",
+				                                          objectId,
+				                                          proxy.GetType().Name,
+				                                          typeof (T).Name));
+
+			return (T)proxy;
+		}
+
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
 			IServant servant = _servantCreator.CreateServant(objectId, subject);
@@ -409,6 +424,16 @@ namespace SharpRemote
 				_servants.Add(objectId, servant);
 			}
 			return servant;
+		}
+
+		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
+		{
+			throw new NotImplementedException();
+		}
+
+		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
+		{
+			throw new NotImplementedException();
 		}
 
 		public MemoryStream CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments)

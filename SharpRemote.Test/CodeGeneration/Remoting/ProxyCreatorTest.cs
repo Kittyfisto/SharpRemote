@@ -724,7 +724,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var reader = new BinaryReader(input);
 			var output = new MemoryStream();
 			writer = new BinaryWriter(output);
-			((IProxy)proxy).InvokeEvent("Foobar", reader, writer);
+			((IProxy)proxy).Invoke("Foobar", reader, writer);
 
 			actualValue.Should().Be(42);
 		}

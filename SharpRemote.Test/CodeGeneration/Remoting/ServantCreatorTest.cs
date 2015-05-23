@@ -111,7 +111,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			writer.Write(typeof(string).AssemblyQualifiedName);
 			arguments.Position = 0;
 
-			servant.InvokeMethod("Do", new BinaryReader(arguments), new BinaryWriter(new MemoryStream()));
+			servant.Invoke("Do", new BinaryReader(arguments), new BinaryWriter(new MemoryStream()));
 			actualType.Should().Be<string>();
 		}
 
@@ -145,11 +145,11 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			arguments.Position = 0;
 
 			var output = new MemoryStream();
-			servant.InvokeMethod("CreateSubject1", new BinaryReader(arguments), new BinaryWriter(output));
+			servant.Invoke("CreateSubject1", new BinaryReader(arguments), new BinaryWriter(output));
 			@interface.Should().Be<IGetStringProperty>();
 			@impl.Should().Be<GetStringPropertyImplementation>();
 
-			servant.InvokeMethod("Dispose", null, new BinaryWriter(new MemoryStream()));
+			servant.Invoke("Dispose", null, new BinaryWriter(new MemoryStream()));
 			disposed.Should().BeTrue();
 		}
 
@@ -163,7 +163,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			var outStream = new MemoryStream();
 			var @out = new BinaryWriter(outStream);
-			servant.InvokeMethod("get_Value", null, @out);
+			servant.Invoke("get_Value", null, @out);
 
 			outStream.Position = 0;
 			var reader = new BinaryReader(outStream);
@@ -197,7 +197,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var @in = new BinaryReader(inStream);
 
 			var outStream = new MemoryStream();
-			servant.InvokeMethod("AddListener", @in, new BinaryWriter(outStream));
+			servant.Invoke("AddListener", @in, new BinaryWriter(outStream));
 			actualListener.Should().BeSameAs(listener.Object, "because the compiled code should've retrieved the existing proxy by its id");
 			outStream.Length.Should().Be(0, "because nothing needed to be written to the outstream");
 		}

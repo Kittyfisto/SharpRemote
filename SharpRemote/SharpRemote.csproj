@@ -67,6 +67,7 @@
     <Compile Include="CodeGeneration\Serialization\Serializers\VersionSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\SingletonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
+    <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="SingletonFactoryMethodAttribute.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="TypeInformation.cs" />

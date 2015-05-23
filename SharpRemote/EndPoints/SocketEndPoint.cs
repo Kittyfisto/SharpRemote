@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -42,8 +41,8 @@ namespace SharpRemote
 		private long _nextRpcId;
 
 		private readonly Dictionary<long, Action<MessageType, BinaryReader>> _pendingCalls;
-		private readonly string _stacktrace;
 		private readonly Serializer _serializer;
+		private readonly HashSet<MethodInvocation> _pendingInvocations;
 
 		[Flags]
 		private enum MessageType : byte
@@ -60,7 +59,6 @@ namespace SharpRemote
 			_syncRoot = new object();
 
 			_name = name ?? "<Unnamed>";
-			_stacktrace = new StackTrace().ToString();
 
 			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out _localEndPoint);
 			_serverSocket.Listen(1);
@@ -82,6 +80,7 @@ namespace SharpRemote
 			_servantCreator = new ServantCreator(_module, _serializer, this, this);
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
 			_pendingCalls = new Dictionary<long, Action<MessageType, BinaryReader>>();
+			_pendingInvocations = new HashSet<MethodInvocation>();
 		}
 
 		private void Read(object sock)
@@ -110,14 +109,7 @@ namespace SharpRemote
 						var reader = new BinaryReader(stream);
 						var rpcId = reader.ReadInt64();
 						var type = (MessageType)reader.ReadByte();
-						int responseLength;
-						var response = HandleMessage(rpcId, type, reader, out responseLength);
-						if (response != null)
-						{
-							if (!SynchronizedWrite(socket, response, responseLength, out err) ||
-								!HandleError(socket, err))
-								break;
-						}
+						HandleMessage(rpcId, type, reader);
 					}
 				}
 			}
@@ -507,74 +499,108 @@ namespace SharpRemote
 			}
 		}
 
-		private byte[] HandleMessage(long rpcId, MessageType type, BinaryReader reader, out int responseLength)
+		private void HandleMessage(long rpcId, MessageType type, BinaryReader reader)
 		{
 			if (type == MessageType.Call)
 			{
-				return HandleRequest(rpcId, reader, out responseLength);
+				HandleRequest(rpcId, reader);
 			}
-			if ((type & MessageType.Return) != 0)
+			else if ((type & MessageType.Return) != 0)
 			{
 				if (!HandleResponse(rpcId, type, reader))
 				{
 					Log.ErrorFormat("There is no pending RPC of id '{0}' - disconnecting...", rpcId);
 					Disconnect();
 				}
-
-				responseLength = -1;
-				return null;
 			}
-
-			throw new NotImplementedException();
+			else
+			{
+				throw new NotImplementedException();
+			}
 		}
 
-		private byte[] HandleRequest(long rpcId, BinaryReader reader, out int responseLength)
+		private void DispatchMethodInvocation(long rpcId, IGrain grain, string methodName, BinaryReader reader)
+		{
+			var task = new Task(() =>
+				{
+					try
+					{
+						var socket = _socket;
+						var response = new MemoryStream();
+						var writer = new BinaryWriter(response, Encoding.UTF8);
+						try
+						{
+							WriteResponseHeader(rpcId, writer, MessageType.Return);
+							grain.Invoke(methodName, reader, writer);
+							PatchResponseMessageLength(response, writer);
+						}
+						catch (Exception e)
+						{
+							response.Position = 0;
+							WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+							WriteException(writer, e);
+							PatchResponseMessageLength(response, writer);
+						}
+
+						var responseLength = (int) response.Length;
+						var data = response.GetBuffer();
+
+						SocketError err;
+						if (!SynchronizedWrite(socket, data, responseLength, out err) ||
+						    !HandleError(socket, err))
+						{
+							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+							Disconnect();
+						}
+					}
+					catch (Exception e)
+					{
+						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
+						Disconnect();
+					}
+				});
+			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
+
+			task.ContinueWith(unused =>
+				{
+					_pendingInvocations.Remove(methodInvocation);
+				});
+			_pendingInvocations.Add(methodInvocation);
+			task.Start();
+		}
+
+		private void HandleRequest(long rpcId, BinaryReader reader)
 		{
 			var servantId = reader.ReadUInt64();
 			var methodName = reader.ReadString();
 
-			var response = new MemoryStream();
-			var writer = new BinaryWriter(response, Encoding.UTF8);
-			try
+			IServant servant;
+			lock (_servants)
 			{
-				IServant servant;
-				lock (_servants)
+				_servants.TryGetValue(servantId, out servant);
+			}
+
+			if (servant != null)
+			{
+				DispatchMethodInvocation(rpcId, servant, methodName, reader);
+			}
+			else
+			{
+				IProxy proxy;
+				lock (_proxies)
 				{
-					_servants.TryGetValue(servantId, out servant);
+					_proxies.TryGetValue(servantId, out proxy);
 				}
 
-				if (servant != null)
+				if (proxy != null)
 				{
-					WriteResponseHeader(rpcId, writer, MessageType.Return);
-					servant.InvokeMethod(methodName, reader, writer);
-					PatchResponseMessageLength(response, writer);
+					DispatchMethodInvocation(rpcId, proxy, methodName, reader);
 				}
 				else
 				{
-					IProxy proxy;
-					lock (_proxies)
-					{
-						_proxies.TryGetValue(servantId, out proxy);
-					}
-
-					if (proxy != null)
-					{
-						WriteResponseHeader(rpcId, writer, MessageType.Return);
-						proxy.InvokeEvent(methodName, reader, writer);
-						PatchResponseMessageLength(response, writer);
-					}
+					throw new NotImplementedException();
 				}
 			}
-			catch (Exception e)
-			{
-				response.Position = 0;
-				WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-				WriteException(writer, e);
-				PatchResponseMessageLength(response, writer);
-			}
-
-			responseLength = (int) response.Length;
-			return response.GetBuffer();
 		}
 
 		private static void PatchResponseMessageLength(MemoryStream response, BinaryWriter writer)

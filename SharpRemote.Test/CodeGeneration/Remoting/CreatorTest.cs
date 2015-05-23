@@ -51,7 +51,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					       var ret = new MemoryStream();
 					       var writer = new BinaryWriter(ret);
 
-					       _servant.InvokeMethod(methodName, reader, writer);
+					       _servant.Invoke(methodName, reader, writer);
 					       ret.Position = 0;
 					       return ret;
 				       });

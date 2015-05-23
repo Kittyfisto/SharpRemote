@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using SharpRemote.CodeGeneration.Serialization.Serializers;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -35,8 +34,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo StreamSetPosition;
 		public static readonly MethodInfo ObjectGetType;
 		public static readonly FieldInfo StringEmpty;
-		public static readonly MethodInfo ServantInvokeMethod;
-		public static readonly MethodInfo ProxyInvokeEvent;
+		public static readonly MethodInfo GrainInvoke;
 		public static readonly MethodInfo StringEquality;
 		public static readonly MethodInfo ReadBytes;
 		public static readonly MethodInfo ReadString;
@@ -75,9 +73,8 @@ namespace SharpRemote.CodeGeneration
 
 			GrainGetObjectId = typeof(IGrain).GetMethod("get_ObjectId");
 			GrainGetSerializer = typeof(IGrain).GetMethod("get_Serializer");
-			ServantInvokeMethod = typeof (IServant).GetMethod("InvokeMethod");
 			ServantGetSubject = typeof (IServant).GetMethod("get_Subject");
-			ProxyInvokeEvent = typeof (IProxy).GetMethod("InvokeEvent");
+			GrainInvoke = typeof (IGrain).GetMethod("Invoke");
 
 			ObjectCtor = typeof(object).GetConstructor(new Type[0]);
 			ChannelCallRemoteMethod = typeof(IEndPointChannel).GetMethod("CallRemoteMethod");

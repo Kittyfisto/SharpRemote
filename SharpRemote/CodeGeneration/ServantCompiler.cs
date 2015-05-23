@@ -85,7 +85,7 @@ namespace SharpRemote.CodeGeneration
 		private void GenerateEvents()
 		{
 			// For every event we have to compile a method that essentially does the same that the proxy compiler
-			// does for interface methods: serialize the arguments into a stream and then call IEndPointChannel.InvokeMethod
+			// does for interface methods: serialize the arguments into a stream and then call IEndPointChannel.Invoke
 			var allEvents = _interfaceType.GetEvents();
 			foreach (var @event in allEvents)
 			{
@@ -128,7 +128,7 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateDispatchMethod()
 		{
-			var method = _typeBuilder.DefineMethod("InvokeMethod",
+			var method = _typeBuilder.DefineMethod("Invoke",
 			                                       MethodAttributes.Public | MethodAttributes.Virtual,
 												   typeof(void),
 												   new[]
@@ -204,7 +204,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Call, Methods.BinaryWriterFlush);
 			gen.Emit(OpCodes.Ret);
 
-			_typeBuilder.DefineMethodOverride(method, Methods.ServantInvokeMethod);
+			_typeBuilder.DefineMethodOverride(method, Methods.GrainInvoke);
 		}
 
 		private MethodInfo CompileExtractingMethod(MethodInfo originalMethod)

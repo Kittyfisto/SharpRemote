@@ -273,7 +273,7 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateInvokeEvent()
 		{
-			var originalMethod = Methods.ProxyInvokeEvent;
+			var originalMethod = Methods.GrainInvoke;
 			var method = _typeBuilder.DefineMethod(originalMethod.Name, MethodAttributes.Public | MethodAttributes.Virtual,
 			                                       typeof (void),
 			                                       new[]
@@ -333,7 +333,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Call, Methods.BinaryWriterFlush);
 			gen.Emit(OpCodes.Ret);
 
-			_typeBuilder.DefineMethodOverride(method, Methods.ProxyInvokeEvent);
+			_typeBuilder.DefineMethodOverride(method, Methods.GrainInvoke);
 		}
 
 		private void ExtractArgumentsAndInvokeEvent(ILGenerator gen, EventInfo eventInfo)

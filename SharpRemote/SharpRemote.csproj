@@ -69,6 +69,7 @@
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="SingletonFactoryMethodAttribute.cs" />
+    <Compile Include="Tasks\SerialTaskScheduler.cs" />
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="TypeInformation.cs" />
     <Compile Include="DisposableExtensions.cs" />

@@ -71,6 +71,7 @@
     <Compile Include="Hosting\ProcessSiloAcceptanceTest.cs" />
     <Compile Include="Hosting\ProcessSiloTest.cs" />
     <Compile Include="PerformanceTestAttribute.cs" />
+    <Compile Include="Tasks\SerialTaskSchedulerTest.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="TestLogger.cs" />
     <Compile Include="Types\Classes\BinaryTreeNode.cs" />

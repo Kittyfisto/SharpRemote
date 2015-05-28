@@ -36,6 +36,7 @@ namespace SharpRemote.CodeGeneration
 		public ProxyCreator(IRemotingEndPoint endPoint, IEndPointChannel channel)
 			: this (CreateModule(), endPoint, channel)
 		{
+			
 		}
 
 		private static ModuleBuilder CreateModule()

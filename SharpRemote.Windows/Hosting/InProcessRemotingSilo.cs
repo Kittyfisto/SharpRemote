@@ -23,7 +23,7 @@ namespace SharpRemote.Hosting
 			_remoteEndPoint = new SocketEndPoint(IPAddress.Loopback);
 			_remoteEndPoint.CreateServant(subjectHostId, (ISubjectHost)new SubjectHost(_remoteEndPoint, subjectHostId+1, OnSubjectHostDisposed));
 
-			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(1));
+			_localEndPoint.Connect(_remoteEndPoint.LocalAddress, TimeSpan.FromSeconds(1));
 		}
 
 		private void OnSubjectHostDisposed()

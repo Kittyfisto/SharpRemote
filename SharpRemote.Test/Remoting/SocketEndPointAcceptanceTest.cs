@@ -33,7 +33,7 @@ namespace SharpRemote.Test.Remoting
 
 			_server = CreateEndPoint(IPAddress.Loopback, "Server");
 			_client = CreateEndPoint(IPAddress.Loopback, "Client");
-			_client.Connect(_server.LocalEndPoint, TimeSpan.FromMinutes(1));
+			_client.Connect(_server.LocalAddress, TimeSpan.FromMinutes(1));
 		}
 
 		[TestFixtureTearDown]

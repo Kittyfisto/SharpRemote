@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\bin\Debug\</OutputPath>
+    <OutputPath>..\bin\Debug\win\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\bin\Release\</OutputPath>
+    <OutputPath>..\bin\Release\win\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -67,7 +67,19 @@
     <Compile Include="CodeGeneration\Serialization\Serializers\VersionSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\SingletonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
+    <Compile Include="Dispatch.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
+    <Compile Include="Exceptions\ConnectionLostException.cs" />
+    <Compile Include="Exceptions\NoSuchEndPointException.cs" />
+    <Compile Include="Exceptions\NoSuchServantException.cs" />
+    <Compile Include="Exceptions\NotConnectedException.cs" />
+    <Compile Include="Exceptions\RemotingException.cs" />
+    <Compile Include="Exceptions\UnserializableException.cs" />
+    <Compile Include="IGrain.cs" />
+    <Compile Include="InvokeAttribute.cs" />
+    <Compile Include="IProxy.cs" />
+    <Compile Include="ISerializer.cs" />
+    <Compile Include="IServant.cs" />
     <Compile Include="SingletonFactoryMethodAttribute.cs" />
     <Compile Include="Tasks\SerialTaskScheduler.cs" />
     <Compile Include="TypeExtensions.cs" />
@@ -75,11 +87,6 @@
     <Compile Include="DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />
     <Compile Include="EndPoints\SocketEndPoint.cs" />
-    <Compile Include="Exceptions\ConnectionLostException.cs" />
-    <Compile Include="Exceptions\UnserializableException.cs" />
-    <Compile Include="Exceptions\NoSuchEndPointException.cs" />
-    <Compile Include="Exceptions\NoSuchServantException.cs" />
-    <Compile Include="Exceptions\NotConnectedException.cs" />
     <Compile Include="Hosting\InProcessRemotingSilo.cs" />
     <Compile Include="Hosting\InProcessSilo.cs" />
     <Compile Include="Hosting\ISilo.cs" />
@@ -87,7 +94,6 @@
     <Compile Include="Hosting\ProcessExtensions.cs" />
     <Compile Include="Hosting\ProcessSilo.cs" />
     <Compile Include="Hosting\SubjectHost.cs" />
-    <Compile Include="ISerializer.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializer.cs" />
     <Compile Include="CodeGeneration\ServantCompiler.cs" />
@@ -95,12 +101,8 @@
     <Compile Include="IRemotingEndPoint.cs" />
     <Compile Include="IEndpointChannel.cs" />
     <Compile Include="CodeGeneration\ProxyCompiler.cs" />
-    <Compile Include="IGrain.cs" />
-    <Compile Include="IProxy.cs" />
-    <Compile Include="IServant.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CodeGeneration\ProxyCreator.cs" />
-    <Compile Include="Exceptions\RemotingException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\bin\Debug\</OutputPath>
+    <OutputPath>..\bin\Debug\win\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\bin\Release\</OutputPath>
+    <OutputPath>..\bin\Release\win\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -139,9 +139,9 @@
       <Project>{21218e92-3815-4e5e-9761-c3fb0709f532}</Project>
       <Name>SharpRemote.Host</Name>
     </ProjectReference>
-    <ProjectReference Include="..\SharpRemote\SharpRemote.csproj">
+    <ProjectReference Include="..\SharpRemote.Windows\SharpRemote.Windows.csproj">
       <Project>{1b908b3a-2f3b-47b8-b69f-3827b8829586}</Project>
-      <Name>SharpRemote</Name>
+      <Name>SharpRemote.Windows</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

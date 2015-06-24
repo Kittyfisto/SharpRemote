@@ -69,7 +69,8 @@ namespace SharpRemote.Hosting
 			if (port == null)
 				throw new NotImplementedException();
 
-			_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
+			var uri = new Uri(string.Format("tcp://{0}:{1}", IPAddress.Loopback, port.Value));
+			_endPoint.Connect(uri, Constants.ConnectionTimeout);
 		}
 
 		[Pure]

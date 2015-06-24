@@ -68,7 +68,7 @@ namespace SharpRemote.Host
 				{
 					var servant = endpoint.CreateServant(subjectHostId, (ISubjectHost) host);
 
-					Console.WriteLine(endpoint.LocalEndPoint.Port);
+					Console.WriteLine(endpoint.LocalAddress.Port);
 					Console.WriteLine(ProcessSilo.Constants.ReadyMessage);
 
 					_waitHandle.WaitOne();

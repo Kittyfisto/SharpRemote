@@ -34,8 +34,13 @@ namespace SampleBrowser.Scenarios.Host
 			using (var appender = new LogInterceptor(Log))
 			using (var silo = new ProcessSilo(hostOutputWritten: LogHost))
 			{
-				var instance = silo.CreateGrain<IWritesToConsoleSample>(typeof (WritesToConsoleSample));
-				instance.Write("This message is sent via a remote procedure call through the IWritesToConsoleSample interface");
+				var instance = silo.CreateGrain<ISample>(typeof (Sample));
+				Log(string.Format("Have you been called yet? - {0}", instance.HaveYouBeenCalledYet()));
+				instance.Call("This message is sent via a remote procedure call through the ISample interface");
+				Log(string.Format("What about now? - {0}", instance.HaveYouBeenCalledYet()));
+
+				Log("What's the value of PI?");
+				instance.WritePi();
 			}
 		}
 

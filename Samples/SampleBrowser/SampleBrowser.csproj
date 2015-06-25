@@ -67,9 +67,9 @@
     <Compile Include="Scenarios\Host\HostView.xaml.cs">
       <DependentUpon>HostView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Scenarios\Host\IWritesToConsoleSample.cs" />
+    <Compile Include="Scenarios\Host\ISample.cs" />
     <Compile Include="Scenarios\Host\TaskCommand.cs" />
-    <Compile Include="Scenarios\Host\WritesToConsoleSample.cs" />
+    <Compile Include="Scenarios\Host\Sample.cs" />
     <Compile Include="Scenarios\IScenario.cs" />
     <Compile Include="Scenarios\RemoteHost\RemoteHostScenario.cs" />
     <Page Include="Controls\Console.xaml">

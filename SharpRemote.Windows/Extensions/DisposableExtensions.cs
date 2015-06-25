@@ -6,7 +6,7 @@ namespace SharpRemote
 {
 	public static class DisposableExtensions
 	{
-		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog Log = LogManager.GetLogger("SharpRemote.DisposableExtensions");
 
 		public static void TryDispose(this IDisposable that)
 		{

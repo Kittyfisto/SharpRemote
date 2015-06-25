@@ -13,9 +13,11 @@ namespace SharpRemote
 	public class ConnectionLostException
 		: OperationCanceledException
 	{
+#if !WINDOWS_PHONE_APP
 		public ConnectionLostException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
+#endif
 
 		public ConnectionLostException()
 			: base("The connection to the remote endpoint has been lost")

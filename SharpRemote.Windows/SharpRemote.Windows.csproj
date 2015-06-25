@@ -39,7 +39,7 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ByReferenceAttribute.cs" />
+    <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="CodeGeneration\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeSerializer.cs" />
@@ -69,6 +69,7 @@
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
     <Compile Include="Dispatch.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
+    <Compile Include="EndPoints\WebEndPoint.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />
@@ -76,15 +77,15 @@
     <Compile Include="Exceptions\RemotingException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />
     <Compile Include="IGrain.cs" />
-    <Compile Include="InvokeAttribute.cs" />
+    <Compile Include="Attributes\InvokeAttribute.cs" />
     <Compile Include="IProxy.cs" />
     <Compile Include="ISerializer.cs" />
     <Compile Include="IServant.cs" />
-    <Compile Include="SingletonFactoryMethodAttribute.cs" />
+    <Compile Include="Attributes\SingletonFactoryMethodAttribute.cs" />
     <Compile Include="Tasks\SerialTaskScheduler.cs" />
-    <Compile Include="TypeExtensions.cs" />
+    <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="TypeInformation.cs" />
-    <Compile Include="DisposableExtensions.cs" />
+    <Compile Include="Extensions\DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />
     <Compile Include="EndPoints\SocketEndPoint.cs" />
     <Compile Include="Hosting\InProcessRemotingSilo.cs" />

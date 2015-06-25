@@ -14,15 +14,12 @@ namespace SharpRemote
 	{
 		public ulong ObjectId;
 
+#if !WINDOWS_PHONE_APP
 		public NoSuchServantException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
 			ObjectId = info.GetUInt64("ObjectId");
 		}
-
-		public NoSuchServantException(ulong objectId)
-			: base(string.Format("No such servant: {0}", objectId))
-		{}
 
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
@@ -30,5 +27,10 @@ namespace SharpRemote
 
 			info.AddValue("ObjectId", ObjectId);
 		}
+#endif
+
+        public NoSuchServantException(ulong objectId)
+			: base(string.Format("No such servant: {0}", objectId))
+		{}
 	}
 }

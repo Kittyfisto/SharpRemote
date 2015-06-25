@@ -17,7 +17,11 @@ namespace SharpRemote
 		private readonly string _originalMessage;
 		private readonly string _originalSource;
 		private readonly string _originalStacktrace;
+
+#if !WINDOWS_PHONE_APP
 		private readonly string _originalTargetSite;
+#endif
+
 		private readonly string _originalTypename;
 
 		public UnserializableException(Exception originalException)
@@ -26,11 +30,15 @@ namespace SharpRemote
 			_originalStacktrace = originalException.StackTrace;
 			_originalTypename = originalException.GetType().AssemblyQualifiedName;
 			_originalSource = originalException.Source;
+
+#if !WINDOWS_PHONE_APP
 			_originalTargetSite = originalException.TargetSite.Name;
+#endif
 
 			HResult = originalException.HResult;
 		}
 
+#if !WINDOWS_PHONE_APP
 		public UnserializableException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
@@ -41,7 +49,19 @@ namespace SharpRemote
 			_originalTargetSite = info.GetString("OriginalTargetSite");
 		}
 
-		public string OriginalMessage
+		public override void GetObjectData(SerializationInfo info, StreamingContext context)
+		{
+			base.GetObjectData(info, context);
+
+			info.AddValue("OriginalMessage", _originalMessage);
+			info.AddValue("OriginalStacktrace", _originalStacktrace);
+			info.AddValue("OriginalExceptionType", _originalTypename);
+			info.AddValue("OriginalSource", _originalSource);
+			info.AddValue("OriginalTargetSite", _originalTargetSite);
+		}
+#endif
+
+        public string OriginalMessage
 		{
 			get { return _originalMessage; }
 		}
@@ -61,20 +81,11 @@ namespace SharpRemote
 			get { return _originalTypename; }
 		}
 
+#if !WINDOWS_PHONE_APP
 		public string OriginalTargetSite
 		{
 			get { return _originalTargetSite; }
 		}
-
-		public override void GetObjectData(SerializationInfo info, StreamingContext context)
-		{
-			base.GetObjectData(info, context);
-
-			info.AddValue("OriginalMessage", _originalMessage);
-			info.AddValue("OriginalStacktrace", _originalStacktrace);
-			info.AddValue("OriginalExceptionType", _originalTypename);
-			info.AddValue("OriginalSource", _originalSource);
-			info.AddValue("OriginalTargetSite", _originalTargetSite);
-		}
+#endif
 	}
 }

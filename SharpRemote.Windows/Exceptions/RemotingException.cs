@@ -12,9 +12,11 @@ namespace SharpRemote
 		public RemotingException()
 		{}
 
+#if !WINDOWS_PHONE_APP
 		public RemotingException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
+#endif
 
 		public RemotingException(string message, Exception e = null)
 			: base(message, e)

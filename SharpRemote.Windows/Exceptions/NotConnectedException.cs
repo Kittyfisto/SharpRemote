@@ -11,16 +11,11 @@ namespace SharpRemote
 	{
 		public readonly string EndPointName;
 
+#if !WINDOWS_PHONE_APP
 		public NotConnectedException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
 			EndPointName = info.GetString("EndPointName");
-		}
-
-		public NotConnectedException(string endPointName)
-			: base("This endpoint is not connected to any other endpoint")
-		{
-			EndPointName = endPointName;
 		}
 
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -29,5 +24,13 @@ namespace SharpRemote
 
 			info.AddValue("EndPointName", EndPointName);
 		}
+#endif
+
+        public NotConnectedException(string endPointName)
+			: base("This endpoint is not connected to any other endpoint")
+		{
+			EndPointName = endPointName;
+		}
+
 	}
 }

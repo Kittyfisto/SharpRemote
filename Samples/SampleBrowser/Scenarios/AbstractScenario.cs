@@ -1,28 +1,44 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace SampleBrowser.Scenarios
 {
 	public abstract class AbstractScenario
 		: IScenario
 	{
-		private readonly string _name;
+		private static Dispatcher Dispatcher
+		{
+			get { return App.Dispatcher; }
+		}
+
+		private readonly string _title;
 		private readonly string _description;
 		private readonly ICommand _startCommand;
 		private readonly ICommand _stopCommand;
 
-		protected AbstractScenario(string name, string description)
+		protected AbstractScenario(string title, string description)
 		{
-			_name = name;
+			_title = title;
 			_description = description;
 
 			_startCommand = new DelegateCommand(Start);
 			_stopCommand = new DelegateCommand(Stop);
 		}
 
+		public abstract FrameworkElement CreateView();
+
 		private void Start(object unused)
 		{
-			Start();
+			App.ViewModel.ShowScenario(this);
+			Start().ContinueWith(task => Dispatcher.BeginInvoke(new Action(ScenarioStarted)));
+		}
+
+		private void ScenarioStarted()
+		{
+			
 		}
 
 		private void Stop(object unused)
@@ -33,9 +49,9 @@ namespace SampleBrowser.Scenarios
 		protected abstract Task Start();
 		protected abstract Task Stop();
 
-		public string Name
+		public string Title
 		{
-			get { return _name; }
+			get { return _title; }
 		}
 
 		public string Description

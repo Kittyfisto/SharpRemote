@@ -4,7 +4,7 @@ namespace SampleBrowser.Scenarios
 {
 	public interface IScenario
 	{
-		string Name { get; }
+		string Title { get; }
 		string Description { get; }
 
 		ICommand StartCommand { get; }

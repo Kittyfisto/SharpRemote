@@ -7,8 +7,11 @@
 	{
 		public MainWindow()
 		{
+			App.Dispatcher = Dispatcher;
+			App.ViewModel = new MainWindowViewModel();
+
 			InitializeComponent();
-			DataContext = new MainWindowViewModel();
+			DataContext = App.ViewModel;
 		}
 	}
 }

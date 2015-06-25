@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
+using System.Windows;
 
-namespace SampleBrowser.Scenarios
+namespace SampleBrowser.Scenarios.RemoteHost
 {
 	public sealed class RemoteHostScenario
 		: AbstractScenario
@@ -12,6 +13,11 @@ namespace SampleBrowser.Scenarios
 			)
 		{
 			
+		}
+
+		public override FrameworkElement CreateView()
+		{
+			return null;
 		}
 
 		protected override Task Start()

@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows.Threading;
 
 namespace SampleBrowser
 {
 	/// <summary>
-	/// Interaction logic for App.xaml
+	///     Interaction logic for App.xaml
 	/// </summary>
-	public partial class App : Application
+	public partial class App
 	{
+		public static Dispatcher Dispatcher;
+		public static MainWindowViewModel ViewModel;
 	}
 }

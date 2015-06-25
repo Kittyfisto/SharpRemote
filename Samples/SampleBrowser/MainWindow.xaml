@@ -5,43 +5,50 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d"
         xmlns:sampleBrowser="clr-namespace:SampleBrowser"
-        Title="Sample Browser" Height="350" Width="525"
-        d:DataContext="{d:DesignInstance sampleBrowser:MainWindowViewModel, IsDesignTimeCreatable=True}"
-        >
+        Title="{Binding Title}" Height="350" Width="525"
+        d:DataContext="{d:DesignInstance sampleBrowser:MainWindowViewModel, IsDesignTimeCreatable=True}">
     <Grid>
         <ItemsControl ItemsSource="{Binding Scenarios}"
-            >
+                      Visibility="{Binding IsScenarioSelectionVisible, Converter={StaticResource BoolFalseToVisibilityCollapsedConverter}}"
+                      >
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Grid Width="220" Height="140"
+                    <Grid Width="220" Height="160"
                           Background="DodgerBlue"
-                          Margin="12"
-                          >
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBlock FontSize="28"
-                                   Text="{Binding Name}"
-                                   Foreground="White"
-                                   Grid.Row="0"
-                                   Margin="12"
-                                   />
-                        <TextBlock Text="{Binding Description}"
-                                   Foreground="White"
-                                   TextWrapping="Wrap"
-                                   Grid.Row="2"
-                                   Margin="12" />
+                          Margin="12">
+                        <Button
+                            Command="{Binding StartCommand}"
+                            Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+                            >
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock FontSize="28"
+                                           Text="{Binding Title}"
+                                           Foreground="White"
+                                           Grid.Row="0"
+                                           Margin="12" />
+                                <TextBlock Text="{Binding Description}"
+                                           Foreground="White"
+                                           TextWrapping="Wrap"
+                                           Grid.Row="2"
+                                           Margin="12" />
+                            </Grid>
+                        </Button>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
-            
+
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <WrapPanel />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>
+        
+        <ContentPresenter Content="{Binding CurrentScenarioView}" />
     </Grid>
 </Window>

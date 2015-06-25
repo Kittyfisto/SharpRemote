@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="log4net">
+      <HintPath>..\..\bin\Debug\win\log4net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -55,6 +58,7 @@
     </ApplicationDefinition>
     <Compile Include="Controls\Console.cs" />
     <Compile Include="Converters\BoolFalseToVisibilityCollapsedConverter.cs" />
+    <Compile Include="LogInterceptor.cs" />
     <Compile Include="MainWindowViewModel.cs" />
     <Compile Include="Scenarios\AbstractScenario.cs" />
     <Compile Include="Scenarios\DelegateCommand.cs" />
@@ -116,6 +120,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SharpRemote.Windows\SharpRemote.Windows.csproj">
+      <Project>{1B908B3A-2F3B-47B8-B69F-3827B8829586}</Project>
+      <Name>SharpRemote.Windows</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

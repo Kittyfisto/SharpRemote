@@ -27,9 +27,11 @@ namespace SampleBrowser.Scenarios.Host
 
 		private void TaskFinished(Task task)
 		{
-			_task = null;
-			// TODO: Execute on dispatcher thread?
-			EmitCanExecuteChanged();
+			App.Dispatcher.BeginInvoke(new Action(() =>
+			{
+				_task = null;
+				EmitCanExecuteChanged();
+			}));
 		}
 
 		public event EventHandler CanExecuteChanged;

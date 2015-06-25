@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
+using SharpRemote.Hosting;
 
 namespace SampleBrowser.Scenarios.Host
 {
@@ -13,18 +13,18 @@ namespace SampleBrowser.Scenarios.Host
 		{
 		}
 
-		public ICommand RunTestCommand
-		{
-			get { return new TaskCommand(() => Task.Factory.StartNew(RunTest)); }
-		}
-
-		private void RunTest()
-		{
-		}
-
 		public override FrameworkElement CreateView()
 		{
 			return new HostView();
+		}
+
+		protected override void RunTest()
+		{
+			using (var appender = new LogInterceptor(Log))
+			using (var silo = new ProcessSilo())
+			{
+				
+			}
 		}
 
 		protected override Task Start()

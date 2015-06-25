@@ -1,26 +1,26 @@
 ﻿<UserControl x:Class="SampleBrowser.Scenarios.Host.HostView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:controls="clr-namespace:SampleBrowser.Controls"
              xmlns:host="clr-namespace:SampleBrowser.Scenarios.Host"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
-             d:DataContext="{d:DesignInstance host:HostScenario, IsDesignTimeCreatable=True}"
-             >
+             d:DataContext="{d:DesignInstance host:HostScenario, IsDesignTimeCreatable=True}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-            <controls:Console Grid.Row="0" />
+
+        <controls:Console Grid.Row="0"
+                          Output="{Binding Output}" />
 
         <StackPanel Grid.Row="1">
             <Button Content="Run test!"
                     HorizontalAlignment="Right"
-                    Command="{Binding RunTestCommand}"
-                />
+                    Command="{Binding RunTestCommand}" />
         </StackPanel>
     </Grid>
 </UserControl>

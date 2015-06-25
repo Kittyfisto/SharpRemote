@@ -20,6 +20,11 @@ namespace SampleBrowser.Scenarios.RemoteHost
 			return null;
 		}
 
+		protected override void RunTest()
+		{
+			throw new System.NotImplementedException();
+		}
+
 		protected override Task Start()
 		{
 			return Task.Factory.StartNew(() =>

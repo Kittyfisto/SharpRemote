@@ -73,6 +73,8 @@ namespace SampleBrowser
 		public void ShowScenario(AbstractScenario scenario)
 		{
 			CurrentScenarioView = scenario.CreateView();
+			CurrentScenarioView.DataContext = scenario;
+
 			IsScenarioSelectionVisible = false;
 			Title = string.Format("Sample Browser - {0}", scenario.Title);
 		}

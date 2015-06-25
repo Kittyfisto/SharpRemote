@@ -8,7 +8,7 @@ namespace SampleBrowser
 	/// </summary>
 	public partial class App
 	{
-		public static Dispatcher Dispatcher;
+		public static new Dispatcher Dispatcher;
 		public static MainWindowViewModel ViewModel;
 
 		public App()

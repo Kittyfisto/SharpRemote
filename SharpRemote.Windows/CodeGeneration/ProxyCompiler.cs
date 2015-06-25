@@ -88,6 +88,8 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg, 4);
 			gen.Emit(OpCodes.Stfld, Serializer);
+
+			gen.Emit(OpCodes.Ret);
 		}
 
 		private void GenerateGetSerializer()

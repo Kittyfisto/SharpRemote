@@ -11,6 +11,7 @@ namespace SampleBrowser.Scenarios.Host
 			: base("Host",
 			       "Start and connect to a host application on the same computer and run a test suite over the network")
 		{
+			RunTestCommand.Execute(null);
 		}
 
 		public override FrameworkElement CreateView()

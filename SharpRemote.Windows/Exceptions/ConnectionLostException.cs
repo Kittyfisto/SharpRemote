@@ -14,9 +14,11 @@ namespace SharpRemote
 		: OperationCanceledException
 	{
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 		public ConnectionLostException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
+#endif
 #endif
 
 		public ConnectionLostException()

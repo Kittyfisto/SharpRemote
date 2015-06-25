@@ -32,13 +32,16 @@ namespace SharpRemote
 			_originalSource = originalException.Source;
 
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 			_originalTargetSite = originalException.TargetSite.Name;
+#endif
 #endif
 
 			HResult = originalException.HResult;
 		}
 
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 		public UnserializableException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
@@ -59,6 +62,7 @@ namespace SharpRemote
 			info.AddValue("OriginalSource", _originalSource);
 			info.AddValue("OriginalTargetSite", _originalTargetSite);
 		}
+#endif
 #endif
 
         public string OriginalMessage

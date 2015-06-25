@@ -15,6 +15,7 @@ namespace SharpRemote
 		public ulong ObjectId;
 
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 		public NoSuchServantException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
@@ -27,6 +28,7 @@ namespace SharpRemote
 
 			info.AddValue("ObjectId", ObjectId);
 		}
+#endif
 #endif
 
         public NoSuchServantException(ulong objectId)

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SharpRemote
+namespace System
 {
     /// <summary>
     /// Stub attribute to allow exceptions to compile...

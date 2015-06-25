@@ -10,6 +10,7 @@ namespace SharpRemote
 		: RemotingException
 	{
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 		public NoSuchEndPointException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
@@ -23,6 +24,7 @@ namespace SharpRemote
 
 			info.AddValue("Uri", Uri != null ? Uri.ToString() : null);
 		}
+#endif
 #endif
 
         public NoSuchEndPointException(Uri uri, Exception e = null)

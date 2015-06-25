@@ -1,7 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.Serialization;
+
+
+#if !SILVERLIGHT
 using System.Runtime.Serialization.Formatters.Binary;
+#endif
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -11,6 +15,7 @@ namespace SharpRemote
 	{
 		#region Static Methods
 
+#if !SILVERLIGHT
 		protected static void WriteException(BinaryWriter writer, Exception e)
 		{
 			Stream stream = writer.BaseStream;
@@ -29,6 +34,7 @@ namespace SharpRemote
 				formatter.Serialize(stream, new UnserializableException(e));
 			}
 		}
+#endif
 
 		#endregion
 	}

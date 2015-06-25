@@ -12,6 +12,7 @@ namespace SharpRemote
 		public readonly string EndPointName;
 
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 		public NotConnectedException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
@@ -24,6 +25,7 @@ namespace SharpRemote
 
 			info.AddValue("EndPointName", EndPointName);
 		}
+#endif
 #endif
 
         public NotConnectedException(string endPointName)

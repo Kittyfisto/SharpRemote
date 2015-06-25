@@ -35,7 +35,7 @@ namespace SampleBrowser.Scenarios.Host
 			using (var silo = new ProcessSilo(hostOutputWritten: LogHost))
 			{
 				var instance = silo.CreateGrain<IWritesToConsoleSample>(typeof (WritesToConsoleSample));
-				instance.Write("This is a test message that is written to the host's console");
+				instance.Write("This message is sent to the host application via the IWritesToConsoleSample interface, who's implementation instance resides in the host's silo");
 			}
 		}
 

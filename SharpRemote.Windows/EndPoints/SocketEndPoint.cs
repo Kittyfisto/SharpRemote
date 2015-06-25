@@ -284,6 +284,7 @@ namespace SharpRemote
 		public void Dispose()
 		{
 			Disconnect();
+			_serverSocket.TryDispose();
 		}
 
 		public string Name

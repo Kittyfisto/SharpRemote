@@ -10,23 +10,27 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}">
 
-                        <ItemsControl
+                        <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Auto"
+                                      >
+                            <ItemsControl
                             ItemsSource="{Binding Output, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Vertical" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding}" Foreground="White"
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Vertical" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <TextBlock Text="{Binding}" Foreground="White"
                                                TextWrapping="Wrap"
                                                />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                            
-                        </ItemsControl>
-
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>

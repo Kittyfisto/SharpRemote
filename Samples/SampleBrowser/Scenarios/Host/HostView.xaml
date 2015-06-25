@@ -14,9 +14,22 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <controls:Console Grid.Row="0"
-                          Output="{Binding Output}" />
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
 
+            <controls:Console Grid.Column="0"
+                          Output="{Binding Output}"
+                              Margin="12,12,6,12" />
+
+            <controls:Console Grid.Column="1"
+                          Output="{Binding HostOutput}"
+                              Margin="6,12,12,12"/>
+
+        </Grid>
+        
         <StackPanel Grid.Row="1">
             <Button Content="Run test!"
                     HorizontalAlignment="Right"

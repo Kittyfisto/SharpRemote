@@ -8,6 +8,12 @@ using log4net;
 
 namespace SharpRemote.Hosting
 {
+	public enum ProcessOptions
+	{
+		ShowConsole,
+		HideConsole,
+	}
+
 	/// <summary>
 	///     Represents a silo that is actually hosted in a completely different process.
 	/// </summary>
@@ -26,6 +32,7 @@ namespace SharpRemote.Hosting
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly SocketEndPoint _endPoint;
+		private readonly Action<string> _hostOutputWritten;
 		private readonly Process _process;
 		private readonly ISubjectHost _subjectHost;
 		private readonly ManualResetEvent _waitHandle;
@@ -33,8 +40,9 @@ namespace SharpRemote.Hosting
 
 		private int? _remotePort;
 
-		public ProcessSilo()
+		public ProcessSilo(ProcessOptions options = ProcessOptions.HideConsole, Action<string> hostOutputWritten = null)
 		{
+			_hostOutputWritten = hostOutputWritten;
 			_endPoint = new SocketEndPoint(IPAddress.Loopback);
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 			_waitHandle = new ManualResetEvent(false);
@@ -45,11 +53,21 @@ namespace SharpRemote.Hosting
 					StartInfo = new ProcessStartInfo("SharpRemote.Host.exe")
 						{
 							Arguments = string.Format("{0}", parentPid),
-							UseShellExecute = false,
 							RedirectStandardOutput = true,
-							CreateNoWindow = true,
+							UseShellExecute = false,
 						}
 				};
+			switch (options)
+			{
+				case ProcessOptions.HideConsole:
+					_process.StartInfo.CreateNoWindow = true;
+					break;
+
+				case ProcessOptions.ShowConsole:
+					_process.StartInfo.CreateNoWindow = false;
+					break;
+			}
+
 			_process.Exited += ProcessOnExited;
 			_process.OutputDataReceived += ProcessOnOutputDataReceived;
 
@@ -79,7 +97,8 @@ namespace SharpRemote.Hosting
 			get { return !_process.HasExited; }
 		}
 
-		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class
+		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters)
+			where TInterface : class
 		{
 			Type interfaceType = typeof (TInterface);
 			ulong id = _subjectHost.CreateSubject2(assemblyQualifiedTypeName, interfaceType);
@@ -105,9 +124,16 @@ namespace SharpRemote.Hosting
 			_process.TryDispose();
 		}
 
+		private void EmitHostOutputWritten(string message)
+		{
+			Action<string> handler = _hostOutputWritten;
+			if (handler != null) handler(message);
+		}
+
 		private void ProcessOnOutputDataReceived(object sender, DataReceivedEventArgs args)
 		{
 			string message = args.Data;
+			EmitHostOutputWritten(message);
 			switch (message)
 			{
 				case Constants.BootingMessage:

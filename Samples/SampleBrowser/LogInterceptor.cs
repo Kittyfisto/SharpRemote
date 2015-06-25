@@ -15,6 +15,8 @@ namespace SampleBrowser
 
 		public LogInterceptor(Action<string> logAction)
 		{
+			Threshold = Level.All;
+
 			_logAction = logAction;
 			_root = ((Hierarchy) LogManager.GetRepository()).Root;
 			_root.AddAppender(this);

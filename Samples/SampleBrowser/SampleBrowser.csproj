@@ -66,7 +66,9 @@
     <Compile Include="Scenarios\Host\HostView.xaml.cs">
       <DependentUpon>HostView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Scenarios\Host\IWritesToConsoleSample.cs" />
     <Compile Include="Scenarios\Host\TaskCommand.cs" />
+    <Compile Include="Scenarios\Host\WritesToConsoleSample.cs" />
     <Compile Include="Scenarios\IScenario.cs" />
     <Compile Include="Scenarios\RemoteHost\RemoteHostScenario.cs" />
     <Page Include="Controls\Console.xaml">
@@ -122,6 +124,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SharpRemote.Host\SharpRemote.Host.csproj">
+      <Project>{21218e92-3815-4e5e-9761-c3fb0709f532}</Project>
+      <Name>SharpRemote.Host</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SharpRemote.Windows\SharpRemote.Windows.csproj">
       <Project>{1B908B3A-2F3B-47B8-B69F-3827B8829586}</Project>
       <Name>SharpRemote.Windows</Name>

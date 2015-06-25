@@ -1,4 +1,5 @@
 ﻿using System.Windows.Threading;
+using log4net.Config;
 
 namespace SampleBrowser
 {
@@ -9,5 +10,10 @@ namespace SampleBrowser
 	{
 		public static Dispatcher Dispatcher;
 		public static MainWindowViewModel ViewModel;
+
+		public App()
+		{
+			BasicConfigurator.Configure();
+		}
 	}
 }

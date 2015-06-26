@@ -131,6 +131,7 @@
     <Compile Include="Remoting\SocketEndPointAcceptanceTest.cs" />
     <Compile Include="Remoting\SocketEndPointTest.cs" />
     <Compile Include="Watchdog\ApplicationInstallerTest.cs" />
+    <Compile Include="Watchdog\WatchdogTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

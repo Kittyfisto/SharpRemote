@@ -37,6 +37,8 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
@@ -106,6 +108,7 @@
     <Compile Include="CodeGeneration\ProxyCreator.cs" />
     <Compile Include="Watchdog\ApplicationDescriptor.cs" />
     <Compile Include="Watchdog\ApplicationInstaller.cs" />
+    <Compile Include="Watchdog\ApplicationInstanceDescription.cs" />
     <Compile Include="Watchdog\IApplicationInstaller.cs" />
     <Compile Include="Exceptions\InstallationFailedException.cs" />
     <Compile Include="Watchdog\InstalledApplication.cs" />

@@ -10,6 +10,9 @@ namespace SharpRemote.Watchdog
 	public struct ApplicationDescriptor : IEquatable<ApplicationDescriptor>
 	{
 		[DataMember]
+		public long? Id { get; set; }
+
+		[DataMember]
 		public string Name { get; set; }
 
 		[DataMember]

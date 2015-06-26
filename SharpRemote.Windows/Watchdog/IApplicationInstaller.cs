@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SharpRemote.Watchdog
 {
@@ -21,7 +22,7 @@ namespace SharpRemote.Watchdog
 		double Progress { get; }
 
 		/// <summary>
-		/// Adds the list of files to be transferred.
+		/// Adds the given file to the current installation.
 		/// </summary>
 		/// <param name="sourceFileName"></param>
 		/// <param name="destinationFolder"></param>
@@ -29,9 +30,29 @@ namespace SharpRemote.Watchdog
 		void AddFile(string sourceFileName, Environment.SpecialFolder destinationFolder, string destinationPath = null);
 
 		/// <summary>
+		/// Adds all files in the given folder to the current installation.
+		/// </summary>
+		/// <remarks>
+		/// Doesn't add files in sub-directories of the given folder.
+		/// </remarks>
+		/// <param name="sourceFolder"></param>
+		/// <param name="destinationFolder"></param>
+		/// <param name="destinationPath"></param>
+		void AddFiles(string sourceFolder, Environment.SpecialFolder destinationFolder, string destinationPath = null);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="files"></param>
+		/// <param name="destinationFolder"></param>
+		/// <param name="destinationPath"></param>
+		void AddFiles(List<string> files, Environment.SpecialFolder destinationFolder, string destinationPath = null);
+
+		/// <summary>
 		/// Finishes the installation - blocks until all files have been transferred and successfully installed
 		/// on the target system or an exception is thrown in case of failure.
 		/// </summary>
 		InstalledApplication Commit();
+
 	}
 }

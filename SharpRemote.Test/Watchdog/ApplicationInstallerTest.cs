@@ -11,6 +11,7 @@ namespace SharpRemote.Test.Watchdog
 	public sealed class ApplicationInstallerTest
 	{
 		private string _sharpRemoteLibraryLocation;
+		private string _binFolder;
 		private InProcessRemotingSilo _silo;
 		private IRemoteWatchdog _watchdog;
 
@@ -19,6 +20,7 @@ namespace SharpRemote.Test.Watchdog
 		{
 			var assembly = typeof (RemoteWatchdog).Assembly;
 			_sharpRemoteLibraryLocation = assembly.Location;
+			_binFolder = Path.GetDirectoryName(_sharpRemoteLibraryLocation);
 		}
 
 		[SetUp]
@@ -36,13 +38,42 @@ namespace SharpRemote.Test.Watchdog
 		}
 
 		[Test]
+		[Description("Verifies that an application with multiple files in the same directory works")]
+		public void TestInstallMultipleFiles()
+		{
+			var descriptor = new ApplicationDescriptor
+			{
+				Name = "TestInstallSingleFile",
+				FolderName = "TestInstallSingleFile",
+			};
+
+			InstalledApplication app;
+			using (var installer = new ApplicationInstaller(_watchdog, descriptor))
+			{
+				installer.AddFiles(_binFolder, Environment.SpecialFolder.CommonDocuments);
+				app = installer.Commit();
+			}
+
+			var expectedFiles = Directory.GetFiles(_binFolder);
+			var actualFiles = app.Files;
+
+			actualFiles.Count.Should().Be(expectedFiles.Length);
+			for (int i = 0; i < expectedFiles.Length; ++i)
+			{
+				var fullPath = RemoteWatchdog.Resolve(descriptor.FolderName, Environment.SpecialFolder.CommonDocuments,
+														 actualFiles[i].Filename);
+				FilesAreEqual(new FileInfo(expectedFiles[i]), new FileInfo(fullPath));
+			}
+		}
+
+		[Test]
 		[Description("Verifies that an application with a single file works")]
 		public void TestInstallSingleFile()
 		{
 			var descriptor = new ApplicationDescriptor
 			{
-				Name = "ApplicationInstallerTest",
-				FolderName = "ApplicationInstallerTest",
+				Name = "TestInstallSingleFile",
+				FolderName = "TestInstallSingleFile",
 			};
 			var fullPath = RemoteWatchdog.Resolve(descriptor.FolderName, Environment.SpecialFolder.CommonApplicationData,
 													 "SharpRemote.dll");

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,11 @@ namespace SharpRemote.Watchdog
 		private readonly ConcurrentBag<File> _pendingFiles;
 		private readonly Task _task;
 		private readonly IRemoteWatchdog _watchdog;
+		private float _progress;
+		private long _totalSize;
+		private long _transferedSize;
 		private Exception _exception;
+		private bool _success;
 
 		public ApplicationInstaller(IRemoteWatchdog watchdog, ApplicationDescriptor descriptor)
 		{
@@ -33,11 +38,22 @@ namespace SharpRemote.Watchdog
 			_commitTokenSource = new CancellationTokenSource();
 			_task = Task.Factory.StartNew(InstallApplication);
 
-			_appId = _watchdog.StartApplicationInstallation(descriptor);
+			_appId = _watchdog.StartInstallation(descriptor);
 		}
 
 		public void Dispose()
 		{
+			if (!_success)
+			{
+				try
+				{
+					_watchdog.AbortInstallation(_appId);
+				}
+				catch (Exception)
+				{
+				}
+			}
+
 			_cancellationTokenSource.Cancel();
 			_task.Wait();
 
@@ -50,14 +66,32 @@ namespace SharpRemote.Watchdog
 
 		public double Progress
 		{
-			get { throw new NotImplementedException(); }
+			get { return _progress; }
 		}
 
 		public void AddFile(string sourceFileName, Environment.SpecialFolder destinationFolder, string destinationPath = null)
 		{
 			ThrowIfNecessary();
 			var file = new File(sourceFileName, destinationFolder, destinationPath);
+			_totalSize += file.FileSize;
 			_pendingFiles.Add(file);
+		}
+
+		public void AddFiles(string sourceFolder, Environment.SpecialFolder destinationFolder, string destinationPath = null)
+		{
+			var files = Directory.GetFiles(sourceFolder);
+			foreach (var file in files)
+			{
+				AddFile(file, destinationFolder, destinationPath);
+			}
+		}
+
+		public void AddFiles(List<string> files, Environment.SpecialFolder destinationFolder, string destinationPath = null)
+		{
+			foreach (var file in files)
+			{
+				AddFile(file, destinationFolder, destinationPath);
+			}
 		}
 
 		public InstalledApplication Commit()
@@ -69,7 +103,9 @@ namespace SharpRemote.Watchdog
 
 			// No exception was thrown - let's try to end the installation
 			// on the remote system - if that work's then we're done
-			return _watchdog.CommitApplicationInstallation(_appId);
+			var ret = _watchdog.CommitInstallation(_appId);
+			_success = true;
+			return ret;
 		}
 
 		private void ThrowIfNecessary()
@@ -122,6 +158,8 @@ namespace SharpRemote.Watchdog
 
 				_watchdog.WriteFilePartially(fileId, _blockBuffer, offset, toRead);
 				offset += read;
+				_transferedSize += read;
+				_progress = (float) (1.0*_transferedSize/_totalSize);
 			}
 		}
 

@@ -8,10 +8,19 @@ namespace SharpRemote.Watchdog
 	/// </summary>
 	public interface IRemoteWatchdog
 	{
-		long StartApplicationInstallation(ApplicationDescriptor description);
-		InstalledApplication CommitApplicationInstallation(long appId);
-		void AbortApplicationInstallation(long appId);
-		void RemoveApplication();
+		/// <summary>
+		/// Registers the given process with this monitor.
+		/// </summary>
+		/// <param name="instance"></param>
+		/// <returns></returns>
+		long RegisterApplicationInstance(ApplicationInstanceDescription instance);
+
+		void UnregisterApplicationInstance(long id);
+
+		long StartInstallation(ApplicationDescriptor description);
+		InstalledApplication CommitInstallation(long appId);
+		void AbortInstallation(long appId);
+		void RemoveApplication(long id);
 
 		/// <summary>
 		/// Creates a new file (or replaces an existing file) at the given location

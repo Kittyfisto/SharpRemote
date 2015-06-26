@@ -130,6 +130,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Remoting\SocketEndPointAcceptanceTest.cs" />
     <Compile Include="Remoting\SocketEndPointTest.cs" />
+    <Compile Include="Watchdog\ApplicationInstallerTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

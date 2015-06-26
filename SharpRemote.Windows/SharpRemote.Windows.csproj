@@ -104,6 +104,16 @@
     <Compile Include="CodeGeneration\ProxyCompiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CodeGeneration\ProxyCreator.cs" />
+    <Compile Include="Watchdog\ApplicationDescriptor.cs" />
+    <Compile Include="Watchdog\ApplicationInstaller.cs" />
+    <Compile Include="Watchdog\IApplicationInstaller.cs" />
+    <Compile Include="Exceptions\InstallationFailedException.cs" />
+    <Compile Include="Watchdog\InstalledApplication.cs" />
+    <Compile Include="Watchdog\InstalledFile.cs" />
+    <Compile Include="Watchdog\IRemoteWatchdog.cs" />
+    <Compile Include="Watchdog\IWatchdog.cs" />
+    <Compile Include="Watchdog\RemoteWatchdog.cs" />
+    <Compile Include="Watchdog\Watchdog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -2,6 +2,7 @@
 using System.Runtime.Serialization;
 
 // ReSharper disable CheckNamespace
+
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
@@ -14,7 +15,7 @@ namespace SharpRemote
 		public NoSuchEndPointException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
-			var ip = info.GetString("Address");
+			string ip = info.GetString("Address");
 			Uri.TryCreate(ip, UriKind.RelativeOrAbsolute, out Uri);
 		}
 
@@ -27,7 +28,7 @@ namespace SharpRemote
 #endif
 #endif
 
-        public NoSuchEndPointException(Uri uri, Exception e = null)
+		public NoSuchEndPointException(Uri uri, Exception e = null)
 			: base(string.Format("Unable to establish a connection with the given endpoint: {0}", uri), e)
 		{
 			Uri = uri;

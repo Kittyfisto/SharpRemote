@@ -16,7 +16,8 @@ namespace SharpRemote.Watchdog
 		{
 			if (instance == null) throw new ArgumentNullException("instance");
 
-			_remoteWatchdog.RegisterApplicationInstance(instance);
+			var id = _remoteWatchdog.RegisterApplicationInstance(instance);
+			instance.Id = id;
 		}
 
 		public void UnregisterApplicationInstance(ApplicationInstanceDescription instance)
@@ -27,17 +28,16 @@ namespace SharpRemote.Watchdog
 			_remoteWatchdog.UnregisterApplicationInstance(instance.Id.Value);
 		}
 
-		public void UninstallApplication(ApplicationDescriptor description)
+		public void UninstallApplication(InstalledApplication application)
 		{
-			if (description == null) throw new ArgumentNullException("description");
-			if (description.Id == null) throw new ArgumentNullException("description.Id");
+			if (application == null) throw new ArgumentNullException("application");
 
-			_remoteWatchdog.RemoveApplication(description.Id.Value);
+			_remoteWatchdog.RemoveApplication(application.Id);
 		}
 
-		public IApplicationInstaller StartInstallation(ApplicationDescriptor description)
+		public IApplicationInstaller StartInstallation(ApplicationDescriptor description, Installation installation = Installation.FailOnUpgrade)
 		{
-			return new ApplicationInstaller(_remoteWatchdog, description);
+			return new ApplicationInstaller(_remoteWatchdog, description, installation);
 		}
 	}
 }

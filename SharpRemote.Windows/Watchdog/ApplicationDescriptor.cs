@@ -10,13 +10,15 @@ namespace SharpRemote.Watchdog
 	public struct ApplicationDescriptor : IEquatable<ApplicationDescriptor>
 	{
 		[DataMember]
-		public long? Id { get; set; }
-
-		[DataMember]
 		public string Name { get; set; }
 
 		[DataMember]
 		public string FolderName { get; set; }
+
+		public override string ToString()
+		{
+			return string.Format("{0} (@{1})", Name, FolderName);
+		}
 
 		public bool Equals(ApplicationDescriptor other)
 		{

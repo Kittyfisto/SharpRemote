@@ -15,12 +15,20 @@
 		CleanInstall,
 
 		/// <summary>
-		/// If there's a previous installation, kill all of its running processes
-		/// and then apply the installation.
+		/// Performs an update of an existing application. All running application instances
+		/// are stopped for the durationg of the update and restarted once the update is finished.
 		/// </summary>
 		/// <remarks>
 		/// Files not touched by the current installation are simply from the previous
 		/// installation.
+		/// </remarks>
+		/// <remarks>
+		/// The installation will fail if the files being installed are in used.
+		/// </remarks>
+		/// <remarks>
+		/// If the installation fails then the application is very likely in an inconsistent state
+		/// (old files alongside new files) and therefore is deemed broken.
+		/// In order to remedy this, a <see cref="CleanInstall"/> should be performed.
 		/// </remarks>
 		ColdUpdate,
 
@@ -34,6 +42,11 @@
 		/// </remarks>
 		/// <remarks>
 		/// The installation will fail if the files being installed are in used.
+		/// </remarks>
+		/// <remarks>
+		/// If the installation fails then the application is very likely in an inconsistent state
+		/// (old files alongside new files) and therefore is deemed broken.
+		/// In order to remedy this, a <see cref="CleanInstall"/> should be performed.
 		/// </remarks>
 		HotUpdate,
 	}

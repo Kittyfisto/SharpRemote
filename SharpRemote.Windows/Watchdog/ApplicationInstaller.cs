@@ -17,28 +17,35 @@ namespace SharpRemote.Watchdog
 		private readonly CancellationTokenSource _cancellationTokenSource;
 		private readonly CancellationTokenSource _commitTokenSource;
 		private readonly ApplicationDescriptor _descriptor;
+		private readonly Installation _installation;
 		private readonly ConcurrentBag<File> _pendingFiles;
 		private readonly Task _task;
 		private readonly IRemoteWatchdog _watchdog;
+		private Exception _exception;
 		private float _progress;
+		private bool _success;
 		private long _totalSize;
 		private long _transferedSize;
-		private Exception _exception;
-		private bool _success;
 
-		public ApplicationInstaller(IRemoteWatchdog watchdog, ApplicationDescriptor descriptor)
+		public ApplicationInstaller(IRemoteWatchdog watchdog, ApplicationDescriptor descriptor, Installation installation = Installation.FailOnUpgrade)
 		{
 			if (watchdog == null) throw new ArgumentNullException("watchdog");
 
 			_blockBuffer = new byte[BlockSize];
 			_descriptor = descriptor;
+			_installation = installation;
 			_watchdog = watchdog;
 			_pendingFiles = new ConcurrentBag<File>();
 			_cancellationTokenSource = new CancellationTokenSource();
 			_commitTokenSource = new CancellationTokenSource();
 			_task = Task.Factory.StartNew(InstallApplication);
 
-			_appId = _watchdog.StartInstallation(descriptor);
+			_appId = _watchdog.StartInstallation(descriptor, installation);
+		}
+
+		public Installation Installation
+		{
+			get { return _installation; }
 		}
 
 		public void Dispose()
@@ -79,8 +86,8 @@ namespace SharpRemote.Watchdog
 
 		public void AddFiles(string sourceFolder, Environment.SpecialFolder destinationFolder, string destinationPath = null)
 		{
-			var files = Directory.GetFiles(sourceFolder);
-			foreach (var file in files)
+			string[] files = Directory.GetFiles(sourceFolder);
+			foreach (string file in files)
 			{
 				AddFile(file, destinationFolder, destinationPath);
 			}
@@ -88,7 +95,7 @@ namespace SharpRemote.Watchdog
 
 		public void AddFiles(List<string> files, Environment.SpecialFolder destinationFolder, string destinationPath = null)
 		{
-			foreach (var file in files)
+			foreach (string file in files)
 			{
 				AddFile(file, destinationFolder, destinationPath);
 			}
@@ -103,7 +110,7 @@ namespace SharpRemote.Watchdog
 
 			// No exception was thrown - let's try to end the installation
 			// on the remote system - if that work's then we're done
-			var ret = _watchdog.CommitInstallation(_appId);
+			InstalledApplication ret = _watchdog.CommitInstallation(_appId);
 			_success = true;
 			return ret;
 		}

@@ -49,9 +49,9 @@
 		/// If the installation was aborted, then the watchdog tries to restore the system to a consistent state as soon as possible.
 		/// </remarks>
 		/// <returns></returns>
-		IApplicationInstaller StartInstallation(ApplicationDescriptor description);
+		IApplicationInstaller StartInstallation(ApplicationDescriptor description, Installation installation = Installation.FailOnUpgrade);
 
-		void UninstallApplication(ApplicationDescriptor description);
+		void UninstallApplication(InstalledApplication description);
 
 		#endregion
 	}

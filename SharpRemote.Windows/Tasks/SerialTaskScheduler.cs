@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -23,9 +24,17 @@ namespace SharpRemote.Tasks
 		private readonly object _syncRoot;
 		private Task _executingTask;
 		private Thread _executingThread;
+		private readonly ConcurrentBag<Exception> _exceptions;
 
-		public SerialTaskScheduler()
+		public IEnumerable<Exception> Exceptions
 		{
+			get { return _exceptions ?? Enumerable.Empty<Exception>(); }
+		}
+
+		public SerialTaskScheduler(bool logExceptions = false)
+		{
+			if (logExceptions)
+				_exceptions = new ConcurrentBag<Exception>();
 			_syncRoot = new object();
 			_pendingTasks = new Queue<Task>();
 			_disposeEvent = new ManualResetEvent(false);
@@ -64,6 +73,9 @@ namespace SharpRemote.Tasks
 					}
 					catch (Exception e)
 					{
+						if (_exceptions != null)
+							_exceptions.Add(e);
+
 						Log.ErrorFormat("Caught exception while executing task '{0}': {1}", task, e);
 					}
 				}
@@ -94,6 +106,7 @@ namespace SharpRemote.Tasks
 
 			lock (_syncRoot)
 			{
+				_pendingTaskCount.Wait();
 				return _pendingTasks.Dequeue();
 			}
 		}
@@ -138,7 +151,7 @@ namespace SharpRemote.Tasks
 		{
 			if (!TryExecuteTask(task))
 			{
-				// PRogramming error
+				// Programming error
 				throw new NotImplementedException();
 			}
 		}

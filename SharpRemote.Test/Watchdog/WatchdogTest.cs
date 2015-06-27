@@ -209,7 +209,7 @@ namespace SharpRemote.Test.Watchdog
 
 		[Test]
 		[Description("Verifies that an update can install completely new files while not touching old ones")]
-		public void TestUpdate1()
+		public void TestColdUpdate1()
 		{
 			using (var remote = new RemoteWatchdog())
 			{
@@ -243,7 +243,7 @@ namespace SharpRemote.Test.Watchdog
 
 		[Test]
 		[Description("Verifies that an update can be installed even its files are in used")]
-		public void TestUpdate2()
+		public void TestColdUpdate2()
 		{
 			using (var remote = new RemoteWatchdog())
 			{

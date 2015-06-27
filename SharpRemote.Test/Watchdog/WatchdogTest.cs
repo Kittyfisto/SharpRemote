@@ -50,48 +50,13 @@ namespace SharpRemote.Test.Watchdog
 			_silo.Dispose();
 		}
 
-		private ApplicationDescriptor SharpRemote
+		private ApplicationDescriptor SharpRemote(string version)
 		{
-			get{return new ApplicationDescriptor
-					{
-						Name = "SharpRemote",
-						FolderName = "SharpRemote",
-					};}
-		}
-		private ApplicationDescriptor SharpRemote01
-		{
-			get
+			return new ApplicationDescriptor
 			{
-				return new ApplicationDescriptor
-				{
-					Name = "SharpRemote 0.1",
-					FolderName = "SharpRemote 0.1",
-				};
-			}
-		}
-
-		private ApplicationDescriptor SharpRemote02
-		{
-			get
-			{
-				return new ApplicationDescriptor
-				{
-					Name = "SharpRemote 0.2",
-					FolderName = "SharpRemote 0.2",
-				};
-			}
-		}
-
-		private ApplicationDescriptor SharpRemote03
-		{
-			get
-			{
-				return new ApplicationDescriptor
-				{
-					Name = "SharpRemote 0.3",
-					FolderName = "SharpRemote 0.3",
-				};
-			}
+				Name = string.Format("SharpRemote {0}", version),
+				FolderName = string.Format("SharpRemote {0}", version),
+			};
 		}
 
 		private ApplicationInstanceDescription CreateBrowserInstance(InstalledApplication app)
@@ -126,7 +91,7 @@ namespace SharpRemote.Test.Watchdog
 			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
 
 			InstalledApplication app;
-			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote))
+			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote("0.1")))
 			{
 				DeploySharpRemote(installer);
 				app = installer.Commit();
@@ -177,8 +142,8 @@ namespace SharpRemote.Test.Watchdog
 			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
 
 			InstalledApplication app1, app2;
-			using (IApplicationInstaller installer1 = watchdog.StartInstallation(SharpRemote01))
-			using (IApplicationInstaller installer2 = watchdog.StartInstallation(SharpRemote02))
+			using (IApplicationInstaller installer1 = watchdog.StartInstallation(SharpRemote("0.2")))
+			using (IApplicationInstaller installer2 = watchdog.StartInstallation(SharpRemote("0.3")))
 			{
 				DeploySharpRemote(installer2);
 				DeploySharpRemote(installer1);
@@ -201,11 +166,12 @@ namespace SharpRemote.Test.Watchdog
 			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
 
 			InstalledApplication app1;
-			using (IApplicationInstaller installer1 = watchdog.StartInstallation(SharpRemote03))
+			var desc = SharpRemote("0.4");
+			using (IApplicationInstaller installer1 = watchdog.StartInstallation(desc))
 			{
 				DeploySharpRemote(installer1);
 
-				new Action(() => watchdog.StartInstallation(SharpRemote03))
+				new Action(() => watchdog.StartInstallation(desc))
 					.ShouldThrow<InstallationFailedException>()
 					.WithMessage("There already is a pending installation for the same application - this installation must be completed or aborted in order for a new installation to be allowed");
 
@@ -225,14 +191,15 @@ namespace SharpRemote.Test.Watchdog
 			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
 
 			InstalledApplication app, update;
-			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
+			var desc = SharpRemote("0.5");
+			using (IApplicationInstaller installer = watchdog.StartInstallation(desc))
 			{
 				DeploySharpRemote(installer);
 				app = installer.Commit();
 			}
 
 			// Let's try patching the pdb...
-			using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.ColdUpdate))
+			using (var installer = watchdog.StartInstallation(desc, Installation.ColdUpdate))
 			{
 				var pdb = Path.Combine(SharpRemoteFolder, "SharpRemote.pdb");
 				installer.AddFile(pdb, Environment.SpecialFolder.LocalApplicationData);
@@ -256,7 +223,8 @@ namespace SharpRemote.Test.Watchdog
 			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
 
 			InstalledApplication app, update;
-			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
+			var desc = SharpRemote("0.6");
+			using (IApplicationInstaller installer = watchdog.StartInstallation(desc))
 			{
 				DeploySharpRemote(installer);
 				app = installer.Commit();
@@ -268,7 +236,7 @@ namespace SharpRemote.Test.Watchdog
 			IsBrowserRunning().Should().BeTrue();
 
 			// Performing a cold update should be possible because it kills the app(s) first..
-			using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.ColdUpdate))
+			using (var installer = watchdog.StartInstallation(desc, Installation.ColdUpdate))
 			{
 				IsBrowserRunning().Should().BeFalse("because the update needed to kill the browser");
 
@@ -292,7 +260,8 @@ namespace SharpRemote.Test.Watchdog
 			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
 
 			InstalledApplication app;
-			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
+			var desc = SharpRemote("0.7");
+			using (IApplicationInstaller installer = watchdog.StartInstallation(desc))
 			{
 				DeploySharpRemote(installer);
 				app = installer.Commit();
@@ -304,7 +273,7 @@ namespace SharpRemote.Test.Watchdog
 			IsBrowserRunning().Should().BeTrue();
 
 			// Performing a cold update should be possible because it kills the app(s) first..
-			using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.HotUpdate))
+			using (var installer = watchdog.StartInstallation(desc, Installation.HotUpdate))
 			{
 				IsBrowserRunning().Should().BeTrue("because the update shouldn't kill any instance");
 
@@ -312,7 +281,7 @@ namespace SharpRemote.Test.Watchdog
 				installer.AddFile(browser, Environment.SpecialFolder.LocalApplicationData);
 				new Action(() => installer.Commit())
 					.ShouldThrow<InstallationFailedException>()
-					.WithMessage("Application of 'SharpRemote 0.1' failed")
+					.WithMessage("Application of 'SharpRemote 0.7' failed")
 					.WithInnerException<UnauthorizedAccessException>();
 			}
 		}

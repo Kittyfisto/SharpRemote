@@ -11,6 +11,7 @@ using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using SharpRemote.Test.Types.Structs;
+using SharpRemote.Watchdog;
 
 namespace SharpRemote.Test.CodeGeneration.Remoting
 {

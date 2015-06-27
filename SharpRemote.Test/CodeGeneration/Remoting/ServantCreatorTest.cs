@@ -6,11 +6,13 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
+using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
+using SharpRemote.Watchdog;
 
 namespace SharpRemote.Test.CodeGeneration.Remoting
 {
@@ -24,6 +26,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private Mock<IRemotingEndPoint> _endPoint;
 		private AssemblyBuilder _assembly;
 		private string _moduleName;
+		private ISerializer _serializer;
 
 		[SetUp]
 		public void SetUp()
@@ -39,6 +42,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_endPoint = new Mock<IRemotingEndPoint>();
 			_channel = new Mock<IEndPointChannel>();
 			_creator = new ServantCreator(module, _endPoint.Object, _channel.Object);
+			_serializer = _creator.Serializer;
 		}
 
 		[TestFixtureTearDown]
@@ -50,7 +54,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private IServant TestGenerate<T>(T subject)
 		{
 			Type type = null;
-			new Action(() => type = _creator.GenerateSubject<T>())
+			new Action(() => type = _creator.GenerateServant<T>())
 				.ShouldNotThrow();
 
 			type.Should().NotBeNull();
@@ -62,6 +66,29 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			servant.Subject.Should().BeSameAs(subject);
 
 			return servant;
+		}
+
+		[Test]
+		public void TestWatchdog()
+		{
+			var subject = new Mock<IReturnComplexType>();
+			var app = new InstalledApplication(1337,
+			                                   new ApplicationDescriptor {Name = "SharpRemote", FolderName = "SharpRemote/0.1"});
+			app.Files.Add(new InstalledFile{Id=1, Filename = "SharpRemote.dll", FileLength = 212345, Folder = Environment.SpecialFolder.CommonProgramFiles});
+			app.Files.Add(new InstalledFile { Id = 2, Filename = "SharpRemote.Host.exe", FileLength = 1234, Folder = Environment.SpecialFolder.CommonProgramFiles });
+			subject.Setup(x => x.CommitInstallation(It.IsAny<long>()))
+			       .Returns((long id) => app);
+			var servant = TestGenerate(subject.Object);
+			
+			var arguments = new MemoryStream();
+			var writer = new BinaryWriter(arguments);
+			writer.Write((long)42);
+			arguments.Position = 0;
+
+			var output = new MemoryStream();
+			servant.Invoke("CommitInstallation", new BinaryReader(arguments), new BinaryWriter(output));
+			output.Position = 0;
+			output.Length.Should().Be(351);
 		}
 
 		[Test]

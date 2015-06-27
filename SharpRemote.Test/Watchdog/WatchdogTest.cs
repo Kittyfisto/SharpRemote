@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
+using SharpRemote.Hosting;
 using SharpRemote.Watchdog;
 
 namespace SharpRemote.Test.Watchdog
@@ -20,10 +21,33 @@ namespace SharpRemote.Test.Watchdog
 					"SharpRemote.dll",
 					"SampleBrowser.exe"
 				};
+
+		private InProcessRemotingSilo _silo;
+		private RemoteWatchdog _watchdog;
+
 		private void DeploySharpRemote(IApplicationInstaller installer)
 		{
 			List<string> fileNames = SharpRemoteFiles.Select(x => Path.Combine(SharpRemoteFolder, x)).ToList();
 			installer.AddFiles(fileNames, Environment.SpecialFolder.LocalApplicationData);
+		}
+
+		[SetUp]
+		public void SetUp()
+		{
+			//_silo = new InProcessRemotingSilo();
+		}
+
+		private IRemoteWatchdog CreateWatchdog()
+		{
+			//return _silo.CreateGrain<IRemoteWatchdog>(typeof(RemoteWatchdog));
+			return _watchdog = new RemoteWatchdog();
+		}
+
+		[TearDown]
+		public void TearDown()
+		{
+			_watchdog.Dispose();
+			//_silo.Dispose();
 		}
 
 		private ApplicationDescriptor SharpRemote
@@ -99,39 +123,32 @@ namespace SharpRemote.Test.Watchdog
 		[Description("Verifies that deploying sharpremote via a watchdog works")]
 		public void TestInstallAndExecuteSharpRemote()
 		{
-			Process process;
-			using (var remote = new RemoteWatchdog())
+			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
+
+			InstalledApplication app;
+			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote))
 			{
-				var watchdog = new SharpRemote.Watchdog.Watchdog(remote);
-
-				InstalledApplication app;
-				using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote))
-				{
-					DeploySharpRemote(installer);
-					app = installer.Commit();
-				}
-
-				app.Should().NotBeNull();
-
-				// Let's verify that the deployment actually worked...
-				VerifyPostSharpDeployment(app);
-
-				// Now that SharpRemote is deployed we can start an actual instance...
-				var instance = new ApplicationInstanceDescription
-					{
-						AppId = app.Id,
-						Executable = app.Files.First(x => x.Filename.EndsWith("SampleBrowser.exe")),
-						Name = "Test Host"
-					};
-				watchdog.RegisterApplicationInstance(instance);
-
-				// Due to the watchdog being executed on the same computer, we expect
-				// the process to be running now...
-				IsBrowserRunning(out process).Should().BeTrue();
+				DeploySharpRemote(installer);
+				app = installer.Commit();
 			}
 
-			// After having been disposed of, the process should no longer be running...
-			process.HasExited.Should().BeTrue();
+			app.Should().NotBeNull();
+
+			// Let's verify that the deployment actually worked...
+			VerifyPostSharpDeployment(app);
+
+			// Now that SharpRemote is deployed we can start an actual instance...
+			var instance = new ApplicationInstanceDescription
+			{
+				AppId = app.Id,
+				Executable = app.Files.First(x => x.Filename.EndsWith("SampleBrowser.exe")),
+				Name = "Test Host"
+			};
+			watchdog.RegisterApplicationInstance(instance);
+
+			// Due to the watchdog being executed on the same computer, we expect
+			// the process to be running now...
+			IsBrowserRunning().Should().BeTrue();
 		}
 
 		private bool IsBrowserRunning()
@@ -157,161 +174,146 @@ namespace SharpRemote.Test.Watchdog
 		[Description("Verifies that deploying two different applications at the same time works")]
 		public void TestInstallConcurrently1()
 		{
-			using (var remote = new RemoteWatchdog())
+			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
+
+			InstalledApplication app1, app2;
+			using (IApplicationInstaller installer1 = watchdog.StartInstallation(SharpRemote01))
+			using (IApplicationInstaller installer2 = watchdog.StartInstallation(SharpRemote02))
 			{
-				var watchdog = new SharpRemote.Watchdog.Watchdog(remote);
-
-				InstalledApplication app1, app2;
-				using (IApplicationInstaller installer1 = watchdog.StartInstallation(SharpRemote01))
-				using (IApplicationInstaller installer2 = watchdog.StartInstallation(SharpRemote02))
-				{
-					DeploySharpRemote(installer2);
-					DeploySharpRemote(installer1);
-					app2 = installer2.Commit();
-					app1 = installer1.Commit();
-				}
-
-				app2.Should().NotBeNull();
-				app1.Should().NotBeNull();
-
-				// Let's verify that the deployment actually worked...
-				VerifyPostSharpDeployment(app1);
-				VerifyPostSharpDeployment(app2);
+				DeploySharpRemote(installer2);
+				DeploySharpRemote(installer1);
+				app2 = installer2.Commit();
+				app1 = installer1.Commit();
 			}
+
+			app2.Should().NotBeNull();
+			app1.Should().NotBeNull();
+
+			// Let's verify that the deployment actually worked...
+			VerifyPostSharpDeployment(app1);
+			VerifyPostSharpDeployment(app2);
 		}
 
 		[Test]
 		[Description("Verifies that deploying the same application twice at the same time is not allowed")]
 		public void TestInstallConcurrently2()
 		{
-			using (var remote = new RemoteWatchdog())
+			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
+
+			InstalledApplication app1;
+			using (IApplicationInstaller installer1 = watchdog.StartInstallation(SharpRemote03))
 			{
-				var watchdog = new SharpRemote.Watchdog.Watchdog(remote);
+				DeploySharpRemote(installer1);
 
-				InstalledApplication app1;
-				using (IApplicationInstaller installer1 = watchdog.StartInstallation(SharpRemote03))
-				{
-					DeploySharpRemote(installer1);
+				new Action(() => watchdog.StartInstallation(SharpRemote03))
+					.ShouldThrow<InstallationFailedException>()
+					.WithMessage("There already is a pending installation for the same application - this installation must be completed or aborted in order for a new installation to be allowed");
 
-					new Action(() => watchdog.StartInstallation(SharpRemote03))
-						.ShouldThrow<InstallationFailedException>()
-						.WithMessage("There already is a pending installation for the same application - this installation must be completed or aborted in order for a new installation to be allowed");
-
-					app1 = installer1.Commit();
-				}
-
-				app1.Should().NotBeNull();
-
-				// Let's verify that the deployment actually worked...
-				VerifyPostSharpDeployment(app1);
+				app1 = installer1.Commit();
 			}
+
+			app1.Should().NotBeNull();
+
+			// Let's verify that the deployment actually worked...
+			VerifyPostSharpDeployment(app1);
 		}
 
 		[Test]
 		[Description("Verifies that an update can install completely new files while not touching old ones")]
 		public void TestColdUpdate1()
 		{
-			using (var remote = new RemoteWatchdog())
+			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
+
+			InstalledApplication app, update;
+			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
 			{
-				var watchdog = new SharpRemote.Watchdog.Watchdog(remote);
-
-				InstalledApplication app, update;
-				using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
-				{
-					DeploySharpRemote(installer);
-					app = installer.Commit();
-				}
-
-				// Let's try patching the pdb...
-				using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.ColdUpdate))
-				{
-					var pdb = Path.Combine(SharpRemoteFolder, "SharpRemote.pdb");
-					installer.AddFile(pdb, Environment.SpecialFolder.LocalApplicationData);
-					update = installer.Commit();
-				}
-
-				// The update should consists of all files from the first installation *AND* the pdb
-				// we installed as an update
-				update.Files.Count.Should().Be(app.Files.Count + 1);
-				var updated = update.Files.Except(app.Files).ToList();
-				updated.Count.Should().Be(1);
-				updated[0].Filename.Should().Be("SharpRemote.pdb");
-				updated[0].Folder.Should().Be(Environment.SpecialFolder.LocalApplicationData);
-				updated[0].Id.Should().Be(4);
+				DeploySharpRemote(installer);
+				app = installer.Commit();
 			}
+
+			// Let's try patching the pdb...
+			using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.ColdUpdate))
+			{
+				var pdb = Path.Combine(SharpRemoteFolder, "SharpRemote.pdb");
+				installer.AddFile(pdb, Environment.SpecialFolder.LocalApplicationData);
+				update = installer.Commit();
+			}
+
+			// The update should consists of all files from the first installation *AND* the pdb
+			// we installed as an update
+			update.Files.Count.Should().Be(app.Files.Count + 1);
+			var updated = update.Files.Except(app.Files).ToList();
+			updated.Count.Should().Be(1);
+			updated[0].Filename.Should().Be("SharpRemote.pdb");
+			updated[0].Folder.Should().Be(Environment.SpecialFolder.LocalApplicationData);
+			updated[0].Id.Should().Be(4);
 		}
 
 		[Test]
 		[Description("Verifies that an update can be installed even its files are in used")]
 		public void TestColdUpdate2()
 		{
-			using (var remote = new RemoteWatchdog())
+			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
+
+			InstalledApplication app, update;
+			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
 			{
-				var watchdog = new SharpRemote.Watchdog.Watchdog(remote);
-
-				InstalledApplication app, update;
-				using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
-				{
-					DeploySharpRemote(installer);
-					app = installer.Commit();
-				}
-
-				// Let's start a browser application to ensure that some files from the update are now in use...
-				var instance = CreateBrowserInstance(app);
-				watchdog.RegisterApplicationInstance(instance);
-				IsBrowserRunning().Should().BeTrue();
-
-				// Performing a cold update should be possible because it kills the app(s) first..
-				using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.ColdUpdate))
-				{
-					IsBrowserRunning().Should().BeFalse("because the update needed to kill the browser");
-
-					var pdb = Path.Combine(SharpRemoteFolder, "SharpRemote.dll");
-					installer.AddFile(pdb, Environment.SpecialFolder.LocalApplicationData);
-					var browser = Path.Combine(SharpRemoteFolder, "SampleBrowser.exe");
-					installer.AddFile(browser, Environment.SpecialFolder.LocalApplicationData);
-					update = installer.Commit();
-
-					IsBrowserRunning().Should().BeTrue("because after the update's finished all application instances should be running again");
-				}
-
-				// The update shouldn't have written new files, not even their file sizes should've changed...
-				app.Files.Should().BeEquivalentTo(update.Files);
+				DeploySharpRemote(installer);
+				app = installer.Commit();
 			}
+
+			// Let's start a browser application to ensure that some files from the update are now in use...
+			var instance = CreateBrowserInstance(app);
+			watchdog.RegisterApplicationInstance(instance);
+			IsBrowserRunning().Should().BeTrue();
+
+			// Performing a cold update should be possible because it kills the app(s) first..
+			using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.ColdUpdate))
+			{
+				IsBrowserRunning().Should().BeFalse("because the update needed to kill the browser");
+
+				var pdb = Path.Combine(SharpRemoteFolder, "SharpRemote.dll");
+				installer.AddFile(pdb, Environment.SpecialFolder.LocalApplicationData);
+				var browser = Path.Combine(SharpRemoteFolder, "SampleBrowser.exe");
+				installer.AddFile(browser, Environment.SpecialFolder.LocalApplicationData);
+				update = installer.Commit();
+
+				IsBrowserRunning().Should().BeTrue("because after the update's finished all application instances should be running again");
+			}
+
+			// The update shouldn't have written new files, not even their file sizes should've changed...
+			app.Files.Should().BeEquivalentTo(update.Files);
 		}
 
 		[Test]
 		[Description("Verifies that a hot update of a file in use is not possible")]
 		public void TestHotUpdate1()
 		{
-			using (var remote = new RemoteWatchdog())
+			var watchdog = new SharpRemote.Watchdog.Watchdog(CreateWatchdog());
+
+			InstalledApplication app;
+			using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
 			{
-				var watchdog = new SharpRemote.Watchdog.Watchdog(remote);
+				DeploySharpRemote(installer);
+				app = installer.Commit();
+			}
 
-				InstalledApplication app;
-				using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
-				{
-					DeploySharpRemote(installer);
-					app = installer.Commit();
-				}
+			// Let's start a browser application to ensure that some files from the update are now in use...
+			var instance = CreateBrowserInstance(app);
+			watchdog.RegisterApplicationInstance(instance);
+			IsBrowserRunning().Should().BeTrue();
 
-				// Let's start a browser application to ensure that some files from the update are now in use...
-				var instance = CreateBrowserInstance(app);
-				watchdog.RegisterApplicationInstance(instance);
-				IsBrowserRunning().Should().BeTrue();
+			// Performing a cold update should be possible because it kills the app(s) first..
+			using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.HotUpdate))
+			{
+				IsBrowserRunning().Should().BeTrue("because the update shouldn't kill any instance");
 
-				// Performing a cold update should be possible because it kills the app(s) first..
-				using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.HotUpdate))
-				{
-					IsBrowserRunning().Should().BeTrue("because the update shouldn't kill any instance");
-
-					var browser = Path.Combine(SharpRemoteFolder, "SampleBrowser.exe");
-					installer.AddFile(browser, Environment.SpecialFolder.LocalApplicationData);
-					new Action(() => installer.Commit())
-						.ShouldThrow<InstallationFailedException>()
-						.WithMessage("Application of 'SharpRemote 0.1' failed")
-						.WithInnerException<UnauthorizedAccessException>();
-				}
+				var browser = Path.Combine(SharpRemoteFolder, "SampleBrowser.exe");
+				installer.AddFile(browser, Environment.SpecialFolder.LocalApplicationData);
+				new Action(() => installer.Commit())
+					.ShouldThrow<InstallationFailedException>()
+					.WithMessage("Application of 'SharpRemote 0.1' failed")
+					.WithInnerException<UnauthorizedAccessException>();
 			}
 		}
 	}

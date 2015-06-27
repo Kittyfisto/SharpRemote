@@ -63,8 +63,6 @@ namespace SharpRemote.CodeGeneration
 
 					var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
 					proxyType = generator.Generate();
-					/*var assembly = (AssemblyBuilder)_module.Assembly;
-					assembly.Save("SharpRemote.GeneratedCode.dll");*/
 				}
 				catch (Exception e)
 				{

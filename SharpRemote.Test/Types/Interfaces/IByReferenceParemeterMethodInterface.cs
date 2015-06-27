@@ -7,4 +7,10 @@ namespace SharpRemote.Test.Types.Interfaces
 		void AddListener([ByReference] IVoidMethodStringParameter listener);
 		void RemoveListener([ByReference] IVoidMethodStringParameter listener);
 	}
+
+	public interface IByReferenceReturnMethodInterface
+	{
+		[return: ByReference]
+		IVoidMethodStringParameter AddListener();
+	}
 }

@@ -69,7 +69,7 @@ namespace SharpRemote.CodeGeneration
 					loadWriter,
 					() => gen.Emit(OpCodes.Ldloc, tmp),
 					() => gen.Emit(OpCodes.Ldloca, tmp),
-					() => gen.Emit(OpCodes.Ldfld, Serializer),
+					loadSerializer,
 					returnType);
 			}
 			else

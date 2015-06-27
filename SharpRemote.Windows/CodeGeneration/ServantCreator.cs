@@ -51,7 +51,7 @@ namespace SharpRemote.CodeGeneration
 			get { return _serializer; }
 		}
 
-		public Type GenerateSubject<T>()
+		public Type GenerateServant<T>()
 		{
 			var interfaceType = typeof(T);
 			if (!interfaceType.IsInterface)
@@ -75,7 +75,7 @@ namespace SharpRemote.CodeGeneration
 			Type subjectType;
 			if (!_interfaceToSubject.TryGetValue(interfaceType, out subjectType))
 			{
-				subjectType = GenerateSubject<T>();
+				subjectType = GenerateServant<T>();
 			}
 
 			ConstructorInfo ctor = subjectType.GetConstructor(new[]

@@ -17,7 +17,7 @@ namespace SharpRemote.Watchdog
 
 		void UnregisterApplicationInstance(long id);
 
-		long StartInstallation(ApplicationDescriptor description);
+		long StartInstallation(ApplicationDescriptor description, Installation installation = Installation.FailOnUpgrade);
 		InstalledApplication CommitInstallation(long appId);
 		void AbortInstallation(long appId);
 		void RemoveApplication(long id);

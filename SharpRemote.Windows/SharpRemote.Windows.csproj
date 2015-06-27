@@ -111,6 +111,7 @@
     <Compile Include="Watchdog\ApplicationInstanceDescription.cs" />
     <Compile Include="Watchdog\IApplicationInstaller.cs" />
     <Compile Include="Exceptions\InstallationFailedException.cs" />
+    <Compile Include="Watchdog\Installation.cs" />
     <Compile Include="Watchdog\InstalledApplication.cs" />
     <Compile Include="Watchdog\InstalledFile.cs" />
     <Compile Include="Watchdog\IRemoteWatchdog.cs" />

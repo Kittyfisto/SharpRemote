@@ -174,14 +174,14 @@ namespace SharpRemote.Watchdog
 			}
 		}
 
-		public long StartInstallation(ApplicationDescriptor description)
+		public long StartInstallation(ApplicationDescriptor description, Installation installation)
 		{
 			lock (_syncRoot)
 			{
 				// If there's another pending installation with the same folder then we'll bail early...
 				var pending = _pendingInstallations.Values.FirstOrDefault(x => x.Descriptor.FolderName == description.FolderName);
 				if (pending != null)
-					throw new InstallationFailedException(string.Format("There already is a pending installation for the same application"));
+					throw new InstallationFailedException(string.Format("There already is a pending installation for the same application - this installation must be completed or aborted in order for a new installation to be allowed"));
 
 				// Let's find out if we're replacing an existing installation...
 				var existing = _installedApplications.Values.FirstOrDefault(x => x.Descriptor.FolderName == description.FolderName);

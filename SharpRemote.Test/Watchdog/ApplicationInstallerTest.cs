@@ -105,7 +105,12 @@ namespace SharpRemote.Test.Watchdog
 			FilesAreEqual(original, copy).Should().BeTrue();
 		}
 
-		static bool FilesAreEqual(FileInfo first, FileInfo second)
+		public static bool FilesAreEqual(string first, string second)
+		{
+			return FilesAreEqual(new FileInfo(first), new FileInfo(second));
+		}
+
+		public static bool FilesAreEqual(FileInfo first, FileInfo second)
 		{
 			if (first.Length != second.Length)
 				return false;

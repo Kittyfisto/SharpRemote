@@ -88,7 +88,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var output = new MemoryStream();
 			servant.Invoke("CommitInstallation", new BinaryReader(arguments), new BinaryWriter(output));
 			output.Position = 0;
-			output.Length.Should().Be(351);
+			output.Length.Should().BeInRange(351, 354);
 		}
 
 		[Test]

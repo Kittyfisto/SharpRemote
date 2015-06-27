@@ -12,7 +12,7 @@ namespace SharpRemote.Test.Watchdog
 	[TestFixture]
 	public sealed class WatchdogTest
 	{
-		private static string SharpRemoteFolder =
+		private static readonly string SharpRemoteFolder =
 			Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(typeof (RemoteWatchdog).Assembly.CodeBase).Path));
 		private static readonly string[] SharpRemoteFiles = new[]
 				{
@@ -277,6 +277,41 @@ namespace SharpRemote.Test.Watchdog
 
 				// The update shouldn't have written new files, not even their file sizes should've changed...
 				app.Files.Should().BeEquivalentTo(update.Files);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that a hot update of a file in use is not possible")]
+		public void TestHotUpdate1()
+		{
+			using (var remote = new RemoteWatchdog())
+			{
+				var watchdog = new SharpRemote.Watchdog.Watchdog(remote);
+
+				InstalledApplication app;
+				using (IApplicationInstaller installer = watchdog.StartInstallation(SharpRemote01))
+				{
+					DeploySharpRemote(installer);
+					app = installer.Commit();
+				}
+
+				// Let's start a browser application to ensure that some files from the update are now in use...
+				var instance = CreateBrowserInstance(app);
+				watchdog.RegisterApplicationInstance(instance);
+				IsBrowserRunning().Should().BeTrue();
+
+				// Performing a cold update should be possible because it kills the app(s) first..
+				using (var installer = watchdog.StartInstallation(SharpRemote01, Installation.HotUpdate))
+				{
+					IsBrowserRunning().Should().BeTrue("because the update shouldn't kill any instance");
+
+					var browser = Path.Combine(SharpRemoteFolder, "SampleBrowser.exe");
+					installer.AddFile(browser, Environment.SpecialFolder.LocalApplicationData);
+					new Action(() => installer.Commit())
+						.ShouldThrow<InstallationFailedException>()
+						.WithMessage("Application of 'SharpRemote 0.1' failed")
+						.WithInnerException<UnauthorizedAccessException>();
+				}
 			}
 		}
 	}

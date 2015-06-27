@@ -8,6 +8,7 @@ namespace SharpRemote
 	/// <summary>
 	/// Is thrown in case an installation failed.
 	/// </summary>
+	[Serializable]
 	public class InstallationFailedException
 		: SystemException
 	{

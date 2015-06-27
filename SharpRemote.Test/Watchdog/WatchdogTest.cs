@@ -34,20 +34,20 @@ namespace SharpRemote.Test.Watchdog
 		[SetUp]
 		public void SetUp()
 		{
-			//_silo = new InProcessRemotingSilo();
+			_silo = new InProcessRemotingSilo();
 		}
 
 		private IRemoteWatchdog CreateWatchdog()
 		{
-			//return _silo.CreateGrain<IRemoteWatchdog>(typeof(RemoteWatchdog));
-			return _watchdog = new RemoteWatchdog();
+			return _silo.CreateGrain<IRemoteWatchdog>(typeof(RemoteWatchdog));
+			//return _watchdog = new RemoteWatchdog();
 		}
 
 		[TearDown]
 		public void TearDown()
 		{
-			_watchdog.Dispose();
-			//_silo.Dispose();
+			//_watchdog.Dispose();
+			_silo.Dispose();
 		}
 
 		private ApplicationDescriptor SharpRemote

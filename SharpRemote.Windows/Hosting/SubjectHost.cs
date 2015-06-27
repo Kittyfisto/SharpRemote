@@ -9,17 +9,16 @@ namespace SharpRemote.Hosting
 		private readonly IRemotingEndPoint _endpoint;
 		private readonly Dictionary<ulong, object> _subjects;
 		private ulong _nextServantId;
-		private readonly Action _disposed;
+		private readonly Action _onDisposed;
 		private bool _isDisposed;
 
-		public SubjectHost(IRemotingEndPoint endpoint, ulong firstServantId, Action disposed)
+		public SubjectHost(IRemotingEndPoint endpoint, ulong firstServantId, Action onDisposed = null)
 		{
 			if (endpoint == null) throw new ArgumentNullException("endpoint");
-			if (disposed == null) throw new ArgumentNullException("disposed");
 
 			_endpoint = endpoint;
 			_nextServantId = firstServantId;
-			_disposed = disposed;
+			_onDisposed = onDisposed;
 			_subjects = new Dictionary<ulong, object>();
 		}
 
@@ -45,8 +44,17 @@ namespace SharpRemote.Hosting
 				return;
 
 			// TODO: Remove / dispose all subjects...
+			foreach (var subject in _subjects.Values)
+			{
+				var disp = subject as IDisposable;
+				if (disp != null)
+					disp.TryDispose();
+			}
+			_subjects.Clear();
 
-			_disposed();
+			if (_onDisposed != null)
+				_onDisposed();
+
 			_isDisposed = true;
 		}
 	}

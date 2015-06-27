@@ -163,7 +163,7 @@ namespace SharpRemote
 				var read = socket.Receive(data, index, toRead, SocketFlags.None, out err);
 				index += read;
 
-				if (err != SocketError.Success || !IsSocketConnected(socket))
+				if (err != SocketError.Success || read == 0 || !socket.Connected)
 				{
 					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, socket status: {2}", read, data.Length, err);
 					return false;
@@ -180,10 +180,13 @@ namespace SharpRemote
 			// let's find out of the socket was interrupted
 			try
 			{
-				if (socket.Poll(1, SelectMode.SelectRead) && socket.Available == 0)
-				{
+				socket.Poll(1, SelectMode.SelectRead);
+
+				if (!socket.Connected)
 					return false;
-				}
+
+				/*if ()
+					return false;*/
 
 				return true;
 			}

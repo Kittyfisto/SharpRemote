@@ -314,7 +314,10 @@ namespace SharpRemote.Watchdog
 
 			var fs = new FileStream(fname, FileMode.Create, FileAccess.Write, FileShare.None);
 			fs.SetLength(fileSize);
-			_openedFiles.Add(file.Id, fs);
+			lock (_syncRoot)
+			{
+				_openedFiles.Add(file.Id, fs);
+			}
 			return file.Id;
 		}
 
@@ -347,7 +350,11 @@ namespace SharpRemote.Watchdog
 
 		public void WriteFilePartially(long fileId, byte[] content, int offset, int length)
 		{
-			Stream stream = _openedFiles[fileId];
+			Stream stream;
+			lock (_syncRoot)
+			{
+				stream = _openedFiles[fileId];
+			}
 			stream.Position = offset;
 			stream.Write(content, 0, length);
 		}

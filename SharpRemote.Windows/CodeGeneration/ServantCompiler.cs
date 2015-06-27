@@ -106,7 +106,7 @@ namespace SharpRemote.CodeGeneration
 													returnType,
 													parameters.Select(x => x.ParameterType).ToArray());
 
-			GenerateMethodInvocation(method, @event.Name, parameters, returnType);
+			GenerateMethodInvocation(method, @event.Name, parameters, method);
 
 			_eventInvocationMethods.Add(new KeyValuePair<EventInfo, MethodInfo>(@event, method));
 		}

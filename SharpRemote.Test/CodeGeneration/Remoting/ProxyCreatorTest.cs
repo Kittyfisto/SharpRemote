@@ -790,6 +790,40 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
+		public void TestReturnByReference()
+		{
+			var proxy = TestGenerate<IByReferenceReturnMethodInterface>();
+
+			const ulong id = 42;
+			bool addListenerCalled = false;
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+							.Returns((ulong objectId, string methodName, Stream stream) =>
+							{
+								objectId.Should().Be(((IProxy)proxy).ObjectId);
+								methodName.Should().Be("AddListener");
+								stream.Should().BeNull();
+
+								addListenerCalled = true;
+
+								var output = new MemoryStream();
+								var writer = new BinaryWriter(output);
+								writer.Write(id);
+								writer.Flush();
+								output.Position = 0;
+
+								return output;
+							});
+
+			var listener = new Mock<IVoidMethodStringParameter>().Object;
+			_endPoint.Setup(x => x.GetExistingOrCreateNewProxy<IVoidMethodStringParameter>(It.Is((ulong y) => y == id)))
+			         .Returns(listener);
+
+			IVoidMethodStringParameter actualListener = proxy.AddListener();
+			actualListener.Should().NotBeNull();
+			actualListener.Should().BeSameAs(listener);
+		}
+
+		[Test]
 		public void TestByReferenceParameter()
 		{
 			_endPoint.Setup(

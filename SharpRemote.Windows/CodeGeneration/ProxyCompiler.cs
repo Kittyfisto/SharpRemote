@@ -407,7 +407,7 @@ namespace SharpRemote.CodeGeneration
 													remoteMethod.ReturnType,
 													parameters.Select(x => x.ParameterType).ToArray());
 
-			GenerateMethodInvocation(method, methodName, parameters, remoteMethod.ReturnType);
+			GenerateMethodInvocation(method, methodName, parameters, remoteMethod);
 
 			_typeBuilder.DefineMethodOverride(method, remoteMethod);
 		}

@@ -78,7 +78,7 @@ namespace SharpRemote.CodeGeneration
 			}
 		}
 
-		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters, Type returnType)
+		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters, MethodInfo remoteMethod)
 		{
 			var gen = method.GetILGenerator();
 
@@ -171,6 +171,8 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldloc, stream);
 			gen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
 
+			var returnType = method.ReturnType;
+			var returnAttributes = remoteMethod.ReturnTypeCustomAttributes;
 			if (returnType == typeof(void))
 			{
 				gen.Emit(OpCodes.Pop);
@@ -181,17 +183,35 @@ namespace SharpRemote.CodeGeneration
 				gen.Emit(OpCodes.Newobj, Methods.BinaryReaderCtor);
 				gen.Emit(OpCodes.Stloc, binaryReader);
 
-				// return _serializer.DeserializeXXX(reader);
-				SerializerCompiler.EmitReadValue(
-					gen,
-					() => gen.Emit(OpCodes.Ldloc, binaryReader),
-					() =>
-					{
-						gen.Emit(OpCodes.Ldarg_0);
-						gen.Emit(OpCodes.Ldfld, Serializer);
-					},
-					returnType
-					);
+				Action loadReader = () => gen.Emit(OpCodes.Ldloc, binaryReader);
+
+				if (returnAttributes.GetCustomAttributes(typeof(ByReferenceAttribute), true).Length > 0)
+				{
+					// _endPoint.GetOrCreateProxy(reader.ReadUlong());
+					VerifyReturnParameterConstraints(method);
+
+					// _endPoint.GetOrCreateProxy(reader.ReadUlong());
+					var getOrCreateProxy = Methods.RemotingEndPointGetOrCreateProxy.MakeGenericMethod(returnType);
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldfld, EndPoint);
+					loadReader();
+					gen.Emit(OpCodes.Call, Methods.ReadULong);
+					gen.Emit(OpCodes.Callvirt, getOrCreateProxy);
+				}
+				else
+				{
+					// return _serializer.DeserializeXXX(reader);
+					SerializerCompiler.EmitReadValue(
+						gen,
+						loadReader,
+						() =>
+						{
+							gen.Emit(OpCodes.Ldarg_0);
+							gen.Emit(OpCodes.Ldfld, Serializer);
+						},
+						returnType
+						);
+				}
 			}
 
 			gen.Emit(OpCodes.Ret);
@@ -201,6 +221,12 @@ namespace SharpRemote.CodeGeneration
 		{
 			if (parameter.ParameterType.IsValueType)
 				throw new ArgumentException(string.Format("The parameter '{0}' of method '{1}' is marked as [ByReference] but is a valuetype - this is not supported", parameter.Name, parameter.Member.Name));
+		}
+
+		private void VerifyReturnParameterConstraints(MethodInfo method)
+		{
+			if (method.ReturnType.IsValueType)
+				throw new ArgumentException(string.Format("The return parameter of method '{0}' is marked as [ByReference] but is a valuetype - this is not supported", method.Name));
 		}
 	}
 }

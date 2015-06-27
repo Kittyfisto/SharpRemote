@@ -99,14 +99,14 @@ namespace SharpRemote
 				while (!token.IsCancellationRequested)
 				{
 					SocketError err;
-					if (!SynchronizedRead(socket, size, out err) || !HandleError(socket, err))
+					if (!SynchronizedRead(socket, size, out err))
 						break;
 
 					var length = BitConverter.ToInt32(size, 0);
 					if (length >= 8)
 					{
 						var buffer = new byte[length];
-						if (!SynchronizedRead(socket, buffer, out err) || !HandleError(socket, err))
+						if (!SynchronizedRead(socket, buffer, out err))
 							break;
 
 						var stream = new MemoryStream(buffer, false);
@@ -142,7 +142,7 @@ namespace SharpRemote
 				}
 
 				int written = socket.Send(data, 0, length, SocketFlags.None, out err);
-				if (written != length)
+				if (written != length || err != SocketError.Success || !socket.Connected)
 				{
 					Log.ErrorFormat("Error while writing to socket: {0} out of {1} written, socket status: {2}", written, data.Length, err);
 					return false;
@@ -174,54 +174,6 @@ namespace SharpRemote
 		}
 
 		#endregion
-
-		private static bool IsSocketConnected(Socket socket)
-		{
-			// let's find out of the socket was interrupted
-			try
-			{
-				socket.Poll(1, SelectMode.SelectRead);
-
-				if (!socket.Connected)
-					return false;
-
-				/*if ()
-					return false;*/
-
-				return true;
-			}
-			catch (SocketException)
-			{
-				return false;
-			}
-		}
-
-		private bool HandleError(Socket socket, SocketError err)
-		{
-			switch (err)
-			{
-				case SocketError.Success:
-					if (!IsSocketConnected(socket))
-					{
-						Log.InfoFormat("Socket '{0}' connection aborted", _name);
-						return false;
-					}
-
-					return true;
-
-				case SocketError.NotConnected:
-				case SocketError.Interrupted:
-					return false;
-
-				case SocketError.ConnectionAborted:
-					Log.InfoFormat("Socket '{0}' connection aborted", _name);
-					return false;
-
-				default:
-					Log.ErrorFormat("Unexpected socket error '{0}' - disconnecting from other endpoint", err);
-					return false;
-			}
-		}
 
 		private void OnIncomingConnection(IAsyncResult ar)
 		{
@@ -588,8 +540,7 @@ namespace SharpRemote
 						var data = response.GetBuffer();
 
 						SocketError err;
-						if (!SynchronizedWrite(socket, data, responseLength, out err) ||
-						    !HandleError(socket, err))
+						if (!SynchronizedWrite(socket, data, responseLength, out err))
 						{
 							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
 							Disconnect();

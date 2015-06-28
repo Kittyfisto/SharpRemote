@@ -23,6 +23,9 @@ namespace SharpRemote
 		, IEndPointChannel
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private const string ServerWelcomeMessage = "SharpRemote Socket";
+		private static readonly byte[] ServerWelcomeMessageData = Encoding.UTF8.GetBytes(ServerWelcomeMessage);
+		private static readonly int ServerWelcomeMessageLength = ServerWelcomeMessageData.Length;
 
 		private readonly object _syncRoot;
 		private readonly IPEndPoint _localEndPoint;
@@ -157,20 +160,38 @@ namespace SharpRemote
 			}
 		}
 
-		private bool SynchronizedRead(Socket socket, byte[] data, out SocketError err)
+		private bool SynchronizedRead(Socket socket, byte[] buffer, TimeSpan timeout, out SocketError err)
+		{
+			var start = DateTime.Now;
+			while (socket.Available < buffer.Length)
+			{
+				var remaining = timeout- (DateTime.Now - start);
+				var t = (int)(remaining.TotalMilliseconds * 1000);
+				if (!socket.Poll(t, SelectMode.SelectRead))
+				{
+					err = SocketError.TimedOut;
+					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0, buffer.Length, err, socket.Connected);
+					return false;
+				}
+			}
+
+			return SynchronizedRead(socket, buffer, out err);
+		}
+
+		private bool SynchronizedRead(Socket socket, byte[] buffer, out SocketError err)
 		{
 			err = SocketError.Success;
 
 			int index = 0;
 			int toRead;
-			while ((toRead = data.Length - index) > 0)
+			while ((toRead = buffer.Length - index) > 0)
 			{
-				var read = socket.Receive(data, index, toRead, SocketFlags.None, out err);
+				var read = socket.Receive(buffer, index, toRead, SocketFlags.None, out err);
 				index += read;
 
 				if (err != SocketError.Success || read == 0 || !socket.Connected)
 				{
-					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read, data.Length, err, socket.Connected);
+					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read, buffer.Length, err, socket.Connected);
 					return false;
 				}
 			}
@@ -190,6 +211,7 @@ namespace SharpRemote
 				try
 				{
 					OnConnected(_serverSocket.EndAccept(ar));
+					_socket.Send(ServerWelcomeMessageData);
 				}
 				catch (Exception e)
 				{
@@ -212,6 +234,7 @@ namespace SharpRemote
 				_cancellationTokenSource = new CancellationTokenSource();
 				_readTask = new Task(Read, new KeyValuePair<Socket, CancellationToken>(_socket, _cancellationTokenSource.Token));
 				_readTask.Start();
+
 				Log.InfoFormat("{0}: Connected to {1}", _name, _remoteEndPoint);
 			}
 		}
@@ -299,7 +322,7 @@ namespace SharpRemote
 
 		public void Connect(Uri uri, TimeSpan timeout)
 		{
-            if (uri == null) throw new ArgumentNullException("uri");
+			if (uri == null) throw new ArgumentNullException("uri");
 			if (Equals(uri, _localAddress)) throw new ArgumentException("An endpoint cannot be connected to itself", "uri");
 			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
 			if (IsConnected) throw new InvalidOperationException("This endpoint is already connected to another endpoint and cannot establish any more connections");
@@ -307,15 +330,20 @@ namespace SharpRemote
 			Socket socket = null;
 			try
 			{
+				var ep = ResolveEndPoint(uri);
+				var started = DateTime.Now;
 				var task = new Task(() =>
 					{
-						var ep = ResolveEndPoint(uri);
 						socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 						socket.Connect(ep);
 					});
 				task.Start();
 				if (!task.Wait(timeout))
 					throw new NoSuchEndPointException(uri);
+
+				var remaining = timeout - (DateTime.Now - started);
+				if (!ReadWelcomeMessage(socket, remaining, ep))
+					throw new InvalidEndPointException(uri);
 
 				_remoteAddress = uri;
 				OnConnected(socket);
@@ -330,6 +358,30 @@ namespace SharpRemote
 					socket.Dispose();
 				throw;
 			}
+		}
+
+		private bool ReadWelcomeMessage(Socket socket, TimeSpan remaining, EndPoint ep)
+		{
+			var buffer = new byte[ServerWelcomeMessageLength];
+			SocketError err;
+			if (!SynchronizedRead(socket, buffer, remaining, out err))
+			{
+				Log.ErrorFormat("EndPoint '{0}' failed to respond with welcome message in time, disconnecting...", ep);
+				return false;
+			}
+
+// ReSharper disable LoopCanBeConvertedToQuery
+			for (int i = 0; i < buffer.Length; ++i)
+// ReSharper restore LoopCanBeConvertedToQuery
+			{
+				if (buffer[i] != ServerWelcomeMessageData[i])
+				{
+					Log.ErrorFormat("EndPoint '{0}' answered with wrong welcome message, disconnecting...", ep);
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		private static IPEndPoint ResolveEndPoint(Uri uri)

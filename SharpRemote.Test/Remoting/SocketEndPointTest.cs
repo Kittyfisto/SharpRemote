@@ -217,6 +217,21 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Description("Verifies that Connect() throws when the other socket doesn't respond with the proper greeting message in time")]
+		public void TestConnect8()
+		{
+			using (var rep = CreateEndPoint(IPAddress.Loopback))
+			{
+				var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
+				socket.Listen(1);
+				socket.BeginAccept(ar => socket.EndAccept(ar), null);
+				new Action(() => rep.Connect(new Uri(string.Format("tcp://{0}:{1}", IPAddress.Loopback, 54321))))
+					.ShouldThrow<InvalidEndPointException>();
+			}
+		}
+
+		[Test]
 		[Description("Verifies that a proxy on an unconnected endpoint can be created")]
 		public void TestCreateProxy1()
 		{
@@ -343,8 +358,7 @@ namespace SharpRemote.Test.Remoting
 				new Action(() => rep1.Connect(rep2.LocalAddress, TimeSpan.FromSeconds(1)))
 					.ShouldNotThrow();
 				rep1.IsConnected.Should().BeTrue();
-				WaitFor(() => rep2.IsConnected, TimeSpan.FromSeconds(20))
-					.Should().BeTrue();
+				rep2.IsConnected.Should().BeTrue();
 			}
 		}
 

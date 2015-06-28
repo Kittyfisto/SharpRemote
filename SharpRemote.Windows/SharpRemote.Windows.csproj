@@ -74,6 +74,7 @@
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebEndPoint.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
+    <Compile Include="Exceptions\InvalidEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchApplicationException.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />

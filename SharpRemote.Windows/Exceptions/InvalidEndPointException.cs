@@ -6,12 +6,12 @@ namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	[Serializable]
-	public sealed class NoSuchEndPointException
+	public sealed class InvalidEndPointException
 		: RemotingException
 	{
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
-		public NoSuchEndPointException(SerializationInfo info, StreamingContext context)
+		public InvalidEndPointException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
 			string ip = info.GetString("Address");
@@ -27,8 +27,8 @@ namespace SharpRemote
 #endif
 #endif
 
-		public NoSuchEndPointException(Uri uri, Exception e = null)
-			: base(string.Format("Unable to establish a connection with the given endpoint: {0}", uri), e)
+		public InvalidEndPointException(Uri uri, Exception e = null)
+			: base(string.Format("The given socket does not represent a valid endpoint: {0}", uri), e)
 		{
 			Uri = uri;
 		}

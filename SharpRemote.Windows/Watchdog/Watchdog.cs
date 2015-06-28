@@ -5,39 +5,38 @@ namespace SharpRemote.Watchdog
 	public sealed class Watchdog
 		: IWatchdog
 	{
-		private readonly IRemoteWatchdog _remoteWatchdog;
+		private readonly IInternalWatchdog _internalWatchdog;
 
-		public Watchdog(IRemoteWatchdog remoteWatchdog)
+		public Watchdog(IInternalWatchdog internalWatchdog)
 		{
-			_remoteWatchdog = remoteWatchdog;
+			_internalWatchdog = internalWatchdog;
 		}
 
 		public void RegisterApplicationInstance(ApplicationInstanceDescription instance)
 		{
 			if (instance == null) throw new ArgumentNullException("instance");
 
-			var id = _remoteWatchdog.RegisterApplicationInstance(instance);
-			instance.Id = id;
+			_internalWatchdog.RegisterApplicationInstance(instance);
 		}
 
 		public void UnregisterApplicationInstance(ApplicationInstanceDescription instance)
 		{
 			if (instance == null) throw new ArgumentNullException("instance");
-			if (instance.Id == null) throw new ArgumentNullException("instance.Id");
+			if (instance.Name == null) throw new ArgumentNullException("instance.Name");
 
-			_remoteWatchdog.UnregisterApplicationInstance(instance.Id.Value);
+			_internalWatchdog.UnregisterApplicationInstance(instance.Name);
 		}
 
 		public void UninstallApplication(InstalledApplication application)
 		{
 			if (application == null) throw new ArgumentNullException("application");
 
-			_remoteWatchdog.RemoveApplication(application.Id);
+			_internalWatchdog.RemoveApplication(application.Descriptor.Name);
 		}
 
 		public IApplicationInstaller StartInstallation(ApplicationDescriptor description, Installation installation = Installation.FailOnUpgrade)
 		{
-			return new ApplicationInstaller(_remoteWatchdog, description, installation);
+			return new ApplicationInstaller(_internalWatchdog, description, installation);
 		}
 	}
 }

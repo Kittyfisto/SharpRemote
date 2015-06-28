@@ -1,19 +1,24 @@
-﻿using System.ServiceProcess;
+﻿using System;
+using log4net.Config;
 
 namespace SharpRemote.Watchdog
 {
-	internal static class Program
+	internal class Program
 	{
-		/// <summary>
-		///     The main entry point for the application.
-		/// </summary>
-		private static void Main()
+		private static void Main(string[] args)
 		{
-			var servicesToRun = new ServiceBase[]
-				{
-					new WatchdogService()
-				};
-			ServiceBase.Run(servicesToRun);
+			BasicConfigurator.Configure();
+
+			Console.WriteLine("Starting watchdog...");
+			using (var host = new WatchdogHost())
+			{
+				Console.WriteLine("Running and listening on {0}", host.LocalEndPoint);
+				Console.WriteLine("Name published via PNRP");
+				Console.WriteLine("Type exit to end the watchdog");
+
+				while (Console.ReadLine() != "exit")
+					break;
+			}
 		}
 	}
 }

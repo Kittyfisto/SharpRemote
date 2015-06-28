@@ -7,7 +7,7 @@ namespace SharpRemote.Watchdog
 	[DataContract]
 	public sealed class InstalledApplication
 	{
-		[DataMember] public long Id;
+		public string Name { get { return Descriptor.Name; } }
 
 		[DataMember] public ApplicationDescriptor Descriptor;
 
@@ -21,9 +21,11 @@ namespace SharpRemote.Watchdog
 		public InstalledApplication()
 		{}
 
-		public InstalledApplication(long id, ApplicationDescriptor description)
+		public InstalledApplication(ApplicationDescriptor description)
 		{
-			Id = id;
+			if (description == null) throw new ArgumentNullException("description");
+			if (description.Name == null) throw new ArgumentNullException("description.Name");
+
 			Descriptor = description;
 			Files = new List<InstalledFile>();
 		}

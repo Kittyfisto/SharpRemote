@@ -11,7 +11,6 @@ namespace SharpRemote.Watchdog
 		: IApplicationInstaller
 	{
 		private const int BlockSize = 4096;
-		private readonly long _appId;
 
 		private readonly byte[] _blockBuffer;
 		private readonly CancellationTokenSource _cancellationTokenSource;
@@ -20,16 +19,18 @@ namespace SharpRemote.Watchdog
 		private readonly Installation _installation;
 		private readonly ConcurrentBag<File> _pendingFiles;
 		private readonly Task _task;
-		private readonly IRemoteWatchdog _watchdog;
+		private readonly IInternalWatchdog _watchdog;
 		private Exception _exception;
 		private float _progress;
 		private bool _success;
 		private long _totalSize;
 		private long _transferedSize;
 
-		public ApplicationInstaller(IRemoteWatchdog watchdog, ApplicationDescriptor descriptor, Installation installation = Installation.FailOnUpgrade)
+		public ApplicationInstaller(IInternalWatchdog watchdog, ApplicationDescriptor descriptor, Installation installation = Installation.FailOnUpgrade)
 		{
 			if (watchdog == null) throw new ArgumentNullException("watchdog");
+			if (descriptor == null) throw new ArgumentNullException("descriptor");
+			if (descriptor.Name == null) throw new ArgumentNullException("descriptor.Name");
 
 			_blockBuffer = new byte[BlockSize];
 			_descriptor = descriptor;
@@ -40,7 +41,7 @@ namespace SharpRemote.Watchdog
 			_commitTokenSource = new CancellationTokenSource();
 			_task = Task.Factory.StartNew(InstallApplication);
 
-			_appId = _watchdog.StartInstallation(descriptor, installation);
+			_watchdog.StartInstallation(descriptor, installation);
 		}
 
 		public Installation Installation
@@ -54,7 +55,7 @@ namespace SharpRemote.Watchdog
 			{
 				try
 				{
-					_watchdog.AbortInstallation(_appId);
+					_watchdog.AbortInstallation(_descriptor.Name);
 				}
 				catch (Exception)
 				{
@@ -93,7 +94,7 @@ namespace SharpRemote.Watchdog
 			}
 		}
 
-		public void AddFiles(List<string> files, Environment.SpecialFolder destinationFolder, string destinationPath = null)
+		public void AddFiles(IEnumerable<string> files, Environment.SpecialFolder destinationFolder, string destinationPath = null)
 		{
 			foreach (string file in files)
 			{
@@ -110,7 +111,7 @@ namespace SharpRemote.Watchdog
 
 			// No exception was thrown - let's try to end the installation
 			// on the remote system - if that work's then we're done
-			InstalledApplication ret = _watchdog.CommitInstallation(_appId);
+			InstalledApplication ret = _watchdog.CommitInstallation(_descriptor.Name);
 			_success = true;
 			return ret;
 		}
@@ -154,7 +155,7 @@ namespace SharpRemote.Watchdog
 
 		private void TransferFile(File nextFile)
 		{
-			long fileId = _watchdog.CreateFile(_appId, nextFile.DestinationFolder, nextFile.RelativeFileName, nextFile.FileSize);
+			long fileId = _watchdog.CreateFile(_descriptor.Name, nextFile.DestinationFolder, nextFile.RelativeFileName, nextFile.FileSize);
 
 			int offset = 0;
 			for (int i = 0; i < nextFile.NumBlocks; ++i)

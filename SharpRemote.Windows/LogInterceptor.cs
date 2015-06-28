@@ -4,16 +4,16 @@ using log4net.Appender;
 using log4net.Core;
 using log4net.Repository.Hierarchy;
 
-namespace SampleBrowser
+namespace SharpRemote
 {
-	internal sealed class LogInterceptor
+	public sealed class LogInterceptor
 		: AppenderSkeleton
 		  , IDisposable
 	{
-		private readonly Action<string> _logAction;
+		private readonly Action<LoggingEvent> _logAction;
 		private IAppenderAttachable _root;
 
-		public LogInterceptor(Action<string> logAction)
+		public LogInterceptor(Action<LoggingEvent> logAction)
 		{
 			Threshold = Level.All;
 
@@ -33,7 +33,7 @@ namespace SampleBrowser
 
 		protected override void Append(LoggingEvent loggingEvent)
 		{
-			_logAction(loggingEvent.RenderedMessage);
+			_logAction(loggingEvent);
 		}
 	}
 }

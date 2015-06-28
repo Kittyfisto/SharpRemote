@@ -14,7 +14,7 @@ namespace SharpRemote.Test.Watchdog
 	public sealed class WatchdogTest
 	{
 		private static readonly string SharpRemoteFolder =
-			Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(typeof (RemoteWatchdog).Assembly.CodeBase).Path));
+			Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(typeof (InternalWatchdog).Assembly.CodeBase).Path));
 		private static readonly string[] SharpRemoteFiles = new[]
 				{
 					"log4net.dll",
@@ -23,7 +23,7 @@ namespace SharpRemote.Test.Watchdog
 				};
 
 		private InProcessRemotingSilo _silo;
-		private RemoteWatchdog _watchdog;
+		private InternalWatchdog _watchdog;
 
 		private void DeploySharpRemote(IApplicationInstaller installer)
 		{
@@ -37,10 +37,10 @@ namespace SharpRemote.Test.Watchdog
 			_silo = new InProcessRemotingSilo();
 		}
 
-		private IRemoteWatchdog CreateWatchdog()
+		private IInternalWatchdog CreateWatchdog()
 		{
-			return _silo.CreateGrain<IRemoteWatchdog>(typeof(RemoteWatchdog));
-			//return _watchdog = new RemoteWatchdog();
+			return _silo.CreateGrain<IInternalWatchdog>(typeof(InternalWatchdog));
+			//return _watchdog = new internalWatchdog();
 		}
 
 		[TearDown]
@@ -55,7 +55,6 @@ namespace SharpRemote.Test.Watchdog
 			return new ApplicationDescriptor
 			{
 				Name = string.Format("SharpRemote {0}", version),
-				FolderName = string.Format("SharpRemote {0}", version),
 			};
 		}
 
@@ -63,21 +62,21 @@ namespace SharpRemote.Test.Watchdog
 		{
 			return new ApplicationInstanceDescription
 			{
-				AppId = app.Id,
+				ApplicationName = app.Name,
 				Executable = app.Files.First(x => x.Filename.EndsWith("SampleBrowser.exe")),
-				Name = "Test Host"
+				Name = "Sample Browser autostart",
 			};
 		}
 
 		private void VerifyPostSharpDeployment(InstalledApplication app)
 		{
 			string sourceFolder =
-				Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(typeof(RemoteWatchdog).Assembly.CodeBase).Path));
+				Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(typeof(InternalWatchdog).Assembly.CodeBase).Path));
 
 			foreach (var file in SharpRemoteFiles)
 			{
 				var sourceFileName = Path.Combine(sourceFolder, file);
-				var destFileName = RemoteWatchdog.Resolve(app, Environment.SpecialFolder.LocalApplicationData, file);
+				var destFileName = InternalWatchdog.Resolve(app, Environment.SpecialFolder.LocalApplicationData, file);
 
 				ApplicationInstallerTest.FilesAreEqual(sourceFileName, destFileName)
 				                        .Should().BeTrue();
@@ -105,7 +104,7 @@ namespace SharpRemote.Test.Watchdog
 			// Now that SharpRemote is deployed we can start an actual instance...
 			var instance = new ApplicationInstanceDescription
 			{
-				AppId = app.Id,
+				ApplicationName = app.Name,
 				Executable = app.Files.First(x => x.Filename.EndsWith("SampleBrowser.exe")),
 				Name = "Test Host"
 			};

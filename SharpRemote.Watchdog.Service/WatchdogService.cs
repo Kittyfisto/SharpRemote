@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.ServiceProcess;
 
-namespace SharpRemote.Watchdog
+namespace SharpRemote.Watchdog.Service
 {
 	public partial class WatchdogService
 		: ServiceBase
@@ -11,6 +11,7 @@ namespace SharpRemote.Watchdog
 		private const string EventSourceName = "SharpRemote.Watchdog";
 		private const string EventLogName = "Log";
 		private readonly EventLog _eventLog;
+		private WatchdogHost _host;
 		private ServiceStatus _currentStatus;
 
 		public WatchdogService()

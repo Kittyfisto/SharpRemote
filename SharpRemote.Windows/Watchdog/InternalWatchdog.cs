@@ -5,38 +5,47 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.Hosting;
+using log4net;
 
 namespace SharpRemote.Watchdog
 {
-	internal sealed class RemoteWatchdog
-		: IRemoteWatchdog
+	internal sealed class InternalWatchdog
+		: IInternalWatchdog
 		  , IDisposable
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private readonly CancellationTokenSource _cancellationTokenSource;
-		private readonly Dictionary<long, InstalledApplication> _installedApplications;
+		private readonly Dictionary<string, InstalledApplication> _installedApplications;
+		private readonly Dictionary<string, InstalledApplication> _pendingInstallations;
+		private readonly Dictionary<string, Process> _processes;
+		private readonly Dictionary<string, ApplicationInstanceDescription> _registeredApplicationInstances;
 		private readonly Dictionary<long, Stream> _openedFiles;
-		private readonly Dictionary<long, InstalledApplication> _pendingInstallations;
-		private readonly Dictionary<long, Process> _processes;
-		private readonly Dictionary<long, ApplicationInstanceDescription> _registeredApplicationInstances;
 		private readonly object _syncRoot;
 		private readonly Task _task;
-		private long _nextAppId;
-		private long _nextApplicationInstanceId;
 		private long _nextFileId;
 
-		public RemoteWatchdog()
+		public InternalWatchdog()
+			: this(new IsolatedStorage())
+		{}
+
+		public InternalWatchdog(IIsolatedStorage storage)
 		{
+			if (storage == null) throw new ArgumentNullException("storage");
+
 			_syncRoot = new object();
+
 			_openedFiles = new Dictionary<long, Stream>();
-			_pendingInstallations = new Dictionary<long, InstalledApplication>();
-			_installedApplications = new Dictionary<long, InstalledApplication>();
+			_pendingInstallations = new Dictionary<string, InstalledApplication>();
+			_installedApplications = new Dictionary<string, InstalledApplication>();
 
-			_registeredApplicationInstances = new Dictionary<long, ApplicationInstanceDescription>();
+			_registeredApplicationInstances = new Dictionary<string, ApplicationInstanceDescription>();
 
-			_processes = new Dictionary<long, Process>();
+			_processes = new Dictionary<string, Process>();
 
 			_cancellationTokenSource = new CancellationTokenSource();
 			_syncRoot = new object();
@@ -63,26 +72,18 @@ namespace SharpRemote.Watchdog
 		{
 			while (!_cancellationTokenSource.IsCancellationRequested)
 			{
+				Thread.Sleep(1);
 			}
 		}
 
-		public void Unregister(long id)
+		public void StartInstance(string instanceName)
 		{
 			lock (_syncRoot)
 			{
-				StopInstance(id);
-				_registeredApplicationInstances.Remove(id);
-			}
-		}
-
-		public void StartInstance(long instanceId)
-		{
-			lock (_syncRoot)
-			{
-				if (!_processes.ContainsKey(instanceId))
+				if (!_processes.ContainsKey(instanceName))
 				{
-					Process process = StartNewProcress(instanceId);
-					_processes.Add(instanceId, process);
+					Process process = StartNewProcress(instanceName);
+					_processes.Add(instanceName, process);
 					try
 					{
 						process.Exited += ProcessOnExited;
@@ -91,7 +92,7 @@ namespace SharpRemote.Watchdog
 					catch (Exception)
 					{
 						process.Exited -= ProcessOnExited;
-						_processes.Remove(instanceId);
+						_processes.Remove(instanceName);
 						throw;
 					}
 				}
@@ -102,13 +103,13 @@ namespace SharpRemote.Watchdog
 		{
 		}
 
-		private Process StartNewProcress(long instanceId)
+		private Process StartNewProcress(string instanceName)
 		{
 			lock (_syncRoot)
 			{
-				ApplicationInstanceDescription instance = _registeredApplicationInstances[instanceId];
+				ApplicationInstanceDescription instance = _registeredApplicationInstances[instanceName];
 				InstalledFile executable = instance.Executable;
-				InstalledApplication application = _installedApplications[instance.AppId];
+				InstalledApplication application = _installedApplications[instance.ApplicationName];
 
 				var process = new Process
 					{
@@ -123,14 +124,14 @@ namespace SharpRemote.Watchdog
 			}
 		}
 
-		private void StartAllApplicationInstances(long applicationId)
+		private void StartAllApplicationInstances(string applicationName)
 		{
 			lock (_syncRoot)
 			{
-				List<long> instanceIds = _registeredApplicationInstances.Where(x => x.Value.AppId == applicationId).Select(x => x.Key).ToList();
-				foreach (long instanceId in instanceIds)
+				List<string> instanceNames = _registeredApplicationInstances.Where(x => x.Value.ApplicationName == applicationName).Select(x => x.Key).ToList();
+				foreach (string instanceName in instanceNames)
 				{
-					StartInstance(instanceId);
+					StartInstance(instanceName);
 				}
 			}
 		}
@@ -138,16 +139,16 @@ namespace SharpRemote.Watchdog
 		/// <summary>
 		///     Stops all application instances belonging to the given application.
 		/// </summary>
-		/// <param name="applicationId"></param>
-		private void StopAllApplicationInstances(long applicationId)
+		/// <param name="applicationName"></param>
+		private void StopAllApplicationInstances(string applicationName)
 		{
 			lock (_syncRoot)
 			{
-				List<long> instanceIds =
-					_processes.Keys.Where(x => _registeredApplicationInstances[x].AppId == applicationId).ToList();
-				foreach (long instanceId in instanceIds)
+				List<string> instanceNames =
+					_processes.Keys.Where(x => _registeredApplicationInstances[x].ApplicationName == applicationName).ToList();
+				foreach (string instanceName in instanceNames)
 				{
-					StopInstance(instanceId);
+					StopInstance(instanceName);
 				}
 			}
 		}
@@ -156,7 +157,7 @@ namespace SharpRemote.Watchdog
 		///     Stops the application instance with the given id.
 		/// </summary>
 		/// <param name="instanceId"></param>
-		private void StopInstance(long instanceId)
+		private void StopInstance(string instanceId)
 		{
 			lock (_syncRoot)
 			{
@@ -172,54 +173,58 @@ namespace SharpRemote.Watchdog
 
 		#region Installation
 
-		public long RegisterApplicationInstance(ApplicationInstanceDescription instance)
+		public void RegisterApplicationInstance(ApplicationInstanceDescription instance)
 		{
 			lock (_syncRoot)
 			{
-				long id = ++_nextApplicationInstanceId;
-				_registeredApplicationInstances.Add(id, instance);
+				if (_registeredApplicationInstances.ContainsKey(instance.Name))
+				{
+					UnregisterApplicationInstance(instance.Name);
+				}
+
+				_registeredApplicationInstances.Add(instance.Name, instance);
 				try
 				{
-					StartInstance(id);
-					instance.Id = id;
-					return id;
+					StartInstance(instance.Name);
 				}
 				catch (Exception)
 				{
-					_registeredApplicationInstances.Remove(id);
+					_registeredApplicationInstances.Remove(instance.Name);
 					throw;
 				}
 			}
 		}
 
-		public void UnregisterApplicationInstance(long id)
+		public void UnregisterApplicationInstance(string instanceName)
 		{
 			lock (_syncRoot)
 			{
 				ApplicationInstanceDescription description;
-				if (_registeredApplicationInstances.TryGetValue(id, out description))
+				if (_registeredApplicationInstances.TryGetValue(instanceName, out description))
 				{
-					StopInstance(id);
-					_registeredApplicationInstances.Remove(id);
+					StopInstance(instanceName);
+					_registeredApplicationInstances.Remove(instanceName);
 				}
 			}
 		}
 
-		public long StartInstallation(ApplicationDescriptor description, Installation installation)
+		public void StartInstallation(ApplicationDescriptor description, Installation installation)
 		{
 			lock (_syncRoot)
 			{
+				Log.DebugFormat("Starting installation of '{0}': {1}", description.Name, installation);
+
 				// If there's another pending installation with the same folder then we'll bail early...
 				InstalledApplication pending =
-					_pendingInstallations.Values.FirstOrDefault(x => x.Descriptor.FolderName == description.FolderName);
+					_pendingInstallations.Values.FirstOrDefault(x => x.Descriptor.Name == description.Name);
 				if (pending != null)
 					throw new InstallationFailedException(
 						string.Format(
 							"There already is a pending installation for the same application - this installation must be completed or aborted in order for a new installation to be allowed"));
 
 				// Let's find out if we're replacing an existing installation...
-				InstalledApplication existingApp =
-					_installedApplications.Values.FirstOrDefault(x => x.Descriptor.FolderName == description.FolderName);
+				InstalledApplication existingApp;
+				_installedApplications.TryGetValue(description.Name, out existingApp);
 				InstalledApplication newApp;
 				if (existingApp != null)
 				{
@@ -230,20 +235,19 @@ namespace SharpRemote.Watchdog
 								string.Format("There already is an installation of the same application present"));
 
 						case Installation.CleanInstall:
-							StopAllApplicationInstances(existingApp.Id);
-							RemoveApplication(existingApp.Id);
-							newApp = new InstalledApplication(_nextAppId + 1, description);
-							++_nextAppId;
+							StopAllApplicationInstances(existingApp.Name);
+							RemoveApplication(existingApp.Name);
+							newApp = new InstalledApplication(description);
 							break;
 
 						case Installation.ColdUpdate:
-							StopAllApplicationInstances(existingApp.Id);
-							newApp = new InstalledApplication(existingApp.Id, description);
+							StopAllApplicationInstances(existingApp.Name);
+							newApp = new InstalledApplication(description);
 							newApp.Files.AddRange(existingApp.Files);
 							break;
 
 						case Installation.HotUpdate:
-							newApp = new InstalledApplication(existingApp.Id, description);
+							newApp = new InstalledApplication(description);
 							newApp.Files.AddRange(existingApp.Files);
 							break;
 
@@ -253,20 +257,18 @@ namespace SharpRemote.Watchdog
 				}
 				else
 				{
-					newApp = new InstalledApplication(_nextAppId + 1, description);
-					++_nextAppId;
+					newApp = new InstalledApplication(description);
 				}
 
-				_pendingInstallations.Add(newApp.Id, newApp);
-				return newApp.Id;
+				_pendingInstallations.Add(newApp.Name, newApp);
 			}
 		}
 
-		public InstalledApplication CommitInstallation(long appId)
+		public InstalledApplication CommitInstallation(string applicationName)
 		{
 			lock (_syncRoot)
 			{
-				InstalledApplication newApp = _pendingInstallations[appId];
+				InstalledApplication newApp = _pendingInstallations[applicationName];
 				foreach (InstalledFile file in newApp.Files)
 				{
 					Stream stream;
@@ -277,21 +279,23 @@ namespace SharpRemote.Watchdog
 					}
 				}
 
-				_pendingInstallations.Remove(appId);
-				_installedApplications[appId] = newApp;
+				_pendingInstallations.Remove(applicationName);
+				_installedApplications[applicationName] = newApp;
 
-				StartAllApplicationInstances(newApp.Id);
+				Log.DebugFormat("Installation of '{0}' finished", newApp.Name);
+
+				StartAllApplicationInstances(newApp.Name);
 
 				return newApp;
 			}
 		}
 
-		public void AbortInstallation(long appId)
+		public void AbortInstallation(string appId)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void RemoveApplication(long id)
+		public void RemoveApplication(string id)
 		{
 			lock (_syncRoot)
 			{
@@ -299,9 +303,11 @@ namespace SharpRemote.Watchdog
 			}
 		}
 
-		public long CreateFile(long appId, Environment.SpecialFolder folder, string fileName, long fileSize)
+		public long CreateFile(string applicationName, Environment.SpecialFolder folder, string fileName, long fileSize)
 		{
-			InstalledApplication app = _pendingInstallations[appId];
+			Log.DebugFormat("Creating file '{0}': {1} bytes", fileName, fileSize);
+
+			InstalledApplication app = _pendingInstallations[applicationName];
 			string fname = Resolve(app, folder, fileName);
 
 			var file = CreateAndAddFileDescription(app, folder, fileName, fileSize);
@@ -359,9 +365,11 @@ namespace SharpRemote.Watchdog
 			stream.Write(content, 0, length);
 		}
 
-		public void WriteFile(long appId, Environment.SpecialFolder folder, string fileName, byte[] content)
+		public void WriteFile(string applicationName, Environment.SpecialFolder folder, string fileName, byte[] content)
 		{
-			InstalledApplication app = _pendingInstallations[appId];
+			Log.DebugFormat("Creating file '{0}': {1} bytes", fileName, content.Length);
+
+			InstalledApplication app = _pendingInstallations[applicationName];
 			string path = Resolve(app, folder, fileName);
 
 			if (File.Exists(path))
@@ -371,9 +379,11 @@ namespace SharpRemote.Watchdog
 			CreateAndAddFileDescription(app, folder, fileName, content.Length);
 		}
 
-		public void DeleteFile(long appId, Environment.SpecialFolder folder, string fileName)
+		public void DeleteFile(string applicationName, Environment.SpecialFolder folder, string fileName)
 		{
-			InstalledApplication app = _installedApplications[appId];
+			Log.DebugFormat("Deleting file '{0}'", fileName);
+
+			InstalledApplication app = _installedApplications[applicationName];
 			string path = Resolve(app, folder, fileName);
 			File.Delete(path);
 		}
@@ -385,16 +395,16 @@ namespace SharpRemote.Watchdog
 		/// <remarks>
 		///     Doesn't do anything when there are no instances (or when there's no such application).
 		/// </remarks>
-		/// <param name="applicationId"></param>
-		private void RemoveApplicationInstances(long applicationId)
+		/// <param name="applicationName"></param>
+		private void RemoveApplicationInstances(string applicationName)
 		{
 			lock (_syncRoot)
 			{
-				List<KeyValuePair<long, ApplicationInstanceDescription>> instances =
-					_registeredApplicationInstances.Where(x => x.Value.AppId == applicationId).ToList();
+				List<string> instances =
+					_registeredApplicationInstances.Where(x => x.Value.ApplicationName == applicationName).Select(x => x.Key).ToList();
 				foreach (var instance in instances)
 				{
-					UnregisterApplicationInstance(instance.Key);
+					UnregisterApplicationInstance(instance);
 				}
 			}
 		}
@@ -408,7 +418,7 @@ namespace SharpRemote.Watchdog
 		[Pure]
 		public static string Resolve(InstalledApplication app, Environment.SpecialFolder folder, string relativeFileName)
 		{
-			return Resolve(app.Descriptor.FolderName, folder, relativeFileName);
+			return Resolve(app.Name, folder, relativeFileName);
 		}
 
 		[Pure]

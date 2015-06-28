@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("svcutil")]
+[assembly: AssemblyTitle("SharpRemote.Watchdog")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("svcutil")]
+[assembly: AssemblyProduct("SharpRemote.Watchdog")]
 [assembly: AssemblyCopyright("Copyright © Kittyfisto 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("bf16600c-f218-49f0-be2e-99191a97c216")]
+[assembly: Guid("793ef647-58ad-4433-a04e-8e591d8d77d9")]
 
 // Version information for an assembly consists of the following four values:
 //

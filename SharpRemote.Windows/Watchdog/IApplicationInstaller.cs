@@ -46,7 +46,7 @@ namespace SharpRemote.Watchdog
 		/// <param name="files"></param>
 		/// <param name="destinationFolder"></param>
 		/// <param name="destinationPath"></param>
-		void AddFiles(List<string> files, Environment.SpecialFolder destinationFolder, string destinationPath = null);
+		void AddFiles(IEnumerable<string> files, Environment.SpecialFolder destinationFolder, string destinationPath = null);
 
 		/// <summary>
 		/// Finishes the installation - blocks until all files have been transferred and successfully installed

@@ -29,6 +29,7 @@
                                 <TextBlock FontSize="28"
                                            Text="{Binding Title}"
                                            Foreground="White"
+                                           TextWrapping="Wrap"
                                            Grid.Row="0"
                                            Margin="12" />
                                 <TextBlock Text="{Binding Description}"

@@ -33,6 +33,8 @@
         <StackPanel Grid.Row="1">
             <Button Content="Run test!"
                     HorizontalAlignment="Right"
+                    Margin="12,6,12,12"
+                    Padding="6"
                     Command="{Binding RunTestCommand}" />
         </StackPanel>
     </Grid>

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using SampleBrowser.Scenarios;
 using SampleBrowser.Scenarios.Host;
-using SampleBrowser.Scenarios.RemoteHost;
+using SampleBrowser.Scenarios.WatchdogInstallation;
 
 namespace SampleBrowser
 {

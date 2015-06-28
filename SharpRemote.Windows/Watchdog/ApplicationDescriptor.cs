@@ -12,17 +12,14 @@ namespace SharpRemote.Watchdog
 		[DataMember]
 		public string Name { get; set; }
 
-		[DataMember]
-		public string FolderName { get; set; }
-
 		public override string ToString()
 		{
-			return string.Format("{0} (@{1})", Name, FolderName);
+			return string.Format("{0}", Name);
 		}
 
 		public bool Equals(ApplicationDescriptor other)
 		{
-			return string.Equals(Name, other.Name) && string.Equals(FolderName, other.FolderName);
+			return string.Equals(Name, other.Name);
 		}
 
 		public override bool Equals(object obj)
@@ -35,7 +32,7 @@ namespace SharpRemote.Watchdog
 		{
 			unchecked
 			{
-				return ((Name != null ? Name.GetHashCode() : 0)*397) ^ (FolderName != null ? FolderName.GetHashCode() : 0);
+				return ((Name != null ? Name.GetHashCode() : 0)*397);
 			}
 		}
 

@@ -1,4 +1,4 @@
-﻿namespace SharpRemote.Watchdog
+﻿namespace SharpRemote.Watchdog.Service
 {
 	partial class WatchdogService
 	{

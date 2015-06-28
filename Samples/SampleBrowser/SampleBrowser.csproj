@@ -40,6 +40,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Net" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -59,7 +60,6 @@
     </ApplicationDefinition>
     <Compile Include="Controls\Console.cs" />
     <Compile Include="Converters\BoolFalseToVisibilityCollapsedConverter.cs" />
-    <Compile Include="LogInterceptor.cs" />
     <Compile Include="MainWindowViewModel.cs" />
     <Compile Include="Scenarios\AbstractScenario.cs" />
     <Compile Include="Scenarios\DelegateCommand.cs" />
@@ -71,7 +71,10 @@
     <Compile Include="Scenarios\Host\TaskCommand.cs" />
     <Compile Include="Scenarios\Host\Sample.cs" />
     <Compile Include="Scenarios\IScenario.cs" />
-    <Compile Include="Scenarios\RemoteHost\RemoteHostScenario.cs" />
+    <Compile Include="Scenarios\WatchdogInstallation\RemoteHostScenario.cs" />
+    <Compile Include="Scenarios\WatchdogInstallation\RemoteInstallView.xaml.cs">
+      <DependentUpon>RemoteInstallView.xaml</DependentUpon>
+    </Compile>
     <Page Include="Controls\Console.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -89,6 +92,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Scenarios\Host\HostView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Scenarios\WatchdogInstallation\RemoteInstallView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

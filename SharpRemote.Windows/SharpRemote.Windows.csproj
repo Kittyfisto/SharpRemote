@@ -36,6 +36,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
@@ -73,6 +74,7 @@
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebEndPoint.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
+    <Compile Include="Exceptions\NoSuchApplicationException.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />
     <Compile Include="Exceptions\NotConnectedException.cs" />
@@ -84,6 +86,7 @@
     <Compile Include="ISerializer.cs" />
     <Compile Include="IServant.cs" />
     <Compile Include="Attributes\SingletonFactoryMethodAttribute.cs" />
+    <Compile Include="LogInterceptor.cs" />
     <Compile Include="Tasks\SerialTaskScheduler.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="TypeInformation.cs" />
@@ -111,13 +114,16 @@
     <Compile Include="Watchdog\ApplicationInstanceDescription.cs" />
     <Compile Include="Watchdog\IApplicationInstaller.cs" />
     <Compile Include="Exceptions\InstallationFailedException.cs" />
+    <Compile Include="Watchdog\IIsolatedStorage.cs" />
     <Compile Include="Watchdog\Installation.cs" />
     <Compile Include="Watchdog\InstalledApplication.cs" />
     <Compile Include="Watchdog\InstalledFile.cs" />
-    <Compile Include="Watchdog\IRemoteWatchdog.cs" />
+    <Compile Include="Watchdog\IInternalWatchdog.cs" />
+    <Compile Include="Watchdog\IsolatedStorage.cs" />
     <Compile Include="Watchdog\IWatchdog.cs" />
-    <Compile Include="Watchdog\RemoteWatchdog.cs" />
+    <Compile Include="Watchdog\InternalWatchdog.cs" />
     <Compile Include="Watchdog\Watchdog.cs" />
+    <Compile Include="Watchdog\WatchdogHost.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

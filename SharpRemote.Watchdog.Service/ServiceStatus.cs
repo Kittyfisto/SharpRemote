@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace SharpRemote.Watchdog
+namespace SharpRemote.Watchdog.Service
 {
 	[StructLayout(LayoutKind.Sequential)]
 	public struct ServiceStatus

@@ -13,14 +13,7 @@ namespace SharpRemote.Watchdog
 	public sealed class ApplicationInstanceDescription
 	{
 		/// <summary>
-		/// Identifies this instance - will be set by the watchdog upon registration.
-		/// </summary>
-		[DataMember]
-		[XmlAttribute]
-		public long? Id;
-
-		/// <summary>
-		/// The name of this instance - helps debugging.
+		/// Name of this instance, must be unique amongst all others.
 		/// </summary>
 		[DataMember]
 		[XmlAttribute]
@@ -31,7 +24,7 @@ namespace SharpRemote.Watchdog
 		/// </summary>
 		[DataMember]
 		[XmlAttribute]
-		public long AppId;
+		public string ApplicationName;
 
 		/// <summary>
 		/// The executable to start.

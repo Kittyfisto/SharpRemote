@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using SampleBrowser.Scenarios.Host;
+using log4net.Core;
 
 namespace SampleBrowser.Scenarios
 {
@@ -62,6 +63,11 @@ namespace SampleBrowser.Scenarios
 			get { return _stopCommand; }
 		}
 
+		protected void Log(LoggingEvent @event)
+		{
+			Log(@event.RenderedMessage);
+		}
+
 		protected void Log(string that)
 		{
 			App.Dispatcher.BeginInvoke(new Action(() => _output.Add(that)));
@@ -80,8 +86,14 @@ namespace SampleBrowser.Scenarios
 			Log("Starting test...");
 			try
 			{
-				RunTest();
-				Log("Test succeeded!");
+				if (RunTest())
+				{
+					Log("Test succeeded!");
+				}
+				else
+				{
+					Log("Test failed");
+				}
 			}
 			catch (Exception e)
 			{
@@ -92,7 +104,7 @@ namespace SampleBrowser.Scenarios
 			}
 		}
 
-		protected abstract void RunTest();
+		protected abstract bool RunTest();
 
 
 		private void ScenarioStarted()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows;
+using SharpRemote;
 using SharpRemote.Hosting;
 
 namespace SampleBrowser.Scenarios.Host
@@ -29,7 +30,7 @@ namespace SampleBrowser.Scenarios.Host
 			return new HostView();
 		}
 
-		protected override void RunTest()
+		protected override bool RunTest()
 		{
 			using (var appender = new LogInterceptor(Log))
 			using (var silo = new ProcessSilo(hostOutputWritten: LogHost))
@@ -41,6 +42,7 @@ namespace SampleBrowser.Scenarios.Host
 
 				Log("What's the value of PI?");
 				instance.WritePi();
+				return true;
 			}
 		}
 

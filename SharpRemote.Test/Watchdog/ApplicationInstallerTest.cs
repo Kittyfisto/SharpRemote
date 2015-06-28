@@ -13,12 +13,12 @@ namespace SharpRemote.Test.Watchdog
 		private string _sharpRemoteLibraryLocation;
 		private string _binFolder;
 		private InProcessRemotingSilo _silo;
-		private IRemoteWatchdog _watchdog;
+		private IInternalWatchdog _watchdog;
 
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
 		{
-			var assembly = typeof (RemoteWatchdog).Assembly;
+			var assembly = typeof (InternalWatchdog).Assembly;
 			_sharpRemoteLibraryLocation = assembly.Location;
 			_binFolder = Path.GetDirectoryName(_sharpRemoteLibraryLocation);
 		}
@@ -27,8 +27,8 @@ namespace SharpRemote.Test.Watchdog
 		public void SetUp()
 		{
 			//_silo = new InProcessRemotingSilo();
-			//_watchdog = _silo.CreateGrain<IRemoteWatchdog>(typeof (RemoteWatchdog));
-			_watchdog = new RemoteWatchdog();
+			//_watchdog = _silo.CreateGrain<IInternalWatchdog>(typeof (internalWatchdog));
+			_watchdog = new InternalWatchdog();
 		}
 
 		[TearDown]
@@ -44,7 +44,6 @@ namespace SharpRemote.Test.Watchdog
 			var descriptor = new ApplicationDescriptor
 			{
 				Name = "TestInstallSingleFile",
-				FolderName = "TestInstallSingleFile",
 			};
 
 			InstalledApplication app;
@@ -60,7 +59,7 @@ namespace SharpRemote.Test.Watchdog
 			actualFiles.Count.Should().Be(expectedFiles.Length);
 			for (int i = 0; i < expectedFiles.Length; ++i)
 			{
-				var fullPath = RemoteWatchdog.Resolve(descriptor.FolderName, Environment.SpecialFolder.CommonDocuments,
+				var fullPath = InternalWatchdog.Resolve(descriptor.Name, Environment.SpecialFolder.CommonDocuments,
 														 actualFiles[i].Filename);
 				FilesAreEqual(new FileInfo(expectedFiles[i]), new FileInfo(fullPath));
 			}
@@ -73,9 +72,8 @@ namespace SharpRemote.Test.Watchdog
 			var descriptor = new ApplicationDescriptor
 			{
 				Name = "TestInstallSingleFile",
-				FolderName = "TestInstallSingleFile",
 			};
-			var fullPath = RemoteWatchdog.Resolve(descriptor.FolderName, Environment.SpecialFolder.CommonApplicationData,
+			var fullPath = InternalWatchdog.Resolve(descriptor.Name, Environment.SpecialFolder.CommonApplicationData,
 													 "SharpRemote.dll");
 			var original = new FileInfo(_sharpRemoteLibraryLocation);
 
@@ -89,7 +87,6 @@ namespace SharpRemote.Test.Watchdog
 				app = installer.Commit();
 			}
 
-			app.Id.Should().Be(1);
 			app.Descriptor.Should().Be(descriptor);
 			app.Files.Count.Should().Be(1);
 			var file = app.Files[0];

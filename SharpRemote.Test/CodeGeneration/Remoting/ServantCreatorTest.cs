@@ -72,8 +72,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		public void TestWatchdog()
 		{
 			var subject = new Mock<IReturnComplexType>();
-			var app = new InstalledApplication(1337,
-			                                   new ApplicationDescriptor {Name = "SharpRemote", FolderName = "SharpRemote/0.1"});
+			var app = new InstalledApplication(new ApplicationDescriptor {Name = "SharpRemote/0.1"});
 			app.Files.Add(new InstalledFile{Id=1, Filename = "SharpRemote.dll", FileLength = 212345, Folder = Environment.SpecialFolder.CommonProgramFiles});
 			app.Files.Add(new InstalledFile { Id = 2, Filename = "SharpRemote.Host.exe", FileLength = 1234, Folder = Environment.SpecialFolder.CommonProgramFiles });
 			subject.Setup(x => x.CommitInstallation(It.IsAny<long>()))
@@ -88,7 +87,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var output = new MemoryStream();
 			servant.Invoke("CommitInstallation", new BinaryReader(arguments), new BinaryWriter(output));
 			output.Position = 0;
-			output.Length.Should().BeInRange(351, 354);
+			output.Length.Should().BeInRange(330, 333);
 		}
 
 		[Test]

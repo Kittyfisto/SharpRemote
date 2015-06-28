@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -324,6 +325,30 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
+		public void TestDisconnect3()
+		{
+			using (SocketEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
+			using (SocketEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
+			{
+				rep1.Connect(rep2.LocalAddress, TimeSpan.FromSeconds(1));
+				rep1.IsConnected.Should().BeTrue();
+				rep2.IsConnected.Should().BeTrue();
+
+				rep1.Disconnect();
+				rep1.IsConnected.Should().BeFalse();
+				WaitFor(() => !rep2.IsConnected, TimeSpan.FromSeconds(2))
+					.Should().BeTrue();
+
+				new Action(() => rep1.Connect(rep2.LocalAddress, TimeSpan.FromSeconds(1)))
+					.ShouldNotThrow();
+				rep1.IsConnected.Should().BeTrue();
+				WaitFor(() => rep2.IsConnected, TimeSpan.FromSeconds(20))
+					.Should().BeTrue();
+			}
+		}
+
+		[Test]
 		[Description("Verifies that disposing the endpoint actually closes the listening socket")]
 		public void TestDispose()
 		{
@@ -340,6 +365,23 @@ namespace SharpRemote.Test.Remoting
 				new Action(() => socket.Bind(endpoint))
 					.ShouldNotThrow("Because the corresponding endpoint should no longer be in use");
 			}
+		}
+
+		private static bool WaitFor(Func<bool> fn, TimeSpan timeout)
+		{
+			var start = DateTime.Now;
+			var now = start;
+			while ((now - start) < timeout)
+			{
+				if (fn())
+					return true;
+
+				Thread.Sleep(TimeSpan.FromMilliseconds(10));
+
+				now = DateTime.Now;
+			}
+
+			return false;
 		}
 	}
 }

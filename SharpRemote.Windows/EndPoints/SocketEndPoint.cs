@@ -33,7 +33,7 @@ namespace SharpRemote
 		private readonly Dictionary<ulong, IServant> _servants;
 		private readonly ProxyCreator _proxyCreator;
 		private readonly ServantCreator _servantCreator;
-		private readonly CancellationTokenSource _cancellationTokenSource;
+		private CancellationTokenSource _cancellationTokenSource;
 		private readonly AssemblyBuilder _assembly;
 		private readonly ModuleBuilder _module;
 		private Task _readTask;
@@ -45,6 +45,7 @@ namespace SharpRemote
 		private readonly Dictionary<long, Action<MessageType, BinaryReader>> _pendingCalls;
 		private readonly Serializer _serializer;
 		private readonly HashSet<MethodInvocation> _pendingInvocations;
+		private bool _isDisposed;
 
 		[Flags]
 		private enum MessageType : byte
@@ -73,8 +74,6 @@ namespace SharpRemote
 			_servants = new Dictionary<ulong, IServant>();
 			_proxies = new Dictionary<ulong, IProxy>();
 
-			_cancellationTokenSource = new CancellationTokenSource();
-
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			var moduleName = assemblyName.Name + ".dll";
@@ -96,8 +95,14 @@ namespace SharpRemote
 			try
 			{
 				var size = new byte[4];
-				while (!token.IsCancellationRequested)
+				while (true)
 				{
+					if (token.IsCancellationRequested)
+					{
+						Log.InfoFormat("Cancellation was requested: Stopping read and disconnecting '{0}'", _name);
+						break;
+					}
+
 					SocketError err;
 					if (!SynchronizedRead(socket, size, out err))
 						break;
@@ -144,7 +149,7 @@ namespace SharpRemote
 				int written = socket.Send(data, 0, length, SocketFlags.None, out err);
 				if (written != length || err != SocketError.Success || !socket.Connected)
 				{
-					Log.ErrorFormat("Error while writing to socket: {0} out of {1} written, socket status: {2}", written, data.Length, err);
+					Log.ErrorFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written, data.Length, err, socket.Connected);
 					return false;
 				}
 
@@ -165,7 +170,7 @@ namespace SharpRemote
 
 				if (err != SocketError.Success || read == 0 || !socket.Connected)
 				{
-					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, socket status: {2}", read, data.Length, err);
+					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read, data.Length, err, socket.Connected);
 					return false;
 				}
 			}
@@ -177,14 +182,24 @@ namespace SharpRemote
 
 		private void OnIncomingConnection(IAsyncResult ar)
 		{
-			try
+			lock (_syncRoot)
 			{
-				OnConnected(_serverSocket.EndAccept(ar));
-			}
-			catch (Exception e)
-			{
-				Log.ErrorFormat("Caught exception while accepting incoming connection - disconnecting again: {0}", e);
-				Disconnect();
+				if (_isDisposed)
+					return;
+
+				try
+				{
+					OnConnected(_serverSocket.EndAccept(ar));
+				}
+				catch (Exception e)
+				{
+					Log.ErrorFormat("Caught exception while accepting incoming connection - disconnecting again: {0}", e);
+					Disconnect();
+				}
+				finally
+				{
+					_serverSocket.BeginAccept(OnIncomingConnection, null);
+				}
 			}
 		}
 
@@ -194,6 +209,7 @@ namespace SharpRemote
 			{
 				_socket = socket;
 				_remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
+				_cancellationTokenSource = new CancellationTokenSource();
 				_readTask = new Task(Read, new KeyValuePair<Socket, CancellationToken>(_socket, _cancellationTokenSource.Token));
 				_readTask.Start();
 				Log.InfoFormat("{0}: Connected to {1}", _name, _remoteEndPoint);
@@ -238,8 +254,12 @@ namespace SharpRemote
 
 		public void Dispose()
 		{
-			Disconnect();
-			_serverSocket.TryDispose();
+			lock (_syncRoot)
+			{
+				Disconnect();
+				_serverSocket.TryDispose();
+				_isDisposed = true;
+			}
 		}
 
 		public string Name
@@ -270,6 +290,11 @@ namespace SharpRemote
 		public bool IsConnected
 		{
 			get { return _remoteEndPoint != null; }
+		}
+
+		public void Connect(Uri uri)
+		{
+			Connect(uri, TimeSpan.FromSeconds(1));
 		}
 
 		public void Connect(Uri uri, TimeSpan timeout)
@@ -375,6 +400,11 @@ namespace SharpRemote
 					_remoteAddress = null;
 				}
 			}
+		}
+
+		public override string ToString()
+		{
+			return _name;
 		}
 
 		public T CreateProxy<T>(ulong objectId) where T : class

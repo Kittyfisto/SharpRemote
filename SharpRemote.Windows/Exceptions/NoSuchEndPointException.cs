@@ -47,6 +47,11 @@ namespace SharpRemote
 			EndPointName = endPointName;
 		}
 
+		public NoSuchEndPointException()
+		{
+			
+		}
+
 		public readonly IPEndPoint EndPoint;
 		public readonly string EndPointName;
 	}

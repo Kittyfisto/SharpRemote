@@ -552,6 +552,18 @@ namespace SharpRemote
 				_remoteEndPoint = endpoint;
 				OnConnected(socket);
 			}
+			catch (AggregateException e)
+			{
+				var inner = e.InnerExceptions;
+				if (inner.Count != 1)
+					throw;
+
+				var ex = inner[0];
+				if (!(ex is SocketException))
+					throw;
+
+				throw new NoSuchEndPointException(endpoint, e);
+			}
 			catch (SocketException e)
 			{
 				throw new NoSuchEndPointException(endpoint, e);

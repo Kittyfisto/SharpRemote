@@ -114,10 +114,38 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Ignore]
+		[Description("Verifies that Connect() can establish a connection with an endpoint by specifying its name")]
+		public void TestConnect2()
+		{
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep2"))
+			{
+				rep2.Bind(IPAddress.Loopback);
+
+				rep1.IsConnected.Should().BeFalse();
+				rep1.RemoteEndPoint.Should().BeNull();
+
+				rep2.IsConnected.Should().BeFalse();
+				rep2.RemoteEndPoint.Should().BeNull();
+
+				// ReSharper disable AccessToDisposedClosure
+				new Action(() => rep1.Connect(rep2.Name, TimeSpan.FromSeconds(1)))
+					// ReSharper restore AccessToDisposedClosure
+					.ShouldNotThrow();
+
+				rep1.IsConnected.Should().BeTrue();
+				rep1.RemoteEndPoint.Should().Be(rep2.LocalEndPoint);
+
+				rep2.IsConnected.Should().BeTrue();
+			}
+		}
+
+		[Test]
 		[Description(
 			"Verifies that Connect() cannot establish a connection with a non-existant endpoint and returns in the specified timeout"
 			)]
-		public void TestConnect2()
+		public void TestConnect3()
 		{
 			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
@@ -136,7 +164,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Description("Verifies that Connect() cannot establish a connection with itself")]
-		public void TestConnect3()
+		public void TestConnect4()
 		{
 			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
@@ -163,7 +191,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
-		public void TestConnect4()
+		public void TestConnect5()
 		{
 			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
 			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
@@ -189,11 +217,11 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Description("Verifies that Connect() throws when a null address is given")]
-		public void TestConnect5()
+		public void TestConnect6()
 		{
 			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
-				new Action(() => rep.Connect(null, TimeSpan.FromSeconds(1)))
+				new Action(() => rep.Connect((IPEndPoint)null, TimeSpan.FromSeconds(1)))
 					.ShouldThrow<ArgumentNullException>()
 					.WithMessage("Value cannot be null.\r\nParameter name: endpoint");
 			}
@@ -201,7 +229,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Description("Verifies that Connect() throws when a zero timeout is given")]
-		public void TestConnect6()
+		public void TestConnect7()
 		{
 			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
@@ -214,7 +242,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Description("Verifies that Connect() throws when a negative timeout is given")]
-		public void TestConnect7()
+		public void TestConnect8()
 		{
 			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
@@ -227,7 +255,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Description("Verifies that Connect() throws when the other socket doesn't respond with the proper greeting message in time")]
-		public void TestConnect8()
+		public void TestConnect9()
 		{
 			using (var rep = CreateEndPoint())
 			{

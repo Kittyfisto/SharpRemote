@@ -22,6 +22,7 @@ namespace SharpRemote
 				int port = info.GetInt32("Port");
 				EndPoint = new IPEndPoint(address, port);
 			}
+			EndPointName = info.GetString("EndPointName");
 		}
 
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -29,6 +30,7 @@ namespace SharpRemote
 			base.GetObjectData(info, context);
 			info.AddValue("Address", EndPoint != null ? EndPoint.Address.ToString() : null);
 			info.AddValue("Port", EndPoint != null ? EndPoint.Port : int.MaxValue);
+			info.AddValue("EndPointName", EndPointName);
 		}
 #endif
 #endif
@@ -39,6 +41,13 @@ namespace SharpRemote
 			EndPoint = endPoint;
 		}
 
+		public NoSuchEndPointException(string endPointName, Exception e = null)
+			: base(string.Format("Unable to establish a connection with the given endpoint: {0}", endPointName), e)
+		{
+			EndPointName = endPointName;
+		}
+
 		public readonly IPEndPoint EndPoint;
+		public readonly string EndPointName;
 	}
 }

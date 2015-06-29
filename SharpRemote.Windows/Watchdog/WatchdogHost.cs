@@ -15,25 +15,15 @@ namespace SharpRemote.Watchdog
 		public const ulong ObjectId = 0;
 
 		private readonly SocketRemotingEndPoint _endPoint;
-		private readonly PeerNameRegistration _peerNameRegistration;
 		private readonly InternalWatchdog _watchdog;
 
 		public WatchdogHost()
 		{
 			_watchdog = new InternalWatchdog();
 
-			_endPoint = new SocketRemotingEndPoint();
+			_endPoint = new SocketRemotingEndPoint(PeerName);
 			_endPoint.CreateServant(ObjectId, (IInternalWatchdog) _watchdog);
 			_endPoint.Bind(IPAddress.Any);
-
-			var peerName = new PeerName(PeerName, PeerNameType.Unsecured);
-			_peerNameRegistration = new PeerNameRegistration
-				{
-					PeerName = peerName,
-					Port = _endPoint.LocalEndPoint.Port,
-					Comment = "1st version of the watchdog"
-				};
-			_peerNameRegistration.Start();
 		}
 
 		public EndPoint LocalEndPoint
@@ -45,7 +35,6 @@ namespace SharpRemote.Watchdog
 		{
 			_watchdog.Dispose();
 			_endPoint.Dispose();
-			_peerNameRegistration.Stop();
 		}
 	}
 }

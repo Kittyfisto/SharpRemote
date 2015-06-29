@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.PeerToPeer;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -47,6 +48,7 @@ namespace SharpRemote
 		private IPEndPoint _remoteEndPoint;
 		private Socket _serverSocket;
 		private Socket _socket;
+		private PeerNameRegistration _peerNameRegistration;
 
 		public SocketRemotingEndPoint(string name = null)
 		{
@@ -279,6 +281,11 @@ namespace SharpRemote
 				Disconnect();
 				_serverSocket.TryDispose();
 				_isDisposed = true;
+
+				if (_peerNameRegistration != null)
+				{
+					_peerNameRegistration.Dispose();
+				}
 			}
 		}
 
@@ -363,16 +370,6 @@ namespace SharpRemote
 			throw new NotImplementedException();
 		}
 
-		public void Bind(IPAddress localAddress)
-		{
-			if (localAddress == null) throw new ArgumentNullException("localAddress");
-
-			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out _localEndPoint);
-			_serverSocket.Listen(1);
-			_serverSocket.BeginAccept(OnIncomingConnection, null);
-			Log.InfoFormat("Socket '{0}' listening on {1}", _name, _localEndPoint);
-		}
-
 		private void OnIncomingConnection(IAsyncResult ar)
 		{
 			lock (_syncRoot)
@@ -446,6 +443,62 @@ namespace SharpRemote
 			}
 		}
 
+		public void Bind(IPAddress localAddress)
+		{
+			if (localAddress == null) throw new ArgumentNullException("localAddress");
+
+			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out _localEndPoint);
+			_serverSocket.Listen(1);
+			_serverSocket.BeginAccept(OnIncomingConnection, null);
+			Log.InfoFormat("EndPoint '{0}' listening on {1}", _name, _localEndPoint);
+
+			if (_name != null)
+			{
+				var peerName = new PeerName(_name, PeerNameType.Unsecured);
+				_peerNameRegistration = new PeerNameRegistration
+				{
+					PeerName = peerName,
+					Port = _localEndPoint.Port,
+				};
+				_peerNameRegistration.Start();
+				Log.InfoFormat("Endpoint '{0}@{1}' published to local cloud via PNRP", _name, _localEndPoint);
+			}
+		}
+
+		/// <summary>
+		/// Connects to another endpoint with the given name.
+		/// </summary>
+		/// <param name="endPointName"></param>
+		/// <param name="timeout"></param>
+		/// <exception cref="ArgumentException">In case <paramref name="endPointName"/> is null</exception>
+		public void Connect(string endPointName, TimeSpan timeout)
+		{
+			if (endPointName == null) throw new ArgumentNullException("endPointName");
+
+			var resolver = new PeerNameResolver();
+			var results = resolver.Resolve(new PeerName(endPointName, PeerNameType.Unsecured));
+
+			if (results.Count == 0)
+			{
+				Log.ErrorFormat("Unable to find peer named '{0}'", endPointName);
+				throw new NoSuchEndPointException(endPointName);
+			}
+
+			var peer = results[0];
+			var endPoints = peer.EndPointCollection;
+
+			foreach (var ep in endPoints)
+			{
+				try
+				{
+					Connect(ep, timeout);
+					break;
+				}
+				catch (NoSuchEndPointException) //< Let's try the next...
+				{}
+			}
+		}
+
 		public void Connect(IPEndPoint endPoint)
 		{
 			Connect(endPoint, TimeSpan.FromSeconds(1));
@@ -466,6 +519,7 @@ namespace SharpRemote
 		///     When this endpoint is already connected to another endpoint.
 		/// </exception>
 		/// <exception cref="NoSuchEndPointException">When no such endpoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
+		/// <exception cref="InvalidEndPointException">The given endpoint is no <see cref="SocketRemotingEndPoint"/></exception>
 		public void Connect(IPEndPoint endpoint, TimeSpan timeout)
 		{
 			if (endpoint == null) throw new ArgumentNullException("endpoint");
@@ -475,6 +529,8 @@ namespace SharpRemote
 			if (IsConnected)
 				throw new InvalidOperationException(
 					"This endpoint is already connected to another endpoint and cannot establish any more connections");
+
+			Log.DebugFormat("Trying to connect to '{0}', timeout: {1}ms", endpoint, timeout.TotalMilliseconds);
 
 			Socket socket = null;
 			try

@@ -9,8 +9,8 @@ namespace SharpRemote.Hosting
 	public sealed class InProcessRemotingSilo
 		: ISilo
 	{
-		private readonly SocketEndPoint _localEndPoint;
-		private readonly SocketEndPoint _remoteEndPoint;
+		private readonly SocketRemotingEndPoint _localEndPoint;
+		private readonly SocketRemotingEndPoint _remoteEndPoint;
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
 
@@ -18,14 +18,14 @@ namespace SharpRemote.Hosting
 		{
 			const int subjectHostId = 0;
 
-			_localEndPoint = new SocketEndPoint(IPAddress.Loopback);
+			_localEndPoint = new SocketRemotingEndPoint(IPAddress.Loopback);
 			_subjectHostProxy = _localEndPoint.CreateProxy<ISubjectHost>(subjectHostId);
 
-			_remoteEndPoint = new SocketEndPoint(IPAddress.Loopback);
+			_remoteEndPoint = new SocketRemotingEndPoint(IPAddress.Loopback);
 			_subjectHost = new SubjectHost(_remoteEndPoint, subjectHostId + 1);
 			_remoteEndPoint.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);
 
-			_localEndPoint.Connect(_remoteEndPoint.LocalAddress, TimeSpan.FromSeconds(1));
+			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(1));
 		}
 
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class

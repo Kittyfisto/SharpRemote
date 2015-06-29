@@ -63,12 +63,12 @@ namespace SharpRemote.Host
 
 			try
 			{
-				using (var endpoint = new SocketEndPoint(IPAddress.Loopback))
+				using (var endpoint = new SocketRemotingEndPoint(IPAddress.Loopback))
 				using (var host = new SubjectHost(endpoint, firstServantId, OnSubjectHostDisposed))
 				{
 					var servant = endpoint.CreateServant(subjectHostId, (ISubjectHost) host);
 
-					Console.WriteLine(endpoint.LocalAddress.Port);
+					Console.WriteLine(endpoint.LocalEndPoint.Port);
 					Console.WriteLine(ProcessSilo.Constants.ReadyMessage);
 
 					_waitHandle.WaitOne();

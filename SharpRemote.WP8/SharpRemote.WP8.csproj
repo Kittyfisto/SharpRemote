@@ -101,8 +101,8 @@
     <Compile Include="..\SharpRemote.Windows\EndPoints\MethodInvocation.cs">
       <Link>EndPoints\MethodInvocation.cs</Link>
     </Compile>
-    <Compile Include="..\SharpRemote.Windows\EndPoints\WebEndPoint.cs">
-      <Link>EndPoints\WebEndPoint.cs</Link>
+    <Compile Include="..\SharpRemote.Windows\EndPoints\WebRemotingEndPoint.cs">
+      <Link>EndPoints\WebRemotingEndPoint.cs</Link>
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\ConnectionLostException.cs">
       <Link>Exceptions\ConnectionLostException.cs</Link>

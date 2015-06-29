@@ -95,8 +95,11 @@
     <Compile Include="..\SharpRemote.Windows\Dispatch.cs">
       <Link>Dispatch.cs</Link>
     </Compile>
-    <Compile Include="..\SharpRemote.Windows\EndPoints\WebEndPoint.cs">
-      <Link>EndPoints\WebEndPoint.cs</Link>
+    <Compile Include="..\SharpRemote.Windows\EndPoints\AbstractEndPoint.cs">
+      <Link>EndPoints\AbstractEndPoint.cs</Link>
+    </Compile>
+    <Compile Include="..\SharpRemote.Windows\EndPoints\WebRemotingEndPoint.cs">
+      <Link>EndPoints\WebRemotingEndPoint.cs</Link>
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\ConnectionLostException.cs">
       <Link>Exceptions\ConnectionLostException.cs</Link>

@@ -17,7 +17,7 @@ using log4net;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public sealed class SocketEndPoint
+	public sealed class SocketRemotingEndPoint
 		: AbstractEndPoint
 		, IRemotingEndPoint
 		, IEndPointChannel
@@ -29,7 +29,6 @@ namespace SharpRemote
 
 		private readonly object _syncRoot;
 		private readonly IPEndPoint _localEndPoint;
-		private readonly Uri _localAddress;
 		private readonly string _name;
 		private readonly Socket _serverSocket;
 		private readonly Dictionary<ulong, IProxy> _proxies;
@@ -41,7 +40,6 @@ namespace SharpRemote
 		private readonly ModuleBuilder _module;
 		private Task _readTask;
 		private IPEndPoint _remoteEndPoint;
-		private Uri _remoteAddress;
 		private Socket _socket;
 		private long _nextRpcId;
 
@@ -58,7 +56,7 @@ namespace SharpRemote
 			Exception = 0x4,
 		}
 
-		public SocketEndPoint(IPAddress localAddress, string name = null)
+		public SocketRemotingEndPoint(IPAddress localAddress, string name = null)
 		{
 			if (localAddress == null) throw new ArgumentNullException("localAddress");
 
@@ -67,8 +65,6 @@ namespace SharpRemote
 			_name = name ?? "<Unnamed>";
 
 			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out _localEndPoint);
-			var address = string.Format("tcp://{0}", _localEndPoint);
-			_localAddress = new Uri(address, UriKind.Absolute);
 			_serverSocket.Listen(1);
 			_serverSocket.BeginAccept(OnIncomingConnection, null);
 
@@ -290,11 +286,6 @@ namespace SharpRemote
 			get { return _name; }
 		}
 
-		public Uri LocalAddress
-		{
-			get { return _localAddress; }
-		}
-
 		public IPEndPoint LocalEndPoint
 		{
 			get { return _localEndPoint; }
@@ -305,52 +296,61 @@ namespace SharpRemote
 			get { return _remoteEndPoint; }
 		}
 
-		public Uri RemoteAddress
-		{
-			get { return _remoteAddress; }
-		}
-
 		public bool IsConnected
 		{
 			get { return _remoteEndPoint != null; }
 		}
 
-		public void Connect(Uri uri)
+		public void Connect(IPEndPoint endPoint)
 		{
-			Connect(uri, TimeSpan.FromSeconds(1));
+			Connect(endPoint, TimeSpan.FromSeconds(1));
 		}
 
-		public void Connect(Uri uri, TimeSpan timeout)
+		/// <summary>
+		///     Connects this endpoint to the given one.
+		/// </summary>
+		/// <param name="endpoint"></param>
+		/// <param name="timeout">The amount of time this method should block and await a successful connection from the remote end-point</param>
+		/// <exception cref="ArgumentNullException">
+		///     When <paramref name="endpoint" /> is null
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		///     When <paramref name="timeout" /> is equal or less than <see cref="TimeSpan.Zero" />
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		///     When this endpoint is already connected to another endpoint.
+		/// </exception>
+		/// <exception cref="NoSuchEndPointException">When no such endpoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
+		public void Connect(IPEndPoint endpoint, TimeSpan timeout)
 		{
-			if (uri == null) throw new ArgumentNullException("uri");
-			if (Equals(uri, _localAddress)) throw new ArgumentException("An endpoint cannot be connected to itself", "uri");
+			if (endpoint == null) throw new ArgumentNullException("endpoint");
+			if (Equals(endpoint, _localEndPoint)) throw new ArgumentException("An endpoint cannot be connected to itself", "endpoint");
 			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
 			if (IsConnected) throw new InvalidOperationException("This endpoint is already connected to another endpoint and cannot establish any more connections");
 
 			Socket socket = null;
 			try
 			{
-				var ep = ResolveEndPoint(uri);
 				var started = DateTime.Now;
 				var task = new Task(() =>
 					{
-						socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-						socket.Connect(ep);
+						socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+						socket.Connect(endpoint);
 					});
 				task.Start();
 				if (!task.Wait(timeout))
-					throw new NoSuchEndPointException(uri);
+					throw new NoSuchEndPointException(endpoint);
 
 				var remaining = timeout - (DateTime.Now - started);
-				if (!ReadWelcomeMessage(socket, remaining, ep))
-					throw new InvalidEndPointException(uri);
+				if (!ReadWelcomeMessage(socket, remaining, endpoint))
+					throw new InvalidEndPointException(endpoint);
 
-				_remoteAddress = uri;
+				_remoteEndPoint = endpoint;
 				OnConnected(socket);
 			}
 			catch (SocketException e)
 			{
-				throw new NoSuchEndPointException(uri, e);
+				throw new NoSuchEndPointException(endpoint, e);
 			}
 			catch (Exception)
 			{
@@ -382,22 +382,6 @@ namespace SharpRemote
 			}
 
 			return true;
-		}
-
-		private static IPEndPoint ResolveEndPoint(Uri uri)
-		{
-			var hostname = uri.Host;
-			var port = uri.Port;
-
-			IPAddress address;
-			if (!IPAddress.TryParse(hostname, out address))
-			{
-				var hostEntry = Dns.GetHostEntry(hostname);
-				address = hostEntry.AddressList[0];
-			}
-
-			var ep = new IPEndPoint(address, port);
-			return ep;
 		}
 
 		private void InterruptOngoingCalls()
@@ -449,7 +433,6 @@ namespace SharpRemote
 
 					_socket = null;
 					_remoteEndPoint = null;
-					_remoteAddress = null;
 				}
 			}
 		}

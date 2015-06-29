@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Runtime.Serialization;
 
 // ReSharper disable CheckNamespace
@@ -14,25 +15,30 @@ namespace SharpRemote
 		public NoSuchEndPointException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
-			string ip = info.GetString("Address");
-			Uri.TryCreate(ip, UriKind.RelativeOrAbsolute, out Uri);
+			var ip = info.GetString("Address");
+			IPAddress address;
+			if (ip != null && IPAddress.TryParse(ip, out address))
+			{
+				int port = info.GetInt32("Port");
+				EndPoint = new IPEndPoint(address, port);
+			}
 		}
 
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData(info, context);
-
-			info.AddValue("Uri", Uri != null ? Uri.ToString() : null);
+			info.AddValue("Address", EndPoint != null ? EndPoint.Address.ToString() : null);
+			info.AddValue("Port", EndPoint != null ? EndPoint.Port : int.MaxValue);
 		}
 #endif
 #endif
 
-		public NoSuchEndPointException(Uri uri, Exception e = null)
-			: base(string.Format("Unable to establish a connection with the given endpoint: {0}", uri), e)
+		public NoSuchEndPointException(IPEndPoint endPoint, Exception e = null)
+			: base(string.Format("Unable to establish a connection with the given endpoint: {0}", endPoint), e)
 		{
-			Uri = uri;
+			EndPoint = endPoint;
 		}
 
-		public readonly Uri Uri;
+		public readonly IPEndPoint EndPoint;
 	}
 }

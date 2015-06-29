@@ -15,25 +15,25 @@ namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
 	[Description("Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour")]
-	public class SocketEndPointAcceptanceTest
+	public class RemotingEndPointAcceptanceTest
 	{
-		private IRemotingEndPoint _server;
-		private IRemotingEndPoint _client;
+		private SocketRemotingEndPoint _server;
+		private SocketRemotingEndPoint _client;
 
-		protected IRemotingEndPoint CreateEndPoint(IPAddress address, string name = null)
+		protected SocketRemotingEndPoint CreateEndPoint(IPAddress address, string name = null)
 		{
-			return new SocketEndPoint(address, name);
+			return new SocketRemotingEndPoint(address, name);
 		}
 
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
-			TestLogger.SetLevel<SocketEndPoint>(Level.Info);
+			TestLogger.SetLevel<SocketRemotingEndPoint>(Level.Info);
 
 			_server = CreateEndPoint(IPAddress.Loopback, "Server");
 			_client = CreateEndPoint(IPAddress.Loopback, "Client");
-			_client.Connect(_server.LocalAddress, TimeSpan.FromMinutes(1));
+			_client.Connect(_server.LocalEndPoint, TimeSpan.FromMinutes(1));
 		}
 
 		[TestFixtureTearDown]

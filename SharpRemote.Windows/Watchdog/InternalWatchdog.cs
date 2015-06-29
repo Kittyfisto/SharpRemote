@@ -19,12 +19,16 @@ namespace SharpRemote.Watchdog
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private const string InstalledApplicationsName = "InstalledApplications";
+		private const string ApplicationInstancesName = "ApplicationInstances";
+
 		private readonly CancellationTokenSource _cancellationTokenSource;
 		private readonly Dictionary<string, InstalledApplication> _installedApplications;
 		private readonly Dictionary<string, InstalledApplication> _pendingInstallations;
 		private readonly Dictionary<string, Process> _processes;
 		private readonly Dictionary<string, ApplicationInstanceDescription> _registeredApplicationInstances;
 		private readonly Dictionary<long, Stream> _openedFiles;
+		private readonly IIsolatedStorage _storage;
 		private readonly object _syncRoot;
 		private readonly Task _task;
 		private long _nextFileId;
@@ -39,18 +43,56 @@ namespace SharpRemote.Watchdog
 
 			_syncRoot = new object();
 
+			_storage = storage;
+
 			_openedFiles = new Dictionary<long, Stream>();
 			_pendingInstallations = new Dictionary<string, InstalledApplication>();
 			_installedApplications = new Dictionary<string, InstalledApplication>();
-
 			_registeredApplicationInstances = new Dictionary<string, ApplicationInstanceDescription>();
-
 			_processes = new Dictionary<string, Process>();
+
+			RestoreApplications();
 
 			_cancellationTokenSource = new CancellationTokenSource();
 			_syncRoot = new object();
 
 			_task = Task.Factory.StartNew(MonitorApplications, TaskCreationOptions.LongRunning);
+		}
+
+		private void RestoreApplications()
+		{
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var apps = _storage.Restore<List<string>>(InstalledApplicationsName);
+			if (apps != null)
+			{
+				foreach (var name in apps)
+				{
+					var app = _storage.Restore<InstalledApplication>(name);
+					if (app != null)
+					{
+						_installedApplications.Add(app.Name, app);
+					}
+				}
+			}
+
+			var instances = _storage.Restore<List<string>>(ApplicationInstancesName);
+			if (instances != null)
+			{
+				foreach (var name in instances)
+				{
+					var inst = _storage.Restore<ApplicationInstanceDescription>(name);
+					if (inst != null)
+					{
+						_registeredApplicationInstances.Add(inst.Name, inst);
+					}
+				}
+			}
+
+			sw.Stop();
+			var elapsed = sw.Elapsed;
+			Log.DebugFormat("Restored descriptions in {0}ms", elapsed.TotalMilliseconds);
 		}
 
 		public void Dispose()

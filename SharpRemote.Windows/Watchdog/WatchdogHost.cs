@@ -6,7 +6,7 @@ namespace SharpRemote.Watchdog
 {
 	/// <summary>
 	///     Responsible for hosting a <see cref="IInternalWatchdog" /> instance and exposing it via
-	///     a <see cref="SocketEndPoint" />.
+	///     a <see cref="SocketRemotingEndPoint" />.
 	/// </summary>
 	public sealed class WatchdogHost
 		: IDisposable
@@ -14,7 +14,7 @@ namespace SharpRemote.Watchdog
 		public const string PeerName = "SharpRemote.Watchdog";
 		public const ulong ObjectId = 0;
 
-		private readonly SocketEndPoint _endPoint;
+		private readonly SocketRemotingEndPoint _endPoint;
 		private readonly PeerNameRegistration _peerNameRegistration;
 		private readonly InternalWatchdog _watchdog;
 
@@ -22,7 +22,7 @@ namespace SharpRemote.Watchdog
 		{
 			_watchdog = new InternalWatchdog();
 
-			_endPoint = new SocketEndPoint(IPAddress.Any);
+			_endPoint = new SocketRemotingEndPoint(IPAddress.Any);
 			_endPoint.CreateServant(ObjectId, (IInternalWatchdog) _watchdog);
 
 			var peerName = new PeerName(PeerName, PeerNameType.Unsecured);

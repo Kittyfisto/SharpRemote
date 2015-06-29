@@ -19,36 +19,9 @@ namespace SharpRemote
 		string Name { get; }
 
 		/// <summary>
-		///     The address of this endpoint.
-		/// </summary>
-		Uri LocalAddress { get; }
-
-		/// <summary>
-		///     The address of the remote endpoint or null when this one is not connected to one.
-		/// </summary>
-		Uri RemoteAddress { get; }
-
-		/// <summary>
 		///     Whether or not this endpoint is connected to another one.
 		/// </summary>
 		bool IsConnected { get; }
-
-		/// <summary>
-		///     Connects this endpoint to the given one.
-		/// </summary>
-        /// <param name="uri"></param>
-		/// <param name="timeout">The amount of time this method should block and await a successful connection from the remote end-point</param>
-		/// <exception cref="ArgumentNullException">
-		///     When <paramref name="uri" /> is null
-		/// </exception>
-		/// <exception cref="ArgumentOutOfRangeException">
-		///     When <paramref name="timeout" /> is equal or less than <see cref="TimeSpan.Zero" />
-		/// </exception>
-		/// <exception cref="InvalidOperationException">
-		///     When this endpoint is already connected to another endpoint.
-		/// </exception>
-		/// <exception cref="NoSuchEndPointException">When no such endpoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		void Connect(Uri uri, TimeSpan timeout);
 
 		/// <summary>
 		///     Disconnects this endpoint from its remote endpoint.

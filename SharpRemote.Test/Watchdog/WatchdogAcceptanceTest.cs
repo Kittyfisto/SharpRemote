@@ -11,7 +11,7 @@ using SharpRemote.Watchdog;
 namespace SharpRemote.Test.Watchdog
 {
 	[TestFixture]
-	public sealed class WatchdogTest
+	public sealed class WatchdogAcceptanceTest
 	{
 		private static readonly string SharpRemoteFolder =
 			Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(typeof (InternalWatchdog).Assembly.CodeBase).Path));
@@ -23,7 +23,6 @@ namespace SharpRemote.Test.Watchdog
 				};
 
 		private InProcessRemotingSilo _silo;
-		private InternalWatchdog _watchdog;
 
 		private void DeploySharpRemote(IApplicationInstaller installer)
 		{
@@ -40,13 +39,11 @@ namespace SharpRemote.Test.Watchdog
 		private IInternalWatchdog CreateWatchdog()
 		{
 			return _silo.CreateGrain<IInternalWatchdog>(typeof(InternalWatchdog));
-			//return _watchdog = new internalWatchdog();
 		}
 
 		[TearDown]
 		public void TearDown()
 		{
-			//_watchdog.Dispose();
 			_silo.Dispose();
 		}
 

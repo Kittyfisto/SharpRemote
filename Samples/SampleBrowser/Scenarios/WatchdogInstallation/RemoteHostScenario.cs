@@ -27,7 +27,7 @@ namespace SampleBrowser.Scenarios.WatchdogInstallation
 
 		protected override bool RunTest()
 		{
-			using (IRemotingEndPoint endPoint = new SocketEndPoint(IPAddress.Loopback))
+			using (var endPoint = new SocketRemotingEndPoint(IPAddress.Loopback))
 			{
 				Log("Looking for watchdog...");
 				var resolver = new PeerNameResolver();
@@ -46,10 +46,9 @@ namespace SampleBrowser.Scenarios.WatchdogInstallation
 				foreach (var ep in endPoints)
 				{
 					Log(string.Format("Connecting to {0}...", ep));
-					var uri = new Uri(string.Format("tcp://{0}", ep));
 					try
 					{
-						endPoint.Connect(uri, TimeSpan.FromSeconds(5));
+						endPoint.Connect(ep, TimeSpan.FromSeconds(5));
 						Log("Successfully connected to watchdog!");
 						break;
 					}

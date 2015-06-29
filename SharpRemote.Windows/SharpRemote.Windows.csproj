@@ -31,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="InTheHand.Net.Personal, Version=3.5.605.0, Culture=neutral, PublicKeyToken=ea38caa273134499, processorArchitecture=MSIL">
+      <HintPath>..\packages\32feet.NET.3.5.0.0\lib\net\InTheHand.Net.Personal.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -71,8 +75,9 @@
     <Compile Include="CodeGeneration\Serialization\SingletonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
     <Compile Include="Dispatch.cs" />
+    <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
-    <Compile Include="EndPoints\WebEndPoint.cs" />
+    <Compile Include="EndPoints\WebRemotingEndPoint.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
     <Compile Include="Exceptions\InvalidEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchApplicationException.cs" />
@@ -93,7 +98,7 @@
     <Compile Include="TypeInformation.cs" />
     <Compile Include="Extensions\DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />
-    <Compile Include="EndPoints\SocketEndPoint.cs" />
+    <Compile Include="EndPoints\SocketRemotingEndPoint.cs" />
     <Compile Include="Hosting\InProcessRemotingSilo.cs" />
     <Compile Include="Hosting\InProcessSilo.cs" />
     <Compile Include="Hosting\ISilo.cs" />

@@ -129,10 +129,11 @@
     <Compile Include="Types\Structs\StaticDataMemberFieldStruct.cs" />
     <Compile Include="Hosting\AbstractSiloAcceptanceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Remoting\SocketEndPointAcceptanceTest.cs" />
-    <Compile Include="Remoting\SocketEndPointTest.cs" />
+    <Compile Include="Remoting\RemotingEndPointAcceptanceTest.cs" />
+    <Compile Include="Remoting\SocketRemotingEndPointTest.cs" />
     <Compile Include="Watchdog\ApplicationInstallerTest.cs" />
-    <Compile Include="Watchdog\WatchdogTest.cs" />
+    <Compile Include="Watchdog\WatchdogAcceptanceTest.cs" />
+    <Compile Include="Watchdog\InternalWatchdogTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

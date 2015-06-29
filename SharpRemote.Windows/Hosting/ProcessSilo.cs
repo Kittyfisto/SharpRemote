@@ -31,7 +31,7 @@ namespace SharpRemote.Hosting
 
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly SocketEndPoint _endPoint;
+		private readonly SocketRemotingEndPoint _endPoint;
 		private readonly Action<string> _hostOutputWritten;
 		private readonly Process _process;
 		private readonly ISubjectHost _subjectHost;
@@ -43,7 +43,7 @@ namespace SharpRemote.Hosting
 		public ProcessSilo(ProcessOptions options = ProcessOptions.HideConsole, Action<string> hostOutputWritten = null)
 		{
 			_hostOutputWritten = hostOutputWritten;
-			_endPoint = new SocketEndPoint(IPAddress.Loopback);
+			_endPoint = new SocketRemotingEndPoint(IPAddress.Loopback);
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 			_waitHandle = new ManualResetEvent(false);
 
@@ -87,8 +87,7 @@ namespace SharpRemote.Hosting
 			if (port == null)
 				throw new NotImplementedException();
 
-			var uri = new Uri(string.Format("tcp://{0}:{1}", IPAddress.Loopback, port.Value));
-			_endPoint.Connect(uri, Constants.ConnectionTimeout);
+			_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
 		}
 
 		[Pure]

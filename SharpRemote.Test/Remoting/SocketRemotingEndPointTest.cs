@@ -21,9 +21,9 @@ namespace SharpRemote.Test.Remoting
 			TestLogger.SetLevel<SocketRemotingEndPoint>(Level.Info);
 		}
 
-		protected SocketRemotingEndPoint CreateEndPoint(IPAddress address, string name = null)
+		protected SocketRemotingEndPoint CreateEndPoint(string name = null)
 		{
-			return new SocketRemotingEndPoint(address, name);
+			return new SocketRemotingEndPoint(name);
 		}
 
 		[Test]
@@ -32,9 +32,10 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestCallMethod1()
 		{
-			using (SocketRemotingEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
-			using (SocketRemotingEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
+				rep2.Bind(IPAddress.Loopback);
 				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
 
 				var subject = new Mock<IGetDoubleProperty>();
@@ -61,9 +62,10 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestCallMethod2()
 		{
-			using (SocketRemotingEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
-			using (SocketRemotingEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
+				rep2.Bind(IPAddress.Loopback);
 				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
 
 				var subject = new Mock<IGetDoubleProperty>();
@@ -88,9 +90,11 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() can establish a connection with an endpoint in the same process")]
 		public void TestConnect1()
 		{
-			using (SocketRemotingEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
-			using (SocketRemotingEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
+				rep2.Bind(IPAddress.Loopback);
+
 				rep1.IsConnected.Should().BeFalse();
 				rep1.RemoteEndPoint.Should().BeNull();
 
@@ -115,7 +119,7 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestConnect2()
 		{
-			using (SocketRemotingEndPoint rep = CreateEndPoint(IPAddress.Loopback))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
 				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
 				new Action(
@@ -134,8 +138,10 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() cannot establish a connection with itself")]
 		public void TestConnect3()
 		{
-			using (SocketRemotingEndPoint rep = CreateEndPoint(IPAddress.Loopback))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
+				rep.Bind(IPAddress.Loopback);
+
 				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
 				const string message = "An endpoint cannot be connected to itself\r\nParameter name: endpoint";
 				new Action(() => rep.Connect(rep.LocalEndPoint, timeout))
@@ -159,10 +165,13 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
 		public void TestConnect4()
 		{
-			using (SocketRemotingEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
-			using (SocketRemotingEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
-			using (SocketRemotingEndPoint rep3 = CreateEndPoint(IPAddress.Loopback, "Rep#3"))
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
+			using (SocketRemotingEndPoint rep3 = CreateEndPoint("Rep#3"))
 			{
+				rep2.Bind(IPAddress.Loopback);
+				rep3.Bind(IPAddress.Loopback);
+
 				TimeSpan timeout = TimeSpan.FromSeconds(1);
 				rep1.Connect(rep2.LocalEndPoint, timeout);
 				rep1.IsConnected.Should().BeTrue();
@@ -182,7 +191,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() throws when a null address is given")]
 		public void TestConnect5()
 		{
-			using (SocketRemotingEndPoint rep = CreateEndPoint(IPAddress.Loopback))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
 				new Action(() => rep.Connect(null, TimeSpan.FromSeconds(1)))
 					.ShouldThrow<ArgumentNullException>()
@@ -194,7 +203,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() throws when a zero timeout is given")]
 		public void TestConnect6()
 		{
-			using (SocketRemotingEndPoint rep = CreateEndPoint(IPAddress.Loopback))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
 				new Action(
 					() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 12345), TimeSpan.FromSeconds(0)))
@@ -207,7 +216,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() throws when a negative timeout is given")]
 		public void TestConnect7()
 		{
-			using (SocketRemotingEndPoint rep = CreateEndPoint(IPAddress.Loopback))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
 				new Action(
 					() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 12345), TimeSpan.FromSeconds(-1)))
@@ -220,7 +229,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() throws when the other socket doesn't respond with the proper greeting message in time")]
 		public void TestConnect8()
 		{
-			using (var rep = CreateEndPoint(IPAddress.Loopback))
+			using (var rep = CreateEndPoint())
 			{
 				var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
@@ -235,7 +244,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that a proxy on an unconnected endpoint can be created")]
 		public void TestCreateProxy1()
 		{
-			using (SocketRemotingEndPoint rep = CreateEndPoint(IPAddress.Loopback))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
 				IDisposable proxy = null;
 
@@ -255,7 +264,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that a servant on an unconnected endpoint can be created")]
 		public void TestCreateServant1()
 		{
-			using (SocketRemotingEndPoint rep = CreateEndPoint(IPAddress.Loopback))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
 				var subject = new Mock<IEventInt32>();
 				IServant servant = null;
@@ -276,11 +285,12 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that creating a peer-endpoint without specifying a port works and assigns a free port")]
 		public void TestCtor1()
 		{
-			IPAddress address = IPAddress.Loopback;
-			using (SocketRemotingEndPoint rep = CreateEndPoint(address))
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
+				rep.Bind(IPAddress.Loopback);
+
 				rep.LocalEndPoint.Should().NotBeNull();
-				rep.LocalEndPoint.Address.Should().Be(address);
+				rep.LocalEndPoint.Address.Should().Be(IPAddress.Loopback);
 				rep.LocalEndPoint.Port.Should()
 				   .BeInRange(49152, 65535,
 				              "because an automatically chosen port should be in the range of private/dynamic port numbers");
@@ -295,9 +305,11 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestDisconnect1()
 		{
-			using (SocketRemotingEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
-			using (SocketRemotingEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
+				rep2.Bind(IPAddress.Loopback);
+
 				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
 
 				rep1.IsConnected.Should().BeTrue();
@@ -320,9 +332,10 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestDisconnect2()
 		{
-			using (SocketRemotingEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
-			using (SocketRemotingEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
+				rep2.Bind(IPAddress.Loopback);
 				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
 
 				rep1.IsConnected.Should().BeTrue();
@@ -343,9 +356,10 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
 		public void TestDisconnect3()
 		{
-			using (SocketRemotingEndPoint rep1 = CreateEndPoint(IPAddress.Loopback, "Rep#1"))
-			using (SocketRemotingEndPoint rep2 = CreateEndPoint(IPAddress.Loopback, "Rep#2"))
+			using (SocketRemotingEndPoint rep1 = CreateEndPoint("Rep#1"))
+			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
+				rep2.Bind(IPAddress.Loopback);
 				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
 				rep1.IsConnected.Should().BeTrue();
 				rep2.IsConnected.Should().BeTrue();
@@ -367,8 +381,9 @@ namespace SharpRemote.Test.Remoting
 		public void TestDispose()
 		{
 			IPEndPoint endpoint;
-			using (SocketRemotingEndPoint ep = CreateEndPoint(IPAddress.Loopback, "Foo"))
+			using (SocketRemotingEndPoint ep = CreateEndPoint("Foo"))
 			{
+				ep.Bind(IPAddress.Loopback);
 				endpoint = ep.LocalEndPoint;
 			}
 

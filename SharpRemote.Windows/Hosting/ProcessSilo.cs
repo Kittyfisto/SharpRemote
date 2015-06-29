@@ -43,7 +43,7 @@ namespace SharpRemote.Hosting
 		public ProcessSilo(ProcessOptions options = ProcessOptions.HideConsole, Action<string> hostOutputWritten = null)
 		{
 			_hostOutputWritten = hostOutputWritten;
-			_endPoint = new SocketRemotingEndPoint(IPAddress.Loopback);
+			_endPoint = new SocketRemotingEndPoint();
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 			_waitHandle = new ManualResetEvent(false);
 

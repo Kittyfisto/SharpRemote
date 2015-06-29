@@ -22,8 +22,9 @@ namespace SharpRemote.Watchdog
 		{
 			_watchdog = new InternalWatchdog();
 
-			_endPoint = new SocketRemotingEndPoint(IPAddress.Any);
+			_endPoint = new SocketRemotingEndPoint();
 			_endPoint.CreateServant(ObjectId, (IInternalWatchdog) _watchdog);
+			_endPoint.Bind(IPAddress.Any);
 
 			var peerName = new PeerName(PeerName, PeerNameType.Unsecured);
 			_peerNameRegistration = new PeerNameRegistration

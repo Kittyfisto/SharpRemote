@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 using System.Net.PeerToPeer;
 using System.Threading.Tasks;
 using System.Windows;
@@ -27,7 +26,7 @@ namespace SampleBrowser.Scenarios.WatchdogInstallation
 
 		protected override bool RunTest()
 		{
-			using (var endPoint = new SocketRemotingEndPoint(IPAddress.Loopback))
+			using (var endPoint = new SocketRemotingEndPoint())
 			{
 				Log("Looking for watchdog...");
 				var resolver = new PeerNameResolver();

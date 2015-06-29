@@ -20,9 +20,9 @@ namespace SharpRemote.Test.Remoting
 		private SocketRemotingEndPoint _server;
 		private SocketRemotingEndPoint _client;
 
-		protected SocketRemotingEndPoint CreateEndPoint(IPAddress address, string name = null)
+		protected SocketRemotingEndPoint CreateEndPoint(string name = null)
 		{
-			return new SocketRemotingEndPoint(address, name);
+			return new SocketRemotingEndPoint(name);
 		}
 
 		[TestFixtureSetUp]
@@ -31,8 +31,10 @@ namespace SharpRemote.Test.Remoting
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<SocketRemotingEndPoint>(Level.Info);
 
-			_server = CreateEndPoint(IPAddress.Loopback, "Server");
-			_client = CreateEndPoint(IPAddress.Loopback, "Client");
+			_server = CreateEndPoint("Server");
+			_server.Bind(IPAddress.Loopback);
+
+			_client = CreateEndPoint("Client");
 			_client.Connect(_server.LocalEndPoint, TimeSpan.FromMinutes(1));
 		}
 

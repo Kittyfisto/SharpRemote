@@ -18,12 +18,13 @@ namespace SharpRemote.Hosting
 		{
 			const int subjectHostId = 0;
 
-			_localEndPoint = new SocketRemotingEndPoint(IPAddress.Loopback);
+			_localEndPoint = new SocketRemotingEndPoint();
 			_subjectHostProxy = _localEndPoint.CreateProxy<ISubjectHost>(subjectHostId);
 
-			_remoteEndPoint = new SocketRemotingEndPoint(IPAddress.Loopback);
+			_remoteEndPoint = new SocketRemotingEndPoint();
 			_subjectHost = new SubjectHost(_remoteEndPoint, subjectHostId + 1);
 			_remoteEndPoint.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);
+			_remoteEndPoint.Bind(IPAddress.Loopback);
 
 			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(1));
 		}

@@ -62,6 +62,10 @@
     <Compile Include="Converters\BoolFalseToVisibilityCollapsedConverter.cs" />
     <Compile Include="MainWindowViewModel.cs" />
     <Compile Include="Scenarios\AbstractScenario.cs" />
+    <Compile Include="Scenarios\BluetoothPairing\BluetoothPairingScenario.cs" />
+    <Compile Include="Scenarios\BluetoothPairing\BluetoothView.xaml.cs">
+      <DependentUpon>BluetoothView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Scenarios\DelegateCommand.cs" />
     <Compile Include="Scenarios\Host\HostScenario.cs" />
     <Compile Include="Scenarios\Host\HostView.xaml.cs">
@@ -91,6 +95,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Scenarios\BluetoothPairing\BluetoothView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Scenarios\Host\HostView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

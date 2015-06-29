@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net.PeerToPeer;
 using System.Threading.Tasks;
 using System.Windows;
 using SharpRemote;
@@ -26,42 +25,10 @@ namespace SampleBrowser.Scenarios.WatchdogInstallation
 
 		protected override bool RunTest()
 		{
+			using (var accessor = new LogInterceptor(Log))
 			using (var endPoint = new SocketRemotingEndPoint())
 			{
-				Log("Looking for watchdog...");
-				var resolver = new PeerNameResolver();
-				var results = resolver.Resolve(new PeerName(WatchdogHost.PeerName, PeerNameType.Unsecured));
-
-				if (results.Count == 0)
-				{
-					Log("Couldn't find watchdog!");
-					return false;
-				}
-
-				var peer = results[0];
-				var endPoints = peer.EndPointCollection;
-				Log(string.Format("Found watchdog, {0} endpoints", endPoints.Count));
-
-				foreach (var ep in endPoints)
-				{
-					Log(string.Format("Connecting to {0}...", ep));
-					try
-					{
-						endPoint.Connect(ep, TimeSpan.FromSeconds(5));
-						Log("Successfully connected to watchdog!");
-						break;
-					}
-					catch (Exception)
-					{
-						
-					}
-				}
-
-				if (!endPoint.IsConnected)
-				{
-					Log("Couldn't establish a connection with the endpoint");
-					return false;
-				}
+				endPoint.Connect(WatchdogHost.PeerName, TimeSpan.FromSeconds(5));
 
 				var remote = endPoint.CreateProxy<IInternalWatchdog>(WatchdogHost.ObjectId);
 				var watchdog = new Watchdog(remote);

@@ -1,5 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
+using InTheHand.Net;
+using InTheHand.Net.Bluetooth;
+using InTheHand.Net.Sockets;
 
 namespace SharpRemote.EndPoints
 {
@@ -8,9 +12,55 @@ namespace SharpRemote.EndPoints
 		  , IRemotingEndPoint
 		  , IEndPointChannel
 	{
+		private BluetoothEndPoint _localEndPoint;
+
+		public BluetoothRemotingEndPoint()
+		{
+			
+		}
+
+		public void Bind(Guid serviceGuid)
+		{
+			_localEndPoint = new BluetoothEndPoint(new BluetoothAddress(1234), serviceGuid);
+		}
+
 		public MemoryStream CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments)
 		{
 			throw new NotImplementedException();
+		}
+
+		public void Connect(TimeSpan timeout)
+		{
+			var devices = DiscoverDevices(timeout);
+
+			int n = 0;
+		}
+
+		public static BluetoothDeviceInfo[] DiscoverDevices(TimeSpan timeout)
+		{
+			BluetoothDeviceInfo[] devices;
+			using (var @event = new ManualResetEvent(false))
+			{
+				devices = null;
+				var comp = new BluetoothComponent();
+				EventHandler<DiscoverDevicesEventArgs> fn = (unused, args) =>
+					{
+						devices = args.Devices;
+						@event.Set();
+					};
+				comp.DiscoverDevicesComplete += fn;
+				try
+				{
+					comp.DiscoverDevicesAsync(10, true, true, true, false, null);
+					if (!@event.WaitOne(timeout))
+						throw new NoSuchEndPointException();
+				}
+				finally
+				{
+					comp.DiscoverDevicesComplete -= fn;
+				}
+			}
+			return devices;
 		}
 
 		public void Dispose()

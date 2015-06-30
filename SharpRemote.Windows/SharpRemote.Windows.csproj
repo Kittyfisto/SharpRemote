@@ -40,6 +40,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Messaging" />
     <Reference Include="System.Net" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
@@ -75,6 +76,7 @@
     <Compile Include="CodeGeneration\Serialization\SingletonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
     <Compile Include="Dispatch.cs" />
+    <Compile Include="EndPoints\AbstractSocketRemotingEndPoint.cs" />
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />

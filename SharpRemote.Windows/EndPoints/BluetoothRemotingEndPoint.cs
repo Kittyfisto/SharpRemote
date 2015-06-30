@@ -43,21 +43,27 @@ namespace SharpRemote.EndPoints
 			{
 				devices = null;
 				var comp = new BluetoothComponent();
-				EventHandler<DiscoverDevicesEventArgs> fn = (unused, args) =>
+				EventHandler<DiscoverDevicesEventArgs> progress = (unused, args) =>
+					{
+						devices = args.Devices;
+					};
+				EventHandler<DiscoverDevicesEventArgs> completed = (unused, args) =>
 					{
 						devices = args.Devices;
 						@event.Set();
 					};
-				comp.DiscoverDevicesComplete += fn;
+				comp.DiscoverDevicesProgress += progress;
+				comp.DiscoverDevicesComplete += completed;
 				try
 				{
 					comp.DiscoverDevicesAsync(10, true, true, true, false, null);
 					if (!@event.WaitOne(timeout))
-						throw new NoSuchEndPointException();
+						return new BluetoothDeviceInfo[0];
 				}
 				finally
 				{
-					comp.DiscoverDevicesComplete -= fn;
+					comp.DiscoverDevicesProgress -= progress;
+					comp.DiscoverDevicesComplete -= completed;
 				}
 			}
 			return devices;

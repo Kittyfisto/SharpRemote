@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.CodeGeneration
@@ -9,10 +11,10 @@ namespace SharpRemote.CodeGeneration
 	public abstract class Compiler
 	{
 		protected readonly Serializer SerializerCompiler;
-		protected FieldBuilder Serializer;
-		protected FieldBuilder EndPoint;
 		protected FieldBuilder Channel;
+		protected FieldBuilder EndPoint;
 		protected FieldBuilder ObjectId;
+		protected FieldBuilder Serializer;
 
 		protected Compiler(Serializer serializer)
 		{
@@ -20,9 +22,9 @@ namespace SharpRemote.CodeGeneration
 		}
 
 		protected void ExtractArgumentsAndCallMethod(ILGenerator gen,
-			MethodInfo methodInfo,
-			Action loadReader,
-			Action loadWriter)
+		                                             MethodInfo methodInfo,
+		                                             Action loadReader,
+		                                             Action loadWriter)
 		{
 			Action loadSerializer = () =>
 				{
@@ -30,17 +32,17 @@ namespace SharpRemote.CodeGeneration
 					gen.Emit(OpCodes.Ldfld, Serializer);
 				};
 
-			var allParameters = methodInfo.GetParameters();
-			foreach (var parameter in allParameters)
+			ParameterInfo[] allParameters = methodInfo.GetParameters();
+			foreach (ParameterInfo parameter in allParameters)
 			{
-				var parameterType = parameter.ParameterType;
+				Type parameterType = parameter.ParameterType;
 
 				if (parameter.GetCustomAttribute<ByReferenceAttribute>() != null)
 				{
 					VerifyParameterConstraints(parameter);
 
 					// _endPoint.GetOrCreateProxy(reader.ReadUlong());
-					var getOrCreateProxy = Methods.RemotingEndPointGetOrCreateProxy.MakeGenericMethod(parameterType);
+					MethodInfo getOrCreateProxy = Methods.RemotingEndPointGetOrCreateProxy.MakeGenericMethod(parameterType);
 					gen.Emit(OpCodes.Ldarg_0);
 					gen.Emit(OpCodes.Ldfld, EndPoint);
 					loadReader();
@@ -58,19 +60,19 @@ namespace SharpRemote.CodeGeneration
 				}
 			}
 
-			var returnType = methodInfo.ReturnType;
+			Type returnType = methodInfo.ReturnType;
 			if (returnType != typeof (void))
 			{
-				var tmp = gen.DeclareLocal(returnType);
+				LocalBuilder tmp = gen.DeclareLocal(returnType);
 				gen.Emit(OpCodes.Callvirt, methodInfo);
 				gen.Emit(OpCodes.Stloc, tmp);
 
 				SerializerCompiler.EmitWriteValue(gen,
-					loadWriter,
-					() => gen.Emit(OpCodes.Ldloc, tmp),
-					() => gen.Emit(OpCodes.Ldloca, tmp),
-					loadSerializer,
-					returnType);
+				                                  loadWriter,
+				                                  () => gen.Emit(OpCodes.Ldloc, tmp),
+				                                  () => gen.Emit(OpCodes.Ldloca, tmp),
+				                                  loadSerializer,
+				                                  returnType);
 			}
 			else
 			{
@@ -78,13 +80,13 @@ namespace SharpRemote.CodeGeneration
 			}
 		}
 
-		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters, MethodInfo remoteMethod)
+		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters,
+		                                        MethodInfo remoteMethod)
 		{
-			var gen = method.GetILGenerator();
+			ILGenerator gen = method.GetILGenerator();
 
-			var stream = gen.DeclareLocal(typeof(MemoryStream));
-			var binaryWriter = gen.DeclareLocal(typeof(StreamWriter));
-			var binaryReader = gen.DeclareLocal(typeof(StreamReader));
+			LocalBuilder stream = gen.DeclareLocal(typeof (MemoryStream));
+			LocalBuilder binaryWriter = gen.DeclareLocal(typeof (StreamWriter));
 
 			if (parameters.Length > 0)
 			{
@@ -100,16 +102,16 @@ namespace SharpRemote.CodeGeneration
 				Action loadWriter = () => gen.Emit(OpCodes.Ldloc, binaryWriter);
 				Action loadSerializer =
 					() =>
-					{
-						gen.Emit(OpCodes.Ldarg_0);
-						gen.Emit(OpCodes.Ldfld, Serializer);
-					};
+						{
+							gen.Emit(OpCodes.Ldarg_0);
+							gen.Emit(OpCodes.Ldfld, Serializer);
+						};
 
 				for (int i = 0; i < parameters.Length; ++i)
 				{
-					var parameter = parameters[i];
-					var parameterType = parameter.ParameterType;
-					int currentIndex = i+1;
+					ParameterInfo parameter = parameters[i];
+					Type parameterType = parameter.ParameterType;
+					int currentIndex = i + 1;
 
 					Action loadValue = () => gen.Emit(OpCodes.Ldarg, currentIndex);
 
@@ -122,7 +124,7 @@ namespace SharpRemote.CodeGeneration
 						gen.Emit(OpCodes.Ldloc, binaryWriter);
 
 						// _endPoint.GetOrCreateServant(arg[y])
-						var getOrCreateServant = Methods.RemotingEndPointGetOrCreateServant.MakeGenericMethod(parameterType);
+						MethodInfo getOrCreateServant = Methods.RemotingEndPointGetOrCreateServant.MakeGenericMethod(parameterType);
 						gen.Emit(OpCodes.Ldarg_0);
 						gen.Emit(OpCodes.Ldfld, EndPoint);
 						loadValue();
@@ -153,7 +155,7 @@ namespace SharpRemote.CodeGeneration
 
 				// stream.Position = 0
 				gen.Emit(OpCodes.Ldloc, stream);
-				gen.Emit(OpCodes.Ldc_I8, (long)0);
+				gen.Emit(OpCodes.Ldc_I8, (long) 0);
 				gen.Emit(OpCodes.Call, Methods.StreamSetPosition);
 			}
 			else
@@ -162,71 +164,176 @@ namespace SharpRemote.CodeGeneration
 				gen.Emit(OpCodes.Stloc, stream);
 			}
 
-			// _channel.CallRemoteMethod(_objectId, "get_XXX", stream);
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, Channel);
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, ObjectId);
-			gen.Emit(OpCodes.Ldstr, remoteMethodName);
-			gen.Emit(OpCodes.Ldloc, stream);
-			gen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
+			Type returnType = method.ReturnType;
+			ICustomAttributeProvider returnAttributes = remoteMethod.ReturnTypeCustomAttributes;
+			bool isAsync = returnType == typeof (Task) ||
+			               returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof (Task<>);
 
-			var returnType = method.ReturnType;
-			var returnAttributes = remoteMethod.ReturnTypeCustomAttributes;
-			if (returnType == typeof(void))
+			if (isAsync)
 			{
-				gen.Emit(OpCodes.Pop);
-			}
-			else
-			{
-				// reader = new BinaryReader(...)
-				gen.Emit(OpCodes.Newobj, Methods.BinaryReaderCtor);
-				gen.Emit(OpCodes.Stloc, binaryReader);
+				Type taskReturnType = returnType != typeof (Task) ? returnType.GetGenericArguments()[0] : typeof (void);
 
-				Action loadReader = () => gen.Emit(OpCodes.Ldloc, binaryReader);
+				var type = (TypeBuilder) method.DeclaringType;
 
-				if (returnAttributes.GetCustomAttributes(typeof(ByReferenceAttribute), true).Length > 0)
+				string name = string.Format("Invoke_{0}", method.Name);
+				MethodBuilder invokeMethod = type.DefineMethod(name, MethodAttributes.Private,
+				                                               CallingConventions.Standard,
+				                                               taskReturnType,
+				                                               new[] {typeof (object)}
+					);
+
+				// Task.Factory_get()
+				gen.Emit(OpCodes.Call, Methods.TaskGetFactory);
+
+				if (taskReturnType == typeof (void))
 				{
-					// _endPoint.GetOrCreateProxy(reader.ReadUlong());
-					VerifyReturnParameterConstraints(method);
-
-					// _endPoint.GetOrCreateProxy(reader.ReadUlong());
-					var getOrCreateProxy = Methods.RemotingEndPointGetOrCreateProxy.MakeGenericMethod(returnType);
+					// new Action<object>(this, Invoke_XXX)
 					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldfld, EndPoint);
-					loadReader();
-					gen.Emit(OpCodes.Call, Methods.ReadULong);
-					gen.Emit(OpCodes.Callvirt, getOrCreateProxy);
+					gen.Emit(OpCodes.Ldftn, invokeMethod);
+					gen.Emit(OpCodes.Newobj, Methods.ActionIntPtrCtor);
 				}
 				else
 				{
-					// return _serializer.DeserializeXXX(reader);
-					SerializerCompiler.EmitReadValue(
-						gen,
-						loadReader,
-						() =>
+					// new Func<object, T>(this, Invoke_XXX)
+					Type func = typeof (Func<,>).MakeGenericType(typeof (object), taskReturnType);
+					ConstructorInfo funcCtor = func.GetConstructor(new[] {typeof (object), typeof (IntPtr)});
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldftn, invokeMethod);
+					gen.Emit(OpCodes.Newobj, funcCtor);
+				}
+
+				// new TaskParameters(_channel, _objectId, "get_XXX", stream);
+				gen.Emit(OpCodes.Ldstr, remoteMethodName);
+				gen.Emit(OpCodes.Ldloc, stream);
+				gen.Emit(OpCodes.Newobj, Methods.NewTaskParameters);
+
+				if (taskReturnType == typeof (void))
+				{
+					// return TaskFactory.StartNew(Action<object>, object);
+					gen.Emit(OpCodes.Callvirt, Methods.TaskFactoryStartNew);
+					gen.Emit(OpCodes.Ret);
+				}
+				else
+				{
+					// return TaskFactory.StartNew<T>(Func<object, T>, object);
+					MethodInfo startNew = typeof (TaskFactory).GetMethods()
+					                                          .Where(x => x.Name == "StartNew")
+					                                          .Where(x => x.GetParameters().Length == 2 &&
+					                                                      x.GetParameters()[1].ParameterType == typeof (object))
+					                                          .First(x => x.IsGenericMethod)
+					                                          .MakeGenericMethod(taskReturnType);
+
+					gen.Emit(OpCodes.Callvirt, startNew);
+					gen.Emit(OpCodes.Ret);
+				}
+
+				ILGenerator invokeGen = invokeMethod.GetILGenerator();
+				invokeGen.Emit(OpCodes.Ldarg_0);
+				invokeGen.Emit(OpCodes.Ldfld, Channel);
+				invokeGen.Emit(OpCodes.Ldarg_0);
+				invokeGen.Emit(OpCodes.Ldfld, ObjectId);
+				invokeGen.Emit(OpCodes.Ldarg_1);
+				invokeGen.Emit(OpCodes.Ldfld, Methods.TaskParametersMethodName);
+				invokeGen.Emit(OpCodes.Ldarg_1);
+				invokeGen.Emit(OpCodes.Ldfld, Methods.TaskParametersStream);
+
+				// _channel.CallRemoteMethod(_objectId, "get_XXX", stream);
+				invokeGen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
+
+				if (taskReturnType == typeof(void))
+				{
+					invokeGen.Emit(OpCodes.Pop);
+				}
+				else
+				{
+					LocalBuilder binaryReader = invokeGen.DeclareLocal(typeof(StreamReader));
+					ReadValueFromStream(method, invokeGen, binaryReader, null, taskReturnType);
+				}
+
+				invokeGen.Emit(OpCodes.Ret);
+			}
+			else
+			{
+				// _channel.CallRemoteMethod(_objectId, "get_XXX", stream);
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, Channel);
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, ObjectId);
+				gen.Emit(OpCodes.Ldstr, remoteMethodName);
+				gen.Emit(OpCodes.Ldloc, stream);
+				gen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
+
+				if (returnType == typeof (void))
+				{
+					gen.Emit(OpCodes.Pop);
+				}
+				else
+				{
+					LocalBuilder binaryReader = gen.DeclareLocal(typeof(StreamReader));
+					ReadValueFromStream(method, gen, binaryReader, returnAttributes, returnType);
+				}
+
+				gen.Emit(OpCodes.Ret);
+			}
+		}
+
+		private void ReadValueFromStream(MethodBuilder method,
+		                                 ILGenerator gen,
+		                                 LocalBuilder binaryReader,
+		                                 ICustomAttributeProvider returnAttributes,
+										Type returnType)
+		{
+			// reader = new BinaryReader(...)
+			gen.Emit(OpCodes.Newobj, Methods.BinaryReaderCtor);
+			gen.Emit(OpCodes.Stloc, binaryReader);
+
+			Action loadReader = () => gen.Emit(OpCodes.Ldloc, binaryReader);
+
+			if (returnAttributes != null && returnAttributes.GetCustomAttributes(typeof (ByReferenceAttribute), true).Length > 0)
+			{
+				// _endPoint.GetOrCreateProxy(reader.ReadUlong());
+				VerifyReturnParameterConstraints(method);
+
+				// _endPoint.GetOrCreateProxy(reader.ReadUlong());
+				MethodInfo getOrCreateProxy = Methods.RemotingEndPointGetOrCreateProxy.MakeGenericMethod(returnType);
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, EndPoint);
+				loadReader();
+				gen.Emit(OpCodes.Call, Methods.ReadULong);
+				gen.Emit(OpCodes.Callvirt, getOrCreateProxy);
+			}
+			else
+			{
+				// return _serializer.DeserializeXXX(reader);
+				SerializerCompiler.EmitReadValue(
+					gen,
+					loadReader,
+					() =>
 						{
 							gen.Emit(OpCodes.Ldarg_0);
 							gen.Emit(OpCodes.Ldfld, Serializer);
 						},
-						returnType
-						);
-				}
+					returnType
+					);
 			}
-
-			gen.Emit(OpCodes.Ret);
 		}
 
 		private void VerifyParameterConstraints(ParameterInfo parameter)
 		{
 			if (parameter.ParameterType.IsValueType)
-				throw new ArgumentException(string.Format("The parameter '{0}' of method '{1}' is marked as [ByReference] but is a valuetype - this is not supported", parameter.Name, parameter.Member.Name));
+				throw new ArgumentException(
+					string.Format(
+						"The parameter '{0}' of method '{1}' is marked as [ByReference] but is a valuetype - this is not supported",
+						parameter.Name, parameter.Member.Name));
 		}
 
 		private void VerifyReturnParameterConstraints(MethodInfo method)
 		{
 			if (method.ReturnType.IsValueType)
-				throw new ArgumentException(string.Format("The return parameter of method '{0}' is marked as [ByReference] but is a valuetype - this is not supported", method.Name));
+				throw new ArgumentException(
+					string.Format(
+						"The return parameter of method '{0}' is marked as [ByReference] but is a valuetype - this is not supported",
+						method.Name));
 		}
 	}
 }

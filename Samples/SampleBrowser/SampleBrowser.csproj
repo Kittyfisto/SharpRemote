@@ -41,6 +41,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -75,6 +76,17 @@
     <Compile Include="Scenarios\Host\TaskCommand.cs" />
     <Compile Include="Scenarios\Host\Sample.cs" />
     <Compile Include="Scenarios\IScenario.cs" />
+    <Compile Include="Scenarios\LongTermUsage\DataPacket.cs" />
+    <Compile Include="Scenarios\LongTermUsage\ICommandDescription.cs" />
+    <Compile Include="Scenarios\LongTermUsage\IDataListener.cs" />
+    <Compile Include="Scenarios\LongTermUsage\ITaskController.cs" />
+    <Compile Include="Scenarios\LongTermUsage\ITaskExecutor.cs" />
+    <Compile Include="Scenarios\LongTermUsage\LongTermScenario.cs" />
+    <Compile Include="Scenarios\LongTermUsage\LongTermView.xaml.cs">
+      <DependentUpon>LongTermView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Scenarios\LongTermUsage\TaskController.cs" />
+    <Compile Include="Scenarios\LongTermUsage\TaskExecutor.cs" />
     <Compile Include="Scenarios\WatchdogInstallation\RemoteHostScenario.cs" />
     <Compile Include="Scenarios\WatchdogInstallation\RemoteInstallView.xaml.cs">
       <DependentUpon>RemoteInstallView.xaml</DependentUpon>
@@ -100,6 +112,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Scenarios\Host\HostView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Scenarios\LongTermUsage\LongTermView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -150,6 +166,7 @@
       <Name>SharpRemote.Windows</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

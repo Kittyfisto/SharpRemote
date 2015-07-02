@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -61,6 +62,14 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo CreateTypeFromName;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateServant;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateProxy;
+		public static readonly ConstructorInfo NewTaskParameters;
+		public static readonly MethodInfo TaskGetFactory;
+		public static readonly ConstructorInfo ActionIntPtrCtor;
+		public static readonly MethodInfo TaskFactoryStartNew;
+		public static readonly FieldInfo TaskParametersChannel;
+		public static readonly FieldInfo TaskParametersObjectId;
+		public static readonly FieldInfo TaskParametersMethodName;
+		public static readonly FieldInfo TaskParametersStream;
 
 		static Methods()
 		{
@@ -133,6 +142,24 @@ namespace SharpRemote.CodeGeneration
 			RemotingEndPointGetOrCreateProxy = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy");
 
 			CreateTypeFromName = typeof(Methods).GetMethod("GetType", new[] { typeof(string) });
+
+			NewTaskParameters = typeof (TaskParameters).GetConstructor(new[]
+				{
+					typeof (string),
+					typeof (MemoryStream)
+				});
+			TaskParametersChannel = typeof (TaskParameters).GetField("Channel");
+			TaskParametersMethodName = typeof (TaskParameters).GetField("MethodName");
+			TaskParametersObjectId = typeof (TaskParameters).GetField("ObjectId");
+			TaskParametersStream = typeof (TaskParameters).GetField("Stream");
+
+			TaskGetFactory = typeof (Task).GetProperty("Factory").GetMethod;
+			ActionIntPtrCtor = typeof (Action<object>).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
+			TaskFactoryStartNew = typeof (TaskFactory).GetMethod("StartNew", new[]
+				{
+					typeof(Action<object>),
+					typeof(object)
+				});
 		}
 
 		public static Type GetType(string name)

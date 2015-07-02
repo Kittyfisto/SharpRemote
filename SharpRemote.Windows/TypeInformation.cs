@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Threading.Tasks;
+using SharpRemote.CodeGeneration;
 
 namespace SharpRemote
 {
@@ -259,6 +262,20 @@ namespace SharpRemote
 							type.Namespace, type.Name, field.Name));
 				}
 			}
+		}
+
+		public void StartTask()
+		{
+			IEndPointChannel channel = null;
+			ulong objectId = 0;
+			string methodName = null;
+			MemoryStream stream = null;
+			Task.Factory.StartNew(Do, new TaskParameters(methodName, stream));
+		}
+
+		private static void Do(object obj)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

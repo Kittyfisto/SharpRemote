@@ -1,5 +1,7 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Net;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -14,7 +16,7 @@ using log4net.Core;
 namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
-	[Description("Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour")]
+	[NUnit.Framework.Description("Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour")]
 	public class RemotingEndPointAcceptanceTest
 	{
 		private SocketRemotingEndPoint _server;
@@ -58,7 +60,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that an eception can be marshalled")]
+		[NUnit.Framework.Description("Verifies that an eception can be marshalled")]
 		public void TestGetPropertyThrowException1()
 		{
 			var subject = new Mock<IGetDoubleProperty>();
@@ -76,7 +78,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that if an exception could not be serialized, but can be re-constructed due to a default ctor, then it is thrown again")]
+		[NUnit.Framework.Description("Verifies that if an exception could not be serialized, but can be re-constructed due to a default ctor, then it is thrown again")]
 		public void TestGetPropertyThrowNonSerializableException()
 		{
 			var subject = new Mock<IGetDoubleProperty>();
@@ -93,7 +95,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that raising an event on the subject to which no-one is connected via the proxy doesn't do anything - besides not failing")]
+		[NUnit.Framework.Description("Verifies that raising an event on the subject to which no-one is connected via the proxy doesn't do anything - besides not failing")]
 		public void TestRaiseEmptyEvent()
 		{
 			var subject = new Mock<IEventInt32>();
@@ -109,7 +111,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that raising an event on the subject successfully serialized the parameter's value and forwards it to the proxy")]
+		[NUnit.Framework.Description("Verifies that raising an event on the subject successfully serialized the parameter's value and forwards it to the proxy")]
 		public void TestRaiseEvent1()
 		{
 			var subject = new Mock<IEventInt32>();
@@ -128,7 +130,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that delegates are invoked in the exact order that they are registered in")]
+		[NUnit.Framework.Description("Verifies that delegates are invoked in the exact order that they are registered in")]
 		public void TestRaiseEvent2()
 		{
 			var subject = new Mock<IEventInt32>();
@@ -152,7 +154,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that a delegate is no longer invoked once it's removed from the event")]
+		[NUnit.Framework.Description("Verifies that a delegate is no longer invoked once it's removed from the event")]
 		public void TestRaiseEvent3()
 		{
 			var subject = new Mock<IEventInt32>();
@@ -177,7 +179,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that an exception is successfully marshalled when thrown by the delegate attached to the proxie's event")]
+		[NUnit.Framework.Description("Verifies that an exception is successfully marshalled when thrown by the delegate attached to the proxie's event")]
 		public void TestRaiseEventThrowException1()
 		{
 			var subject = new Mock<IEventInt32>();
@@ -194,7 +196,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that an interface which itself implements another interface works")]
+		[NUnit.Framework.Description("Verifies that an interface which itself implements another interface works")]
 		public void TestMultipleInterfaces()
 		{
 			var subject = new Mock<ICalculator>();
@@ -240,6 +242,23 @@ namespace SharpRemote.Test.Remoting
 			actualId.Should().Be(42);
 			type.Should().Be<GetStringPropertyImplementation>();
 			@interface.Should().Be<IGetStringProperty>();
+		}
+
+		[Test]
+		[NUnit.Framework.Description("")]
+		public void TestGetTaskThrowException1()
+		{
+			const int servantId = 11;
+			var subject = new Mock<IReturnsIntTask>();
+			subject.Setup(x => x.DoStuff()).Returns(() => Task<int>.Factory.StartNew(() =>
+				{
+					throw new Win32Exception(1337);
+				}));
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
+			var task = proxy.DoStuff();
+			new Action(task.Wait)
+				.ShouldThrow<AggregateException>();
 		}
 	}
 }

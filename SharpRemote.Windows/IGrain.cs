@@ -8,11 +8,11 @@ namespace SharpRemote
 		ISerializer Serializer { get; }
 
 		/// <summary>
-		/// Shall invoke the event or method named <paramref cref="eventName"/>.
+		/// Shall invoke the event or method named <paramref cref="eventOrMethodName"/>.
 		/// </summary>
-		/// <param name="eventName"></param>
+		/// <param name="eventOrMethodName"></param>
 		/// <param name="reader"></param>
 		/// <param name="writer"></param>
-		void Invoke(string eventName, BinaryReader reader, BinaryWriter writer);
+		void Invoke(string eventOrMethodName, BinaryReader reader, BinaryWriter writer);
 	}
 }

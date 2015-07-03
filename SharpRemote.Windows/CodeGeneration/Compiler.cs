@@ -69,7 +69,19 @@ namespace SharpRemote.CodeGeneration
 				Type taskReturnType = returnType != typeof(Task) ? returnType.GetGenericArguments()[0] : typeof(void);
 				if (taskReturnType != typeof (void))
 				{
-					
+					LocalBuilder tmp = gen.DeclareLocal(returnType);
+
+					gen.Emit(OpCodes.Callvirt, methodInfo);
+					var getResult = returnType.GetProperty("Result").GetMethod;
+					gen.Emit(OpCodes.Call, getResult);
+					gen.Emit(OpCodes.Stloc, tmp);
+
+					SerializerCompiler.EmitWriteValue(gen,
+						loadWriter,
+						() => gen.Emit(OpCodes.Ldloc, tmp),
+						() => gen.Emit(OpCodes.Ldloca, tmp),
+						loadSerializer,
+						taskReturnType);
 				}
 				else
 				{

@@ -70,6 +70,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly FieldInfo TaskParametersObjectId;
 		public static readonly FieldInfo TaskParametersMethodName;
 		public static readonly FieldInfo TaskParametersStream;
+		public static readonly MethodInfo TaskWait;
 
 		static Methods()
 		{
@@ -160,6 +161,8 @@ namespace SharpRemote.CodeGeneration
 					typeof(Action<object>),
 					typeof(object)
 				});
+
+			TaskWait = typeof (Task).GetMethod("Wait", new Type[0]);
 		}
 
 		public static Type GetType(string name)

@@ -22,15 +22,15 @@ namespace SharpRemote.CodeGeneration
 		}
 
 		protected void ExtractArgumentsAndCallMethod(ILGenerator gen,
-		                                             MethodInfo methodInfo,
-		                                             Action loadReader,
-		                                             Action loadWriter)
+			MethodInfo methodInfo,
+			Action loadReader,
+			Action loadWriter)
 		{
 			Action loadSerializer = () =>
-				{
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldfld, Serializer);
-				};
+			{
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, Serializer);
+			};
 
 			ParameterInfo[] allParameters = methodInfo.GetParameters();
 			foreach (ParameterInfo parameter in allParameters)
@@ -61,18 +61,34 @@ namespace SharpRemote.CodeGeneration
 			}
 
 			Type returnType = methodInfo.ReturnType;
-			if (returnType != typeof (void))
+			bool isAsync = returnType == typeof (Task) ||
+			               returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof (Task<>);
+
+			if (isAsync)
+			{
+				Type taskReturnType = returnType != typeof(Task) ? returnType.GetGenericArguments()[0] : typeof(void);
+				if (taskReturnType != typeof (void))
+				{
+					
+				}
+				else
+				{
+					gen.Emit(OpCodes.Callvirt, methodInfo);
+					gen.Emit(OpCodes.Call, Methods.TaskWait);
+				}
+			}
+			else if (returnType != typeof (void))
 			{
 				LocalBuilder tmp = gen.DeclareLocal(returnType);
 				gen.Emit(OpCodes.Callvirt, methodInfo);
 				gen.Emit(OpCodes.Stloc, tmp);
 
 				SerializerCompiler.EmitWriteValue(gen,
-				                                  loadWriter,
-				                                  () => gen.Emit(OpCodes.Ldloc, tmp),
-				                                  () => gen.Emit(OpCodes.Ldloca, tmp),
-				                                  loadSerializer,
-				                                  returnType);
+					loadWriter,
+					() => gen.Emit(OpCodes.Ldloc, tmp),
+					() => gen.Emit(OpCodes.Ldloca, tmp),
+					loadSerializer,
+					returnType);
 			}
 			else
 			{
@@ -81,7 +97,7 @@ namespace SharpRemote.CodeGeneration
 		}
 
 		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters,
-		                                        MethodInfo remoteMethod)
+			MethodInfo remoteMethod)
 		{
 			ILGenerator gen = method.GetILGenerator();
 
@@ -102,10 +118,10 @@ namespace SharpRemote.CodeGeneration
 				Action loadWriter = () => gen.Emit(OpCodes.Ldloc, binaryWriter);
 				Action loadSerializer =
 					() =>
-						{
-							gen.Emit(OpCodes.Ldarg_0);
-							gen.Emit(OpCodes.Ldfld, Serializer);
-						};
+					{
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, Serializer);
+					};
 
 				for (int i = 0; i < parameters.Length; ++i)
 				{
@@ -177,9 +193,9 @@ namespace SharpRemote.CodeGeneration
 
 				string name = string.Format("Invoke_{0}", method.Name);
 				MethodBuilder invokeMethod = type.DefineMethod(name, MethodAttributes.Private,
-				                                               CallingConventions.Standard,
-				                                               taskReturnType,
-				                                               new[] {typeof (object)}
+					CallingConventions.Standard,
+					taskReturnType,
+					new[] {typeof (object)}
 					);
 
 				// Task.Factory_get()
@@ -217,11 +233,11 @@ namespace SharpRemote.CodeGeneration
 				{
 					// return TaskFactory.StartNew<T>(Func<object, T>, object);
 					MethodInfo startNew = typeof (TaskFactory).GetMethods()
-					                                          .Where(x => x.Name == "StartNew")
-					                                          .Where(x => x.GetParameters().Length == 2 &&
-					                                                      x.GetParameters()[1].ParameterType == typeof (object))
-					                                          .First(x => x.IsGenericMethod)
-					                                          .MakeGenericMethod(taskReturnType);
+						.Where(x => x.Name == "StartNew")
+						.Where(x => x.GetParameters().Length == 2 &&
+						            x.GetParameters()[1].ParameterType == typeof (object))
+						.First(x => x.IsGenericMethod)
+						.MakeGenericMethod(taskReturnType);
 
 					gen.Emit(OpCodes.Callvirt, startNew);
 					gen.Emit(OpCodes.Ret);
@@ -240,13 +256,13 @@ namespace SharpRemote.CodeGeneration
 				// _channel.CallRemoteMethod(_objectId, "get_XXX", stream);
 				invokeGen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
 
-				if (taskReturnType == typeof(void))
+				if (taskReturnType == typeof (void))
 				{
 					invokeGen.Emit(OpCodes.Pop);
 				}
 				else
 				{
-					LocalBuilder binaryReader = invokeGen.DeclareLocal(typeof(StreamReader));
+					LocalBuilder binaryReader = invokeGen.DeclareLocal(typeof (StreamReader));
 					ReadValueFromStream(method, invokeGen, binaryReader, null, taskReturnType);
 				}
 
@@ -269,7 +285,7 @@ namespace SharpRemote.CodeGeneration
 				}
 				else
 				{
-					LocalBuilder binaryReader = gen.DeclareLocal(typeof(StreamReader));
+					LocalBuilder binaryReader = gen.DeclareLocal(typeof (StreamReader));
 					ReadValueFromStream(method, gen, binaryReader, returnAttributes, returnType);
 				}
 
@@ -278,10 +294,10 @@ namespace SharpRemote.CodeGeneration
 		}
 
 		private void ReadValueFromStream(MethodBuilder method,
-		                                 ILGenerator gen,
-		                                 LocalBuilder binaryReader,
-		                                 ICustomAttributeProvider returnAttributes,
-										Type returnType)
+			ILGenerator gen,
+			LocalBuilder binaryReader,
+			ICustomAttributeProvider returnAttributes,
+			Type returnType)
 		{
 			// reader = new BinaryReader(...)
 			gen.Emit(OpCodes.Newobj, Methods.BinaryReaderCtor);
@@ -309,10 +325,10 @@ namespace SharpRemote.CodeGeneration
 					gen,
 					loadReader,
 					() =>
-						{
-							gen.Emit(OpCodes.Ldarg_0);
-							gen.Emit(OpCodes.Ldfld, Serializer);
-						},
+					{
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, Serializer);
+					},
 					returnType
 					);
 			}

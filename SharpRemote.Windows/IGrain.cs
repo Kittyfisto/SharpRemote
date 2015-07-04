@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace SharpRemote
 {
@@ -6,6 +7,7 @@ namespace SharpRemote
 	{
 		ulong ObjectId { get; }
 		ISerializer Serializer { get; }
+		Type InterfaceType { get; }
 
 		/// <summary>
 		/// Shall invoke the event or method named <paramref cref="eventOrMethodName"/>.

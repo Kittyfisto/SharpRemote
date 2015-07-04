@@ -51,9 +51,23 @@ namespace SharpRemote.CodeGeneration
 			GenerateGetSerializer();
 			GenerateMethods();
 			GenerateInvokeEvent();
+			GenerateInterfaceType();
 
 			var proxyType = _typeBuilder.CreateType();
 			return proxyType;
+		}
+
+		private void GenerateInterfaceType()
+		{
+			var getInterfaceType = _typeBuilder.DefineMethod("get_InterfaceType",
+				MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final
+				, typeof(Type), null);
+			var gen = getInterfaceType.GetILGenerator();
+			gen.Emit(OpCodes.Ldtoken, InterfaceType);
+			gen.Emit(OpCodes.Call, Methods.TypeGetTypeFromHandle);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(getInterfaceType, Methods.GrainGetInterfaceType);
 		}
 
 		private void GenerateCtor()
@@ -404,7 +418,7 @@ namespace SharpRemote.CodeGeneration
 													remoteMethod.ReturnType,
 													parameters.Select(x => x.ParameterType).ToArray());
 
-			GenerateMethodInvocation(method, methodName, parameters, remoteMethod);
+			GenerateMethodInvocation(method, InterfaceType.FullName, methodName, parameters, remoteMethod);
 
 			_typeBuilder.DefineMethodOverride(method, remoteMethod);
 		}

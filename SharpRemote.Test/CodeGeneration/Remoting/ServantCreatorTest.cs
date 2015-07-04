@@ -118,8 +118,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			IServant servant = TestGenerate(subject.Object);
 
 			bool callRemoteMethodInvoked = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
-			        .Callback((ulong id, string methodName, MemoryStream stream) =>
+			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+			        .Callback((ulong id, string interfaceName, string methodName, MemoryStream stream) =>
 				        {
 					        id.Should().Be(servant.ObjectId);
 					        methodName.Should().Be("Foobar");

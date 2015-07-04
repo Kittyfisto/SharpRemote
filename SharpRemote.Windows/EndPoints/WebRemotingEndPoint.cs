@@ -8,7 +8,7 @@ namespace SharpRemote.EndPoints
 		  , IRemotingEndPoint
 		  , IEndPointChannel
 	{
-		public MemoryStream CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments)
+		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
 			throw new NotImplementedException();
 		}

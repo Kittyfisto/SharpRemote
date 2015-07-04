@@ -75,7 +75,6 @@
     <Compile Include="CodeGeneration\Serialization\Serializers\VersionSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\SingletonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
-    <Compile Include="CodeGeneration\TaskParameters.cs" />
     <Compile Include="Dispatch.cs" />
     <Compile Include="EndPoints\AbstractSocketRemotingEndPoint.cs" />
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
@@ -88,6 +87,7 @@
     <Compile Include="Exceptions\NoSuchServantException.cs" />
     <Compile Include="Exceptions\NotConnectedException.cs" />
     <Compile Include="Exceptions\RemotingException.cs" />
+    <Compile Include="Exceptions\TypeMismatchException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />
     <Compile Include="IGrain.cs" />
     <Compile Include="Attributes\InvokeAttribute.cs" />

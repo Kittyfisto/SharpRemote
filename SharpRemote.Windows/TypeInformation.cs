@@ -264,23 +264,10 @@ namespace SharpRemote
 			}
 		}
 
-		public void StartTask(MethodInfo method, IServant servant)
+		public Type Test<T>()
 		{
-			var tmp = Do();
-			if (tmp.Status == TaskStatus.Created)
-			{
-
-				throw new NotSupportedException(string.Format("{0}.{1} blub {2}",
-					method.DeclaringType.Name,
-					method.Name,
-					servant.ObjectId
-					));
-			}
-		}
-
-		private static Task Do()
-		{
-			throw new NotImplementedException();
+			return typeof (int);
 		}
 	}
+
 }

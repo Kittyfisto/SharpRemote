@@ -149,7 +149,7 @@ namespace SharpRemote.CodeGeneration
 			gen.MarkLabel(taskStarted);
 		}
 
-		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters,
+		protected void GenerateMethodInvocation(MethodBuilder method, string interfaceType, string remoteMethodName, ParameterInfo[] parameters,
 			MethodInfo remoteMethod)
 		{
 			ILGenerator gen = method.GetILGenerator();
@@ -271,10 +271,7 @@ namespace SharpRemote.CodeGeneration
 					gen.Emit(OpCodes.Newobj, funcCtor);
 				}
 
-				// new TaskParameters(_channel, _objectId, "get_XXX", stream);
-				gen.Emit(OpCodes.Ldstr, remoteMethodName);
 				gen.Emit(OpCodes.Ldloc, stream);
-				gen.Emit(OpCodes.Newobj, Methods.NewTaskParameters);
 
 				if (taskReturnType == typeof (void))
 				{
@@ -301,12 +298,12 @@ namespace SharpRemote.CodeGeneration
 				invokeGen.Emit(OpCodes.Ldfld, Channel);
 				invokeGen.Emit(OpCodes.Ldarg_0);
 				invokeGen.Emit(OpCodes.Ldfld, ObjectId);
+				invokeGen.Emit(OpCodes.Ldstr, interfaceType);
+				invokeGen.Emit(OpCodes.Ldstr, remoteMethodName);
 				invokeGen.Emit(OpCodes.Ldarg_1);
-				invokeGen.Emit(OpCodes.Ldfld, Methods.TaskParametersMethodName);
-				invokeGen.Emit(OpCodes.Ldarg_1);
-				invokeGen.Emit(OpCodes.Ldfld, Methods.TaskParametersStream);
+				invokeGen.Emit(OpCodes.Castclass, typeof(MemoryStream));
 
-				// _channel.CallRemoteMethod(_objectId, "get_XXX", stream);
+				// _channel.CallRemoteMethod(_objectId, "IFoo", "get_XXX", stream);
 				invokeGen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
 
 				if (taskReturnType == typeof (void))
@@ -323,11 +320,12 @@ namespace SharpRemote.CodeGeneration
 			}
 			else
 			{
-				// _channel.CallRemoteMethod(_objectId, "get_XXX", stream);
+				// _channel.CallRemoteMethod(_objectId, "IFoo", "get_XXX", stream);
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, Channel);
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, ObjectId);
+				gen.Emit(OpCodes.Ldstr, interfaceType);
 				gen.Emit(OpCodes.Ldstr, remoteMethodName);
 				gen.Emit(OpCodes.Ldloc, stream);
 				gen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);

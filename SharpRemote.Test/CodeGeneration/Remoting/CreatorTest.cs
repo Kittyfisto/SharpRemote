@@ -41,8 +41,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_proxyCreator = new ProxyCreator(_endPoint, _channel);
 			_servantCreator = new ServantCreator(_endPoint, _channel);
 
-			channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
-			       .Returns((ulong objectId, string methodName, Stream arguments) =>
+			channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+			       .Returns((ulong objectId, string interfaceName, string methodName, Stream arguments) =>
 				       {
 					       if (objectId != _servant.ObjectId)
 						       throw new NoSuchServantException(objectId);

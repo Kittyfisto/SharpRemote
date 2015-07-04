@@ -202,7 +202,7 @@ namespace SharpRemote
 
 		#endregion
 
-		public MemoryStream CallRemoteMethod(ulong servantId, string methodName, MemoryStream arguments)
+		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
 			Socket socket = _socket;
 			if (socket == null || !socket.Connected)
@@ -210,7 +210,7 @@ namespace SharpRemote
 
 			long rpcId = Interlocked.Increment(ref _nextRpcId);
 			int messageLength;
-			byte[] message = CreateMessage(servantId, methodName, arguments, rpcId, out messageLength);
+			byte[] message = CreateMessage(servantId, interfaceType, methodName, arguments, rpcId, out messageLength);
 
 			if (Log.IsDebugEnabled)
 			{
@@ -396,7 +396,7 @@ namespace SharpRemote
 			}
 		}
 
-		private void DispatchMethodInvocation(long rpcId, IGrain grain, string methodName, BinaryReader reader)
+		private void DispatchMethodInvocation(long rpcId, ulong servantId, IGrain grain, string typeName, string methodName, BinaryReader reader)
 		{
 			var task = new Task(() =>
 			{
@@ -407,6 +407,8 @@ namespace SharpRemote
 					var writer = new BinaryWriter(response, Encoding.UTF8);
 					try
 					{
+						EnsureTypeSafety(servantId, grain.InterfaceType, typeName, methodName);
+
 						WriteResponseHeader(rpcId, writer, MessageType.Return);
 						grain.Invoke(methodName, reader, writer);
 						PatchResponseMessageLength(response, writer);
@@ -445,6 +447,7 @@ namespace SharpRemote
 		private void HandleRequest(long rpcId, BinaryReader reader)
 		{
 			ulong servantId = reader.ReadUInt64();
+			string typeName = reader.ReadString();
 			string methodName = reader.ReadString();
 
 			IServant servant;
@@ -455,7 +458,7 @@ namespace SharpRemote
 
 			if (servant != null)
 			{
-				DispatchMethodInvocation(rpcId, servant, methodName, reader);
+				DispatchMethodInvocation(rpcId, servantId, servant, typeName, methodName, reader);
 			}
 			else
 			{
@@ -467,12 +470,26 @@ namespace SharpRemote
 
 				if (proxy != null)
 				{
-					DispatchMethodInvocation(rpcId, proxy, methodName, reader);
+					DispatchMethodInvocation(rpcId, servantId, proxy, typeName, methodName, reader);
 				}
 				else
 				{
 					throw new NotImplementedException();
 				}
+			}
+		}
+
+		private static void EnsureTypeSafety(ulong objectId, Type getType, string typeName, string methodName)
+		{
+			var actualTypeName = getType.FullName;
+			if (actualTypeName != typeName)
+			{
+				throw new TypeMismatchException(
+					string.Format("There was a type mismatch when invoking method '{0}' on grain #{1}: Expected '{2}' but found '{3}",
+					methodName,
+					objectId,
+					typeName,
+					actualTypeName));
 			}
 		}
 
@@ -505,11 +522,10 @@ namespace SharpRemote
 			return true;
 		}
 
-		private static byte[] CreateMessage(ulong servantId, string methodName, MemoryStream arguments, long rpcId,
-											out int bufferSize)
+		private static byte[] CreateMessage(ulong servantId, string interfaceType, string methodName, MemoryStream arguments, long rpcId, out int bufferSize)
 		{
 			int argumentSize = arguments != null ? (int)arguments.Length : 0;
-			int maxMessageSize = 1 + 8 + 8 + methodName.Length * 2 + argumentSize;
+			int maxMessageSize = 1 + 8 + 8 + interfaceType.Length*2 + methodName.Length * 2 + argumentSize;
 			int maxBufferSize = 4 + maxMessageSize;
 			var buffer = new byte[maxBufferSize];
 			using (var stream = new MemoryStream(buffer, 0, buffer.Length, true, true))
@@ -519,6 +535,7 @@ namespace SharpRemote
 				writer.Write(rpcId);
 				writer.Write((byte)MessageType.Call);
 				writer.Write(servantId);
+				writer.Write(interfaceType);
 				writer.Write(methodName);
 
 				if (arguments != null)

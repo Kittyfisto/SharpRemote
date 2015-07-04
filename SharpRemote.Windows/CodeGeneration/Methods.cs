@@ -36,6 +36,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo ObjectGetType;
 		public static readonly FieldInfo StringEmpty;
 		public static readonly MethodInfo GrainInvoke;
+		public static readonly MethodInfo GrainGetInterfaceType;
 		public static readonly MethodInfo StringEquality;
 		public static readonly MethodInfo ReadBytes;
 		public static readonly MethodInfo ReadString;
@@ -63,17 +64,13 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo CreateTypeFromName;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateServant;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateProxy;
-		public static readonly ConstructorInfo NewTaskParameters;
 		public static readonly MethodInfo TaskGetFactory;
 		public static readonly ConstructorInfo ActionIntPtrCtor;
 		public static readonly MethodInfo TaskFactoryStartNew;
-		public static readonly FieldInfo TaskParametersChannel;
-		public static readonly FieldInfo TaskParametersObjectId;
-		public static readonly FieldInfo TaskParametersMethodName;
-		public static readonly FieldInfo TaskParametersStream;
 		public static readonly MethodInfo TaskWait;
 		public static readonly MethodInfo TaskGetStatus;
 		public static readonly MethodInfo StringFormat3Objects;
+		public static readonly MethodInfo TypeGetTypeFromHandle;
 
 		static Methods()
 		{
@@ -88,6 +85,7 @@ namespace SharpRemote.CodeGeneration
 			GrainGetSerializer = typeof(IGrain).GetMethod("get_Serializer");
 			ServantGetSubject = typeof (IServant).GetMethod("get_Subject");
 			GrainInvoke = typeof (IGrain).GetMethod("Invoke");
+			GrainGetInterfaceType = typeof (IGrain).GetMethod("get_InterfaceType");
 
 			ObjectCtor = typeof(object).GetConstructor(new Type[0]);
 			ChannelCallRemoteMethod = typeof(IEndPointChannel).GetMethod("CallRemoteMethod");
@@ -148,16 +146,6 @@ namespace SharpRemote.CodeGeneration
 
 			CreateTypeFromName = typeof(Methods).GetMethod("GetType", new[] { typeof(string) });
 
-			NewTaskParameters = typeof (TaskParameters).GetConstructor(new[]
-				{
-					typeof (string),
-					typeof (MemoryStream)
-				});
-			TaskParametersChannel = typeof (TaskParameters).GetField("Channel");
-			TaskParametersMethodName = typeof (TaskParameters).GetField("MethodName");
-			TaskParametersObjectId = typeof (TaskParameters).GetField("ObjectId");
-			TaskParametersStream = typeof (TaskParameters).GetField("Stream");
-
 			TaskGetFactory = typeof (Task).GetProperty("Factory").GetMethod;
 			ActionIntPtrCtor = typeof (Action<object>).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
 			TaskFactoryStartNew = typeof (TaskFactory).GetMethod("StartNew", new[]
@@ -170,6 +158,8 @@ namespace SharpRemote.CodeGeneration
 			TaskGetStatus = typeof (Task).GetProperty("Status").GetMethod;
 
 			StringFormat3Objects = typeof (string).GetMethod("Format", new[] {typeof(string), typeof (object), typeof (object), typeof (object)});
+
+			TypeGetTypeFromHandle = typeof (Type).GetMethod("GetTypeFromHandle");
 		}
 
 		public static Type GetType(string name)

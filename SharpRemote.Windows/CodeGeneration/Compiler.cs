@@ -11,14 +11,18 @@ namespace SharpRemote.CodeGeneration
 	public abstract class Compiler
 	{
 		protected readonly Serializer SerializerCompiler;
+		protected readonly Type InterfaceType;
 		protected FieldBuilder Channel;
 		protected FieldBuilder EndPoint;
 		protected FieldBuilder ObjectId;
 		protected FieldBuilder Serializer;
 
-		protected Compiler(Serializer serializer)
+		protected Compiler(Serializer serializer, Type interfaceType)
 		{
+			if (interfaceType == null) throw new ArgumentNullException("interfaceType");
+
 			SerializerCompiler = serializer;
+			InterfaceType = interfaceType;
 		}
 
 		protected void ExtractArgumentsAndCallMethod(ILGenerator gen,
@@ -66,26 +70,35 @@ namespace SharpRemote.CodeGeneration
 
 			if (isAsync)
 			{
+				LocalBuilder task = gen.DeclareLocal(returnType);
 				Type taskReturnType = returnType != typeof(Task) ? returnType.GetGenericArguments()[0] : typeof(void);
 				if (taskReturnType != typeof (void))
 				{
-					LocalBuilder tmp = gen.DeclareLocal(returnType);
+					LocalBuilder taskResult = gen.DeclareLocal(taskReturnType);
 
 					gen.Emit(OpCodes.Callvirt, methodInfo);
+					gen.Emit(OpCodes.Stloc, task);
+					EmitVerifyTaskConstraints(methodInfo, gen, () => gen.Emit(OpCodes.Ldloc, task));
+
+					gen.Emit(OpCodes.Ldloc, task);
 					var getResult = returnType.GetProperty("Result").GetMethod;
 					gen.Emit(OpCodes.Call, getResult);
-					gen.Emit(OpCodes.Stloc, tmp);
+					gen.Emit(OpCodes.Stloc, taskResult);
 
 					SerializerCompiler.EmitWriteValue(gen,
 						loadWriter,
-						() => gen.Emit(OpCodes.Ldloc, tmp),
-						() => gen.Emit(OpCodes.Ldloca, tmp),
+						() => gen.Emit(OpCodes.Ldloc, taskResult),
+						() => gen.Emit(OpCodes.Ldloca, taskResult),
 						loadSerializer,
 						taskReturnType);
 				}
 				else
 				{
 					gen.Emit(OpCodes.Callvirt, methodInfo);
+					gen.Emit(OpCodes.Stloc, task);
+					EmitVerifyTaskConstraints(methodInfo, gen, () => gen.Emit(OpCodes.Ldloc, task));
+
+					gen.Emit(OpCodes.Ldloc, task);
 					gen.Emit(OpCodes.Call, Methods.TaskWait);
 				}
 			}
@@ -106,6 +119,34 @@ namespace SharpRemote.CodeGeneration
 			{
 				gen.Emit(OpCodes.Callvirt, methodInfo);
 			}
+		}
+
+		private void EmitVerifyTaskConstraints(MethodInfo method, ILGenerator gen, Action loadTask)
+		{
+			loadTask();
+			gen.Emit(OpCodes.Callvirt, Methods.TaskGetStatus);
+			gen.Emit(OpCodes.Ldc_I4, (int)TaskStatus.Created);
+			gen.Emit(OpCodes.Ceq);
+
+			var taskNotStarted = gen.DefineLabel();
+			var taskStarted = gen.DefineLabel();
+
+			gen.Emit(OpCodes.Brtrue, taskNotStarted);
+			gen.Emit(OpCodes.Br, taskStarted);
+
+			gen.MarkLabel(taskNotStarted);
+
+			gen.Emit(OpCodes.Ldstr, "{0}.{1} of servant #{2} returned a non-started task - this is not supported");
+			gen.Emit(OpCodes.Ldstr, InterfaceType.Name);
+			gen.Emit(OpCodes.Ldstr, method.Name);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, ObjectId);
+			gen.Emit(OpCodes.Box, typeof(ulong));
+			gen.Emit(OpCodes.Call, Methods.StringFormat3Objects);
+			gen.Emit(OpCodes.Newobj, Methods.NotSupportedExceptionCtor);
+			gen.Emit(OpCodes.Throw);
+
+			gen.MarkLabel(taskStarted);
 		}
 
 		protected void GenerateMethodInvocation(MethodBuilder method, string remoteMethodName, ParameterInfo[] parameters,

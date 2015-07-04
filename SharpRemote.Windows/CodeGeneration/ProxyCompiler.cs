@@ -12,7 +12,6 @@ namespace SharpRemote.CodeGeneration
 	public class ProxyCompiler
 		: Compiler
 	{
-		private readonly Type _interfaceType;
 		private readonly ModuleBuilder _module;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly Dictionary<string, FieldBuilder> _fields;
@@ -22,13 +21,11 @@ namespace SharpRemote.CodeGeneration
 		#endregion
 
 		public ProxyCompiler(Serializer serializer, ModuleBuilder module, string proxyTypeName, Type interfaceType)
-			: base(serializer)
+			: base(serializer, interfaceType)
 		{
 			if (module == null) throw new ArgumentNullException("module");
 			if (proxyTypeName == null) throw new ArgumentNullException("proxyTypeName");
-			if (interfaceType == null) throw new ArgumentNullException("interfaceType");
 
-			_interfaceType = interfaceType;
 			_module = module;
 
 			_typeBuilder = _module.DefineType(proxyTypeName, TypeAttributes.Class, typeof (object), new[]
@@ -118,9 +115,9 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateMethods()
 		{
-			var allMethods = _interfaceType
+			var allMethods = InterfaceType
 				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
-				.Concat(_interfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
+				.Concat(InterfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
 				.OrderBy(x => x.Name)
 				.ToArray();
 			foreach (var method in allMethods)
@@ -297,7 +294,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldloc, name);
 			gen.Emit(OpCodes.Brfalse, @throw);
 
-			var allEvents = _interfaceType.GetEvents();
+			var allEvents = InterfaceType.GetEvents();
 			var labels = new Label[allEvents.Length];
 			int index = 0;
 			foreach (var eventInfo in allEvents)

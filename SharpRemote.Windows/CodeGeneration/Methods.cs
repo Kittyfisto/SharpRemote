@@ -51,6 +51,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo ReadBool;
 		public static readonly ConstructorInfo NotImplementedCtor;
 		public static readonly ConstructorInfo ArgumentExceptionCtor;
+		public static readonly ConstructorInfo NotSupportedExceptionCtor;
 		public static readonly MethodInfo ServantGetSubject;
 		public static readonly MethodInfo StringFormat;
 		public static readonly MethodInfo ArrayGetLength;
@@ -71,6 +72,8 @@ namespace SharpRemote.CodeGeneration
 		public static readonly FieldInfo TaskParametersMethodName;
 		public static readonly FieldInfo TaskParametersStream;
 		public static readonly MethodInfo TaskWait;
+		public static readonly MethodInfo TaskGetStatus;
+		public static readonly MethodInfo StringFormat3Objects;
 
 		static Methods()
 		{
@@ -127,6 +130,7 @@ namespace SharpRemote.CodeGeneration
 
 			NotImplementedCtor = typeof (NotImplementedException).GetConstructor(new Type[0]);
 			ArgumentExceptionCtor = typeof (ArgumentException).GetConstructor(new[] {typeof (string)});
+			NotSupportedExceptionCtor = typeof (NotSupportedException).GetConstructor(new[] {typeof (string)});
 
 			ArrayGetLength = typeof (byte[]).GetProperty("Length").GetMethod;
 
@@ -163,6 +167,9 @@ namespace SharpRemote.CodeGeneration
 				});
 
 			TaskWait = typeof (Task).GetMethod("Wait", new Type[0]);
+			TaskGetStatus = typeof (Task).GetProperty("Status").GetMethod;
+
+			StringFormat3Objects = typeof (string).GetMethod("Format", new[] {typeof(string), typeof (object), typeof (object), typeof (object)});
 		}
 
 		public static Type GetType(string name)

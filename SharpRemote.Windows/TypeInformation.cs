@@ -264,16 +264,21 @@ namespace SharpRemote
 			}
 		}
 
-		public void StartTask()
+		public void StartTask(MethodInfo method, IServant servant)
 		{
-			IEndPointChannel channel = null;
-			ulong objectId = 0;
-			string methodName = null;
-			MemoryStream stream = null;
-			Task.Factory.StartNew(Do, new TaskParameters(methodName, stream));
+			var tmp = Do();
+			if (tmp.Status == TaskStatus.Created)
+			{
+
+				throw new NotSupportedException(string.Format("{0}.{1} blub {2}",
+					method.DeclaringType.Name,
+					method.Name,
+					servant.ObjectId
+					));
+			}
 		}
 
-		private static void Do(object obj)
+		private static Task Do()
 		{
 			throw new NotImplementedException();
 		}

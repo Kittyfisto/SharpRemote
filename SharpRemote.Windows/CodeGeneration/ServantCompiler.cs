@@ -11,7 +11,6 @@ namespace SharpRemote.CodeGeneration
 	public sealed class ServantCompiler
 		: Compiler
 	{
-		private readonly Type _interfaceType;
 		private readonly ModuleBuilder _module;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly FieldBuilder _subject;
@@ -21,13 +20,11 @@ namespace SharpRemote.CodeGeneration
 		                       ModuleBuilder module,
 		                       string subjectTypeName,
 		                       Type interfaceType)
-			: base(serializer)
+			: base(serializer, interfaceType)
 		{
 			if (module == null) throw new ArgumentNullException("module");
 			if (subjectTypeName == null) throw new ArgumentNullException("subjectTypeName");
-			if (interfaceType == null) throw new ArgumentNullException("interfaceType");
 
-			_interfaceType = interfaceType;
 			_module = module;
 
 			_typeBuilder = _module.DefineType(subjectTypeName, TypeAttributes.Class, typeof(object));
@@ -86,7 +83,7 @@ namespace SharpRemote.CodeGeneration
 		{
 			// For every event we have to compile a method that essentially does the same that the proxy compiler
 			// does for interface methods: serialize the arguments into a stream and then call IEndPointChannel.Invoke
-			var allEvents = _interfaceType.GetEvents();
+			var allEvents = InterfaceType.GetEvents();
 			foreach (var @event in allEvents)
 			{
 				GenerateEvent(@event);
@@ -151,13 +148,13 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Brfalse, @throw);
 
 			var allEventMethods =
-				_interfaceType.GetEvents(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+				InterfaceType.GetEvents(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
 				              .SelectMany(x => new[] {x.AddMethod, x.RemoveMethod})
 				              .ToArray();
 
-			var allMethods = _interfaceType
+			var allMethods = InterfaceType
 				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
-				.Concat(_interfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
+				.Concat(InterfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
 				.Where(x => !allEventMethods.Contains(x))
 				.OrderBy(x => x.Name)
 				.ToArray();
@@ -238,7 +235,7 @@ namespace SharpRemote.CodeGeneration
 					typeof (IRemotingEndPoint),
 					typeof (IEndPointChannel),
 					typeof (ISerializer),
-					_interfaceType
+					InterfaceType
 				});
 
 			var gen = builder.GetILGenerator();

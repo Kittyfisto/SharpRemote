@@ -245,10 +245,27 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("")]
+		[NUnit.Framework.Description("Verifies that the exception thrown by a task is correctly marshalled")]
 		public void TestGetTaskThrowException1()
 		{
 			const int servantId = 11;
+			var subject = new Mock<IReturnsTask>();
+			subject.Setup(x => x.DoStuff()).Returns(() => Task.Factory.StartNew(() =>
+			{
+				throw new Win32Exception(1337);
+			}));
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsTask>(servantId);
+			var task = proxy.DoStuff();
+			new Action(task.Wait)
+				.ShouldThrow<AggregateException>();
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that the exception thrown by a task is correctly marshalled")]
+		public void TestGetTaskThrowException2()
+		{
+			const int servantId = 12;
 			var subject = new Mock<IReturnsIntTask>();
 			subject.Setup(x => x.DoStuff()).Returns(() => Task<int>.Factory.StartNew(() =>
 				{
@@ -259,6 +276,51 @@ namespace SharpRemote.Test.Remoting
 			var task = proxy.DoStuff();
 			new Action(task.Wait)
 				.ShouldThrow<AggregateException>();
+		}
+
+		[Test]
+		public void TestGetTaskContinueWith()
+		{
+			const int servantId = 13;
+			var subject = new Mock<IReturnsIntTask>();
+			subject.Setup(x => x.DoStuff()).Returns(() => Task<int>.Factory.StartNew(() => 42));
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
+			int? result = null;
+			var task = proxy.DoStuff().ContinueWith(unused =>
+				{
+					result = unused.Result;
+				});
+			task.Wait();
+			result.Should().Be(42);
+		}
+
+		[Test]
+		[NUnit.Framework.Description("")]
+		public void TestGetNonStartedTaskIsNotSupported1()
+		{
+			const int servantId = 14;
+			var subject = new Mock<IReturnsTask>();
+			subject.Setup(x => x.DoStuff()).Returns(() => new Task(() =>{}));
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsTask>(servantId);
+			new Action(() => proxy.DoStuff().Wait())
+				.ShouldThrow<NotSupportedException>()
+				.WithMessage("IReturnsTask.DoStuff of servant #14 returned a non-started task - this is not supported");
+		}
+
+		[Test]
+		[NUnit.Framework.Description("")]
+		public void TestGetNonStartedTaskIsNotSupported2()
+		{
+			const int servantId = 15;
+			var subject = new Mock<IReturnsIntTask>();
+			subject.Setup(x => x.DoStuff()).Returns(() => new Task<int>(() => 42));
+			var servant = _server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
+			new Action(() => proxy.DoStuff().Wait())
+				.ShouldThrow<NotSupportedException>()
+				.WithMessage("IReturnsIntTask.DoStuff of servant #15 returned a non-started task - this is not supported");
 		}
 	}
 }

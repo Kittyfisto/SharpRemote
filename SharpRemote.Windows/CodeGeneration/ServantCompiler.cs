@@ -1,20 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 using SharpRemote.CodeGeneration.Serialization;
+using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration
 {
 	public sealed class ServantCompiler
 		: Compiler
 	{
-		private readonly ModuleBuilder _module;
-		private readonly TypeBuilder _typeBuilder;
-		private readonly FieldBuilder _subject;
 		private readonly List<KeyValuePair<EventInfo, MethodInfo>> _eventInvocationMethods;
+		private readonly Dictionary<MethodInfo, FieldBuilder> _perMethodSchedulers;
+		private readonly ModuleBuilder _module;
+		private readonly FieldBuilder _subject;
+		private readonly TypeBuilder _typeBuilder;
+		private FieldBuilder _perTypeScheduler;
+		private FieldBuilder _perObjectScheduler;
 
 		public ServantCompiler(Serializer serializer,
 		                       ModuleBuilder module,
@@ -27,25 +33,50 @@ namespace SharpRemote.CodeGeneration
 
 			_module = module;
 
-			_typeBuilder = _module.DefineType(subjectTypeName, TypeAttributes.Class, typeof(object));
-			_typeBuilder.AddInterfaceImplementation(typeof(IServant));
+			_typeBuilder = _module.DefineType(subjectTypeName, TypeAttributes.Class, typeof (object));
+			_typeBuilder.AddInterfaceImplementation(typeof (IServant));
+
+			_perMethodSchedulers = new Dictionary<MethodInfo, FieldBuilder>();
 
 			_eventInvocationMethods = new List<KeyValuePair<EventInfo, MethodInfo>>();
 
 			_subject = _typeBuilder.DefineField("_subject", interfaceType, FieldAttributes.Private | FieldAttributes.InitOnly);
-			ObjectId = _typeBuilder.DefineField("_objectId", typeof(ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
-			EndPoint = _typeBuilder.DefineField("_endPoint", typeof(IRemotingEndPoint),
-									FieldAttributes.Private | FieldAttributes.InitOnly);
+			ObjectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
+			EndPoint = _typeBuilder.DefineField("_endPoint", typeof (IRemotingEndPoint),
+			                                    FieldAttributes.Private | FieldAttributes.InitOnly);
 			Channel = _typeBuilder.DefineField("_channel", typeof (IEndPointChannel),
 			                                   FieldAttributes.Private | FieldAttributes.InitOnly);
-			Serializer = _typeBuilder.DefineField("_serializer", typeof(ISerializer),
-												FieldAttributes.Private | FieldAttributes.InitOnly);
+			Serializer = _typeBuilder.DefineField("_serializer", typeof (ISerializer),
+			                                      FieldAttributes.Private | FieldAttributes.InitOnly);
+		}
+
+		private MethodInfo[] AllMethods
+		{
+			get
+			{
+				MethodInfo[] allEventMethods =
+					InterfaceType.GetEvents(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+					             .SelectMany(x => new[] {x.AddMethod, x.RemoveMethod})
+					             .ToArray();
+
+				return InterfaceType
+					.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+					.Concat(
+						InterfaceType.GetInterfaces()
+						             .SelectMany(
+							             x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
+					.Where(x => !allEventMethods.Contains(x))
+					.OrderBy(x => x.Name)
+					.ToArray();
+			}
 		}
 
 		private void GenerateGetSerializer()
 		{
-			var method = _typeBuilder.DefineMethod("get_Serializer", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, typeof(ISerializer), null);
-			var gen = method.GetILGenerator();
+			MethodBuilder method = _typeBuilder.DefineMethod("get_Serializer",
+			                                                 MethodAttributes.Public | MethodAttributes.Virtual |
+			                                                 MethodAttributes.Final, typeof (ISerializer), null);
+			ILGenerator gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, Serializer);
@@ -56,8 +87,10 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateGetObjectId()
 		{
-			var method = _typeBuilder.DefineMethod("get_Id", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, typeof(ulong), null);
-			var gen = method.GetILGenerator();
+			MethodBuilder method = _typeBuilder.DefineMethod("get_Id",
+			                                                 MethodAttributes.Public | MethodAttributes.Virtual |
+			                                                 MethodAttributes.Final, typeof (ulong), null);
+			ILGenerator gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, ObjectId);
@@ -68,24 +101,27 @@ namespace SharpRemote.CodeGeneration
 
 		public Type Generate()
 		{
+			GenerateCctor();
+			GenerateEvents();
+			GenerateCtor();
 			GenerateGetObjectId();
 			GenerateGetSerializer();
 			GenerateGetSubject();
-			GenerateEvents();
-			GenerateDispatchMethod();
-			GenerateCtor();
+			GenerateInvoke();
+			GenerateGetTaskScheduler();
 			GenerateInterfaceType();
 
-			var proxyType = _typeBuilder.CreateType();
+			Type proxyType = _typeBuilder.CreateType();
 			return proxyType;
 		}
 
 		private void GenerateInterfaceType()
 		{
-			var getInterfaceType = _typeBuilder.DefineMethod("get_InterfaceType",
-				MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final
-				, typeof(Type), null);
-			var gen = getInterfaceType.GetILGenerator();
+			MethodBuilder getInterfaceType = _typeBuilder.DefineMethod("get_InterfaceType",
+			                                                           MethodAttributes.Public | MethodAttributes.Virtual |
+			                                                           MethodAttributes.Final
+			                                                           , typeof (Type), null);
+			ILGenerator gen = getInterfaceType.GetILGenerator();
 			gen.Emit(OpCodes.Ldtoken, InterfaceType);
 			gen.Emit(OpCodes.Call, Methods.TypeGetTypeFromHandle);
 			gen.Emit(OpCodes.Ret);
@@ -97,8 +133,8 @@ namespace SharpRemote.CodeGeneration
 		{
 			// For every event we have to compile a method that essentially does the same that the proxy compiler
 			// does for interface methods: serialize the arguments into a stream and then call IEndPointChannel.Invoke
-			var allEvents = InterfaceType.GetEvents();
-			foreach (var @event in allEvents)
+			EventInfo[] allEvents = InterfaceType.GetEvents();
+			foreach (EventInfo @event in allEvents)
 			{
 				GenerateEvent(@event);
 			}
@@ -106,16 +142,16 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateEvent(EventInfo @event)
 		{
-			var delegateType = @event.EventHandlerType;
-			var methodInfo = delegateType.GetMethod("Invoke");
+			Type delegateType = @event.EventHandlerType;
+			MethodInfo methodInfo = delegateType.GetMethod("Invoke");
 
-			var methodName = string.Format("On{0}", @event.Name);
-			var parameters = methodInfo.GetParameters();
-			var returnType = typeof (void);
-			var method = _typeBuilder.DefineMethod(methodName,
-												   MethodAttributes.Public,
-													returnType,
-													parameters.Select(x => x.ParameterType).ToArray());
+			string methodName = string.Format("On{0}", @event.Name);
+			ParameterInfo[] parameters = methodInfo.GetParameters();
+			Type returnType = typeof (void);
+			MethodBuilder method = _typeBuilder.DefineMethod(methodName,
+			                                                 MethodAttributes.Public,
+			                                                 returnType,
+			                                                 parameters.Select(x => x.ParameterType).ToArray());
 
 			GenerateMethodInvocation(method, InterfaceType.FullName, @event.Name, parameters, method);
 
@@ -124,12 +160,13 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateGetSubject()
 		{
-			var method = _typeBuilder.DefineMethod("get_Subject",
-			                                       MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final,
-			                                       typeof (object),
-			                                       null);
+			MethodBuilder method = _typeBuilder.DefineMethod("get_Subject",
+			                                                 MethodAttributes.Public | MethodAttributes.Virtual |
+			                                                 MethodAttributes.Final,
+			                                                 typeof (object),
+			                                                 null);
 
-			var gen = method.GetILGenerator();
+			ILGenerator gen = method.GetILGenerator();
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
 			gen.Emit(OpCodes.Ret);
@@ -137,23 +174,18 @@ namespace SharpRemote.CodeGeneration
 			_typeBuilder.DefineMethodOverride(method, Methods.ServantGetSubject);
 		}
 
-		private void GenerateDispatchMethod()
+		private void GenerateGetTaskScheduler()
 		{
-			var method = _typeBuilder.DefineMethod("Invoke",
-			                                       MethodAttributes.Public | MethodAttributes.Virtual,
-												   typeof(void),
-												   new[]
-													   {
-														   typeof(string),
-														   typeof(BinaryReader),
-														   typeof(BinaryWriter)
-													   });
+			MethodBuilder method = _typeBuilder.DefineMethod("GetTaskScheduler",
+			                                                 MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.Virtual,
+			                                                 typeof (TaskScheduler),
+			                                                 new[] {typeof (string)});
 
-			var gen = method.GetILGenerator();
+			ILGenerator gen = method.GetILGenerator();
 
-			var name = gen.DeclareLocal(typeof (string));
-			var @throw = gen.DefineLabel();
-			var @ret = gen.DefineLabel();
+			LocalBuilder name = gen.DeclareLocal(typeof (string));
+			Label @throw = gen.DefineLabel();
+			Label @ret = gen.DefineLabel();
 
 			// if (method == null) goto ret
 			gen.Emit(OpCodes.Ldarg_1);
@@ -161,27 +193,17 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldloc, name);
 			gen.Emit(OpCodes.Brfalse, @throw);
 
-			var allEventMethods =
-				InterfaceType.GetEvents(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
-				              .SelectMany(x => new[] {x.AddMethod, x.RemoveMethod})
-				              .ToArray();
-
-			var allMethods = InterfaceType
-				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
-				.Concat(InterfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
-				.Where(x => !allEventMethods.Contains(x))
-				.OrderBy(x => x.Name)
-				.ToArray();
+			MethodInfo[] allMethods = AllMethods;
 
 			var labels = new Label[allMethods.Length];
 			int index = 0;
-			foreach (var methodInfo in allMethods)
+			foreach (MethodInfo methodInfo in allMethods)
 			{
 				gen.Emit(OpCodes.Ldloc, name);
 				gen.Emit(OpCodes.Ldstr, methodInfo.Name);
 				gen.Emit(OpCodes.Call, Methods.StringEquality);
 
-				var @true = gen.DefineLabel();
+				Label @true = gen.DefineLabel();
 				labels[index++] = @true;
 				gen.Emit(OpCodes.Brtrue, @true);
 			}
@@ -190,23 +212,113 @@ namespace SharpRemote.CodeGeneration
 
 			for (int i = 0; i < allMethods.Length; ++i)
 			{
-				var methodInfo = allMethods[i];
-				var label = labels[i];
-				var extractingMethod = CompileExtractingMethod(methodInfo);
+				MethodInfo methodInfo = allMethods[i];
+				Label label = labels[i];
 
 				gen.MarkLabel(label);
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.Emit(OpCodes.Ldarg_3);
-				gen.Emit(OpCodes.Call, extractingMethod);
-			
+				var attribute = methodInfo.GetCustomAttribute<InvokeAttribute>();
+				var strategy = attribute != null ? attribute.DispatchingStrategy : Dispatch.DoNotSerialize;
+
+				switch (strategy)
+				{
+					case Dispatch.DoNotSerialize:
+						gen.Emit(OpCodes.Call, Methods.TaskSchedulerGetDefault);
+						break;
+
+					case Dispatch.SerializePerMethod:
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, _perMethodSchedulers[methodInfo]);
+						break;
+
+					case Dispatch.SerializePerObject:
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, _perObjectScheduler);
+						break;
+
+					case Dispatch.SerializePerType:
+						gen.Emit(OpCodes.Ldsfld, _perTypeScheduler);
+						break;
+
+					default:
+						throw new InvalidEnumArgumentException("InvokeAttribute.DispatchingStrategy", (int)strategy, typeof(Dispatch));
+				}
+
 				gen.Emit(OpCodes.Br, @ret);
 			}
 
 			gen.MarkLabel(@throw);
 			gen.Emit(OpCodes.Ldstr, "Method '{0}' not found");
 			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Call, Methods.StringFormat);
+			gen.Emit(OpCodes.Call, Methods.StringFormatOneObject);
+			gen.Emit(OpCodes.Newobj, Methods.ArgumentExceptionCtor);
+			gen.Emit(OpCodes.Throw);
+
+			gen.MarkLabel(@ret);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetTaskScheduler);
+		}
+
+		private void GenerateInvoke()
+		{
+			MethodBuilder method = _typeBuilder.DefineMethod("Invoke",
+			                                                 MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.Virtual,
+			                                                 typeof (void),
+			                                                 new[]
+				                                                 {
+					                                                 typeof (string),
+					                                                 typeof (BinaryReader),
+					                                                 typeof (BinaryWriter)
+				                                                 });
+
+			ILGenerator gen = method.GetILGenerator();
+
+			LocalBuilder name = gen.DeclareLocal(typeof (string));
+			Label @throw = gen.DefineLabel();
+			Label @ret = gen.DefineLabel();
+
+			// if (method == null) goto ret
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Stloc, name);
+			gen.Emit(OpCodes.Ldloc, name);
+			gen.Emit(OpCodes.Brfalse, @throw);
+
+			MethodInfo[] allMethods = AllMethods;
+
+			var labels = new Label[allMethods.Length];
+			int index = 0;
+			foreach (MethodInfo methodInfo in allMethods)
+			{
+				gen.Emit(OpCodes.Ldloc, name);
+				gen.Emit(OpCodes.Ldstr, methodInfo.Name);
+				gen.Emit(OpCodes.Call, Methods.StringEquality);
+
+				Label @true = gen.DefineLabel();
+				labels[index++] = @true;
+				gen.Emit(OpCodes.Brtrue, @true);
+			}
+
+			gen.Emit(OpCodes.Br, @throw);
+
+			for (int i = 0; i < allMethods.Length; ++i)
+			{
+				MethodInfo methodInfo = allMethods[i];
+				Label label = labels[i];
+				MethodInfo extractingMethod = CompileExtractingMethod(methodInfo);
+
+				gen.MarkLabel(label);
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldarg_2);
+				gen.Emit(OpCodes.Ldarg_3);
+				gen.Emit(OpCodes.Call, extractingMethod);
+
+				gen.Emit(OpCodes.Br, @ret);
+			}
+
+			gen.MarkLabel(@throw);
+			gen.Emit(OpCodes.Ldstr, "Method '{0}' not found");
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, Methods.StringFormatOneObject);
 			gen.Emit(OpCodes.Newobj, Methods.ArgumentExceptionCtor);
 			gen.Emit(OpCodes.Throw);
 
@@ -220,39 +332,62 @@ namespace SharpRemote.CodeGeneration
 
 		private MethodInfo CompileExtractingMethod(MethodInfo originalMethod)
 		{
-			var method = _typeBuilder.DefineMethod(originalMethod.Name, MethodAttributes.Private,
-			                          typeof (void),
-			                          new[]
-				                          {
-					                          typeof (BinaryReader),
-					                          typeof (BinaryWriter)
-				                          });
+			MethodBuilder method = _typeBuilder.DefineMethod(originalMethod.Name, MethodAttributes.Private,
+			                                                 typeof (void),
+			                                                 new[]
+				                                                 {
+					                                                 typeof (BinaryReader),
+					                                                 typeof (BinaryWriter)
+				                                                 });
 
-			var gen = method.GetILGenerator();
+			ILGenerator gen = method.GetILGenerator();
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
 			ExtractArgumentsAndCallMethod(gen,
-				originalMethod,
-				() => gen.Emit(OpCodes.Ldarg_1),
-				() => gen.Emit(OpCodes.Ldarg_2));
+			                              originalMethod,
+			                              () => gen.Emit(OpCodes.Ldarg_1),
+			                              () => gen.Emit(OpCodes.Ldarg_2));
 
 			gen.Emit(OpCodes.Ret);
 			return method;
 		}
 
+		private void GenerateCctor()
+		{
+			var serializePerType = AllMethods.Where(x => x.GetCustomAttribute<InvokeAttribute>() != null &&
+			                                             x.GetCustomAttribute<InvokeAttribute>().DispatchingStrategy ==
+			                                             Dispatch.SerializePerType)
+														 .ToList();
+			if (serializePerType.Count == 0)
+				return;
+
+			_perTypeScheduler = _typeBuilder.DefineField(
+				"_perTypeScheduler",
+				typeof (SerialTaskScheduler),
+				FieldAttributes.Static | FieldAttributes.Private | FieldAttributes.InitOnly
+				);
+			var builder = _typeBuilder.DefineTypeInitializer();
+			var gen = builder.GetILGenerator();
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
+			gen.Emit(OpCodes.Stsfld, _perTypeScheduler);
+			gen.Emit(OpCodes.Ret);
+		}
+
 		private void GenerateCtor()
 		{
-			var builder = _typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[]
-				{
-					typeof (ulong),
-					typeof (IRemotingEndPoint),
-					typeof (IEndPointChannel),
-					typeof (ISerializer),
-					InterfaceType
-				});
+			ConstructorBuilder builder = _typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard,
+			                                                            new[]
+				                                                            {
+					                                                            typeof (ulong),
+					                                                            typeof (IRemotingEndPoint),
+					                                                            typeof (IEndPointChannel),
+					                                                            typeof (ISerializer),
+					                                                            InterfaceType
+				                                                            });
 
-			var gen = builder.GetILGenerator();
+			ILGenerator gen = builder.GetILGenerator();
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, Methods.ObjectCtor);
 
@@ -278,11 +413,44 @@ namespace SharpRemote.CodeGeneration
 
 			foreach (var pair in _eventInvocationMethods)
 			{
-				var eventAddMethod = pair.Key.AddMethod;
-				var delegateType = pair.Key.EventHandlerType;
-				var onEventMethod = pair.Value;
+				MethodInfo eventAddMethod = pair.Key.AddMethod;
+				Type delegateType = pair.Key.EventHandlerType;
+				MethodInfo onEventMethod = pair.Value;
 
 				AddOnFireEvent(gen, eventAddMethod, delegateType, onEventMethod);
+			}
+
+			var serializePerObject = AllMethods.Where(x => x.GetCustomAttribute<InvokeAttribute>() != null &&
+														 x.GetCustomAttribute<InvokeAttribute>().DispatchingStrategy ==
+														 Dispatch.SerializePerObject)
+														 .ToList();
+			if (serializePerObject.Count > 0)
+			{
+				_perObjectScheduler = _typeBuilder.DefineField("_perObjectScheduler", typeof (SerialTaskScheduler),
+				                                               FieldAttributes.Private | FieldAttributes.InitOnly);
+
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldc_I4_0);
+				gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
+				gen.Emit(OpCodes.Stfld, _perObjectScheduler);
+			}
+
+			var serializePerMethod = AllMethods.Where(x => x.GetCustomAttribute<InvokeAttribute>() != null &&
+			                                               x.GetCustomAttribute<InvokeAttribute>().DispatchingStrategy ==
+			                                               Dispatch.SerializePerMethod)
+			                                   .ToList();
+			foreach (var method in serializePerMethod)
+			{
+				var scheduler = _typeBuilder.DefineField(string.Format("_{0}", method.Name),
+					typeof(SerialTaskScheduler),
+					FieldAttributes.Private | FieldAttributes.InitOnly);
+
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldc_I4_0);
+				gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
+				gen.Emit(OpCodes.Stfld, _perObjectScheduler);
+
+				_perMethodSchedulers.Add(method, scheduler);
 			}
 
 			gen.Emit(OpCodes.Ret);
@@ -291,9 +459,11 @@ namespace SharpRemote.CodeGeneration
 		private void AddOnFireEvent(ILGenerator gen, MethodInfo eventAddMethod, Type delegateType, MethodInfo onEventMethod)
 		{
 			// We need to find the constructor of the Action/Delegate that we're creating....
-			var ctor = delegateType.GetConstructor(new[] {typeof (object), typeof (IntPtr)});
+			ConstructorInfo ctor = delegateType.GetConstructor(new[] {typeof (object), typeof (IntPtr)});
 			if (ctor == null)
-				throw new NotImplementedException(string.Format("Could not find a suitable constructor for delegate '{0}' with an (object, IntPtr) signature", delegateType));
+				throw new NotImplementedException(
+					string.Format("Could not find a suitable constructor for delegate '{0}' with an (object, IntPtr) signature",
+					              delegateType));
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);

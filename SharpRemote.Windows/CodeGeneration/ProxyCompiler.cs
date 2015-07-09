@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using System.Threading.Tasks;
 using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.CodeGeneration
@@ -15,6 +17,9 @@ namespace SharpRemote.CodeGeneration
 		private readonly ModuleBuilder _module;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly Dictionary<string, FieldBuilder> _fields;
+		private readonly Dictionary<EventInfo, FieldBuilder> _perMethodSchedulers;
+		private FieldBuilder _perTypeScheduler;
+		private FieldBuilder _perObjectScheduler;
 
 		#region Methods
 
@@ -33,6 +38,7 @@ namespace SharpRemote.CodeGeneration
 					interfaceType
 				});
 			_typeBuilder.AddInterfaceImplementation(typeof(IProxy));
+			_perMethodSchedulers = new Dictionary<EventInfo, FieldBuilder>();
 
 			ObjectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
 			EndPoint = _typeBuilder.DefineField("_endPoint", typeof (IRemotingEndPoint),
@@ -46,11 +52,13 @@ namespace SharpRemote.CodeGeneration
 
 		public Type Generate()
 		{
+			GenerateCctor();
 			GenerateCtor();
 			GenerateGetObjectId();
 			GenerateGetSerializer();
 			GenerateMethods();
 			GenerateInvokeEvent();
+			GenerateGetTaskScheduler();
 			GenerateInterfaceType();
 
 			var proxyType = _typeBuilder.CreateType();
@@ -68,6 +76,10 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(getInterfaceType, Methods.GrainGetInterfaceType);
+		}
+
+		private void GenerateCctor()
+		{
 		}
 
 		private void GenerateCtor()
@@ -125,6 +137,11 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetObjectId);
+		}
+
+		private EventInfo[] AllEvents
+		{
+			get { return InterfaceType.GetEvents(); }
 		}
 
 		private void GenerateMethods()
@@ -284,6 +301,91 @@ namespace SharpRemote.CodeGeneration
 			return builder.ToString();
 		}
 
+		private void GenerateGetTaskScheduler()
+		{
+			MethodBuilder method = _typeBuilder.DefineMethod("GetTaskScheduler",
+															 MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.Virtual,
+															 typeof(TaskScheduler),
+															 new[] { typeof(string) });
+
+			ILGenerator gen = method.GetILGenerator();
+
+			LocalBuilder name = gen.DeclareLocal(typeof(string));
+			Label @throw = gen.DefineLabel();
+			Label @ret = gen.DefineLabel();
+
+			// if (method == null) goto ret
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Stloc, name);
+			gen.Emit(OpCodes.Ldloc, name);
+			gen.Emit(OpCodes.Brfalse, @throw);
+
+			var allEvents = AllEvents;
+
+			var labels = new Label[allEvents.Length];
+			int index = 0;
+			foreach (EventInfo eventInfo in allEvents)
+			{
+				gen.Emit(OpCodes.Ldloc, name);
+				gen.Emit(OpCodes.Ldstr, eventInfo.Name);
+				gen.Emit(OpCodes.Call, Methods.StringEquality);
+
+				Label @true = gen.DefineLabel();
+				labels[index++] = @true;
+				gen.Emit(OpCodes.Brtrue, @true);
+			}
+
+			gen.Emit(OpCodes.Br, @throw);
+
+			for (int i = 0; i < allEvents.Length; ++i)
+			{
+				EventInfo methodInfo = allEvents[i];
+				Label label = labels[i];
+
+				gen.MarkLabel(label);
+				var attribute = methodInfo.GetCustomAttribute<InvokeAttribute>();
+				var strategy = attribute != null ? attribute.DispatchingStrategy : Dispatch.DoNotSerialize;
+
+				switch (strategy)
+				{
+					case Dispatch.DoNotSerialize:
+						gen.Emit(OpCodes.Call, Methods.TaskSchedulerGetDefault);
+						break;
+
+					case Dispatch.SerializePerMethod:
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, _perMethodSchedulers[methodInfo]);
+						break;
+
+					case Dispatch.SerializePerObject:
+						gen.Emit(OpCodes.Ldarg_0);
+						gen.Emit(OpCodes.Ldfld, _perObjectScheduler);
+						break;
+
+					case Dispatch.SerializePerType:
+						gen.Emit(OpCodes.Ldsfld, _perTypeScheduler);
+						break;
+
+					default:
+						throw new InvalidEnumArgumentException("InvokeAttribute.DispatchingStrategy", (int)strategy, typeof(Dispatch));
+				}
+
+				gen.Emit(OpCodes.Br, @ret);
+			}
+
+			gen.MarkLabel(@throw);
+			gen.Emit(OpCodes.Ldstr, "Event '{0}' not found");
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, Methods.StringFormatOneObject);
+			gen.Emit(OpCodes.Newobj, Methods.ArgumentExceptionCtor);
+			gen.Emit(OpCodes.Throw);
+
+			gen.MarkLabel(@ret);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetTaskScheduler);
+		}
+
 		private void GenerateInvokeEvent()
 		{
 			var originalMethod = Methods.GrainInvoke;
@@ -308,7 +410,7 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldloc, name);
 			gen.Emit(OpCodes.Brfalse, @throw);
 
-			var allEvents = InterfaceType.GetEvents();
+			var allEvents = AllEvents;
 			var labels = new Label[allEvents.Length];
 			int index = 0;
 			foreach (var eventInfo in allEvents)
@@ -337,7 +439,7 @@ namespace SharpRemote.CodeGeneration
 			gen.MarkLabel(@throw);
 			gen.Emit(OpCodes.Ldstr, "Event '{0}' not found");
 			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Call, Methods.StringFormat);
+			gen.Emit(OpCodes.Call, Methods.StringFormatOneObject);
 			gen.Emit(OpCodes.Newobj, Methods.ArgumentExceptionCtor);
 			gen.Emit(OpCodes.Throw);
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -36,6 +37,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo ObjectGetType;
 		public static readonly FieldInfo StringEmpty;
 		public static readonly MethodInfo GrainInvoke;
+		public static readonly MethodInfo GrainGetTaskScheduler;
 		public static readonly MethodInfo GrainGetInterfaceType;
 		public static readonly MethodInfo StringEquality;
 		public static readonly MethodInfo ReadBytes;
@@ -54,7 +56,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo ArgumentExceptionCtor;
 		public static readonly ConstructorInfo NotSupportedExceptionCtor;
 		public static readonly MethodInfo ServantGetSubject;
-		public static readonly MethodInfo StringFormat;
+		public static readonly MethodInfo StringFormatOneObject;
 		public static readonly MethodInfo ArrayGetLength;
 		public static readonly MethodInfo DelegateCombine;
 		public static readonly MethodInfo DelegateRemove;
@@ -69,8 +71,11 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo TaskFactoryStartNew;
 		public static readonly MethodInfo TaskWait;
 		public static readonly MethodInfo TaskGetStatus;
+		public static readonly MethodInfo TaskSchedulerGetCurrent;
+		public static readonly MethodInfo TaskSchedulerGetDefault;
 		public static readonly MethodInfo StringFormat3Objects;
 		public static readonly MethodInfo TypeGetTypeFromHandle;
+		public static readonly ConstructorInfo SerialTaskSchedulerCtor;
 
 		static Methods()
 		{
@@ -86,6 +91,7 @@ namespace SharpRemote.CodeGeneration
 			ServantGetSubject = typeof (IServant).GetMethod("get_Subject");
 			GrainInvoke = typeof (IGrain).GetMethod("Invoke");
 			GrainGetInterfaceType = typeof (IGrain).GetMethod("get_InterfaceType");
+			GrainGetTaskScheduler = typeof (IGrain).GetMethod("GetTaskScheduler");
 
 			ObjectCtor = typeof(object).GetConstructor(new Type[0]);
 			ChannelCallRemoteMethod = typeof(IEndPointChannel).GetMethod("CallRemoteMethod");
@@ -124,7 +130,7 @@ namespace SharpRemote.CodeGeneration
 
 			StringEmpty = typeof (string).GetField("Empty", BindingFlags.Public | BindingFlags.Static);
 			StringEquality = typeof (string).GetMethod("op_Equality", new[] {typeof (string), typeof (string)});
-			StringFormat = typeof (string).GetMethod("Format", new[]{typeof(string), typeof(object)});
+			StringFormatOneObject = typeof (string).GetMethod("Format", new[]{typeof(string), typeof(object)});
 
 			NotImplementedCtor = typeof (NotImplementedException).GetConstructor(new Type[0]);
 			ArgumentExceptionCtor = typeof (ArgumentException).GetConstructor(new[] {typeof (string)});
@@ -157,9 +163,14 @@ namespace SharpRemote.CodeGeneration
 			TaskWait = typeof (Task).GetMethod("Wait", new Type[0]);
 			TaskGetStatus = typeof (Task).GetProperty("Status").GetMethod;
 
+			TaskSchedulerGetCurrent = typeof (TaskScheduler).GetProperty("Current").GetMethod;
+			TaskSchedulerGetDefault = typeof (TaskScheduler).GetProperty("Default").GetMethod;
+
 			StringFormat3Objects = typeof (string).GetMethod("Format", new[] {typeof(string), typeof (object), typeof (object), typeof (object)});
 
 			TypeGetTypeFromHandle = typeof (Type).GetMethod("GetTypeFromHandle");
+
+			SerialTaskSchedulerCtor = typeof (SerialTaskScheduler).GetConstructor(new[] {typeof (bool)});
 		}
 
 		public static Type GetType(string name)

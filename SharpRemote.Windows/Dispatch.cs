@@ -5,8 +5,9 @@ namespace SharpRemote
 	[DataContract]
 	public enum Dispatch
 	{
-		[EnumMember] OncePerMethod,
-		[EnumMember] OncePerObject,
-		[EnumMember] OncePerType
+		[EnumMember] DoNotSerialize = 0,
+		[EnumMember] SerializePerMethod = 1,
+		[EnumMember] SerializePerObject = 2,
+		[EnumMember] SerializePerType = 3,
 	}
 }

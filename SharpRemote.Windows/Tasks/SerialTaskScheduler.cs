@@ -12,7 +12,7 @@ namespace SharpRemote.Tasks
 	/// <summary>
 	/// Executes all scheduled tasks in a serial manner.
 	/// </summary>
-	internal sealed class SerialTaskScheduler
+	public sealed class SerialTaskScheduler
 		: TaskScheduler
 		, IDisposable
 	{

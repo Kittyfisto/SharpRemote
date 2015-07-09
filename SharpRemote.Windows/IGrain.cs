@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace SharpRemote
 {
@@ -16,5 +17,7 @@ namespace SharpRemote
 		/// <param name="reader"></param>
 		/// <param name="writer"></param>
 		void Invoke(string eventOrMethodName, BinaryReader reader, BinaryWriter writer);
+
+		TaskScheduler GetTaskScheduler(string eventOrMethodName);
 	}
 }

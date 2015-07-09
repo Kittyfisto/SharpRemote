@@ -4,10 +4,10 @@ namespace SampleBrowser.Scenarios.LongTermUsage
 {
 	public interface ITaskExecutor
 	{
-		[Invoke(Dispatch.OncePerObject)]
+		[Invoke(Dispatch.SerializePerObject)]
 		ITaskController Create(int? numDataPackets);
 
-		[Invoke(Dispatch.OncePerObject)]
+		[Invoke(Dispatch.SerializePerObject)]
 		void Remove(ITaskController controller);
 	}
 }

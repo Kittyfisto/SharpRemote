@@ -9,7 +9,7 @@ namespace SampleBrowser.Scenarios.LongTermUsage
 	[ByReference]
 	public interface IDataListener
 	{
-		[Invoke(Dispatch.OncePerMethod)]
+		[Invoke(Dispatch.SerializePerMethod)]
 		void Process(object data);
 	}
 }

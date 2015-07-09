@@ -396,8 +396,9 @@ namespace SharpRemote
 			}
 		}
 
-		private void DispatchMethodInvocation(long rpcId, ulong servantId, IGrain grain, string typeName, string methodName, BinaryReader reader)
+		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName, BinaryReader reader)
 		{
+			var taskScheduler = grain.GetTaskScheduler(methodName);
 			var task = new Task(() =>
 			{
 				try
@@ -407,7 +408,7 @@ namespace SharpRemote
 					var writer = new BinaryWriter(response, Encoding.UTF8);
 					try
 					{
-						EnsureTypeSafety(servantId, grain.InterfaceType, typeName, methodName);
+						EnsureTypeSafety(grain.ObjectId, grain.InterfaceType, typeName, methodName);
 
 						WriteResponseHeader(rpcId, writer, MessageType.Return);
 						grain.Invoke(methodName, reader, writer);
@@ -437,11 +438,11 @@ namespace SharpRemote
 					Disconnect();
 				}
 			});
-			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
 
+			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
 			task.ContinueWith(unused => { _pendingInvocations.Remove(methodInvocation); });
 			_pendingInvocations.Add(methodInvocation);
-			task.Start();
+			task.Start(taskScheduler);
 		}
 
 		private void HandleRequest(long rpcId, BinaryReader reader)
@@ -458,7 +459,7 @@ namespace SharpRemote
 
 			if (servant != null)
 			{
-				DispatchMethodInvocation(rpcId, servantId, servant, typeName, methodName, reader);
+				DispatchMethodInvocation(rpcId, servant, typeName, methodName, reader);
 			}
 			else
 			{
@@ -470,7 +471,7 @@ namespace SharpRemote
 
 				if (proxy != null)
 				{
-					DispatchMethodInvocation(rpcId, servantId, proxy, typeName, methodName, reader);
+					DispatchMethodInvocation(rpcId, proxy, typeName, methodName, reader);
 				}
 				else
 				{

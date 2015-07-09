@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -339,6 +340,108 @@ namespace SharpRemote.Test.Remoting
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
+		}
+
+		[Test]
+		[Description("Verifies that synchronous methods are executed in the order they are issued in - by issuing them from one thread")]
+		public void TestCallOrder1()
+		{
+			var subject = new OrderedInterface();
+			const int servantId = 18;
+			var servant = _server.CreateServant(servantId, (IOrderInterface)subject);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			for (int i = 0; i < 1000; ++i)
+			{
+				proxy.Unordered(i);
+			}
+
+			subject.UnorderedSequence.Should().Equal(
+				Enumerable.Range(0, 1000).ToList(),
+				"Because synchronous calls made from the same thread are guarantueed to be executed in order"
+				);
+		}
+
+		[Test]
+		[Description("Verifies that synchronous methods are executed in the order they are issued in - by issuing them from two threads")]
+		public void TestCallOrder2()
+		{
+			var subject = new OrderedInterface();
+			const int servantId = 19;
+			var servant = _server.CreateServant(servantId, (IOrderInterface)subject);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			var sequence = Enumerable.Range(0, 1000).ToList();
+			Action fn = () =>
+				{
+					while (true)
+					{
+						lock (sequence)
+						{
+							if (sequence.Count == 0)
+								break;
+
+							var next = sequence[0];
+							sequence.RemoveAt(0);
+							proxy.Unordered(next);
+						}
+					}
+				};
+			var tasks = new[]
+				{
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn)
+				};
+			Task.WaitAll(tasks);
+
+			subject.UnorderedSequence.Should().Equal(
+				Enumerable.Range(0, 1000).ToList(),
+				"Because synchronous calls are executed in the same sequence they are given, independent of the calling thread"
+				);
+		}
+
+		[Test]
+		[Description("Verifies that invocations on a SerializePerType method are serialized, even when the calls happen in parallel")]
+		public void TestCallOrder3()
+		{
+			var subject = new OrderedInterface();
+			const int servantId = 20;
+			var servant = _server.CreateServant(servantId, (IOrderInterface)subject);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			var sequence = Enumerable.Range(0, 1000).ToList();
+			Action fn = () =>
+			{
+				while (true)
+				{
+					int next;
+					lock (sequence)
+					{
+						if (sequence.Count == 0)
+							break;
+
+						next = sequence[0];
+						sequence.RemoveAt(0);
+					}
+
+					proxy.TypeOrdered(next);
+				}
+			};
+			var tasks = new[]
+				{
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn)
+				};
+			Task.WaitAll(tasks);
+
+			subject.TypeOrderedSequence.Should().BeEquivalentTo(
+				Enumerable.Range(0, 1000).ToList(),
+				"Because the proxy calls are not necessarily ordered, its invocations aren't either."
+				);
 		}
 	}
 }

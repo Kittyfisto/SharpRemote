@@ -57,16 +57,23 @@ namespace SharpRemote.CodeGeneration
 			if (!interfaceType.IsInterface)
 				throw new ArgumentException(string.Format("Proxies can only be created for interfaces: {0} is not an interface", interfaceType));
 
-			var proxyTypeName = GetSubjectTypeName(interfaceType);
+			lock (_interfaceToSubject)
+			{
+				Type proxyType;
+				if (!_interfaceToSubject.TryGetValue(interfaceType, out proxyType))
+				{
+					var proxyTypeName = GetSubjectTypeName(interfaceType);
 
-			var generator = new ServantCompiler(_serializer, _module, proxyTypeName, interfaceType);
-			var proxyType = generator.Generate();
+					var generator = new ServantCompiler(_serializer, _module, proxyTypeName, interfaceType);
+					proxyType = generator.Generate();
 
-			//generator.Save();
-			//_assembly.Save(_moduleName);
+					//generator.Save();
+					//_assembly.Save(_moduleName);
 
-			_interfaceToSubject.Add(interfaceType, proxyType);
-			return proxyType;
+					_interfaceToSubject.Add(interfaceType, proxyType);
+				}
+				return proxyType;
+			}
 		}
 
 		public IServant CreateServant<T>(ulong objectId, T subject)

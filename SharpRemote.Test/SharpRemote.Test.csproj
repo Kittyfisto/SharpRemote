@@ -86,6 +86,8 @@
     <Compile Include="Types\Interfaces\IByReferenceParemeterMethodInterface.cs" />
     <Compile Include="Types\Interfaces\IEmpty.cs" />
     <Compile Include="Types\Interfaces\IEventInt32.cs" />
+    <Compile Include="Types\Interfaces\IInvokeAttributeEvents.cs" />
+    <Compile Include="Types\Interfaces\IInvokeAttributeMethods.cs" />
     <Compile Include="Types\Interfaces\IOrderInterface.cs" />
     <Compile Include="Types\Interfaces\IReturnComplexType.cs" />
     <Compile Include="Types\Interfaces\IReturnsIntTask.cs" />

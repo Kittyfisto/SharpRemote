@@ -8,6 +8,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using SharpRemote.CodeGeneration.Serialization;
+using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration
 {
@@ -17,7 +18,7 @@ namespace SharpRemote.CodeGeneration
 		private readonly ModuleBuilder _module;
 		private readonly TypeBuilder _typeBuilder;
 		private readonly Dictionary<string, FieldBuilder> _fields;
-		private readonly Dictionary<EventInfo, FieldBuilder> _perMethodSchedulers;
+		private readonly Dictionary<EventInfo, FieldBuilder> _perEventSchedulers;
 		private FieldBuilder _perTypeScheduler;
 		private FieldBuilder _perObjectScheduler;
 
@@ -38,7 +39,7 @@ namespace SharpRemote.CodeGeneration
 					interfaceType
 				});
 			_typeBuilder.AddInterfaceImplementation(typeof(IProxy));
-			_perMethodSchedulers = new Dictionary<EventInfo, FieldBuilder>();
+			_perEventSchedulers = new Dictionary<EventInfo, FieldBuilder>();
 
 			ObjectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
 			EndPoint = _typeBuilder.DefineField("_endPoint", typeof (IRemotingEndPoint),
@@ -80,6 +81,26 @@ namespace SharpRemote.CodeGeneration
 
 		private void GenerateCctor()
 		{
+			var allEvents = AllEvents
+				.Where(x => x.GetCustomAttribute<InvokeAttribute>() != null &&
+				            x.GetCustomAttribute<InvokeAttribute>().DispatchingStrategy == Dispatch.SerializePerType)
+				.ToList();
+
+			if (allEvents.Count == 0)
+				return;
+
+			_perTypeScheduler = _typeBuilder.DefineField(
+				"PerTypeScheduler",
+				typeof (SerialTaskScheduler),
+				FieldAttributes.Private | FieldAttributes.InitOnly | FieldAttributes.Static);
+
+			var cctor = _typeBuilder.DefineTypeInitializer();
+			var gen = cctor.GetILGenerator();
+
+			gen.Emit(OpCodes.Ldc_I4_0);
+			gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
+			gen.Emit(OpCodes.Stsfld, _perTypeScheduler);
+			gen.Emit(OpCodes.Ret);
 		}
 
 		private void GenerateCtor()
@@ -111,6 +132,42 @@ namespace SharpRemote.CodeGeneration
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg, 4);
 			gen.Emit(OpCodes.Stfld, Serializer);
+
+			var perObjectEvents = AllEvents
+				.Where(x => x.GetCustomAttribute<InvokeAttribute>() != null &&
+				            x.GetCustomAttribute<InvokeAttribute>().DispatchingStrategy == Dispatch.SerializePerObject)
+				.ToList();
+
+			if (perObjectEvents.Count > 0)
+			{
+				_perObjectScheduler = _typeBuilder.DefineField("_perObjectScheduler",
+				                                               typeof (SerialTaskScheduler),
+				                                               FieldAttributes.Private | FieldAttributes.InitOnly);
+
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldc_I4_0);
+				gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
+				gen.Emit(OpCodes.Stfld, _perObjectScheduler);
+			}
+
+			var perMethodEvents = AllEvents
+				.Where(x => x.GetCustomAttribute<InvokeAttribute>() != null &&
+				            x.GetCustomAttribute<InvokeAttribute>().DispatchingStrategy == Dispatch.SerializePerMethod)
+				.ToList();
+
+			foreach (var eventInfo in perMethodEvents)
+			{
+				var scheduler = _typeBuilder.DefineField(string.Format("_{0}", eventInfo.Name),
+															   typeof(SerialTaskScheduler),
+															   FieldAttributes.Private | FieldAttributes.InitOnly);
+
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldc_I4_0);
+				gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
+				gen.Emit(OpCodes.Stfld, scheduler);
+
+				_perEventSchedulers.Add(eventInfo, scheduler);
+			}
 
 			gen.Emit(OpCodes.Ret);
 		}
@@ -339,11 +396,11 @@ namespace SharpRemote.CodeGeneration
 
 			for (int i = 0; i < allEvents.Length; ++i)
 			{
-				EventInfo methodInfo = allEvents[i];
+				EventInfo eventInfo = allEvents[i];
 				Label label = labels[i];
 
 				gen.MarkLabel(label);
-				var attribute = methodInfo.GetCustomAttribute<InvokeAttribute>();
+				var attribute = eventInfo.GetCustomAttribute<InvokeAttribute>();
 				var strategy = attribute != null ? attribute.DispatchingStrategy : Dispatch.DoNotSerialize;
 
 				switch (strategy)
@@ -354,7 +411,7 @@ namespace SharpRemote.CodeGeneration
 
 					case Dispatch.SerializePerMethod:
 						gen.Emit(OpCodes.Ldarg_0);
-						gen.Emit(OpCodes.Ldfld, _perMethodSchedulers[methodInfo]);
+						gen.Emit(OpCodes.Ldfld, _perEventSchedulers[eventInfo]);
 						break;
 
 					case Dispatch.SerializePerObject:

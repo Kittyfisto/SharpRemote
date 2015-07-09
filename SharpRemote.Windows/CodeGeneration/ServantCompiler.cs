@@ -363,7 +363,7 @@ namespace SharpRemote.CodeGeneration
 				return;
 
 			_perTypeScheduler = _typeBuilder.DefineField(
-				"_perTypeScheduler",
+				"PerTypeScheduler",
 				typeof (SerialTaskScheduler),
 				FieldAttributes.Static | FieldAttributes.Private | FieldAttributes.InitOnly
 				);
@@ -448,7 +448,7 @@ namespace SharpRemote.CodeGeneration
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldc_I4_0);
 				gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
-				gen.Emit(OpCodes.Stfld, _perObjectScheduler);
+				gen.Emit(OpCodes.Stfld, scheduler);
 
 				_perMethodSchedulers.Add(method, scheduler);
 			}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.PeerToPeer;
 using System.Net.Sockets;
@@ -30,13 +31,15 @@ namespace SharpRemote
 		{
 			get
 			{
-				using (var sc = new ServiceController("PNRPsvc"))
-				{
-					if (sc.Status == ServiceControllerStatus.Running)
-						return true;
+				var sc = ServiceController.GetServices().FirstOrDefault(x => x.ServiceName == "PNRPsvc");
 
+				if (sc == null)
 					return false;
-				}
+
+				if (sc.Status == ServiceControllerStatus.Running)
+					return true;
+
+				return false;
 			}
 		}
 

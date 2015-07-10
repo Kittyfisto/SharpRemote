@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.PeerToPeer;
 using System.Net.Sockets;
 using System.Reflection;
+using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using log4net;
@@ -24,6 +25,20 @@ namespace SharpRemote
 		private IPEndPoint _remoteEndPoint;
 		private Socket _serverSocket;
 		private Task _readTask;
+
+		public static bool IsP2PAvailable
+		{
+			get
+			{
+				using (var sc = new ServiceController("PNRPsvc"))
+				{
+					if (sc.Status == ServiceControllerStatus.Running)
+						return true;
+
+					return false;
+				}
+			}
+		}
 
 		public SocketRemotingEndPoint(string name = null)
 			: base(name)
@@ -149,7 +164,7 @@ namespace SharpRemote
 			_serverSocket.BeginAccept(OnIncomingConnection, null);
 			Log.InfoFormat("EndPoint '{0}' listening on {1}", Name, _localEndPoint);
 
-			if (Name != null)
+			if (Name != null && IsP2PAvailable)
 			{
 				var peerName = new PeerName(Name, PeerNameType.Unsecured);
 				_peerNameRegistration = new PeerNameRegistration

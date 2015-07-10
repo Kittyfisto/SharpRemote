@@ -9,6 +9,10 @@ using SharpRemote.CodeGeneration.Serialization.Serializers;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
+	/// <summary>
+	/// <see cref="ISerializer"/> implementation that just-in-time compiles the code responsible
+	/// for serializing arbitrary types.
+	/// </summary>
 	public sealed partial class Serializer
 		: ISerializer
 	{
@@ -17,6 +21,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 		private readonly List<ITypeSerializer> _customSerializers;
 		private readonly Dictionary<Type, MethodInfo> _getSingletonInstance;
 
+		/// <summary>
+		/// Creates a new serializer that dynamically compiles serialization methods to the given
+		/// <see cref="ModuleBuilder"/>.
+		/// </summary>
+		/// <param name="module"></param>
 		public Serializer(ModuleBuilder module)
 		{
 			if (module == null) throw new ArgumentNullException("module");
@@ -49,6 +58,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_getSingletonInstance = new Dictionary<Type, MethodInfo>();
 		}
 
+		/// <summary>
+		/// Creates a new serializer that dynamically compiles serialization methods to a new DynamicAssembly.
+		/// </summary>
 		public Serializer()
 			: this(CreateModule())
 		{
@@ -164,7 +176,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					                                                            typeInformation.Type,
 					                                                            typeof (ISerializer)
 				                                                            });
-			MethodInfo writeObjectMethod = CreateWriteValueWithTypeInformation(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
+			CreateWriteValueWithTypeInformation(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
 			MethodInfo writeValueMethod = CreateWriteValue(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
 			MethodBuilder readValueNotNullMethod = typeBuilder.DefineMethod("ReadValueNotNull",
 																	  MethodAttributes.Public | MethodAttributes.Static,
@@ -174,15 +186,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 					                                                          typeof (ISerializer)
 				                                                          });
 
-			MethodInfo readObjectMethod = CreateReadObject(typeBuilder, readValueNotNullMethod, typeInformation.Type);
+			CreateReadObject(typeBuilder, readValueNotNullMethod, typeInformation.Type);
 			MethodInfo readValueMethod = CreateReadValue(typeBuilder, readValueNotNullMethod, typeInformation.Type);
 
-			var m = new SerializationMethods(writeObjectMethod,
+			var m = new SerializationMethods(
 				writeValueMethod,
-				writeValueNotNullMethod,
-				readObjectMethod,
-				readValueMethod,
-				readValueNotNullMethod);
+				readValueMethod);
 			_serializationMethods.Add(typeInformation.Type, m);
 
 			try
@@ -240,7 +249,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			MethodInfo method;
 			if (IsSingleton(typeInformation, out method))
 			{
-				EmitReadSingleton(gen, typeInformation, method);
+				EmitReadSingleton(gen, method);
 			}
 			else if (EmitReadNativeType(gen,
 				() => gen.Emit(OpCodes.Ldarg_0),
@@ -307,7 +316,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return method;
 		}
 
-		private MethodInfo CreateReadObject(TypeBuilder typeBuilder, MethodBuilder methodInfo, Type type)
+		private void CreateReadObject(TypeBuilder typeBuilder, MethodBuilder methodInfo, Type type)
 		{
 			MethodBuilder method = typeBuilder.DefineMethod("ReadObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                                CallingConventions.Standard, typeof (object), new[]
@@ -329,8 +338,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 
 			gen.Emit(OpCodes.Ret);
-
-			return method;
 		}
 
 		private void EmitWriteValueNotNullMethod(ILGenerator gen, TypeInformation typeInformation)
@@ -343,7 +350,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			MethodInfo method;
 			if (IsSingleton(typeInformation, out method))
 			{
-				EmitwriteSingleton(method);
+				// Nothing to do, all possible instance information has already been written....
 			}
 			else if (EmitWriteNativeType(
 				gen,
@@ -432,7 +439,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			return method;
 		}
 
-		private MethodInfo CreateWriteValueWithTypeInformation(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
+		private void CreateWriteValueWithTypeInformation(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
 		{
 			MethodBuilder method = typeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                                CallingConventions.Standard, typeof (void), new[]
@@ -460,8 +467,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 					gen.Emit(OpCodes.Ldarg_2);
 					gen.Emit(OpCodes.Call, methodInfo);
 				});
-
-			return method;
 		}
 
 		private void EmitWriteTypeInformation(ILGenerator gen)
@@ -512,6 +517,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		public void RegisterType(Type type)
 		{
+			if (type == null) throw new ArgumentNullException("type");
+
 			SerializationMethods unused;
 			RegisterType(type, out unused);
 		}
@@ -552,48 +559,23 @@ namespace SharpRemote.CodeGeneration.Serialization
 		private sealed class SerializationMethods
 		{
 			/// <summary>
-			///     Writes a value that can be null and requires embedded object information.
-			/// </summary>
-			public readonly MethodInfo WriteObjectMethod;
-
-			/// <summary>
 			///     Writes a value that can be null.
 			/// </summary>
 			public readonly MethodInfo WriteValueMethod;
-
-			/// <summary>
-			///     Writes a value that can never be null.
-			/// </summary>
-			public readonly MethodInfo WriteValueNotNullMethod;
-
-			public readonly MethodInfo ReadObjectMethod;
 			public readonly MethodInfo ReadValueMethod;
-			public readonly MethodInfo ReadValueNotNullMethod;
 			public Func<BinaryReader, ISerializer, object> ReadObjectDelegate;
-
 			public Action<BinaryWriter, object, ISerializer> WriteDelegate;
 
-			public SerializationMethods(MethodInfo writeObjectMethod,
+			public SerializationMethods(
 				MethodInfo writeValueMethod,
-				MethodBuilder writeValueNotNullMethod,
-				MethodInfo readObjectMethod,
-				MethodInfo readValueMethod,
-				MethodInfo readValueNotNullMethod)
+				MethodInfo readValueMethod)
 			{
-				if (writeObjectMethod == null) throw new ArgumentNullException("writeObjectMethod");
 				if (writeValueMethod == null) throw new ArgumentNullException("writeValueMethod");
-				if (writeValueNotNullMethod == null) throw new ArgumentNullException("writeValueNotNullMethod");
 
-				if (readObjectMethod == null) throw new ArgumentNullException("readObjectMethod");
 				if (readValueMethod == null) throw new ArgumentNullException("readValueMethod");
-				if (readValueNotNullMethod == null) throw new ArgumentNullException("readValueNotNullMethod");
 
-				WriteObjectMethod = writeObjectMethod;
 				WriteValueMethod = writeValueMethod;
-				WriteValueNotNullMethod = writeValueNotNullMethod;
-				ReadObjectMethod = readObjectMethod;
 				ReadValueMethod = readValueMethod;
-				ReadValueNotNullMethod = readValueNotNullMethod;
 			}
 		}
 	}

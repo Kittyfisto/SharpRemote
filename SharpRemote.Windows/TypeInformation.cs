@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
-using SharpRemote.CodeGeneration;
 
 namespace SharpRemote
 {
@@ -89,7 +86,7 @@ namespace SharpRemote
 			}
 
 			if (ifaces.Count > 1)
-				throw new ArgumentException(string.Format("The type '{0}' implements multiple ICollection<> interfaces, this is not supported by default - you have to register a custom serializer"));
+				throw new ArgumentException(string.Format("The type '{0}' implements multiple ICollection<> interfaces, this is not supported by default - you have to register a custom serializer", type));
 
 			var collectionType = ifaces[0];
 			elementType = collectionType.GetGenericArguments()[0]; //< We have a specific ICollection<> Type, hence there's always exactly one argument

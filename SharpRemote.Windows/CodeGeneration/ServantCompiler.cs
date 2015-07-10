@@ -11,7 +11,7 @@ using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration
 {
-	public sealed class ServantCompiler
+	internal sealed class ServantCompiler
 		: Compiler
 	{
 		private readonly List<KeyValuePair<EventInfo, MethodInfo>> _eventInvocationMethods;

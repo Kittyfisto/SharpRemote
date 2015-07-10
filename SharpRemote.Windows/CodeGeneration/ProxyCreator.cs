@@ -6,7 +6,11 @@ using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.CodeGeneration
 {
-	public sealed class ProxyCreator
+	/// <summary>
+	/// Compiler capable of compiling <see cref="IProxy"/> implementations that implement
+	/// one additional interface, and forwards all calls to that interface to an <see cref="IEndPointChannel"/>.
+	/// </summary>
+	internal sealed class ProxyCreator
 	{
 		private readonly Serializer _serializer;
 		private readonly IRemotingEndPoint _endPoint;
@@ -48,6 +52,11 @@ namespace SharpRemote.CodeGeneration
 			return module;
 		}
 
+		/// <summary>
+		/// Generates the class for a proxy of the given type <typeparamref name="T"/>.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
 		public Type GenerateProxy<T>()
 		{
 			var interfaceType = typeof (T);
@@ -76,6 +85,13 @@ namespace SharpRemote.CodeGeneration
 			return proxyType;
 		}
 
+		/// <summary>
+		/// Creates a new proxy instance that implements the given type <typeparamref name="T"/>
+		/// of the given id.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId"></param>
+		/// <returns></returns>
 		public T CreateProxy<T>(ulong objectId)
 		{
 			var interfaceType = typeof (T);

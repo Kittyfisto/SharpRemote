@@ -12,7 +12,7 @@ using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration
 {
-	public class ProxyCompiler
+	internal sealed class ProxyCompiler
 		: Compiler
 	{
 		private readonly ModuleBuilder _module;

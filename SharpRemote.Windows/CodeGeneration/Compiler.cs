@@ -8,7 +8,7 @@ using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.CodeGeneration
 {
-	public abstract class Compiler
+	internal abstract class Compiler
 	{
 		protected readonly Serializer SerializerCompiler;
 		protected readonly Type InterfaceType;

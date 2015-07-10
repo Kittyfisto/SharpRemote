@@ -8,12 +8,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 {
 	public partial class Serializer
 	{
-		private void EmitwriteSingleton(MethodInfo method)
-		{
-			// Nothing to do, all possible instance information has already been written....
-		}
-
-		private void EmitReadSingleton(ILGenerator gen, TypeInformation typeInformation, MethodInfo factoryMethod)
+		private void EmitReadSingleton(ILGenerator gen, MethodInfo factoryMethod)
 		{
 			gen.Emit(OpCodes.Call, factoryMethod);
 		}

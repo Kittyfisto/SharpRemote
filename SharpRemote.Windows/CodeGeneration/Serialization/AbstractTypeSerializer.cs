@@ -4,6 +4,10 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {
+	/// <summary>
+	/// Base class for <see cref="ITypeSerializer"/> implementations.
+	/// Adds methods to read / write nullable values.
+	/// </summary>
 	public abstract class AbstractTypeSerializer
 		: ITypeSerializer
 	{

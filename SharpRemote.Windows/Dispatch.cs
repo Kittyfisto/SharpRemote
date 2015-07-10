@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace SharpRemote
 {
+	/// <summary>
+	/// Defines the possible modes of method dispatch that exist in this framework.
+	/// </summary>
 	[DataContract]
 	public enum Dispatch
 	{
@@ -28,8 +31,7 @@ namespace SharpRemote
 		/// There can never be more than one invocation of the tagged method on the same object at any time.
 		/// </summary>
 		/// <remarks>
-		/// This behaves exactly like the synchronized keyword in java. All pending calls are serialized and
-		/// executed in sequence.
+		/// Behaves exactly as locking this method with an exclusive instance level lock.
 		/// </remarks>
 		[EnumMember] SerializePerMethod = 1,
 
@@ -38,7 +40,8 @@ namespace SharpRemote
 		/// There can never be more than one invocation of ANY tagged method on the same object at any time.
 		/// </summary>
 		/// <remarks>
-		/// This behaves exactly like locking all tagged methods with the same sync root / exclusive lock.
+		/// This behaves exactly like the synchronized keyword in java. All pending calls are serialized and
+		/// executed in sequence.
 		/// </remarks>
 		[EnumMember] SerializePerObject = 2,
 

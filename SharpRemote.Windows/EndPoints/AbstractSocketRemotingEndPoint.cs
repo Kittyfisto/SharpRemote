@@ -273,6 +273,9 @@ namespace SharpRemote
 			}
 		}
 
+		/// <summary>
+		/// Tests if this object has been disposed of or not.
+		/// </summary>
 		public bool IsDisposed
 		{
 			get { return _isDisposed; }

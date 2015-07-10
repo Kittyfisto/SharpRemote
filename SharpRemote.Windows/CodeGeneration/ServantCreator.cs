@@ -6,7 +6,11 @@ using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.CodeGeneration
 {
-	public sealed class ServantCreator
+	/// <summary>
+	/// Compiler capable of compiling <see cref="IServant"/> implementations that forward calls from
+	/// an <see cref="IEndPointChannel"/> to a subject.
+	/// </summary>
+	internal sealed class ServantCreator
 	{
 		private readonly IRemotingEndPoint _endPoint;
 		private readonly IEndPointChannel _channel;

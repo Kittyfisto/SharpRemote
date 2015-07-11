@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using SharpRemote.Extensions;
 
 namespace SharpRemote.Hosting
 {
@@ -14,6 +15,9 @@ namespace SharpRemote.Hosting
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
 
+		/// <summary>
+		/// 
+		/// </summary>
 		public InProcessRemotingSilo()
 		{
 			const int subjectHostId = 0;

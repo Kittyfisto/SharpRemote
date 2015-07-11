@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.Extensions;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types;
@@ -19,7 +20,7 @@ using Description = NUnit.Framework.DescriptionAttribute;
 namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
-	[NUnit.Framework.Description(
+	[Description(
 		"Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour"
 		)]
 	public class RemotingEndPointAcceptanceTest
@@ -225,7 +226,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that an eception can be marshalled")]
+		[Description("Verifies that an eception can be marshalled")]
 		public void TestGetPropertyThrowException1()
 		{
 			var subject = new Mock<IGetDoubleProperty>();
@@ -240,7 +241,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[NUnit.Framework.Description(
+		[Description(
 			"Verifies that if an exception could not be serialized, but can be re-constructed due to a default ctor, then it is thrown again"
 			)]
 		public void TestGetPropertyThrowNonSerializableException()
@@ -270,7 +271,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that the exception thrown by a task is correctly marshalled")]
+		[Description("Verifies that the exception thrown by a task is correctly marshalled")]
 		public void TestGetTaskThrowException1()
 		{
 			const int servantId = 11;

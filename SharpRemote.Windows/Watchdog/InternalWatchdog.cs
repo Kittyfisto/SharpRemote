@@ -8,7 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using SharpRemote.Hosting;
+using SharpRemote.Extensions;
 using log4net;
 
 namespace SharpRemote.Watchdog

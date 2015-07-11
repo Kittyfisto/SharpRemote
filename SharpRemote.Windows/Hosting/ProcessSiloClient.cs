@@ -4,32 +4,24 @@ using System.Diagnostics.Contracts;
 using System.Net;
 using System.Reflection;
 using System.Threading;
+using SharpRemote.Extensions;
 using log4net;
 
 namespace SharpRemote.Hosting
 {
-	public enum ProcessOptions
-	{
-		ShowConsole,
-		HideConsole,
-	}
-
 	/// <summary>
-	///     Represents a silo that is actually hosted in a completely different process.
+	///     <see cref="ISilo"/> implementation that allows client code to host objects in a remote
+	/// process via <see cref="ProcessSiloServer"/>.
 	/// </summary>
-	public sealed class ProcessSilo
+	/// <remarks>
+	/// Can be used to host objects either in the SharpRemote.Host.exe or in a custom application
+	/// of your choice by creating a <see cref="ProcessSiloServer"/> and calling <see cref="ProcessSiloServer.Run"/>.
+	/// </remarks>
+	public sealed class ProcessSiloClient
 		: ISilo
 	{
-		public enum HostState
-		{
-			None,
-
-			Booting,
-			Ready,
-			ShuttingDown,
-		}
-
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private const string SharpRemoteHost = "SharpRemote.Host.exe";
 
 		private readonly SocketRemotingEndPoint _endPoint;
 		private readonly Action<string> _hostOutputWritten;
@@ -40,17 +32,30 @@ namespace SharpRemote.Hosting
 
 		private int? _remotePort;
 
-		public ProcessSilo(ProcessOptions options = ProcessOptions.HideConsole, Action<string> hostOutputWritten = null)
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="process"></param>
+		/// <param name="options"></param>
+		/// <param name="hostOutputWritten"></param>
+		public ProcessSiloClient(
+			string process = SharpRemoteHost,
+			ProcessOptions options = ProcessOptions.HideConsole,
+			Action<string> hostOutputWritten = null
+			)
 		{
+			if (process == null) throw new ArgumentNullException("process");
+
 			_hostOutputWritten = hostOutputWritten;
 			_endPoint = new SocketRemotingEndPoint();
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 			_waitHandle = new ManualResetEvent(false);
+			_hostState = HostState.BootPending;
 
 			int parentPid = Process.GetCurrentProcess().Id;
 			_process = new Process
 				{
-					StartInfo = new ProcessStartInfo("SharpRemote.Host.exe")
+					StartInfo = new ProcessStartInfo(process)
 						{
 							Arguments = string.Format("{0}", parentPid),
 							RedirectStandardOutput = true,
@@ -90,6 +95,17 @@ namespace SharpRemote.Hosting
 			_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		public HostState HostState
+		{
+			get { return _hostState; }
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		[Pure]
 		public bool IsProcessRunning
 		{
@@ -160,7 +176,7 @@ namespace SharpRemote.Hosting
 		{
 		}
 
-		public static class Constants
+		internal static class Constants
 		{
 			/// <summary>
 			///     The id of the grain that is used to instantiate further subjects.

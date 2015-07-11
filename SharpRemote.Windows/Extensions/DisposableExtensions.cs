@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Reflection;
 using log4net;
 
-namespace SharpRemote
+namespace SharpRemote.Extensions
 {
-	public static class DisposableExtensions
+	internal static class DisposableExtensions
 	{
 		private static readonly ILog Log = LogManager.GetLogger("SharpRemote.DisposableExtensions");
 

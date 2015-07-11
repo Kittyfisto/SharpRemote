@@ -93,6 +93,9 @@
     <Compile Include="Exceptions\RemotingException.cs" />
     <Compile Include="Exceptions\TypeMismatchException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />
+    <Compile Include="Hosting\HostState.cs" />
+    <Compile Include="Hosting\ProcessOptions.cs" />
+    <Compile Include="Hosting\ProcessSiloServer.cs" />
     <Compile Include="IGrain.cs" />
     <Compile Include="Attributes\InvokeAttribute.cs" />
     <Compile Include="IProxy.cs" />
@@ -110,8 +113,8 @@
     <Compile Include="Hosting\InProcessSilo.cs" />
     <Compile Include="Hosting\ISilo.cs" />
     <Compile Include="Hosting\ISubjectHost.cs" />
-    <Compile Include="Hosting\ProcessExtensions.cs" />
-    <Compile Include="Hosting\ProcessSilo.cs" />
+    <Compile Include="Extensions\ProcessExtensions.cs" />
+    <Compile Include="Hosting\ProcessSiloClient.cs" />
     <Compile Include="Hosting\SubjectHost.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializer.cs" />

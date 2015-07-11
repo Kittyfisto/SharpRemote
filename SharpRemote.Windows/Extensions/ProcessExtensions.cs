@@ -2,15 +2,16 @@
 using System.ComponentModel;
 using System.Diagnostics;
 
-namespace SharpRemote.Hosting
+namespace SharpRemote.Extensions
 {
-	public static class ProcessExtensions
+	internal static class ProcessExtensions
 	{
 		public static void TryKill(this Process that)
 		{
 			try
 			{
-				that.Kill();
+				if (!that.HasExited)
+					that.Kill();
 			}
 			catch (Win32Exception)
 			{

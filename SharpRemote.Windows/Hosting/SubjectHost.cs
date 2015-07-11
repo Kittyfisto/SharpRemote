@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using SharpRemote.Extensions;
 
 namespace SharpRemote.Hosting
 {
+	/// <summary>
+	/// <see cref="ISubjectHost"/> implementation that uses an <see cref="Activator"/> to
+	/// create object instances.
+	/// </summary>
 	internal sealed class SubjectHost
 		: ISubjectHost
 	{
 		private readonly IRemotingEndPoint _endpoint;
-		private readonly Dictionary<ulong, object> _subjects;
+		private readonly Dictionary<ulong, IServant> _subjects;
+		private readonly object _syncRoot;
 		private ulong _nextServantId;
 		private readonly Action _onDisposed;
 		private bool _isDisposed;
@@ -19,7 +25,8 @@ namespace SharpRemote.Hosting
 			_endpoint = endpoint;
 			_nextServantId = firstServantId;
 			_onDisposed = onDisposed;
-			_subjects = new Dictionary<ulong, object>();
+			_syncRoot = new object();
+			_subjects = new Dictionary<ulong, IServant>();
 		}
 
 		public ulong CreateSubject1(Type type, Type interfaceType)
@@ -28,7 +35,12 @@ namespace SharpRemote.Hosting
 			var subject = Activator.CreateInstance(type);
 			var method = typeof (IRemotingEndPoint).GetMethod("CreateServant").MakeGenericMethod(interfaceType);
 			var servant = (IServant)method.Invoke(_endpoint, new []{servantId, subject});
-			_subjects.Add(servantId, subject);
+
+			lock (_syncRoot)
+			{
+				_subjects.Add(servantId, servant);
+			}
+
 			return servantId;
 		}
 
@@ -40,22 +52,25 @@ namespace SharpRemote.Hosting
 
 		public void Dispose()
 		{
-			if (_isDisposed)
-				return;
-
-			// TODO: Remove / dispose all subjects...
-			foreach (var subject in _subjects.Values)
+			lock (_syncRoot)
 			{
-				var disp = subject as IDisposable;
-				if (disp != null)
-					disp.TryDispose();
+				if (_isDisposed)
+					return;
+
+				// TODO: Remove / dispose all subjects...
+				foreach (var subject in _subjects.Values)
+				{
+					var disp = subject.Subject as IDisposable;
+					if (disp != null)
+						disp.TryDispose();
+				}
+				_subjects.Clear();
+
+				if (_onDisposed != null)
+					_onDisposed();
+
+				_isDisposed = true;
 			}
-			_subjects.Clear();
-
-			if (_onDisposed != null)
-				_onDisposed();
-
-			_isDisposed = true;
 		}
 	}
 }

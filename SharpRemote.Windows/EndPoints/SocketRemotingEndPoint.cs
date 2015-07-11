@@ -8,6 +8,7 @@ using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
+using SharpRemote.Extensions;
 using log4net;
 
 // ReSharper disable CheckNamespace

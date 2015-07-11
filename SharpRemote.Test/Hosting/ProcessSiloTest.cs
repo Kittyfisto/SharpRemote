@@ -11,7 +11,7 @@ namespace SharpRemote.Test.Hosting
 		[Test]
 		public void TestCreateGrain1()
 		{
-			using (var silo = new ProcessSilo())
+			using (var silo = new ProcessSiloClient())
 			{
 				var proxy = silo.CreateGrain<IGetStringProperty>(typeof (GetStringPropertyImplementation));
 				proxy.Value.Should().Be("Foobar");
@@ -21,7 +21,7 @@ namespace SharpRemote.Test.Hosting
 		[Test]
 		public void TestCtor()
 		{
-			using (var silo = new ProcessSilo())
+			using (var silo = new ProcessSiloClient())
 			{
 				silo.IsProcessRunning.Should().BeTrue();
 			}

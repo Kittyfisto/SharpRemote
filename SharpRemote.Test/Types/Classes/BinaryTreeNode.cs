@@ -28,7 +28,7 @@ namespace SharpRemote.Test.Types.Classes
 		{
 			unchecked
 			{
-				int hashCode = (Value != null ? Value.GetHashCode() : 0);
+				int hashCode = Value.GetHashCode();
 				hashCode = (hashCode*397) ^ (Left != null ? Left.GetHashCode() : 0);
 				hashCode = (hashCode*397) ^ (Right != null ? Right.GetHashCode() : 0);
 				return hashCode;

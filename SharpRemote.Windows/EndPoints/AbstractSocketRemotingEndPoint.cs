@@ -9,8 +9,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using SharpRemote.CodeGeneration;
-using SharpRemote.CodeGeneration.Serialization;
+using SharpRemote.CodeGeneration.Remoting;
 using log4net;
 
 // ReSharper disable CheckNamespace

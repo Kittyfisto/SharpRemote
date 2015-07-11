@@ -13,6 +13,9 @@ using System.Runtime.Serialization.Formatters.Binary;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
+	/// <summary>
+	/// Base class for any remoting end point.
+	/// </summary>
 	public abstract class AbstractEndPoint
 	{
 		#region Static Methods

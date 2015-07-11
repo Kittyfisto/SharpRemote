@@ -7,6 +7,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
+using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.Hosting;
 using SharpRemote.Tasks;
 using SharpRemote.Test.Hosting;

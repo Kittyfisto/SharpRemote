@@ -7,7 +7,7 @@ using SharpRemote.Test.Types.Classes;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
-	public static class SerializerExtensions
+	internal static class SerializerExtensions
 	{
 		#region Static Methods
 
@@ -58,7 +58,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				if (value != null)
 				{
-					if (actualValue != string.Empty && !(actualValue is Type) && !(actualValue is Singleton))
+					if (!Equals(actualValue, string.Empty) && !(actualValue is Type) && !(actualValue is Singleton))
 					{
 						actualValue.Should().NotBeSameAs(value, "because serialization should've created a deep copy");
 					}

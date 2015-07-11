@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 using System.Reflection.Emit;
+using SharpRemote.CodeGeneration;
 
-namespace SharpRemote.CodeGeneration.Serialization
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// Base class for <see cref="ITypeSerializer"/> implementations.

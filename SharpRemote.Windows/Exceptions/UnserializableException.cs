@@ -21,7 +21,9 @@ namespace SharpRemote
 		private readonly string _originalStacktrace;
 
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 		private readonly string _originalTargetSite;
+#endif
 #endif
 
 		private readonly string _originalTypename;
@@ -115,6 +117,7 @@ namespace SharpRemote
 		}
 
 #if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 
 		/// <summary>
 		/// The name of the <see cref="Exception.TargetSite"/> of the
@@ -124,6 +127,7 @@ namespace SharpRemote
 		{
 			get { return _originalTargetSite; }
 		}
+#endif
 #endif
 	}
 }

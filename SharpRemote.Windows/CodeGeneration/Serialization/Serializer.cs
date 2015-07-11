@@ -2,17 +2,28 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Serialization;
 using System.Text;
+using SharpRemote.CodeGeneration;
 using SharpRemote.CodeGeneration.Serialization.Serializers;
 
-namespace SharpRemote.CodeGeneration.Serialization
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// <see cref="ISerializer"/> implementation that just-in-time compiles the code responsible
-	/// for serializing arbitrary types.
+	/// for serializing arbitrary types. <see cref="WriteObject"/> serializes an object graph to
+	/// a <see cref="BinaryWriter"/> and <see cref="ReadObject"/> deserializes one from a <see cref="BinaryReader"/>.
 	/// </summary>
+	/// <remarks>
+	/// An object graph (or sub-graph) can only be serialized if its type is either:
+	/// - Natively supported: <see cref="string"/>, <see cref="TimeSpan"/>, etc...
+	/// - Attributed with the <see cref="DataContractAttribute"/> and <see cref="DataMemberAttribute"/>
+	/// </remarks>
 	public sealed partial class Serializer
 		: ISerializer
 	{

@@ -11,7 +11,7 @@ namespace SharpRemote.Watchdog.Service
 		private const string EventSourceName = "SharpRemote.Watchdog";
 		private const string EventLogName = "Log";
 		private readonly EventLog _eventLog;
-		private WatchdogHost _host;
+		//private WatchdogHost _host;
 		private ServiceStatus _currentStatus;
 
 		public WatchdogService()
@@ -63,7 +63,7 @@ namespace SharpRemote.Watchdog.Service
 
 		private ServiceStatus CurrentStatus
 		{
-			get { return _currentStatus; }
+			//get { return _currentStatus; }
 			set
 			{
 				_currentStatus = value;

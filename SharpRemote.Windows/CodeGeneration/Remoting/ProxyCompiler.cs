@@ -7,10 +7,9 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Tasks;
 
-namespace SharpRemote.CodeGeneration
+namespace SharpRemote.CodeGeneration.Remoting
 {
 	internal sealed class ProxyCompiler
 		: Compiler

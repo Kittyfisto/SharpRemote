@@ -5,7 +5,9 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
 
-namespace SharpRemote.CodeGeneration.Serialization
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	public partial class Serializer
 	{
@@ -163,6 +165,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		#region Reading
 
+		/// <summary>
+		/// Emits the code necessary to read a value of the given compile-time type from
+		/// a <see cref="BinaryReader"/>.
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="loadReader"></param>
+		/// <param name="loadSerializer"></param>
+		/// <param name="valueType"></param>
 		public void EmitReadValue(ILGenerator gen,
 			Action loadReader,
 			Action loadSerializer,

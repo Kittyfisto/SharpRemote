@@ -4,9 +4,8 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
-using SharpRemote.CodeGeneration.Serialization;
 
-namespace SharpRemote.CodeGeneration
+namespace SharpRemote.CodeGeneration.Remoting
 {
 	internal abstract class Compiler
 	{

@@ -2,7 +2,6 @@
 using System.IO;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.Hosting;
 using SharpRemote.Watchdog;
 
 namespace SharpRemote.Test.Watchdog
@@ -12,7 +11,6 @@ namespace SharpRemote.Test.Watchdog
 	{
 		private string _sharpRemoteLibraryLocation;
 		private string _binFolder;
-		private InProcessRemotingSilo _silo;
 		private IInternalWatchdog _watchdog;
 
 		[TestFixtureSetUp]
@@ -113,7 +111,7 @@ namespace SharpRemote.Test.Watchdog
 				return false;
 
 			const int blockSize = 4096;
-			int iterations = (int)Math.Ceiling((double)first.Length / blockSize);
+			var iterations = (int)Math.Ceiling((double)first.Length / blockSize);
 
 			using (FileStream fs1 = first.OpenRead())
 			using (FileStream fs2 = File.Open(second.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))

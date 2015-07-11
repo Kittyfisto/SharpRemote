@@ -5,14 +5,31 @@ using System.Xml.Serialization;
 
 namespace SharpRemote.Watchdog
 {
+	/// <summary>
+	/// Represents a file that has been remotely deployed and installed on a machine.
+	/// </summary>
 	[DataContract]
 	[XmlSerializerFormat]
 	public sealed class InstalledFile : IEquatable<InstalledFile>
 	{
+		/// <summary>
+		/// The length of the file in bytes.
+		/// </summary>
 		[DataMember] [XmlAttribute] public long FileLength;
+
+		/// <summary>
+		/// The filename (including extension) relative to the special folder its been placed in.
+		/// </summary>
 		[DataMember] [XmlAttribute] public string Filename;
 
+		/// <summary>
+		/// The folder the file is placed in.
+		/// </summary>
 		[DataMember] [XmlAttribute] public Environment.SpecialFolder Folder;
+
+		/// <summary>
+		/// Unique id of the file.
+		/// </summary>
 		[DataMember] [XmlAttribute] public long Id;
 
 		public bool Equals(InstalledFile other)

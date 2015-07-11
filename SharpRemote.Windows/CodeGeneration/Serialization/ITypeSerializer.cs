@@ -2,7 +2,9 @@
 using System.IO;
 using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.Serialization
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// Responsible for providing the IL-code to serialize a value of the given type <see cref="Type"/>.

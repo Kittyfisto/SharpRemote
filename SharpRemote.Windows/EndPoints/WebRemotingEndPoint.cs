@@ -3,7 +3,7 @@ using System.IO;
 
 namespace SharpRemote.EndPoints
 {
-	public sealed class WebRemotingEndPoint
+	internal sealed class WebRemotingEndPoint
 		: AbstractEndPoint
 		  , IRemotingEndPoint
 		  , IEndPointChannel

@@ -8,6 +8,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
+using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.Tasks;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
@@ -826,6 +827,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			         .Returns(listener);
 
 			IVoidMethodStringParameter actualListener = proxy.AddListener();
+			addListenerCalled.Should().BeTrue();
 			actualListener.Should().NotBeNull();
 			actualListener.Should().BeSameAs(listener);
 		}

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.Serialization
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	public partial class Serializer
 	{

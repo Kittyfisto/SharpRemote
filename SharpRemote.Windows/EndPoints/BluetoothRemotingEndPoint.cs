@@ -7,6 +7,9 @@ using InTheHand.Net.Sockets;
 
 namespace SharpRemote.EndPoints
 {
+	/// <summary>
+	/// NOT FINISHED.
+	/// </summary>
 	public sealed class BluetoothRemotingEndPoint
 		: AbstractEndPoint
 		  , IRemotingEndPoint
@@ -14,11 +17,18 @@ namespace SharpRemote.EndPoints
 	{
 		private BluetoothEndPoint _localEndPoint;
 
+		/// <summary>
+		/// NOT FINISHED
+		/// </summary>
 		public BluetoothRemotingEndPoint()
 		{
 			
 		}
 
+		/// <summary>
+		/// NOT FINISHED
+		/// </summary>
+		/// <param name="serviceGuid"></param>
 		public void Bind(Guid serviceGuid)
 		{
 			_localEndPoint = new BluetoothEndPoint(new BluetoothAddress(1234), serviceGuid);
@@ -29,6 +39,10 @@ namespace SharpRemote.EndPoints
 			throw new NotImplementedException();
 		}
 
+		/// <summary>
+		/// NOT FINISHED
+		/// </summary>
+		/// <param name="timeout"></param>
 		public void Connect(TimeSpan timeout)
 		{
 			var devices = DiscoverDevices(timeout);
@@ -36,6 +50,11 @@ namespace SharpRemote.EndPoints
 			int n = 0;
 		}
 
+		/// <summary>
+		/// NOT FINISHED
+		/// </summary>
+		/// <param name="timeout"></param>
+		/// <returns></returns>
 		public static BluetoothDeviceInfo[] DiscoverDevices(TimeSpan timeout)
 		{
 			BluetoothDeviceInfo[] devices;

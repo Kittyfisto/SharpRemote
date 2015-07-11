@@ -8,7 +8,7 @@ using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration
 {
-	public static class Methods
+	internal static class Methods
 	{
 		public static readonly MethodInfo ChannelCallRemoteMethod;
 		public static readonly MethodInfo ReadDouble;
@@ -150,7 +150,7 @@ namespace SharpRemote.CodeGeneration
 			RemotingEndPointGetOrCreateServant = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewServant");
 			RemotingEndPointGetOrCreateProxy = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy");
 
-			CreateTypeFromName = typeof(Methods).GetMethod("GetType", new[] { typeof(string) });
+			CreateTypeFromName = typeof(TypeResolver).GetMethod("GetType", new[] { typeof(string) });
 
 			TaskGetFactory = typeof (Task).GetProperty("Factory").GetMethod;
 			ActionIntPtrCtor = typeof (Action<object>).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
@@ -171,11 +171,6 @@ namespace SharpRemote.CodeGeneration
 			TypeGetTypeFromHandle = typeof (Type).GetMethod("GetTypeFromHandle");
 
 			SerialTaskSchedulerCtor = typeof (SerialTaskScheduler).GetConstructor(new[] {typeof (bool)});
-		}
-
-		public static Type GetType(string name)
-		{
-			return Type.GetType(name);
 		}
 	}
 }

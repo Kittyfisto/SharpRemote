@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace SharpRemote.Test.Types.Interfaces
@@ -9,10 +7,10 @@ namespace SharpRemote.Test.Types.Interfaces
 	public sealed class OrderedInterface
 		: IOrderInterface
 	{
-		public readonly List<int> UnorderedSequence;
-		public readonly List<int> TypeOrderedSequence;
 		public readonly List<int> InstanceOrderedSequence;
 		public readonly List<int> MethodOrderedSequence;
+		public readonly List<int> TypeOrderedSequence;
+		public readonly List<int> UnorderedSequence;
 		private Thread _currentThread;
 
 		public OrderedInterface()

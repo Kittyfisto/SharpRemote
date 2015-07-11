@@ -5,8 +5,7 @@ namespace SharpRemote.Test.Types.Classes
 	[DataContract]
 	public sealed class ClassWithSingleton
 	{
-		[DataMember]
-		public Singleton That;
+		[DataMember] public Singleton That;
 
 		#region Public Methods
 

@@ -6,7 +6,6 @@ namespace SharpRemote.Test.Types.Classes
 	public class Tree
 		: BaseClass
 	{
-		[DataMember]
-		public byte B;
+		[DataMember] public byte B;
 	}
 }

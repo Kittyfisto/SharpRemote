@@ -21,18 +21,6 @@ namespace SharpRemote.Test.Tasks
 		}
 
 		[Test]
-		public void TestScheduleOneTask()
-		{
-			var scheduler = new SerialTaskScheduler(true);
-			var task = new Task<int>(() => 42);
-			task.Start(scheduler);
-			task.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
-			task.Result.Should().Be(42);
-			scheduler.Dispose();
-			scheduler.Exceptions.Should().BeEmpty();
-		}
-
-		[Test]
 		public void TestScheduleManyTasks()
 		{
 			var scheduler = new SerialTaskScheduler(true);
@@ -47,6 +35,18 @@ namespace SharpRemote.Test.Tasks
 			Task.WaitAll(tasks.Cast<Task>().ToArray(), TimeSpan.FromSeconds(10))
 			    .Should().BeTrue();
 			tasks.All(x => x.Result == 42).Should().BeTrue();
+			scheduler.Exceptions.Should().BeEmpty();
+		}
+
+		[Test]
+		public void TestScheduleOneTask()
+		{
+			var scheduler = new SerialTaskScheduler(true);
+			var task = new Task<int>(() => 42);
+			task.Start(scheduler);
+			task.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+			task.Result.Should().Be(42);
+			scheduler.Dispose();
 			scheduler.Exceptions.Should().BeEmpty();
 		}
 	}

@@ -6,7 +6,6 @@ namespace SharpRemote.Test.Types.Classes
 	public class Birke
 		: Tree
 	{
-		[DataMember]
-		public string C;
+		[DataMember] public string C;
 	}
 }

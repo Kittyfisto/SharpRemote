@@ -4,7 +4,6 @@ namespace SharpRemote.Test.Types.Structs
 {
 	public struct MissingDataContractStruct
 	{
-		[DataMember]
-		public int Value;
+		[DataMember] public int Value;
 	}
 }

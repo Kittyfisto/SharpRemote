@@ -30,7 +30,7 @@ namespace SharpRemote.Test.Types.Structs
 // ReSharper disable NonReadonlyFieldInGetHashCode
 				int hashCode = A.GetHashCode();
 				hashCode = (hashCode*397) ^ B;
-				hashCode = (hashCode * 397) ^ (C != null ? C.GetHashCode() : 0);
+				hashCode = (hashCode*397) ^ (C != null ? C.GetHashCode() : 0);
 // ReSharper restore NonReadonlyFieldInGetHashCode
 				return hashCode;
 			}

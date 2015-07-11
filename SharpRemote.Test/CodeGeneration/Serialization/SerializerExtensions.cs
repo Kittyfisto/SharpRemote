@@ -22,7 +22,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				stream.Position = 0;
 
 				var reader = new BinaryReader(stream, Encoding.UTF8);
-				var actualValue = (T)serializer.ReadObject(reader);
+				var actualValue = (T) serializer.ReadObject(reader);
 
 				actualValue.Should().Equal(value, "because serialization should preserve the order of elements in the enumeration");
 				if (value != null)
@@ -35,8 +35,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				}
 
 				stream.Position.Should()
-					  .Be(stream.Length,
-						  "because reading the object again should've consumed everything that was written - not a single byte less");
+				      .Be(stream.Length,
+				          "because reading the object again should've consumed everything that was written - not a single byte less");
 
 				return actualValue;
 			}
@@ -54,7 +54,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				var reader = new BinaryReader(stream, Encoding.UTF8);
 				object actualValue = serializer.ReadObject(reader);
 
-				actualValue.Should().Be(value, "because serialization should preserve all those members attributing to value equality");
+				actualValue.Should()
+				           .Be(value, "because serialization should preserve all those members attributing to value equality");
 
 				if (value != null)
 				{
@@ -71,7 +72,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				stream.Length.Should().BeGreaterThan(0, "because something must have been written to the stream");
 				stream.Position.Should()
 				      .Be(stream.Length,
-					      "because reading the object again should've consumed everything that was written - not a single byte less");
+				          "because reading the object again should've consumed everything that was written - not a single byte less");
 
 				return actualValue;
 			}

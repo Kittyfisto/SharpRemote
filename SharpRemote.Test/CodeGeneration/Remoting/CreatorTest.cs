@@ -9,7 +9,9 @@ using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 namespace SharpRemote.Test.CodeGeneration.Remoting
 {
 	[TestFixture]
-	[Description("Verifies that proxy and subject can communicate to each other- arguments, return values and exceptions are serialized already")]
+	[Description(
+		"Verifies that proxy and subject can communicate to each other- arguments, return values and exceptions are serialized already"
+		)]
 	public sealed class CreatorTest
 	{
 		private IEndPointChannel _channel;
@@ -41,7 +43,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_proxyCreator = new ProxyCreator(_endPoint, _channel);
 			_servantCreator = new ServantCreator(_endPoint, _channel);
 
-			channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+			channel.Setup(
+				x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 			       .Returns((ulong objectId, string interfaceName, string methodName, Stream arguments) =>
 				       {
 					       if (objectId != _servant.ObjectId)
@@ -63,7 +66,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var subject = new Mock<IGetDoubleProperty>();
 			subject.Setup(x => x.Value).Returns(-414442.3213);
 
-			var proxy = CreateServantAndProxy(subject.Object);
+			IGetDoubleProperty proxy = CreateServantAndProxy(subject.Object);
 			proxy.Value.Should().BeApproximately(subject.Object.Value, 0);
 		}
 	}

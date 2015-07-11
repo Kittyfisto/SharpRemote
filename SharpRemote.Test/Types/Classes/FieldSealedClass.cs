@@ -5,14 +5,11 @@ namespace SharpRemote.Test.Types.Classes
 	[DataContract]
 	public sealed class FieldSealedClass
 	{
-		[DataMember]
-		public double A;
+		[DataMember] public double A;
 
-		[DataMember]
-		public int B;
+		[DataMember] public int B;
 
-		[DataMember]
-		public string C;
+		[DataMember] public string C;
 
 		#region Public Methods
 
@@ -28,8 +25,8 @@ namespace SharpRemote.Test.Types.Classes
 			unchecked
 			{
 				int hashCode = A.GetHashCode();
-				hashCode = (hashCode * 397) ^ B;
-				hashCode = (hashCode * 397) ^ (C != null ? C.GetHashCode() : 0);
+				hashCode = (hashCode*397) ^ B;
+				hashCode = (hashCode*397) ^ (C != null ? C.GetHashCode() : 0);
 				return hashCode;
 			}
 		}

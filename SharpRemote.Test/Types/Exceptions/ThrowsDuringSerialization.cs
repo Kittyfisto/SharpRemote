@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace SharpRemote.Test.Types.Exceptions
 {
@@ -6,7 +7,7 @@ namespace SharpRemote.Test.Types.Exceptions
 	public sealed class ThrowsDuringSerialization
 		: Exception
 	{
-		public override void GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
+		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData(info, context);
 

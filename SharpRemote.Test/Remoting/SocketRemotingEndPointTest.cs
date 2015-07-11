@@ -26,6 +26,23 @@ namespace SharpRemote.Test.Remoting
 			return new SocketRemotingEndPoint(name);
 		}
 
+		private static bool WaitFor(Func<bool> fn, TimeSpan timeout)
+		{
+			DateTime start = DateTime.Now;
+			DateTime now = start;
+			while ((now - start) < timeout)
+			{
+				if (fn())
+					return true;
+
+				Thread.Sleep(TimeSpan.FromMilliseconds(10));
+
+				now = DateTime.Now;
+			}
+
+			return false;
+		}
+
 		[Test]
 		[Description(
 			"Verifies that when the connection between two endpoints is interrupted from the calling end, any ongoing synchronous method call is stopped and an exception is thrown on the calling thread"
@@ -153,7 +170,7 @@ namespace SharpRemote.Test.Remoting
 				new Action(
 					() => new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 50012), timeout))
 						      .ShouldThrow<NoSuchEndPointException>()
-							  .WithMessage("Unable to establish a connection with the given endpoint: 127.0.0.1:50012"))
+						      .WithMessage("Unable to establish a connection with the given endpoint: 127.0.0.1:50012"))
 					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
 
 				const string reason = "because no successfull connection could be established";
@@ -221,7 +238,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
-				new Action(() => rep.Connect((IPEndPoint)null, TimeSpan.FromSeconds(1)))
+				new Action(() => rep.Connect((IPEndPoint) null, TimeSpan.FromSeconds(1)))
 					.ShouldThrow<ArgumentNullException>()
 					.WithMessage("Value cannot be null.\r\nParameter name: endpoint");
 			}
@@ -254,10 +271,11 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that Connect() throws when the other socket doesn't respond with the proper greeting message in time")]
+		[Description(
+			"Verifies that Connect() throws when the other socket doesn't respond with the proper greeting message in time")]
 		public void TestConnect9()
 		{
-			using (var rep = CreateEndPoint())
+			using (SocketRemotingEndPoint rep = CreateEndPoint())
 			{
 				var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
@@ -422,23 +440,6 @@ namespace SharpRemote.Test.Remoting
 				new Action(() => socket.Bind(endpoint))
 					.ShouldNotThrow("Because the corresponding endpoint should no longer be in use");
 			}
-		}
-
-		private static bool WaitFor(Func<bool> fn, TimeSpan timeout)
-		{
-			var start = DateTime.Now;
-			var now = start;
-			while ((now - start) < timeout)
-			{
-				if (fn())
-					return true;
-
-				Thread.Sleep(TimeSpan.FromMilliseconds(10));
-
-				now = DateTime.Now;
-			}
-
-			return false;
 		}
 	}
 }

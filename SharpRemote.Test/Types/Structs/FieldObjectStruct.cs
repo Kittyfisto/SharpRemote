@@ -5,8 +5,7 @@ namespace SharpRemote.Test.Types.Structs
 	[DataContract]
 	public struct FieldObjectStruct
 	{
-		[DataMember]
-		public object Value;
+		[DataMember] public object Value;
 
 		#region Public Methods
 

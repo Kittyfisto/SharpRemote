@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
@@ -18,7 +19,7 @@ using Description = NUnit.Framework.DescriptionAttribute;
 namespace SharpRemote.Test.Remoting
 {
 	[TestFixture]
-	[Description(
+	[NUnit.Framework.Description(
 		"Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour"
 		)]
 	public class RemotingEndPointAcceptanceTest
@@ -52,6 +53,111 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Description(
+			"Verifies that synchronous methods are executed in the order they are issued in - by issuing them from one thread")]
+		public void TestCallOrder1()
+		{
+			var subject = new OrderedInterface();
+			const int servantId = 18;
+			IServant servant = _server.CreateServant(servantId, (IOrderInterface) subject);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			for (int i = 0; i < 1000; ++i)
+			{
+				proxy.Unordered(i);
+			}
+
+			subject.UnorderedSequence.Should().Equal(
+				Enumerable.Range(0, 1000).ToList(),
+				"Because synchronous calls made from the same thread are guarantueed to be executed in order"
+				);
+		}
+
+		[Test]
+		[Description(
+			"Verifies that synchronous methods are executed in the order they are issued in - by issuing them from two threads")]
+		public void TestCallOrder2()
+		{
+			var subject = new OrderedInterface();
+			const int servantId = 19;
+			IServant servant = _server.CreateServant(servantId, (IOrderInterface) subject);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			List<int> sequence = Enumerable.Range(0, 1000).ToList();
+			Action fn = () =>
+				{
+					while (true)
+					{
+						lock (sequence)
+						{
+							if (sequence.Count == 0)
+								break;
+
+							int next = sequence[0];
+							sequence.RemoveAt(0);
+							proxy.Unordered(next);
+						}
+					}
+				};
+			var tasks = new[]
+				{
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn)
+				};
+			Task.WaitAll(tasks);
+
+			subject.UnorderedSequence.Should().Equal(
+				Enumerable.Range(0, 1000).ToList(),
+				"Because synchronous calls are executed in the same sequence they are given, independent of the calling thread"
+				);
+		}
+
+		[Test]
+		[Description(
+			"Verifies that invocations on a SerializePerType method are serialized, even when the calls happen in parallel")]
+		public void TestCallOrder3()
+		{
+			var subject = new OrderedInterface();
+			const int servantId = 20;
+			IServant servant = _server.CreateServant(servantId, (IOrderInterface) subject);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			List<int> sequence = Enumerable.Range(0, 1000).ToList();
+			Action fn = () =>
+				{
+					while (true)
+					{
+						int next;
+						lock (sequence)
+						{
+							if (sequence.Count == 0)
+								break;
+
+							next = sequence[0];
+							sequence.RemoveAt(0);
+						}
+
+						proxy.TypeOrdered(next);
+					}
+				};
+			var tasks = new[]
+				{
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn)
+				};
+			Task.WaitAll(tasks);
+
+			subject.TypeOrderedSequence.Should().BeEquivalentTo(
+				Enumerable.Range(0, 1000).ToList(),
+				"Because the proxy calls are not necessarily ordered, its invocations aren't either."
+				);
+		}
+
+		[Test]
 		public void TestCreateSubject()
 		{
 			var subject = new Mock<ISubjectHost>();
@@ -79,7 +185,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("")]
+		[NUnit.Framework.Description("")]
 		public void TestGetNonStartedTaskIsNotSupported1()
 		{
 			const int servantId = 14;
@@ -93,7 +199,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("")]
+		[NUnit.Framework.Description("")]
 		public void TestGetNonStartedTaskIsNotSupported2()
 		{
 			const int servantId = 15;
@@ -119,7 +225,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that an eception can be marshalled")]
+		[NUnit.Framework.Description("Verifies that an eception can be marshalled")]
 		public void TestGetPropertyThrowException1()
 		{
 			var subject = new Mock<IGetDoubleProperty>();
@@ -134,7 +240,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that if an exception could not be serialized, but can be re-constructed due to a default ctor, then it is thrown again"
 			)]
 		public void TestGetPropertyThrowNonSerializableException()
@@ -164,7 +270,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that the exception thrown by a task is correctly marshalled")]
+		[NUnit.Framework.Description("Verifies that the exception thrown by a task is correctly marshalled")]
 		public void TestGetTaskThrowException1()
 		{
 			const int servantId = 11;
@@ -197,7 +303,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IReturnsIntTask>();
 			const int objectId = 16;
-			var servant = _server.CreateServant(objectId, subject.Object);
+			IServant servant = _server.CreateServant(objectId, subject.Object);
 			new Action(() => _client.CreateProxy<IReturnsTask>(objectId))
 				.ShouldNotThrow("Because creating proxy & servant of different type is not wrong, until a method is invoked");
 		}
@@ -208,7 +314,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IReturnsIntTask>();
 			const int objectId = 17;
-			var servant = _server.CreateServant(objectId, subject.Object);
+			IServant servant = _server.CreateServant(objectId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsTask>(objectId);
 			new Action(() => proxy.DoStuff().Wait())
 				.ShouldThrow<TypeMismatchException>();
@@ -340,108 +446,6 @@ namespace SharpRemote.Test.Remoting
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
-		}
-
-		[Test]
-		[Description("Verifies that synchronous methods are executed in the order they are issued in - by issuing them from one thread")]
-		public void TestCallOrder1()
-		{
-			var subject = new OrderedInterface();
-			const int servantId = 18;
-			var servant = _server.CreateServant(servantId, (IOrderInterface)subject);
-			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
-
-			for (int i = 0; i < 1000; ++i)
-			{
-				proxy.Unordered(i);
-			}
-
-			subject.UnorderedSequence.Should().Equal(
-				Enumerable.Range(0, 1000).ToList(),
-				"Because synchronous calls made from the same thread are guarantueed to be executed in order"
-				);
-		}
-
-		[Test]
-		[Description("Verifies that synchronous methods are executed in the order they are issued in - by issuing them from two threads")]
-		public void TestCallOrder2()
-		{
-			var subject = new OrderedInterface();
-			const int servantId = 19;
-			var servant = _server.CreateServant(servantId, (IOrderInterface)subject);
-			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
-
-			var sequence = Enumerable.Range(0, 1000).ToList();
-			Action fn = () =>
-				{
-					while (true)
-					{
-						lock (sequence)
-						{
-							if (sequence.Count == 0)
-								break;
-
-							var next = sequence[0];
-							sequence.RemoveAt(0);
-							proxy.Unordered(next);
-						}
-					}
-				};
-			var tasks = new[]
-				{
-					Task.Factory.StartNew(fn),
-					Task.Factory.StartNew(fn)
-				};
-			Task.WaitAll(tasks);
-
-			subject.UnorderedSequence.Should().Equal(
-				Enumerable.Range(0, 1000).ToList(),
-				"Because synchronous calls are executed in the same sequence they are given, independent of the calling thread"
-				);
-		}
-
-		[Test]
-		[Description("Verifies that invocations on a SerializePerType method are serialized, even when the calls happen in parallel")]
-		public void TestCallOrder3()
-		{
-			var subject = new OrderedInterface();
-			const int servantId = 20;
-			var servant = _server.CreateServant(servantId, (IOrderInterface)subject);
-			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
-
-			var sequence = Enumerable.Range(0, 1000).ToList();
-			Action fn = () =>
-			{
-				while (true)
-				{
-					int next;
-					lock (sequence)
-					{
-						if (sequence.Count == 0)
-							break;
-
-						next = sequence[0];
-						sequence.RemoveAt(0);
-					}
-
-					proxy.TypeOrdered(next);
-				}
-			};
-			var tasks = new[]
-				{
-					Task.Factory.StartNew(fn),
-					Task.Factory.StartNew(fn),
-					Task.Factory.StartNew(fn),
-					Task.Factory.StartNew(fn),
-					Task.Factory.StartNew(fn),
-					Task.Factory.StartNew(fn)
-				};
-			Task.WaitAll(tasks);
-
-			subject.TypeOrderedSequence.Should().BeEquivalentTo(
-				Enumerable.Range(0, 1000).ToList(),
-				"Because the proxy calls are not necessarily ordered, its invocations aren't either."
-				);
 		}
 	}
 }

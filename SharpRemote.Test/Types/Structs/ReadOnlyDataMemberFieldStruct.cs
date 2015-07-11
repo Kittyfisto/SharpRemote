@@ -5,7 +5,6 @@ namespace SharpRemote.Test.Types.Structs
 	[DataContract]
 	public struct ReadOnlyDataMemberFieldStruct
 	{
-		[DataMember]
-		public readonly int Value;
+		[DataMember] public readonly int Value;
 	}
 }

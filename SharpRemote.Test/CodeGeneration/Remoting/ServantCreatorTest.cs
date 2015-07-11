@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.CodeGeneration;
 using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.Hosting;
 using SharpRemote.Tasks;
@@ -120,7 +119,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			IServant servant = TestGenerate(subject.Object);
 
 			bool callRemoteMethodInvoked = false;
-			_channel.Setup(x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+			_channel.Setup(
+				x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 			        .Callback((ulong id, string interfaceName, string methodName, MemoryStream stream) =>
 				        {
 					        id.Should().Be(servant.ObjectId);
@@ -149,6 +149,98 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			outStream.Position = 0;
 			var reader = new BinaryReader(outStream);
 			reader.ReadDouble().Should().BeApproximately(Math.PI, 0);
+		}
+
+		[Test]
+		[Description("Verifies that a method without the InvokeAttribute is scheduled with the default scheduler")]
+		public void TestGetTaskScheduler1()
+		{
+			var subject = new Mock<IInvokeAttributeMethods>();
+			IServant servant = TestGenerate(subject.Object);
+			servant.GetTaskScheduler("NoAttribute")
+			       .Should().BeSameAs(TaskScheduler.Default);
+		}
+
+		[Test]
+		[Description(
+			"Verifies that a method with the InvokeAttribute set to DontSerialize is scheduled with the default scheduler")]
+		public void TestGetTaskScheduler2()
+		{
+			var subject = new Mock<IInvokeAttributeMethods>();
+			IServant servant = TestGenerate(subject.Object);
+			servant.GetTaskScheduler("DoNotSerialize")
+			       .Should().BeSameAs(TaskScheduler.Default);
+		}
+
+		[Test]
+		[Description(
+			"Verifies that a method with the InvokeAttribute set to SerializePerType is scheduled with the same scheduler regardless of instance, but different to the default scheduler"
+			)]
+		public void TestGetTaskScheduler3()
+		{
+			var subject = new Mock<IInvokeAttributeMethods>();
+			IServant servant1 = TestGenerate(subject.Object);
+			IServant servant2 = TestGenerate(subject.Object);
+
+			TaskScheduler scheduler = servant1.GetTaskScheduler("SerializePerType");
+			scheduler.Should().NotBeNull();
+			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
+			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
+			scheduler.Should().BeOfType<SerialTaskScheduler>();
+
+			scheduler.Should().BeSameAs(servant2.GetTaskScheduler("SerializePerType"));
+		}
+
+		[Test]
+		[Description(
+			"Verifies that a method with the InvokeAttribute set to SerializePerObject is scheduled with the same scheduler, regardless of method, but different to the default scheduler"
+			)]
+		public void TestGetTaskScheduler4()
+		{
+			var subject = new Mock<IInvokeAttributeMethods>();
+			IServant servant = TestGenerate(subject.Object);
+
+			TaskScheduler scheduler = servant.GetTaskScheduler("SerializePerObject1");
+			scheduler.Should().NotBeNull();
+			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
+			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
+			scheduler.Should().BeOfType<SerialTaskScheduler>();
+
+			scheduler.Should().BeSameAs(servant.GetTaskScheduler("SerializePerObject2"));
+		}
+
+		[Test]
+		[Description(
+			"Verifies that a method with the InvokeAttribute set to SerializePerMethod is scheduled with an individual scheduler per method AND object, different to the default and current scheduler"
+			)]
+		public void TestGetTaskScheduler5()
+		{
+			var subject = new Mock<IInvokeAttributeMethods>();
+			IServant servant1 = TestGenerate(subject.Object);
+			IServant servant2 = TestGenerate(subject.Object);
+
+			TaskScheduler scheduler = servant1.GetTaskScheduler("SerializePerMethod1");
+			scheduler.Should().NotBeNull();
+			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
+			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
+			scheduler.Should().BeOfType<SerialTaskScheduler>();
+
+			scheduler.Should()
+			         .NotBeSameAs(servant1.GetTaskScheduler("SerializePerMethod2"),
+			                      "because Dispatch.SerializePerMethod shall behave exactly like Java's synchronized statement");
+			scheduler.Should()
+			         .NotBeSameAs(servant2.GetTaskScheduler("SerializePerMethod1"),
+			                      "because Dispatch.SerializePerMethod shall behave exactly like Java's synchronized statement");
+		}
+
+		[Test]
+		[Description("Verifies that GetTaskScheduler throws when the given method doesn't exist")]
+		public void TestGetTaskScheduler6()
+		{
+			var subject = new Mock<IInvokeAttributeMethods>();
+			IServant servant = TestGenerate(subject.Object);
+			new Action(() => servant.GetTaskScheduler("DoesntExist"))
+				.ShouldThrow<ArgumentException>();
 		}
 
 		[Test]
@@ -190,35 +282,16 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
-		public void TestTaskReturnValue()
-		{
-			var subject = new Mock<IReturnsTask>();
-			Task innerTask = null;
-			subject.Setup(x => x.DoStuff()).Returns(() =>
-				{
-					innerTask = new Task(() =>
-						{
-						});
-					innerTask.Start();
-					return innerTask;
-				});
-			IServant servant = _creator.CreateServant(1, subject.Object);
-			servant.Invoke("DoStuff", null, new BinaryWriter(new MemoryStream()));
-			innerTask.Should().NotBeNull();
-			innerTask.Status.Should().Be(TaskStatus.RanToCompletion);
-		}
-
-		[Test]
 		public void TestIntTaskReturnValue()
 		{
 			var subject = new Mock<IReturnsIntTask>();
 			Task<int> innerTask = null;
 			subject.Setup(x => x.DoStuff()).Returns(() =>
-			{
-				innerTask = new Task<int>(() => 42);
-				innerTask.Start();
-				return innerTask;
-			});
+				{
+					innerTask = new Task<int>(() => 42);
+					innerTask.Start();
+					return innerTask;
+				});
 			IServant servant = _creator.CreateServant(1, subject.Object);
 			var output = new MemoryStream();
 			servant.Invoke("DoStuff", null, new BinaryWriter(output));
@@ -227,6 +300,23 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			output.Position = 0;
 			var reader = new BinaryReader(output);
 			reader.ReadInt32().Should().Be(42);
+		}
+
+		[Test]
+		public void TestTaskReturnValue()
+		{
+			var subject = new Mock<IReturnsTask>();
+			Task innerTask = null;
+			subject.Setup(x => x.DoStuff()).Returns(() =>
+				{
+					innerTask = new Task(() => { });
+					innerTask.Start();
+					return innerTask;
+				});
+			IServant servant = _creator.CreateServant(1, subject.Object);
+			servant.Invoke("DoStuff", null, new BinaryWriter(new MemoryStream()));
+			innerTask.Should().NotBeNull();
+			innerTask.Status.Should().Be(TaskStatus.RanToCompletion);
 		}
 
 		[Test]
@@ -280,87 +370,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			servant.Invoke("CommitInstallation", new BinaryReader(arguments), new BinaryWriter(output));
 			output.Position = 0;
 			output.Length.Should().BeInRange(330, 333);
-		}
-
-		[Test]
-		[Description("Verifies that a method without the InvokeAttribute is scheduled with the default scheduler")]
-		public void TestGetTaskScheduler1()
-		{
-			var subject = new Mock<IInvokeAttributeMethods>();
-			var servant = TestGenerate(subject.Object);
-			servant.GetTaskScheduler("NoAttribute")
-			       .Should().BeSameAs(TaskScheduler.Default);
-		}
-
-		[Test]
-		[Description("Verifies that a method with the InvokeAttribute set to DontSerialize is scheduled with the default scheduler")]
-		public void TestGetTaskScheduler2()
-		{
-			var subject = new Mock<IInvokeAttributeMethods>();
-			var servant = TestGenerate(subject.Object);
-			servant.GetTaskScheduler("DoNotSerialize")
-				   .Should().BeSameAs(TaskScheduler.Default);
-		}
-
-		[Test]
-		[Description("Verifies that a method with the InvokeAttribute set to SerializePerType is scheduled with the same scheduler regardless of instance, but different to the default scheduler")]
-		public void TestGetTaskScheduler3()
-		{
-			var subject = new Mock<IInvokeAttributeMethods>();
-			var servant1 = TestGenerate(subject.Object);
-			var servant2 = TestGenerate(subject.Object);
-
-			var scheduler = servant1.GetTaskScheduler("SerializePerType");
-			scheduler.Should().NotBeNull();
-			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
-			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
-			scheduler.Should().BeOfType<SerialTaskScheduler>();
-
-			scheduler.Should().BeSameAs(servant2.GetTaskScheduler("SerializePerType"));
-		}
-
-		[Test]
-		[Description("Verifies that a method with the InvokeAttribute set to SerializePerObject is scheduled with the same scheduler, regardless of method, but different to the default scheduler")]
-		public void TestGetTaskScheduler4()
-		{
-			var subject = new Mock<IInvokeAttributeMethods>();
-			var servant = TestGenerate(subject.Object);
-
-			var scheduler = servant.GetTaskScheduler("SerializePerObject1");
-			scheduler.Should().NotBeNull();
-			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
-			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
-			scheduler.Should().BeOfType<SerialTaskScheduler>();
-
-			scheduler.Should().BeSameAs(servant.GetTaskScheduler("SerializePerObject2"));
-		}
-
-		[Test]
-		[Description("Verifies that a method with the InvokeAttribute set to SerializePerMethod is scheduled with an individual scheduler per method AND object, different to the default and current scheduler")]
-		public void TestGetTaskScheduler5()
-		{
-			var subject = new Mock<IInvokeAttributeMethods>();
-			var servant1 = TestGenerate(subject.Object);
-			var servant2 = TestGenerate(subject.Object);
-
-			var scheduler = servant1.GetTaskScheduler("SerializePerMethod1");
-			scheduler.Should().NotBeNull();
-			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
-			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
-			scheduler.Should().BeOfType<SerialTaskScheduler>();
-
-			scheduler.Should().NotBeSameAs(servant1.GetTaskScheduler("SerializePerMethod2"), "because Dispatch.SerializePerMethod shall behave exactly like Java's synchronized statement");
-			scheduler.Should().NotBeSameAs(servant2.GetTaskScheduler("SerializePerMethod1"), "because Dispatch.SerializePerMethod shall behave exactly like Java's synchronized statement");
-		}
-
-		[Test]
-		[Description("Verifies that GetTaskScheduler throws when the given method doesn't exist")]
-		public void TestGetTaskScheduler6()
-		{
-			var subject = new Mock<IInvokeAttributeMethods>();
-			var servant = TestGenerate(subject.Object);
-			new Action(() => servant.GetTaskScheduler("DoesntExist"))
-				.ShouldThrow<ArgumentException>();
 		}
 	}
 }

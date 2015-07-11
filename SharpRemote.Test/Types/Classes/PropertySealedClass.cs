@@ -28,8 +28,8 @@ namespace SharpRemote.Test.Types.Classes
 			unchecked
 			{
 				int hashCode = (Value1 != null ? Value1.GetHashCode() : 0);
-				hashCode = (hashCode * 397) ^ Value2;
-				hashCode = (hashCode * 397) ^ Value3.GetHashCode();
+				hashCode = (hashCode*397) ^ Value2;
+				hashCode = (hashCode*397) ^ Value3.GetHashCode();
 				return hashCode;
 			}
 		}

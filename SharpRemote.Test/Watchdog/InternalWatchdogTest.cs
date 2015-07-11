@@ -7,13 +7,13 @@ namespace SharpRemote.Test.Watchdog
 	[TestFixture]
 	public sealed class InternalWatchdogTest
 	{
-		private Mock<IIsolatedStorage> _storage;
-
 		[SetUp]
 		public void SetUp()
 		{
 			_storage = new Mock<IIsolatedStorage>();
 		}
+
+		private Mock<IIsolatedStorage> _storage;
 
 		[Test]
 		[Description("Verifies that the description of previously installed applications is kept")]

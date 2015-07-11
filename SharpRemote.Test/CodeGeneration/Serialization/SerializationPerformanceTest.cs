@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization;
 using NUnit.Framework;
-using SharpRemote.CodeGeneration.Serialization;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
@@ -14,7 +13,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		private DataContractSerializer _contractSerializer;
 
 		/// <summary>
-		/// Prepares the serializers to serialize values of the given type.
+		///     Prepares the serializers to serialize values of the given type.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		private void Prepare<T>()
@@ -22,45 +21,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer = new Serializer();
 			_serializer.RegisterType<T>();
 			_contractSerializer = new DataContractSerializer(typeof (T));
-		}
-
-		[Test]
-		[PerformanceTest]
-		public void TestByteArray()
-		{
-			var value = new byte[12123];
-			Console.WriteLine("Information: {0}", TestHelpers.FormatBytes(value.Length));
-
-			const int numSamples = 1000;
-			Measure(value, numSamples);
-		}
-
-		[Test]
-		[PerformanceTest]
-		public void TestIntArray()
-		{
-			var value = new int[1234];
-			Console.WriteLine("Size: {0}", TestHelpers.FormatBytes(value.Length * 4));
-
-			const int numSamples = 1000;
-			Measure(value, numSamples);
-		}
-
-		[Test]
-		[PerformanceTest]
-		public void TestObjectIntArray()
-		{
-			var value = new object[1234];
-			var rng = new Random();
-			for (int i = 0; i < value.Length; ++i)
-			{
-				value[i] = rng.Next();
-			}
-
-			Console.WriteLine("Size: {0}", TestHelpers.FormatBytes(value.Length * 4));
-
-			const int numSamples = 100;
-			Measure(value, numSamples);
 		}
 
 		private void Measure<T>(T value, int numSamples)
@@ -100,13 +60,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		private static void WriteVerdict(string name, Stopwatch sw, MemoryStream data, int numSamples)
 		{
-			var timePerSample = sw.Elapsed.TotalMilliseconds/numSamples;
-			var sizePerSample = data.Length/numSamples;
+			double timePerSample = sw.Elapsed.TotalMilliseconds/numSamples;
+			long sizePerSample = data.Length/numSamples;
 			Console.WriteLine("{0}: {1:F2}ms, {2}", name, timePerSample, TestHelpers.FormatBytes(sizePerSample));
 		}
 
 		/// <summary>
-		/// Ensures that the 
+		///     Ensures that the
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="value"></param>
@@ -121,6 +81,45 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					_contractSerializer.WriteObject(data, value);
 				}
 			}
+		}
+
+		[Test]
+		[PerformanceTest]
+		public void TestByteArray()
+		{
+			var value = new byte[12123];
+			Console.WriteLine("Information: {0}", TestHelpers.FormatBytes(value.Length));
+
+			const int numSamples = 1000;
+			Measure(value, numSamples);
+		}
+
+		[Test]
+		[PerformanceTest]
+		public void TestIntArray()
+		{
+			var value = new int[1234];
+			Console.WriteLine("Size: {0}", TestHelpers.FormatBytes(value.Length*4));
+
+			const int numSamples = 1000;
+			Measure(value, numSamples);
+		}
+
+		[Test]
+		[PerformanceTest]
+		public void TestObjectIntArray()
+		{
+			var value = new object[1234];
+			var rng = new Random();
+			for (int i = 0; i < value.Length; ++i)
+			{
+				value[i] = rng.Next();
+			}
+
+			Console.WriteLine("Size: {0}", TestHelpers.FormatBytes(value.Length*4));
+
+			const int numSamples = 100;
+			Measure(value, numSamples);
 		}
 	}
 }

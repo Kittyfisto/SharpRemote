@@ -31,17 +31,17 @@ namespace SharpRemote.Hosting
 
 		public ulong CreateSubject1(Type type, Type interfaceType)
 		{
-			var servantId = _nextServantId++;
 			var subject = Activator.CreateInstance(type);
-			var method = typeof (IRemotingEndPoint).GetMethod("CreateServant").MakeGenericMethod(interfaceType);
-			var servant = (IServant)method.Invoke(_endpoint, new []{servantId, subject});
 
 			lock (_syncRoot)
 			{
+				var servantId = _nextServantId++;
+				var method = typeof(IRemotingEndPoint).GetMethod("CreateServant").MakeGenericMethod(interfaceType);
+				var servant = (IServant)method.Invoke(_endpoint, new[] { servantId, subject });
 				_subjects.Add(servantId, servant);
-			}
 
-			return servantId;
+				return servantId;
+			}
 		}
 
 		public ulong CreateSubject2(string assemblyQualifiedTypeName, Type interfaceType)

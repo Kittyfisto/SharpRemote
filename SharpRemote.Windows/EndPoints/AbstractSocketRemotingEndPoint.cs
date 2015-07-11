@@ -442,8 +442,19 @@ namespace SharpRemote
 			});
 
 			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
-			task.ContinueWith(unused => { _pendingInvocations.Remove(methodInvocation); });
-			_pendingInvocations.Add(methodInvocation);
+			task.ContinueWith(unused =>
+				{
+					lock (_pendingInvocations)
+					{
+						_pendingInvocations.Remove(methodInvocation);
+					}
+				});
+
+			lock (_pendingInvocations)
+			{
+				_pendingInvocations.Add(methodInvocation);
+			}
+
 			task.Start(taskScheduler);
 		}
 

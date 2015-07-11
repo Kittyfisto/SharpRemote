@@ -43,16 +43,26 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[Ignore]
 		[Description("Verifies that the create method is thread-safe")]
 		public void TestCreate3()
 		{
-			Func<IGetStringProperty> fn = () => _silo.CreateGrain<IGetStringProperty>(typeof (GetStringPropertyImplementation));
-			var tasks = Enumerable.Range(0, 50).Select(i => Task<IGetStringProperty>.Factory.StartNew(fn)).ToArray();
-			Task.WaitAll(tasks, TimeSpan.FromSeconds(10)).Should().BeTrue("Because that should be plenty of time");
+			const int numTries = 1000;
+			Action fn = () =>
+				{
+					for (int i = 0; i < numTries; ++i)
+					{
+						var proxy = _silo.CreateGrain<IGetStringProperty>(typeof (GetStringPropertyImplementation));
+						proxy.Value.Should().Be("Foobar");
+					}
+				};
 
-			var objects = tasks.Select(x => x.Result).ToList();
-			objects.TrueForAll(x => x.Value == "Foobar").Should().BeTrue();
+			var tasks = new[]
+				{
+					Task.Factory.StartNew(fn),
+					Task.Factory.StartNew(fn)
+				};
+			Task.WaitAll(tasks, TimeSpan.FromSeconds(10)).Should().BeTrue();
+			tasks.All(x => x.IsFaulted).Should().BeFalse();
 		}
 	}
 }

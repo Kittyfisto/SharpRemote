@@ -84,9 +84,9 @@
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
-    <Compile Include="Exceptions\InvalidEndPointException.cs" />
+    <Compile Include="Exceptions\InvalidIPEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchApplicationException.cs" />
-    <Compile Include="Exceptions\NoSuchEndPointException.cs" />
+    <Compile Include="Exceptions\NoSuchIPEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />
     <Compile Include="Exceptions\NotConnectedException.cs" />
     <Compile Include="Exceptions\RemotingException.cs" />

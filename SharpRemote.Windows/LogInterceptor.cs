@@ -6,6 +6,9 @@ using log4net.Repository.Hierarchy;
 
 namespace SharpRemote
 {
+	/// <summary>
+	/// Log4net appender that delegates all log events to a user specified action.
+	/// </summary>
 	public sealed class LogInterceptor
 		: AppenderSkeleton
 		  , IDisposable
@@ -13,6 +16,10 @@ namespace SharpRemote
 		private readonly Action<LoggingEvent> _logAction;
 		private IAppenderAttachable _root;
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="logAction"></param>
 		public LogInterceptor(Action<LoggingEvent> logAction)
 		{
 			Threshold = Level.All;

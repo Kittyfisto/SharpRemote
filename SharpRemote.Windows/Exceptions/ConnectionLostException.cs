@@ -15,12 +15,20 @@ namespace SharpRemote
 	{
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
+		/// <summary>
+		/// Deserialization ctor.
+		/// </summary>
+		/// <param name="info"></param>
+		/// <param name="context"></param>
 		public ConnectionLostException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
 #endif
 #endif
 
+		/// <summary>
+		/// Initializes a new instance of this exception.
+		/// </summary>
 		public ConnectionLostException()
 			: base("The connection to the remote endpoint has been lost")
 		{}

@@ -12,10 +12,18 @@ namespace SharpRemote
 	[Serializable]
 	public class NoSuchServantException : RemotingException
 	{
-		public ulong ObjectId;
+		/// <summary>
+		/// The <see cref="IGrain.ObjectId"/> that could not be found on the callee's side.
+		/// </summary>
+		public readonly ulong ObjectId;
 
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
+		/// <summary>
+		/// Deserialization ctor.
+		/// </summary>
+		/// <param name="info"></param>
+		/// <param name="context"></param>
 		public NoSuchServantException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
@@ -31,7 +39,11 @@ namespace SharpRemote
 #endif
 #endif
 
-        public NoSuchServantException(ulong objectId)
+		/// <summary>
+		/// Initializes a new instance of this exception with the given object id.
+		/// </summary>
+		/// <param name="objectId"></param>
+		public NoSuchServantException(ulong objectId)
 			: base(string.Format("No such servant: {0}", objectId))
 		{}
 	}

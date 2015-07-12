@@ -169,7 +169,7 @@ namespace SharpRemote.Test.Remoting
 				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
 				new Action(
 					() => new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 50012), timeout))
-						      .ShouldThrow<NoSuchEndPointException>()
+						      .ShouldThrow<NoSuchIPEndPointException>()
 						      .WithMessage("Unable to establish a connection with the given endpoint: 127.0.0.1:50012"))
 					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
 
@@ -282,7 +282,7 @@ namespace SharpRemote.Test.Remoting
 				socket.Listen(1);
 				socket.BeginAccept(ar => socket.EndAccept(ar), null);
 				new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 54321)))
-					.ShouldThrow<InvalidEndPointException>();
+					.ShouldThrow<InvalidIPEndPointException>();
 			}
 		}
 

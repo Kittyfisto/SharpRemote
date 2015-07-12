@@ -5,14 +5,26 @@ using System.Runtime.Serialization;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
+	/// <summary>
+	/// This exception is thrown when a method is called that assumes that the endpoint is connected,
+	/// but it was not.
+	/// </summary>
 	[Serializable]
 	public class NotConnectedException
 		: InvalidOperationException
 	{
+		/// <summary>
+		/// The name of the endpoint that was not connected.
+		/// </summary>
 		public readonly string EndPointName;
 
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
+		/// <summary>
+		/// Deserilization ctor.
+		/// </summary>
+		/// <param name="info"></param>
+		/// <param name="context"></param>
 		public NotConnectedException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
@@ -28,7 +40,11 @@ namespace SharpRemote
 #endif
 #endif
 
-        public NotConnectedException(string endPointName)
+		/// <summary>
+		/// Initializes a new instance of this exception with the given endpoint name.
+		/// </summary>
+		/// <param name="endPointName"></param>
+		public NotConnectedException(string endPointName)
 			: base("This endpoint is not connected to any other endpoint")
 		{
 			EndPointName = endPointName;

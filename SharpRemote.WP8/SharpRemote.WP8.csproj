@@ -107,8 +107,17 @@
     <Compile Include="..\SharpRemote.Windows\Exceptions\ConnectionLostException.cs">
       <Link>Exceptions\ConnectionLostException.cs</Link>
     </Compile>
-    <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchEndPointException.cs">
-      <Link>Exceptions\NoSuchEndPointException.cs</Link>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\InstallationFailedException.cs">
+      <Link>Exceptions\InstallationFailedException.cs</Link>
+    </Compile>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\InvalidIPEndPointException.cs">
+      <Link>Exceptions\InvalidIPEndPointException.cs</Link>
+    </Compile>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchApplicationException.cs">
+      <Link>Exceptions\NoSuchApplicationException.cs</Link>
+    </Compile>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchIPEndPointException.cs">
+      <Link>Exceptions\NoSuchIPEndPointException.cs</Link>
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchServantException.cs">
       <Link>Exceptions\NoSuchServantException.cs</Link>
@@ -118,6 +127,9 @@
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\RemotingException.cs">
       <Link>Exceptions\RemotingException.cs</Link>
+    </Compile>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\TypeMismatchException.cs">
+      <Link>Exceptions\TypeMismatchException.cs</Link>
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\UnserializableException.cs">
       <Link>Exceptions\UnserializableException.cs</Link>

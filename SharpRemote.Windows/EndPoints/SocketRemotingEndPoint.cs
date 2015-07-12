@@ -131,8 +131,8 @@ namespace SharpRemote
 		/// <exception cref="InvalidOperationException">
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
-		/// <exception cref="NoSuchEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
+		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
+		/// <exception cref="InvalidIPEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
 		public void Connect(string endPointName, TimeSpan timeout)
 		{
 			if (endPointName == null) throw new ArgumentNullException("endPointName");
@@ -143,7 +143,7 @@ namespace SharpRemote
 			if (results.Count == 0)
 			{
 				Log.ErrorFormat("Unable to find peer named '{0}'", endPointName);
-				throw new NoSuchEndPointException(endPointName);
+				throw new NoSuchIPEndPointException(endPointName);
 			}
 
 			var peer = results[0];
@@ -156,7 +156,7 @@ namespace SharpRemote
 					Connect(ep, timeout);
 					break;
 				}
-				catch (NoSuchEndPointException) //< Let's try the next...
+				catch (NoSuchIPEndPointException) //< Let's try the next...
 				{ }
 			}
 		}
@@ -171,8 +171,8 @@ namespace SharpRemote
 		/// <exception cref="InvalidOperationException">
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
-		/// <exception cref="NoSuchEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
+		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
+		/// <exception cref="InvalidIPEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
 		public void Connect(IPEndPoint endPoint)
 		{
 			Connect(endPoint, TimeSpan.FromSeconds(1));
@@ -192,8 +192,8 @@ namespace SharpRemote
 		/// <exception cref="InvalidOperationException">
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
-		/// <exception cref="NoSuchEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
+		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
+		/// <exception cref="InvalidIPEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
 		public void Connect(IPEndPoint endPoint, TimeSpan timeout)
 		{
 			if (endPoint == null) throw new ArgumentNullException("endPoint");
@@ -217,11 +217,11 @@ namespace SharpRemote
 				});
 				task.Start();
 				if (!task.Wait(timeout))
-					throw new NoSuchEndPointException(endPoint);
+					throw new NoSuchIPEndPointException(endPoint);
 
 				TimeSpan remaining = timeout - (DateTime.Now - started);
 				if (!ReadWelcomeMessage(socket, remaining, endPoint))
-					throw new InvalidEndPointException(endPoint);
+					throw new InvalidIPEndPointException(endPoint);
 
 				_remoteEndPoint = endPoint;
 				OnConnected(socket);
@@ -236,11 +236,11 @@ namespace SharpRemote
 				if (!(ex is SocketException))
 					throw;
 
-				throw new NoSuchEndPointException(endPoint, e);
+				throw new NoSuchIPEndPointException(endPoint, e);
 			}
 			catch (SocketException e)
 			{
-				throw new NoSuchEndPointException(endPoint, e);
+				throw new NoSuchIPEndPointException(endPoint, e);
 			}
 			catch (Exception)
 			{

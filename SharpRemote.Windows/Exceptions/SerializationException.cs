@@ -1,0 +1,42 @@
+﻿using System;
+using System.Runtime.Serialization;
+
+namespace SharpRemote.Exceptions
+{
+	/// <summary>
+	/// This exception is thrown when a type or message is encountered that cannot be serialized / deserialized.
+	/// </summary>
+	[Serializable]
+	public class SerializationException
+		: SystemException
+	{
+#if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
+		/// <summary>
+		/// Deserialization ctor.
+		/// </summary>
+		/// <param name="info"></param>
+		/// <param name="context"></param>
+		public SerializationException(SerializationInfo info, StreamingContext context)
+			: base(info, context)
+		{}
+#endif
+#endif
+
+		/// <summary>
+		/// Initializes a new instance of this exception with the given message and inner exception
+		/// that is the cause of this exception.
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="innerException"></param>
+		public SerializationException(string message, Exception innerException = null)
+			: base(message, innerException)
+		{}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public SerializationException()
+		{}
+	}
+}

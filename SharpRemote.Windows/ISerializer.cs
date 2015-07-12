@@ -2,6 +2,7 @@
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace SharpRemote
 {
@@ -30,6 +31,7 @@ namespace SharpRemote
 		/// <typeparam name="T"></typeparam>
 		/// <exception cref="ArgumentNullException">When <typeparamref name="T"/> is null</exception>
 		/// <exception cref="ArgumentException">When the type cannot be serialized</exception>
+		/// <exception cref="SerializationException">In case there was an error while generating the code necessary for serialization / deserialization</exception>
 		void RegisterType<T>();
 
 		/// <summary>
@@ -43,6 +45,7 @@ namespace SharpRemote
 		/// <param name="type">The type to register</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="type"/> is null</exception>
 		/// <exception cref="ArgumentException">When the type cannot be serialized</exception>
+		/// <exception cref="SerializationException">In case there was an error while generating the code necessary for serialization / deserialization</exception>
 		void RegisterType(Type type);
 
 		/// <summary>
@@ -72,6 +75,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
+		/// <exception cref="SerializationException">In case there was an error while generating the code necessary for serialization / deserialization</exception>
 		void WriteObject(BinaryWriter writer, object value);
 
 		/// <summary>
@@ -80,6 +84,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="reader"></param>
 		/// <returns></returns>
+		/// <exception cref="SerializationException">In case there was an error while generating the code necessary for serialization / deserialization</exception>
 		object ReadObject(BinaryReader reader);
 	}
 }

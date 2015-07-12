@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
+using SerializationException = SharpRemote.Exceptions.SerializationException;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -69,13 +70,29 @@ namespace SharpRemote
 						};
 				else loadValueAddress = null;
 
-				EmitWriteValue(gen,
-					loadWriter,
-					loadValue,
-					loadValueAddress,
-					() => gen.Emit(OpCodes.Ldarg_2),
-					property.PropertyType
-					);
+				try
+				{
+					EmitWriteValue(gen,
+						loadWriter,
+						loadValue,
+						loadValueAddress,
+						() => gen.Emit(OpCodes.Ldarg_2),
+						property.PropertyType
+						);
+				}
+				catch (SerializationException)
+				{
+					throw;
+				}
+				catch (Exception e)
+				{
+					var message = string.Format("There was a problem generating the code to serialize property '{0} {1}' of type '{2}' ",
+						property.PropertyType,
+						property.Name,
+						type.FullName
+						);
+					throw new SerializationException(message, e);
+				}
 			}
 		}
 
@@ -118,13 +135,29 @@ namespace SharpRemote
 					gen.Emit(OpCodes.Ldflda, field);
 				};
 
-				EmitWriteValue(gen,
-					loadWriter,
-					loadField,
-					loadFieldAddress,
-					loadSerializer,
-					field.FieldType
-					);
+				try
+				{
+					EmitWriteValue(gen,
+					               loadWriter,
+					               loadField,
+					               loadFieldAddress,
+					               loadSerializer,
+					               field.FieldType
+						);
+				}
+				catch (SerializationException)
+				{
+					throw;
+				}
+				catch (Exception e)
+				{
+					var message = string.Format("There was a problem generating the code to serialize field '{0} {1}' of type '{2}' ",
+						field.FieldType,
+						field.Name,
+						type.FullName
+						);
+					throw new SerializationException(message, e);
+				}
 			}
 		}
 
@@ -256,10 +289,27 @@ namespace SharpRemote
 			{
 				gen.Emit(type.IsValueType ? OpCodes.Ldloca : OpCodes.Ldloc, target);
 				Type propertyType = property.PropertyType;
-				EmitReadValue(gen,
-					() => gen.Emit(OpCodes.Ldarg_0),
-					() => gen.Emit(OpCodes.Ldarg_1),
-					propertyType);
+
+				try
+				{
+					EmitReadValue(gen,
+					              () => gen.Emit(OpCodes.Ldarg_0),
+					              () => gen.Emit(OpCodes.Ldarg_1),
+					              propertyType);
+				}
+				catch (SerializationException)
+				{
+					throw;
+				}
+				catch (Exception e)
+				{
+					var message = string.Format("There was a problem generating the code to deserialize property '{0} {1}' of type '{2}' ",
+						property.PropertyType,
+						property.Name,
+						type.Type.FullName
+						);
+					throw new SerializationException(message, e);
+				}
 
 				gen.Emit(OpCodes.Call, property.SetMethod);
 			}
@@ -275,12 +325,28 @@ namespace SharpRemote
 			{
 				// tmp.<Field> = writer.ReadXYZ();
 				gen.Emit(type.IsValueType ? OpCodes.Ldloca : OpCodes.Ldloc, target);
-
 				Type fieldType = field.FieldType;
-				EmitReadValue(gen,
-					() => gen.Emit(OpCodes.Ldarg_0),
-					() => gen.Emit(OpCodes.Ldarg_1),
-					fieldType);
+
+				try
+				{
+					EmitReadValue(gen,
+					              () => gen.Emit(OpCodes.Ldarg_0),
+					              () => gen.Emit(OpCodes.Ldarg_1),
+					              fieldType);
+				}
+				catch (SerializationException)
+				{
+					throw;
+				}
+				catch (Exception e)
+				{
+					var message = string.Format("There was a problem generating the code to deserialize field '{0} {1}' of type '{2}' ",
+						field.FieldType,
+						field.Name,
+						type.Type.FullName
+						);
+					throw new SerializationException(message, e);
+				}
 
 				gen.Emit(OpCodes.Stfld, field);
 			}

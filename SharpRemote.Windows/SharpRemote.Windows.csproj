@@ -90,6 +90,7 @@
     <Compile Include="Exceptions\NoSuchServantException.cs" />
     <Compile Include="Exceptions\NotConnectedException.cs" />
     <Compile Include="Exceptions\RemotingException.cs" />
+    <Compile Include="Exceptions\SerializationException.cs" />
     <Compile Include="Exceptions\TypeMismatchException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />
     <Compile Include="Hosting\HostState.cs" />

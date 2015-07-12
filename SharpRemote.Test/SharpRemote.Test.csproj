@@ -74,6 +74,7 @@
     <Compile Include="Tasks\SerialTaskSchedulerTest.cs" />
     <Compile Include="TestLogger.cs" />
     <Compile Include="Types\Classes\BinaryTreeNode.cs" />
+    <Compile Include="Types\Classes\ClassWithNullableStructProperty.cs" />
     <Compile Include="Types\Classes\ClassWithSingleton.cs" />
     <Compile Include="Types\Classes\ClassWithTypeHashSet.cs" />
     <Compile Include="Types\Classes\NonSealedClass.cs" />

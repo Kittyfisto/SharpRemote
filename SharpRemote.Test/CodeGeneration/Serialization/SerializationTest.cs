@@ -251,5 +251,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer.RegisterType<byte>();
 			_serializer.ShouldRoundtrip((byte) 255);
 		}
+
+		[Test]
+		public void TestNullableStructProperty()
+		{
+			_serializer.RegisterType<ClassWithNullableStructProperty>();
+			_serializer.ShouldRoundtrip(new ClassWithNullableStructProperty {Value = 42});
+			_serializer.ShouldRoundtrip(new ClassWithNullableStructProperty { Value = null });
+		}
 	}
 }

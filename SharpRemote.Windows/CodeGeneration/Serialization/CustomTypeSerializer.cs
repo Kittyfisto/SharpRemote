@@ -43,9 +43,8 @@ namespace SharpRemote
 
 			foreach (var property in allProperties)
 			{
-				EmitWriteValue(gen,
-					() => gen.Emit(OpCodes.Ldarg_0),
-					() =>
+				Action loadWriter = () => gen.Emit(OpCodes.Ldarg_0);
+				Action loadValue = () =>
 					{
 						if (type.IsValueType)
 						{
@@ -57,8 +56,23 @@ namespace SharpRemote
 						}
 
 						gen.Emit(OpCodes.Call, property.GetMethod);
-					},
-					null,
+					};
+
+				Action loadValueAddress;
+				if (property.PropertyType.IsValueType)
+					loadValueAddress = () =>
+						{
+							var loc = gen.DeclareLocal(property.PropertyType);
+							loadValue();
+							gen.Emit(OpCodes.Stloc, loc);
+							gen.Emit(OpCodes.Ldloca, loc);
+						};
+				else loadValueAddress = null;
+
+				EmitWriteValue(gen,
+					loadWriter,
+					loadValue,
+					loadValueAddress,
 					() => gen.Emit(OpCodes.Ldarg_2),
 					property.PropertyType
 					);

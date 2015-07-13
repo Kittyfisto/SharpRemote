@@ -83,8 +83,8 @@
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />
+    <Compile Include="Exceptions\AuthenticationException.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
-    <Compile Include="Exceptions\InvalidIPEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchApplicationException.cs" />
     <Compile Include="Exceptions\NoSuchIPEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />
@@ -96,6 +96,7 @@
     <Compile Include="Hosting\HostState.cs" />
     <Compile Include="Hosting\ProcessOptions.cs" />
     <Compile Include="Hosting\ProcessSiloServer.cs" />
+    <Compile Include="IAuthenticator.cs" />
     <Compile Include="IGrain.cs" />
     <Compile Include="Attributes\InvokeAttribute.cs" />
     <Compile Include="IProxy.cs" />

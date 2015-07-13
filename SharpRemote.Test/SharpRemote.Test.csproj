@@ -54,6 +54,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LocalTest.cs" />
+    <Compile Include="TestAuthenticator.cs" />
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\ArrayTest.cs" />
     <Compile Include="CodeGeneration\Serialization\DynamicDispatchTest.cs" />
@@ -140,6 +142,7 @@
     <Compile Include="Watchdog\ApplicationInstallerTest.cs" />
     <Compile Include="Watchdog\WatchdogAcceptanceTest.cs" />
     <Compile Include="Watchdog\InternalWatchdogTest.cs" />
+    <Compile Include="Test2Authenticator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

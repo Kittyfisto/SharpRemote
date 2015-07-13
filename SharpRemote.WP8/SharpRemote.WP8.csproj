@@ -104,14 +104,14 @@
     <Compile Include="..\SharpRemote.Windows\EndPoints\WebRemotingEndPoint.cs">
       <Link>EndPoints\WebRemotingEndPoint.cs</Link>
     </Compile>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\AuthenticationException.cs">
+      <Link>Exceptions\AuthenticationException.cs</Link>
+    </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\ConnectionLostException.cs">
       <Link>Exceptions\ConnectionLostException.cs</Link>
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\InstallationFailedException.cs">
       <Link>Exceptions\InstallationFailedException.cs</Link>
-    </Compile>
-    <Compile Include="..\SharpRemote.Windows\Exceptions\InvalidIPEndPointException.cs">
-      <Link>Exceptions\InvalidIPEndPointException.cs</Link>
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchApplicationException.cs">
       <Link>Exceptions\NoSuchApplicationException.cs</Link>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
 using System.Net.PeerToPeer;
@@ -8,42 +9,64 @@ using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
+using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using log4net;
 
 // ReSharper disable CheckNamespace
+
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// <see cref="IRemotingEndPoint"/> implementation that establishes a TCP socket with another
-	/// endPoint. A listening socket is opened (and bound to an address) with <see cref="Bind"/> while
-	/// a connectiong to such a socket is established with <see cref="Connect(IPEndPoint)"/> or
-	/// <see cref="Connect(string)"/>.
+	///     <see cref="IRemotingEndPoint" /> implementation that establishes a TCP socket with another
+	///     endPoint. A listening socket is opened (and bound to an address) with <see cref="Bind" /> while
+	///     a connectiong to such a socket is established with <see cref="Connect(IPEndPoint)" /> or
+	///     <see cref="Connect(string)" />.
 	/// </summary>
 	public sealed class SocketRemotingEndPoint
 		: AbstractSocketRemotingEndPoint
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private PeerNameRegistration _peerNameRegistration;
-
 		private CancellationTokenSource _cancellationTokenSource;
 		private IPEndPoint _localEndPoint;
+		private PeerNameRegistration _peerNameRegistration;
+		private Task _readTask;
 		private IPEndPoint _remoteEndPoint;
 		private Socket _serverSocket;
-		private Task _readTask;
 
 		/// <summary>
-		/// Whether or not the P2P name publishing service is available on this machine or not.
-		/// Is required to <see cref="Bind"/> a socket to a particular name (as well as a particular port)
-		/// and to <see cref="Connect(string)"/> to that socket.
+		///     Creates a new socket end point that (optionally) is bound to the given
+		///     P2P name, if PNRP is available, otherwise the name is only used for debugging.
+		/// </summary>
+		/// <remarks>
+		///     Currently, no exception is thrown when the required P2P service "PNRPsvc" is
+		///     not installed or not running. Check the <see cref="IsP2PAvailable" /> flag to
+		///     find out if it is.
+		/// </remarks>
+		/// <param name="name">The name of this socket, used to publish it via PNRP as well as to refer to this endpoint in diagnostic output</param>
+		/// <param name="clientAuthenticator">The authenticator, if any, to authenticate a client against a server (both need to use the same authenticator)</param>
+		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>
+		public SocketRemotingEndPoint(string name = null,
+		                              IAuthenticator clientAuthenticator = null,
+		                              IAuthenticator serverAuthenticator = null)
+			: base(name,
+			clientAuthenticator,
+			serverAuthenticator)
+		{
+		}
+
+		/// <summary>
+		///     Whether or not the P2P name publishing service is available on this machine or not.
+		///     Is required to <see cref="Bind" /> a socket to a particular name (as well as a particular port)
+		///     and to <see cref="Connect(string)" /> to that socket.
 		/// </summary>
 		public static bool IsP2PAvailable
 		{
 			get
 			{
-				var sc = ServiceController.GetServices().FirstOrDefault(x => x.ServiceName == "PNRPsvc");
+				ServiceController sc = ServiceController.GetServices().FirstOrDefault(x => x.ServiceName == "PNRPsvc");
 
 				if (sc == null)
 					return false;
@@ -56,22 +79,8 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Creates a new socket end point that (optionally) is bound to the given
-		/// P2P name, if PNRP is available, otherwise the name is only used for debugging.
-		/// </summary>
-		/// <remarks>
-		/// Currently, no exception is thrown when the required P2P service "PNRPsvc" is
-		/// not installed or not running. Check the <see cref="IsP2PAvailable"/> flag to
-		/// find out if it is.
-		/// </remarks>
-		/// <param name="name"></param>
-		public SocketRemotingEndPoint(string name = null)
-			: base(name)
-		{}
-
-		/// <summary>
-		/// IPAddress+Port pair of this endPoint in case <see cref="Bind"/> has been called.
-		/// Otherwise null.
+		///     IPAddress+Port pair of this endPoint in case <see cref="Bind" /> has been called.
+		///     Otherwise null.
 		/// </summary>
 		public IPEndPoint LocalEndPoint
 		{
@@ -79,21 +88,34 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// IPAddress+Port pair of the connected endPoint in case <see cref="Connect(IPEndPoint)"/> has been called.
-		/// Otherwise null.
+		///     IPAddress+Port pair of the connected endPoint in case <see cref="Connect(IPEndPoint)" /> has been called.
+		///     Otherwise null.
 		/// </summary>
 		public IPEndPoint RemoteEndPoint
 		{
 			get { return _remoteEndPoint; }
 		}
+
+		protected override EndPoint InternalLocalEndPoint
+		{
+			get { return _localEndPoint; }
+		}
+
+		protected override EndPoint InternalRemoteEndPoint
+		{
+			get { return _remoteEndPoint; }
+			set { _remoteEndPoint = (IPEndPoint) value; }
+		}
+
 		/// <summary>
-		/// Binds this socket 
+		///     Binds this socket
 		/// </summary>
 		/// <param name="localAddress"></param>
 		public void Bind(IPAddress localAddress)
 		{
 			if (localAddress == null) throw new ArgumentNullException("localAddress");
-			if (IsConnected) throw new InvalidOperationException("A socket may only bound to a particular port when its not already connected");
+			if (IsConnected)
+				throw new InvalidOperationException("A socket may only bound to a particular port when its not already connected");
 
 			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out _localEndPoint);
 			_serverSocket.Listen(1);
@@ -104,17 +126,17 @@ namespace SharpRemote
 			{
 				var peerName = new PeerName(Name, PeerNameType.Unsecured);
 				_peerNameRegistration = new PeerNameRegistration
-				{
-					PeerName = peerName,
-					Port = _localEndPoint.Port,
-				};
+					{
+						PeerName = peerName,
+						Port = _localEndPoint.Port,
+					};
 				_peerNameRegistration.Start();
 				Log.InfoFormat("Endpoint '{0}@{1}' published to local cloud via PNRP", Name, _localEndPoint);
 			}
 		}
 
 		/// <summary>
-		/// Connects to another endPoint with the given name.
+		///     Connects to another endPoint with the given name.
 		/// </summary>
 		/// <param name="endPointName"></param>
 		public void Connect(string endPointName)
@@ -123,22 +145,26 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Connects to another endPoint with the given name.
+		///     Connects to another endPoint with the given name.
 		/// </summary>
 		/// <param name="endPointName"></param>
 		/// <param name="timeout"></param>
-		/// <exception cref="ArgumentException">In case <paramref name="endPointName"/> is null</exception>
+		/// <exception cref="ArgumentException">
+		///     In case <paramref name="endPointName" /> is null
+		/// </exception>
 		/// <exception cref="InvalidOperationException">
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
 		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidIPEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
+		/// <exception cref="InvalidIPEndPointException">
+		///     The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		/// </exception>
 		public void Connect(string endPointName, TimeSpan timeout)
 		{
 			if (endPointName == null) throw new ArgumentNullException("endPointName");
 
 			var resolver = new PeerNameResolver();
-			var results = resolver.Resolve(new PeerName(endPointName, PeerNameType.Unsecured));
+			PeerNameRecordCollection results = resolver.Resolve(new PeerName(endPointName, PeerNameType.Unsecured));
 
 			if (results.Count == 0)
 			{
@@ -146,10 +172,10 @@ namespace SharpRemote
 				throw new NoSuchIPEndPointException(endPointName);
 			}
 
-			var peer = results[0];
-			var endPoints = peer.EndPointCollection;
+			PeerNameRecord peer = results[0];
+			IPEndPointCollection endPoints = peer.EndPointCollection;
 
-			foreach (var ep in endPoints)
+			foreach (IPEndPoint ep in endPoints)
 			{
 				try
 				{
@@ -157,7 +183,8 @@ namespace SharpRemote
 					break;
 				}
 				catch (NoSuchIPEndPointException) //< Let's try the next...
-				{ }
+				{
+				}
 			}
 		}
 
@@ -165,14 +192,17 @@ namespace SharpRemote
 		///     Connects this endPoint to the given one.
 		/// </summary>
 		/// <param name="endPoint"></param>
-		/// /// <exception cref="ArgumentNullException">
+		/// ///
+		/// <exception cref="ArgumentNullException">
 		///     When <paramref name="endPoint" /> is null
 		/// </exception>
 		/// <exception cref="InvalidOperationException">
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
 		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidIPEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
+		/// <exception cref="InvalidIPEndPointException">
+		///     The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		/// </exception>
 		public void Connect(IPEndPoint endPoint)
 		{
 			Connect(endPoint, TimeSpan.FromSeconds(1));
@@ -193,7 +223,9 @@ namespace SharpRemote
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
 		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidIPEndPointException">The given endPoint is no <see cref="SocketRemotingEndPoint"/></exception>
+		/// <exception cref="InvalidIPEndPointException">
+		///     The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		/// </exception>
 		public void Connect(IPEndPoint endPoint, TimeSpan timeout)
 		{
 			if (endPoint == null) throw new ArgumentNullException("endPoint");
@@ -211,28 +243,33 @@ namespace SharpRemote
 			{
 				DateTime started = DateTime.Now;
 				var task = new Task(() =>
-				{
-					socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-					socket.Connect(endPoint);
-				});
+					{
+						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+						socket.Connect(endPoint);
+					});
 				task.Start();
 				if (!task.Wait(timeout))
 					throw new NoSuchIPEndPointException(endPoint);
 
 				TimeSpan remaining = timeout - (DateTime.Now - started);
-				if (!ReadWelcomeMessage(socket, remaining, endPoint))
-					throw new InvalidIPEndPointException(endPoint);
+				if (ReadMessage(socket, "welcome message", remaining) != ServerWelcomeMessage)
+					throw new AuthenticationException(string.Format("Endpoint '{0}' failed to send a welcome message", endPoint));
+
+				AuthenticateOutgoingConnection(socket);
+
+				if (ReadMessage(socket, "ready message", remaining) != ServerReadyMessage)
+					throw new AuthenticationException(string.Format("Endpoint '{0}' failed to send a ready message", endPoint));
 
 				_remoteEndPoint = endPoint;
 				OnConnected(socket);
 			}
 			catch (AggregateException e)
 			{
-				var inner = e.InnerExceptions;
+				ReadOnlyCollection<Exception> inner = e.InnerExceptions;
 				if (inner.Count != 1)
 					throw;
 
-				var ex = inner[0];
+				Exception ex = inner[0];
 				if (!(ex is SocketException))
 					throw;
 
@@ -248,17 +285,6 @@ namespace SharpRemote
 					socket.Dispose();
 				throw;
 			}
-		}
-
-		protected override EndPoint InternalLocalEndPoint
-		{
-			get { return _localEndPoint; }
-		}
-
-		protected override EndPoint InternalRemoteEndPoint
-		{
-			get { return _remoteEndPoint; }
-			set { _remoteEndPoint = (IPEndPoint) value; }
 		}
 
 		protected override void DisposeAdditional()
@@ -279,8 +305,16 @@ namespace SharpRemote
 
 				try
 				{
-					OnConnected(_serverSocket.EndAccept(ar));
-					SendWelcomeMessage();
+					Socket socket = _serverSocket.EndAccept(ar);
+					WriteMessage(socket, "welcome message", ServerWelcomeMessage);
+					AuthenticateIncomingConnection(socket);
+					WriteMessage(socket, "ready message", ServerReadyMessage);
+					OnConnected(socket);
+				}
+				catch (AuthenticationException e)
+				{
+					Log.WarnFormat("Closing connection: {0}", e);
+					Disconnect();
 				}
 				catch (Exception e)
 				{
@@ -342,6 +376,5 @@ namespace SharpRemote
 					socket.Dispose();
 			}
 		}
-
 	}
 }

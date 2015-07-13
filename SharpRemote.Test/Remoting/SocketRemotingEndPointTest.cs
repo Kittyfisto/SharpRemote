@@ -5,6 +5,7 @@ using System.Threading;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.Exceptions;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using log4net.Core;
@@ -19,11 +20,12 @@ namespace SharpRemote.Test.Remoting
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<SocketRemotingEndPoint>(Level.Info);
+			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
 		}
 
-		protected SocketRemotingEndPoint CreateEndPoint(string name = null)
+		protected SocketRemotingEndPoint CreateEndPoint(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null)
 		{
-			return new SocketRemotingEndPoint(name);
+			return new SocketRemotingEndPoint(name, clientAuthenticator, serverAuthenticator);
 		}
 
 		private static bool WaitFor(Func<bool> fn, TimeSpan timeout)
@@ -131,7 +133,8 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Ignore]
+		[Ignore("TODO: Find out why this test wont work - it should :P")]
+		[LocalTest]
 		[Description("Verifies that Connect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect2()
 		{
@@ -282,7 +285,119 @@ namespace SharpRemote.Test.Remoting
 				socket.Listen(1);
 				socket.BeginAccept(ar => socket.EndAccept(ar), null);
 				new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 54321)))
-					.ShouldThrow<InvalidIPEndPointException>();
+					.ShouldThrow<AuthenticationException>();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() succeeds when client-side authentication is enabled and the challenge is met")]
+		public void TestConnect10()
+		{
+			var authenticator = new TestAuthenticator();
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", authenticator))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2", authenticator))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint)).ShouldNotThrow();
+				server.IsConnected.Should().BeTrue();
+				client.IsConnected.Should().BeTrue();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() succeeds when client-side authentication is enabled and the challenge is not met")]
+		public void TestConnect11()
+		{
+			var wrongAuthenticator = new Test2Authenticator();
+			var actualAuthenticator = new TestAuthenticator();
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", wrongAuthenticator))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2", actualAuthenticator))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint))
+					.ShouldThrow<AuthenticationException>();
+				server.IsConnected.Should().BeFalse();
+				client.IsConnected.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() succeeds when server-side authentication is enabled and the challenge is met")]
+		public void TestConnect12()
+		{
+			var authenticator = new TestAuthenticator();
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", null, authenticator))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2", null, authenticator))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint)).ShouldNotThrow();
+				server.IsConnected.Should().BeTrue();
+				client.IsConnected.Should().BeTrue();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() fails when server-side authentication is enabled and the challenge is not met")]
+		public void TestConnect13()
+		{
+			var wrongAuthenticator = new Test2Authenticator();
+			var actualAuthenticator = new TestAuthenticator();
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", null, actualAuthenticator))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2", null, wrongAuthenticator))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint))
+					.ShouldThrow<AuthenticationException>();
+				server.IsConnected.Should().BeFalse();
+				client.IsConnected.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() succeeds when both server and client side authentication is enabled and both challenges are met")]
+		public void TestConnect14()
+		{
+			var clientAuthenticator = new Test2Authenticator();
+			var serverAuthenticator = new TestAuthenticator();
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", clientAuthenticator, serverAuthenticator))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2", clientAuthenticator, serverAuthenticator))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint)).ShouldNotThrow();
+				server.IsConnected.Should().BeTrue();
+				client.IsConnected.Should().BeTrue();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() fails when both server and client side authentication is enabled and the client-side challenge is not met")]
+		public void TestConnect15()
+		{
+			var serverAuthenticator = new TestAuthenticator();
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", new TestAuthenticator(), serverAuthenticator))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2", new Test2Authenticator(), serverAuthenticator))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint))
+					.ShouldThrow<AuthenticationException>();
+				server.IsConnected.Should().BeFalse();
+				client.IsConnected.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() succeeds when both server and client side authentication is enabled and the server-side challenge is not met")]
+		public void TestConnect16()
+		{
+			var clientAuthenticator = new Test2Authenticator();
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", clientAuthenticator, new TestAuthenticator()))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2", clientAuthenticator, new Test2Authenticator()))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint))
+					.ShouldThrow<AuthenticationException>();
+				server.IsConnected.Should().BeFalse();
+				client.IsConnected.Should().BeFalse();
 			}
 		}
 

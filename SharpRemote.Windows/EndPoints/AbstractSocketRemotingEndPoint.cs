@@ -610,7 +610,7 @@ namespace SharpRemote
 			SocketError err;
 			if (!SynchronizedRead(socket, size, timeout, out err))
 			{
-				throw new HandshakeException(string.Format("Failed to receive message from endpoint '{0}' in time", remoteEndPoint));
+				throw new HandshakeException(string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint, timeout.TotalSeconds, err));
 			}
 
 			int length = BitConverter.ToInt32(size, 0);
@@ -622,7 +622,7 @@ namespace SharpRemote
 			var buffer = new byte[length];
 			if (!SynchronizedRead(socket, buffer, timeout, out err))
 			{
-				throw new HandshakeException(string.Format("Failed to receive message from endpoint '{0}' in time", remoteEndPoint));
+				throw new HandshakeException(string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint, timeout.TotalSeconds, err));
 			}
 
 			using (var reader = new BinaryReader(new MemoryStream(buffer)))

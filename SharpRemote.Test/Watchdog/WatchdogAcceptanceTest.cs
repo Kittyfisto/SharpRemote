@@ -22,7 +22,10 @@ namespace SharpRemote.Test.Watchdog
 		[TearDown]
 		public void TearDown()
 		{
-			_silo.Dispose();
+			if (_silo != null)
+			{
+				_silo.Dispose();
+			}
 		}
 
 		private static readonly string SharpRemoteFolder =

@@ -338,7 +338,13 @@ namespace SharpRemote
 					socket.Dispose();
 				}
 
-				_serverSocket.BeginAccept(OnIncomingConnection, null);
+				lock (SyncRoot)
+				{
+					if (!IsDisposed)
+					{
+						_serverSocket.BeginAccept(OnIncomingConnection, null);
+					}
+				}
 			}
 		}
 

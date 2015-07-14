@@ -402,8 +402,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Ignore]
-		[Description("Verifies that Connect() succeeds when both client side authentication is enabled but the client doesn't provide any")]
+		[Description("Verifies that Connect() succeeds when client side authentication is enabled but the client doesn't provide any")]
 		public void TestConnect17()
 		{
 			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1"))
@@ -412,6 +411,21 @@ namespace SharpRemote.Test.Remoting
 				server.Bind(IPAddress.Loopback);
 				new Action(() => client.Connect(server.LocalEndPoint))
 					.ShouldThrow<AuthenticationRequiredException>();
+				server.IsConnected.Should().BeFalse();
+				client.IsConnected.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Connect() succeeds when server side authentication is enabled but the server doesn't provide any")]
+		public void TestConnect18()
+		{
+			using (SocketRemotingEndPoint client = CreateEndPoint("Rep1", null, new TestAuthenticator()))
+			using (SocketRemotingEndPoint server = CreateEndPoint("Rep2"))
+			{
+				server.Bind(IPAddress.Loopback);
+				new Action(() => client.Connect(server.LocalEndPoint))
+					.ShouldThrow<HandshakeException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}

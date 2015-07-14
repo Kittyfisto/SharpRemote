@@ -4,11 +4,11 @@ using System.Runtime.Serialization;
 namespace SharpRemote.Exceptions
 {
 	/// <summary>
-	/// This exception is thrown when client or server failed authentication.
+	/// 
 	/// </summary>
 	[Serializable]
-	public class AuthenticationException
-		: SystemException
+	public class HandshakeException
+		: AuthenticationException
 	{
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
@@ -17,7 +17,7 @@ namespace SharpRemote.Exceptions
 		/// </summary>
 		/// <param name="info"></param>
 		/// <param name="context"></param>
-		public AuthenticationException(SerializationInfo info, StreamingContext context)
+		public HandshakeException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
 #endif
@@ -26,7 +26,7 @@ namespace SharpRemote.Exceptions
 		/// <summary>
 		/// Initializes a new instance of this exception.
 		/// </summary>
-		public AuthenticationException()
+		public HandshakeException()
 		{}
 
 		/// <summary>
@@ -35,7 +35,7 @@ namespace SharpRemote.Exceptions
 		/// </summary>
 		/// <param name="message"></param>
 		/// <param name="innerException"></param>
-		public AuthenticationException(string message, Exception innerException = null)
+		public HandshakeException(string message, Exception innerException = null)
 			: base(message, innerException)
 		{
 			

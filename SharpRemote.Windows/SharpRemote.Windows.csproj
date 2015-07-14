@@ -86,6 +86,7 @@
     <Compile Include="Exceptions\AuthenticationException.cs" />
     <Compile Include="Exceptions\AuthenticationRequiredException.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
+    <Compile Include="Exceptions\HandshakeException.cs" />
     <Compile Include="Exceptions\NoSuchApplicationException.cs" />
     <Compile Include="Exceptions\NoSuchIPEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />

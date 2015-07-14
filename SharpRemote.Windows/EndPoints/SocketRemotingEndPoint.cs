@@ -256,20 +256,9 @@ namespace SharpRemote
 					throw new NoSuchIPEndPointException(endPoint);
 
 				TimeSpan remaining = timeout - (DateTime.Now - started);
-				string messageType;
-				string message;
-				ReadMessage(socket, remaining, out messageType, out message);
-				if (message != ServerWelcomeMessage)
-					throw new AuthenticationException(string.Format("Endpoint '{0}' failed to send a welcome message", endPoint));
-
-				PerformOutgoingHandshake(socket);
-
-				ReadMessage(socket, remaining, out messageType, out message);
-				if (message != ServerReadyMessage)
-					throw new AuthenticationException(string.Format("Endpoint '{0}' failed to send a ready message", endPoint));
-
+				PerformOutgoingHandshake(socket, remaining);
 				_remoteEndPoint = endPoint;
-				OnConnected(socket);
+
 				success = true;
 			}
 			catch (AggregateException e)
@@ -290,10 +279,15 @@ namespace SharpRemote
 			}
 			finally
 			{
-				if (!success && socket != null)
+				if (!success)
 				{
-					socket.Close();
-					socket.Dispose();
+					if (socket != null)
+					{
+						socket.Close();
+						socket.Dispose();
+					}
+
+					_remoteEndPoint = null;
 				}
 			}
 		}
@@ -313,33 +307,42 @@ namespace SharpRemote
 			{
 				if (IsDisposed)
 					return;
+			}
 
-				try
+			Socket socket = null;
+			bool success = false;
+			try
+			{
+				socket = _serverSocket.EndAccept(ar);
+				PerformIncomingHandshake(socket);
+				success = true;
+			}
+			catch (AuthenticationException e)
+			{
+				Log.WarnFormat("Closing connection: {0}", e);
+
+				Disconnect();
+			}
+			catch (Exception e)
+			{
+				Log.ErrorFormat("Caught exception while accepting incoming connection - disconnecting again: {0}", e);
+
+				Disconnect();
+			}
+			finally
+			{
+				if (!success && socket != null)
 				{
-					Socket socket = _serverSocket.EndAccept(ar);
-					WriteMessage(socket, "welcome message", ServerWelcomeMessage);
-					AuthenticateIncomingConnection(socket);
-					WriteMessage(socket, "ready message", ServerReadyMessage);
-					OnConnected(socket);
+					socket.Shutdown(SocketShutdown.Both);
+					socket.Disconnect(false);
+					socket.Dispose();
 				}
-				catch (AuthenticationException e)
-				{
-					Log.WarnFormat("Closing connection: {0}", e);
-					Disconnect();
-				}
-				catch (Exception e)
-				{
-					Log.ErrorFormat("Caught exception while accepting incoming connection - disconnecting again: {0}", e);
-					Disconnect();
-				}
-				finally
-				{
-					_serverSocket.BeginAccept(OnIncomingConnection, null);
-				}
+
+				_serverSocket.BeginAccept(OnIncomingConnection, null);
 			}
 		}
 
-		private void OnConnected(Socket socket)
+		protected override void OnHandshakeSucceeded(Socket socket)
 		{
 			lock (SyncRoot)
 			{

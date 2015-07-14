@@ -210,6 +210,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[LocalTest]
 		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
 		public void TestConnect5()
 		{
@@ -491,6 +492,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[LocalTest]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
 			)]
@@ -518,6 +520,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[LocalTest]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
 			)]
@@ -544,6 +547,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[LocalTest]
 		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
 		public void TestDisconnect3()
 		{

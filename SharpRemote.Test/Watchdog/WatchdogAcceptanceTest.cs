@@ -10,6 +10,7 @@ using SharpRemote.Watchdog;
 
 namespace SharpRemote.Test.Watchdog
 {
+	[LocalTest]
 	[TestFixture]
 	public sealed class WatchdogAcceptanceTest
 	{

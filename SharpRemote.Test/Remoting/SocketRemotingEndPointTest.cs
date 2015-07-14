@@ -220,7 +220,7 @@ namespace SharpRemote.Test.Remoting
 				rep2.Bind(IPAddress.Loopback);
 				rep3.Bind(IPAddress.Loopback);
 
-				TimeSpan timeout = TimeSpan.FromSeconds(1);
+				TimeSpan timeout = TimeSpan.FromSeconds(5);
 				rep1.Connect(rep2.LocalEndPoint, timeout);
 				rep1.IsConnected.Should().BeTrue();
 				rep1.RemoteEndPoint.Should().Be(rep2.LocalEndPoint);
@@ -501,7 +501,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				rep2.Bind(IPAddress.Loopback);
 
-				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
+				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(5));
 
 				rep1.IsConnected.Should().BeTrue();
 				rep1.RemoteEndPoint.Should().Be(rep2.LocalEndPoint);
@@ -527,7 +527,7 @@ namespace SharpRemote.Test.Remoting
 			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
 				rep2.Bind(IPAddress.Loopback);
-				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
+				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(5));
 
 				rep1.IsConnected.Should().BeTrue();
 				rep1.RemoteEndPoint.Should().Be(rep2.LocalEndPoint);
@@ -551,7 +551,7 @@ namespace SharpRemote.Test.Remoting
 			using (SocketRemotingEndPoint rep2 = CreateEndPoint("Rep#2"))
 			{
 				rep2.Bind(IPAddress.Loopback);
-				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(1));
+				rep1.Connect(rep2.LocalEndPoint, TimeSpan.FromSeconds(5));
 				rep1.IsConnected.Should().BeTrue();
 				rep2.IsConnected.Should().BeTrue();
 

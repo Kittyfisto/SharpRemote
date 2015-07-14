@@ -156,8 +156,9 @@ namespace SharpRemote
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
 		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidIPEndPointException">
-		///     The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		/// <exception cref="AuthenticationException">
+		///     - The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		///     - The given endPoint failed authentication
 		/// </exception>
 		public void Connect(string endPointName, TimeSpan timeout)
 		{
@@ -200,8 +201,9 @@ namespace SharpRemote
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
 		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidIPEndPointException">
-		///     The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		/// <exception cref="AuthenticationException">
+		///     - The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		///     - The given endPoint failed authentication
 		/// </exception>
 		public void Connect(IPEndPoint endPoint)
 		{
@@ -223,8 +225,9 @@ namespace SharpRemote
 		///     When this endPoint is already connected to another endPoint.
 		/// </exception>
 		/// <exception cref="NoSuchIPEndPointException">When no such endPoint could be *found* - it might exist but this one is incapable of establishing a successfuly connection</exception>
-		/// <exception cref="InvalidIPEndPointException">
-		///     The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		/// <exception cref="AuthenticationException">
+		///     - The given endPoint is no <see cref="SocketRemotingEndPoint" />
+		///     - The given endPoint failed authentication
 		/// </exception>
 		public void Connect(IPEndPoint endPoint, TimeSpan timeout)
 		{
@@ -238,6 +241,7 @@ namespace SharpRemote
 
 			Log.DebugFormat("Trying to connect to '{0}', timeout: {1}ms", endPoint, timeout.TotalMilliseconds);
 
+			bool success = false;
 			Socket socket = null;
 			try
 			{
@@ -252,16 +256,21 @@ namespace SharpRemote
 					throw new NoSuchIPEndPointException(endPoint);
 
 				TimeSpan remaining = timeout - (DateTime.Now - started);
-				if (ReadMessage(socket, "welcome message", remaining) != ServerWelcomeMessage)
+				string messageType;
+				string message;
+				ReadMessage(socket, remaining, out messageType, out message);
+				if (message != ServerWelcomeMessage)
 					throw new AuthenticationException(string.Format("Endpoint '{0}' failed to send a welcome message", endPoint));
 
-				AuthenticateOutgoingConnection(socket);
+				PerformOutgoingHandshake(socket);
 
-				if (ReadMessage(socket, "ready message", remaining) != ServerReadyMessage)
+				ReadMessage(socket, remaining, out messageType, out message);
+				if (message != ServerReadyMessage)
 					throw new AuthenticationException(string.Format("Endpoint '{0}' failed to send a ready message", endPoint));
 
 				_remoteEndPoint = endPoint;
 				OnConnected(socket);
+				success = true;
 			}
 			catch (AggregateException e)
 			{
@@ -279,11 +288,13 @@ namespace SharpRemote
 			{
 				throw new NoSuchIPEndPointException(endPoint, e);
 			}
-			catch (Exception)
+			finally
 			{
-				if (socket != null)
+				if (!success && socket != null)
+				{
+					socket.Close();
 					socket.Dispose();
-				throw;
+				}
 			}
 		}
 

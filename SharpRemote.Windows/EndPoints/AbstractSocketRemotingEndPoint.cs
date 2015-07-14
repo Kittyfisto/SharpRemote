@@ -30,6 +30,7 @@ namespace SharpRemote
 
 		protected const string ServerWelcomeMessage = "SharpRemote Socket, Welcome";
 		protected const string ServerReadyMessage = "SharpRemote Socket, Ready";
+
 		private const string AuthenticationFailedMessage = "SharpRemote Authentication failed";
 		private const string AuthenticationSucceedMessage = "SharpRemote Authentication succeeded";
 
@@ -177,6 +178,14 @@ namespace SharpRemote
 			DateTime start = DateTime.Now;
 			while (socket.Available < buffer.Length)
 			{
+				if (!socket.Connected)
+				{
+					err = SocketError.NotConnected;
+					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
+									buffer.Length, err, socket.Connected);
+					return false;
+				}
+
 				TimeSpan remaining = timeout - (DateTime.Now - start);
 				var t = (int)(remaining.TotalMilliseconds * 1000);
 				if (!socket.Poll(t, SelectMode.SelectRead))
@@ -325,8 +334,6 @@ namespace SharpRemote
 					Log.InfoFormat("Disconnecting socket '{0}' from {1}", _name, InternalRemoteEndPoint);
 
 					InterruptOngoingCalls();
-
-					
 
 					try
 					{
@@ -587,37 +594,37 @@ namespace SharpRemote
 			return buffer;
 		}
 
-		protected string ReadMessage(Socket socket, string messageName, TimeSpan timeout)
+		protected void ReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message)
 		{
 			var remoteEndPoint = socket.RemoteEndPoint;
 			var size = new byte[4];
 			SocketError err;
 			if (!SynchronizedRead(socket, size, timeout, out err))
 			{
-				throw new AuthenticationException(string.Format("Failed to receive {0} from endpoint '{1}' in time", messageName, remoteEndPoint));
+				throw new AuthenticationException(string.Format("Failed to receive message from endpoint '{0}' in time", remoteEndPoint));
 			}
 
 			int length = BitConverter.ToInt32(size, 0);
 			if (length < 0)
 			{
-				throw new AuthenticationException(string.Format("The {0} received from endpoint '{1}' is malformatted", messageName, remoteEndPoint));
+				throw new AuthenticationException(string.Format("The message received from endpoint '{0}' is malformatted", remoteEndPoint));
 			}
 
 			var buffer = new byte[length];
 			if (!SynchronizedRead(socket, buffer, timeout, out err))
 			{
-				throw new AuthenticationException(string.Format("Failed to receive {0} from endpoint '{1}' in time", messageName, remoteEndPoint));
+				throw new AuthenticationException(string.Format("Failed to receive message from endpoint '{0}' in time", remoteEndPoint));
 			}
 
 			using (var reader = new BinaryReader(new MemoryStream(buffer)))
 			{
-				var challenge = reader.ReadString();
-				return challenge;
+				messageType = reader.ReadString();
+				message = reader.ReadString();
 			}
 		}
 
 		protected void WriteMessage(Socket socket,
-			string messageName,
+			string messageType,
 			string message)
 		{
 			var remoteEndPoint = socket.RemoteEndPoint;
@@ -625,6 +632,7 @@ namespace SharpRemote
 			using (var writer = new BinaryWriter(stream))
 			{
 				stream.Position = 4;
+				writer.Write(messageType);
 				writer.Write(message);
 				writer.Flush();
 				PatchResponseMessageLength(stream, writer);
@@ -634,7 +642,7 @@ namespace SharpRemote
 				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
 				{
 					throw new AuthenticationException(string.Format("Failed to send {0} to endpoint '{1}': {2}",
-						messageName,
+						messageType,
 						remoteEndPoint,
 						err));
 				}
@@ -657,10 +665,15 @@ namespace SharpRemote
 				Log.DebugFormat("Creating challenge '{0}' for endpoint '{1}'", challenge, remoteEndPoint);
 				WriteMessage(socket, "challenge", challenge);
 
-				string response = ReadMessage(socket, "response", timeout);
-				Log.DebugFormat("Received response '{0}' for challenge '{1}' from endpoint '{2}'", response, challenge, remoteEndPoint);
+				string messageType;
+				string message;
+				ReadMessage(socket, timeout, out messageType, out message);
+				Log.DebugFormat("Received response '{0}' for challenge '{1}' from endpoint '{2}'",
+				                message,
+				                challenge,
+				                remoteEndPoint);
 
-				if (!_clientAuthenticator.Authenticate(challenge, response))
+				if (!_clientAuthenticator.Authenticate(challenge, message))
 				{
 					// Should the client fail the challenge, we tell him that,
 					// but drop the connection immediately afterwards.
@@ -675,13 +688,15 @@ namespace SharpRemote
 
 			if (_serverAuthenticator != null)
 			{
-				string challenge = ReadMessage(socket, "challenge", timeout);
-				string response = _serverAuthenticator.CreateResponse(challenge);
+				string messageType;
+				string message;
+				ReadMessage(socket, timeout, out messageType, out message);
+				string response = _serverAuthenticator.CreateResponse(message);
 				WriteMessage(socket, "response", response);
 
 				// After having answered the challenge we wait for a successful response from the client.
 				// If we failed the authentication, then 
-				var message = ReadMessage(socket, "authentication", timeout);
+				ReadMessage(socket, timeout, out messageType, out message);
 				if (message != AuthenticationSucceedMessage)
 					throw new AuthenticationException(string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint));
 			}
@@ -691,7 +706,7 @@ namespace SharpRemote
 		/// Performs the authentication between client & server (if necessary) from the client-side.
 		/// </summary>
 		/// <param name="socket"></param>
-		protected void AuthenticateOutgoingConnection(Socket socket)
+		protected void PerformOutgoingHandshake(Socket socket)
 		{
 			var timeout = TimeSpan.FromMinutes(1);
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
@@ -699,13 +714,15 @@ namespace SharpRemote
 			{
 				// Upon establishing a connection, we try to authenticate the ourselves
 				// against the server by answering his response.
-				string challenge = ReadMessage(socket, "challenge", timeout);
-				string response = _clientAuthenticator.CreateResponse(challenge);
+				string messageType;
+				string message;
+				ReadMessage(socket, timeout, out messageType, out message);
+				string response = _clientAuthenticator.CreateResponse(message);
 				WriteMessage(socket, "response", response);
 
 				// If we failed the authentication, a proper server will tell us so we can
 				// forward this information to the caller.
-				var message = ReadMessage(socket, "authentication", timeout);
+				ReadMessage(socket, timeout, out messageType, out message);
 				if (message != AuthenticationSucceedMessage)
 					throw new AuthenticationException(string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint));
 			}
@@ -716,8 +733,10 @@ namespace SharpRemote
 				// Let's send the challenge
 				string challenge = _serverAuthenticator.CreateChallenge();
 				WriteMessage(socket, "challenge", challenge);
-				string response = ReadMessage(socket, "response", timeout);
-				if (!_serverAuthenticator.Authenticate(challenge, response))
+				string messageType;
+				string message;
+				ReadMessage(socket, timeout, out messageType, out message);
+				if (!_serverAuthenticator.Authenticate(challenge, message))
 				{
 					// Should the server fail to authenticate himself, then we tell him that end then abort
 					// the connection...

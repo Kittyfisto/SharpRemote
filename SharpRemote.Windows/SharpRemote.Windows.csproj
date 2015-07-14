@@ -84,6 +84,7 @@
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />
     <Compile Include="Exceptions\AuthenticationException.cs" />
+    <Compile Include="Exceptions\AuthenticationRequiredException.cs" />
     <Compile Include="Exceptions\ConnectionLostException.cs" />
     <Compile Include="Exceptions\NoSuchApplicationException.cs" />
     <Compile Include="Exceptions\NoSuchIPEndPointException.cs" />

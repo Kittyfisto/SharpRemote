@@ -4,10 +4,11 @@ using System.Runtime.Serialization;
 namespace SharpRemote.Exceptions
 {
 	/// <summary>
-	/// This exception is thrown when client or server failed authentication.
+	/// This exception is thrown when client or server requires authentication, but the other side
+	/// doesn't provide any.
 	/// </summary>
-	public class AuthenticationException
-		: SystemException
+	public class AuthenticationRequiredException
+		: AuthenticationException
 	{
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
@@ -16,17 +17,17 @@ namespace SharpRemote.Exceptions
 		/// </summary>
 		/// <param name="info"></param>
 		/// <param name="context"></param>
-		public AuthenticationException(SerializationInfo info, StreamingContext context)
+		public AuthenticationRequiredException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
-		{}
+		{ }
 #endif
 #endif
 
 		/// <summary>
 		/// Initializes a new instance of this exception.
 		/// </summary>
-		public AuthenticationException()
-		{}
+		public AuthenticationRequiredException()
+		{ }
 
 		/// <summary>
 		/// Initializes a new instance of this exception with the given message and inner exception that
@@ -34,10 +35,10 @@ namespace SharpRemote.Exceptions
 		/// </summary>
 		/// <param name="message"></param>
 		/// <param name="innerException"></param>
-		public AuthenticationException(string message, Exception innerException = null)
+		public AuthenticationRequiredException(string message, Exception innerException = null)
 			: base(message, innerException)
 		{
-			
+
 		}
 	}
 }

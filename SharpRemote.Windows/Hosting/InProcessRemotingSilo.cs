@@ -30,7 +30,7 @@ namespace SharpRemote.Hosting
 			_remoteEndPoint.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);
 			_remoteEndPoint.Bind(IPAddress.Loopback);
 
-			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(1));
+			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(5));
 		}
 
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class

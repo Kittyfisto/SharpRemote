@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
@@ -31,18 +30,22 @@ namespace SharpRemote
 		private readonly Dictionary<Type, SerializationMethods> _serializationMethods;
 		private readonly List<ITypeSerializer> _customSerializers;
 		private readonly Dictionary<Type, MethodInfo> _getSingletonInstance;
+		private readonly ITypeResolver _customTypeResolver;
 
 		/// <summary>
 		/// Creates a new serializer that dynamically compiles serialization methods to the given
 		/// <see cref="ModuleBuilder"/>.
 		/// </summary>
 		/// <param name="module"></param>
-		public Serializer(ModuleBuilder module)
+		/// <param name="customTypeResolver">The instance of the type resolver, if any, that is used to resolve types upon deserialization</param>
+		public Serializer(ModuleBuilder module, ITypeResolver customTypeResolver = null)
 		{
 			if (module == null) throw new ArgumentNullException("module");
 
 			_module = module;
+			_customTypeResolver = customTypeResolver;
 			_serializationMethods = new Dictionary<Type, SerializationMethods>();
+			
 
 			_customSerializers = new List<ITypeSerializer>
 			{
@@ -72,9 +75,17 @@ namespace SharpRemote
 		/// <summary>
 		/// Creates a new serializer that dynamically compiles serialization methods to a new DynamicAssembly.
 		/// </summary>
-		public Serializer()
-			: this(CreateModule())
+		public Serializer(ITypeResolver typeResolver = null)
+			: this(CreateModule(), typeResolver)
 		{
+		}
+
+		public Type GetType(string assemblyQualifiedTypeName)
+		{
+			if (_customTypeResolver != null)
+				return _customTypeResolver.GetType(assemblyQualifiedTypeName);
+
+			return TypeResolver.GetType(assemblyQualifiedTypeName);
 		}
 
 		public void RegisterType<T>()
@@ -102,7 +113,7 @@ namespace SharpRemote
 			string typeName = reader.ReadString();
 			if (typeName != "null")
 			{
-				Type type = Type.GetType(typeName);
+				Type type = GetType(typeName);
 				Func<BinaryReader, ISerializer, object> fn = GetReadObjectDelegate(type);
 				return fn(reader, this);
 			}
@@ -263,7 +274,8 @@ namespace SharpRemote
 				EmitReadSingleton(gen, method);
 			}
 			else if (EmitReadNativeType(gen,
-				() => gen.Emit(OpCodes.Ldarg_0),
+			                                () => gen.Emit(OpCodes.Ldarg_0),
+			                                () => gen.Emit(OpCodes.Ldarg_1),
 			                                typeInformation.Type,
 			                                false))
 			{

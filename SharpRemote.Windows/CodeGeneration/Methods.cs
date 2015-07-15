@@ -63,6 +63,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo InterlockedCompareExchangeGeneric;
 		public static readonly MethodInfo SerializerWriteObject;
 		public static readonly MethodInfo SerializerReadObject;
+		public static readonly MethodInfo SerializerGetType;
 		public static readonly MethodInfo CreateTypeFromName;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateServant;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateProxy;
@@ -146,6 +147,7 @@ namespace SharpRemote.CodeGeneration
 
 			SerializerWriteObject = typeof (ISerializer).GetMethod("WriteObject", new[]{typeof(BinaryWriter), typeof(object)});
 			SerializerReadObject = typeof(ISerializer).GetMethod("ReadObject", new[] { typeof(BinaryReader) });
+			SerializerGetType = typeof(ISerializer).GetMethod("GetType");
 
 			RemotingEndPointGetOrCreateServant = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewServant");
 			RemotingEndPointGetOrCreateProxy = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy");

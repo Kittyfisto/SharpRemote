@@ -225,7 +225,7 @@ namespace SharpRemote
 			Action loadSerializer,
 			Type valueType)
 		{
-			if (EmitReadNativeType(gen, loadReader, valueType))
+			if (EmitReadNativeType(gen, loadReader, loadSerializer, valueType))
 			{
 				// Nothing to do...
 			}

@@ -36,7 +36,8 @@ namespace SharpRemote.Hosting
 		///     Initializes a new silo server.
 		/// </summary>
 		/// <param name="args">The command line arguments given to the Main() method</param>
-		public ProcessSiloServer(string[] args)
+		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
+		public ProcessSiloServer(string[] args, ITypeResolver customTypeResolver = null)
 		{
 			int pid;
 			if (args.Length >= 1 && int.TryParse(args[0], out pid))
@@ -49,7 +50,7 @@ namespace SharpRemote.Hosting
 
 			_waitHandle = new ManualResetEvent(false);
 
-			_endPoint = new SocketRemotingEndPoint();
+			_endPoint = new SocketRemotingEndPoint(customTypeResolver: customTypeResolver);
 		}
 
 		/// <summary>

@@ -86,5 +86,13 @@ namespace SharpRemote
 		/// <returns></returns>
 		/// <exception cref="SerializationException">In case there was an error while generating the code necessary for serialization / deserialization</exception>
 		object ReadObject(BinaryReader reader);
+
+		/// <summary>
+		/// Resolves a type by its name.
+		/// </summary>
+		/// <param name="assemblyQualifiedTypeName"></param>
+		/// <returns></returns>
+		[Pure]
+		Type GetType(string assemblyQualifiedTypeName);
 	}
 }

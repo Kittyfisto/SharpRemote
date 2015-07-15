@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />
     <Compile Include="LocalTest.cs" />
     <Compile Include="TestAuthenticator.cs" />
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />

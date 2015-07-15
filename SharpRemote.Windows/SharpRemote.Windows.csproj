@@ -105,6 +105,7 @@
     <Compile Include="ISerializer.cs" />
     <Compile Include="IServant.cs" />
     <Compile Include="Attributes\SingletonFactoryMethodAttribute.cs" />
+    <Compile Include="ITypeResolver.cs" />
     <Compile Include="LogInterceptor.cs" />
     <Compile Include="Tasks\SerialTaskScheduler.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />

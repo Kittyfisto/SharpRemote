@@ -4,6 +4,11 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Serializers
 {
+	/// <summary>
+	/// Takes care of serializing / deserializing Type values.
+	/// Serialization simply writes the type's assembly qualified name, e.g. "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+	/// and deserialization calls <see cref="TypeResolver.GetType()"/> or a user specified method.
+	/// </summary>
 	internal sealed class TypeSerializer
 		: AbstractTypeSerializer
 	{
@@ -43,9 +48,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 				loadReader,
 				() =>
 				{
+					loadSerializer();
 					loadReader();
 					gen.Emit(OpCodes.Call, Methods.ReadString);
-					gen.Emit(OpCodes.Call, Methods.CreateTypeFromName);
+					gen.Emit(OpCodes.Callvirt, Methods.SerializerGetType);
 				},
 				valueCanBeNull
 				);

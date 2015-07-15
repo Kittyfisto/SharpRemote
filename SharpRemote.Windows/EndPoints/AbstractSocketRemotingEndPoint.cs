@@ -79,8 +79,9 @@ namespace SharpRemote
 		protected Socket Socket { get { return _socket; } set { _socket = value; } }
 
 		protected AbstractSocketRemotingEndPoint(string name,
-			IAuthenticator clientAuthenticator = null,
-									  IAuthenticator serverAuthenticator = null)
+		                                         IAuthenticator clientAuthenticator = null,
+		                                         IAuthenticator serverAuthenticator = null,
+		                                         ITypeResolver customTypeResolver = null)
 		{
 			_name = name ?? "<Unnamed>";
 			_syncRoot = new object();
@@ -93,7 +94,7 @@ namespace SharpRemote
 			string moduleName = assemblyName.Name + ".dll";
 			_module = _assembly.DefineDynamicModule(moduleName);
 
-			_serializer = new Serializer(_module);
+			_serializer = new Serializer(_module, customTypeResolver);
 			_servantCreator = new ServantCreator(_module, _serializer, this, this);
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
 			_pendingCalls = new Dictionary<long, Action<MessageType, BinaryReader>>();

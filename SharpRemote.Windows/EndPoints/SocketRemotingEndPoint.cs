@@ -48,12 +48,15 @@ namespace SharpRemote
 		/// <param name="name">The name of this socket, used to publish it via PNRP as well as to refer to this endpoint in diagnostic output</param>
 		/// <param name="clientAuthenticator">The authenticator, if any, to authenticate a client against a server (both need to use the same authenticator)</param>
 		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>
+		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		public SocketRemotingEndPoint(string name = null,
 		                              IAuthenticator clientAuthenticator = null,
-		                              IAuthenticator serverAuthenticator = null)
+		                              IAuthenticator serverAuthenticator = null,
+		                              ITypeResolver customTypeResolver = null)
 			: base(name,
 			clientAuthenticator,
-			serverAuthenticator)
+			serverAuthenticator,
+			customTypeResolver)
 		{
 		}
 

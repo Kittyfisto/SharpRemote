@@ -38,16 +38,18 @@ namespace SharpRemote.Hosting
 		/// <param name="process"></param>
 		/// <param name="options"></param>
 		/// <param name="hostOutputWritten"></param>
+		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		public ProcessSiloClient(
 			string process = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
-			Action<string> hostOutputWritten = null
+			Action<string> hostOutputWritten = null,
+			ITypeResolver customTypeResolver = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
 
 			_hostOutputWritten = hostOutputWritten;
-			_endPoint = new SocketRemotingEndPoint();
+			_endPoint = new SocketRemotingEndPoint(customTypeResolver: customTypeResolver);
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 			_waitHandle = new ManualResetEvent(false);
 			_hostState = HostState.BootPending;

@@ -11,6 +11,7 @@ namespace SharpRemote
 	{
 		private bool EmitReadNativeType(ILGenerator gen,
 			Action loadReader,
+			Action loadSerializer,
 			Type valueType,
 			bool valueCanBeNull = true)
 		{
@@ -73,7 +74,8 @@ namespace SharpRemote
 				customSerializer.EmitReadValue(gen,
 					this,
 					loadReader,
-					() => gen.Emit(OpCodes.Ldarg_1),
+					loadSerializer,
+					//() => gen.Emit(OpCodes.Ldarg_1),
 					valueType,
 					valueCanBeNull);
 			}

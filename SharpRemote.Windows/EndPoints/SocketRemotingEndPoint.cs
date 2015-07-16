@@ -358,7 +358,7 @@ namespace SharpRemote
 				Socket = socket;
 				_remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
 				_cancellationTokenSource = new CancellationTokenSource();
-				_readTask = new Task(Read, new KeyValuePair<Socket, CancellationToken>(Socket, _cancellationTokenSource.Token));
+				_readTask = new Task(ReadLoop, new KeyValuePair<Socket, CancellationToken>(Socket, _cancellationTokenSource.Token));
 				_readTask.Start();
 
 				Log.InfoFormat("{0}: Connected to {1}", Name, _remoteEndPoint);

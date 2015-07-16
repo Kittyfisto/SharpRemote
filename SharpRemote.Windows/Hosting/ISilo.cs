@@ -15,6 +15,11 @@ namespace SharpRemote.Hosting
 		: IDisposable
 	{
 		/// <summary>
+		/// Whether or not this silo has been disposed of.
+		/// </summary>
+		bool IsDisposed { get; }
+
+		/// <summary>
 		/// Creates a new instance of the given type and returns an interface to it.
 		/// </summary>
 		/// <typeparam name="TInterface"></typeparam>

@@ -33,7 +33,7 @@ namespace SampleBrowser.Scenarios.Host
 		protected override bool RunTest()
 		{
 			using (var appender = new LogInterceptor(Log))
-			using (var silo = new ProcessSiloClient(hostOutputWritten: LogHost))
+			using (var silo = new OutOfProcessSilo(hostOutputWritten: LogHost))
 			{
 				var instance = silo.CreateGrain<ISample>(typeof (Sample));
 				Log(string.Format("Have you been called yet? - {0}", instance.HaveYouBeenCalledYet()));

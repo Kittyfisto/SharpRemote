@@ -9,7 +9,7 @@ namespace SharpRemote.Test.Hosting
 	{
 		protected override ISilo Create()
 		{
-			return new ProcessSiloClient();
+			return new OutOfProcessSilo();
 		}
 	}
 }

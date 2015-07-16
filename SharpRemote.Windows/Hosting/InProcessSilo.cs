@@ -9,6 +9,13 @@ namespace SharpRemote.Hosting
 	public sealed class InProcessSilo
 		: ISilo
 	{
+		private bool _isDisposed;
+
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
+		}
+
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class
 		{
 			return CreateGrain<TInterface>(Type.GetType(assemblyQualifiedTypeName), parameters);
@@ -22,6 +29,7 @@ namespace SharpRemote.Hosting
 
 		public void Dispose()
 		{
+			_isDisposed = true;
 		}
 	}
 }

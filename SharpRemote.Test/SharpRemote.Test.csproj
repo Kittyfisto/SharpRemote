@@ -56,6 +56,7 @@
   <ItemGroup>
     <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />
     <Compile Include="LocalTest.cs" />
+    <Compile Include="Hosting\HeartbeatMonitorTest.cs" />
     <Compile Include="TestAuthenticator.cs" />
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\ArrayTest.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="Types\Classes\NonSealedClass.cs" />
     <Compile Include="Types\Classes\PropertySealedClass.cs" />
     <Compile Include="Types\Classes\Singleton.cs" />
+    <Compile Include="Types\Classes\DeadlocksProcess.cs" />
     <Compile Include="Types\Exceptions\NonSerializableExceptionButDefaultCtor.cs" />
     <Compile Include="Types\Exceptions\ThrowsDuringSerialization.cs" />
     <Compile Include="Types\ICalculator.cs" />

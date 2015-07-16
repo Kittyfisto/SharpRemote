@@ -14,6 +14,7 @@ namespace SharpRemote.Hosting
 		private readonly SocketRemotingEndPoint _remoteEndPoint;
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
+		private bool _isDisposed;
 
 		/// <summary>
 		/// 
@@ -33,6 +34,11 @@ namespace SharpRemote.Hosting
 			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(5));
 		}
 
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
+		}
+
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class
 		{
 			return CreateGrain<TInterface>(Type.GetType(assemblyQualifiedTypeName), parameters);
@@ -50,6 +56,7 @@ namespace SharpRemote.Hosting
 			_subjectHostProxy.TryDispose();
 			_localEndPoint.Dispose();
 			_remoteEndPoint.Dispose();
+			_isDisposed = true;
 		}
 	}
 }

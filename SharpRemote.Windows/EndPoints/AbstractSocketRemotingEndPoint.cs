@@ -106,11 +106,12 @@ namespace SharpRemote
 
 		#region Reading from / Writing to socket
 
-		protected void Read(object sock)
+		protected void ReadLoop(object sock)
 		{
 			var pair = (KeyValuePair<Socket, CancellationToken>)sock;
 			Socket socket = pair.Key;
 			CancellationToken token = pair.Value;
+			bool failed = false;
 
 			try
 			{
@@ -125,14 +126,20 @@ namespace SharpRemote
 
 					SocketError err;
 					if (!SynchronizedRead(socket, size, out err))
+					{
+						failed = true;
 						break;
+					}
 
 					int length = BitConverter.ToInt32(size, 0);
 					if (length >= 8)
 					{
 						var buffer = new byte[length];
 						if (!SynchronizedRead(socket, buffer, out err))
+						{
+							failed = true;
 							break;
+						}
 
 						var stream = new MemoryStream(buffer, false);
 						var reader = new BinaryReader(stream);
@@ -142,15 +149,13 @@ namespace SharpRemote
 					}
 				}
 			}
-			catch (OperationCanceledException)
-			{
-			}
 			catch (Exception e)
 			{
+				failed = true;
 				Log.ErrorFormat("Caught exception while reading/handling messages: {0}", e);
 			}
 
-			Disconnect();
+			Disconnect(dueToFailure: failed);
 		}
 
 		private bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
@@ -335,8 +340,24 @@ namespace SharpRemote
 			get { return InternalRemoteEndPoint != null; }
 		}
 
-		public void Disconnect()
+		private void Disconnect(bool dueToFailure)
 		{
+			if (dueToFailure)
+			{
+				var fn = OnFailure;
+				if (fn != null)
+				{
+					try
+					{
+						fn();
+					}
+					catch (Exception e)
+					{
+						Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
+					}
+				}
+			}
+
 			lock (_syncRoot)
 			{
 				if (_socket != null)
@@ -357,6 +378,20 @@ namespace SharpRemote
 					InternalRemoteEndPoint = null;
 				}
 			}
+		}
+
+		/// <summary>
+		/// This event is invoked right before a socket is to be closed due to failure of:
+		/// - the connection between endpoints
+		/// - a failure of the remote process
+		/// - a failure of SharpRemote
+		/// - something else ;)
+		/// </summary>
+		public event Action OnFailure;
+
+		public void Disconnect()
+		{
+			Disconnect(dueToFailure: false);
 		}
 
 		public T CreateProxy<T>(ulong objectId) where T : class

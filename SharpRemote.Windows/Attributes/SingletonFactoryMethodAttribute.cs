@@ -1,6 +1,8 @@
 ﻿using System;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	///     Indicates that a method or a readable property be a factory method to produce

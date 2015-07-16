@@ -17,12 +17,20 @@ namespace SharpRemote.Hosting
 	/// Can be used to host objects either in the SharpRemote.Host.exe or in a custom application
 	/// of your choice by creating a <see cref="ProcessSiloServer"/> and calling <see cref="ProcessSiloServer.Run"/>.
 	/// </remarks>
-	public sealed class ProcessSiloClient
+	/// <example>
+	/// using (var silo = new OutOfProcessSilo())
+	/// {
+	///		var grain = silo.CreateGrain{IMyInterestingInterface}(typeof(MyRemoteType));
+	///		grain.DoSomethingInteresting();
+	/// }
+	/// </example>
+	public sealed class OutOfProcessSilo
 		: ISilo
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private const string SharpRemoteHost = "SharpRemote.Host.exe";
 
+		private readonly HeartbeatMonitor _monitor;
 		private readonly SocketRemotingEndPoint _endPoint;
 		private readonly Action<string> _hostOutputWritten;
 		private readonly Process _process;
@@ -31,6 +39,32 @@ namespace SharpRemote.Hosting
 		private HostState _hostState;
 
 		private int? _remotePort;
+		private bool _isDisposed;
+		private bool _hasProcessExited;
+		private bool _hasProcessFailed;
+
+		/// <summary>
+		/// Whether or not the remote process has exited
+		/// (independent of failure or intentional exit).
+		/// </summary>
+		/// <remarks>
+		/// Always the opposite of <see cref="IsProcessRunning"/>.
+		/// </remarks>
+		public bool HasProcessExited
+		{
+			get { return _hasProcessExited; }
+		}
+
+		/// <summary>
+		/// Whether or not the process has failed.
+		/// </summary>
+		/// <remarks>
+		/// False means that the process is either running or has exited on purpose.
+		/// </remarks>
+		public bool HasProcessFailed
+		{
+			get { return _hasProcessFailed; }
+		}
 
 		/// <summary>
 		/// 
@@ -39,18 +73,28 @@ namespace SharpRemote.Hosting
 		/// <param name="options"></param>
 		/// <param name="hostOutputWritten"></param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
-		public ProcessSiloClient(
+		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
+		public OutOfProcessSilo(
 			string process = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
 			Action<string> hostOutputWritten = null,
-			ITypeResolver customTypeResolver = null
+			ITypeResolver customTypeResolver = null,
+			HeartbeatSettings heartbeatSettings = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
 
 			_hostOutputWritten = hostOutputWritten;
+
 			_endPoint = new SocketRemotingEndPoint(customTypeResolver: customTypeResolver);
+			_endPoint.OnFailure += EndPointOnOnFailure;
+
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
+
+			var heartbeat = _endPoint.CreateProxy<IHeartbeat>(Constants.HeartbeatId);
+			_monitor = new HeartbeatMonitor(heartbeat, heartbeatSettings ?? new HeartbeatSettings());
+			_monitor.OnFailure += MonitorOnOnFailure;
+
 			_waitHandle = new ManualResetEvent(false);
 			_hostState = HostState.BootPending;
 
@@ -95,6 +139,38 @@ namespace SharpRemote.Hosting
 				throw new NotImplementedException();
 
 			_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
+
+			// After a successful connection, we can enable the heartbeat monitor so we're notified of failures
+			_monitor.Start();
+		}
+
+		/// <summary>
+		/// Is called when the endpoint reports a failure.
+		/// </summary>
+		private void EndPointOnOnFailure()
+		{
+			Log.ErrorFormat("SocketEndPoint detected a failure of the connection to the host process");
+			HandleFailure();
+		}
+
+		/// <summary>
+		/// Is called when the monitor detects a failure of the host process
+		/// by:
+		/// - lack of heartbeats
+		/// - exception during heartbeats
+		/// </summary>
+		private void MonitorOnOnFailure()
+		{
+			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process");
+			HandleFailure();
+		}
+
+		private void HandleFailure()
+		{
+			// TODO: Think of a better way to handle failures thant to quit ;)
+			_process.TryKill();
+			_endPoint.Disconnect();
+			_hasProcessFailed = true;
 		}
 
 		/// <summary>
@@ -111,7 +187,12 @@ namespace SharpRemote.Hosting
 		[Pure]
 		public bool IsProcessRunning
 		{
-			get { return !_process.HasExited; }
+			get { return !_hasProcessExited; }
+		}
+
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
 		}
 
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters)
@@ -136,9 +217,11 @@ namespace SharpRemote.Hosting
 		{
 			_subjectHost.TryDispose();
 			_endPoint.TryDispose();
-
 			_process.TryKill();
 			_process.TryDispose();
+			_monitor.TryDispose();
+			_hasProcessExited = true;
+			_isDisposed = true;
 		}
 
 		private void EmitHostOutputWritten(string message)
@@ -176,6 +259,7 @@ namespace SharpRemote.Hosting
 
 		private void ProcessOnExited(object sender, EventArgs args)
 		{
+			_hasProcessExited = true;
 		}
 
 		internal static class Constants
@@ -183,7 +267,13 @@ namespace SharpRemote.Hosting
 			/// <summary>
 			///     The id of the grain that is used to instantiate further subjects.
 			/// </summary>
-			public const ulong SubjectHostId = 0;
+			public const ulong SubjectHostId = ulong.MaxValue;
+
+			/// <summary>
+			/// The id of the grain that is used to detect whether or not the host process
+			/// has failed.
+			/// </summary>
+			public const ulong HeartbeatId = ulong.MaxValue - 1;
 
 			public const string BootingMessage = "booting";
 			public const string ReadyMessage = "ready";

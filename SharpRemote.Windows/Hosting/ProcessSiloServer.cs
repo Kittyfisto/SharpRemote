@@ -8,7 +8,7 @@ using log4net;
 namespace SharpRemote.Hosting
 {
 	/// <summary>
-	///     Used in conjunction with a <see cref="ProcessSiloClient" /> to host objects in a remote process.
+	///     Used in conjunction with a <see cref="OutOfProcessSilo" /> to host objects in a remote process.
 	/// </summary>
 	/// <example>
 	///     public static void main(string[] arguments)
@@ -109,29 +109,31 @@ namespace SharpRemote.Hosting
 
 		/// <summary>
 		///     Runs the server and blocks until a shutdown command is received because the
-		///     <see cref="ProcessSiloClient" /> is being disposed of or because the parent process
+		///     <see cref="OutOfProcessSilo" /> is being disposed of or because the parent process
 		///     quits unexpectedly.
 		/// </summary>
 		public void Run()
 		{
-			Console.WriteLine(ProcessSiloClient.Constants.BootingMessage);
+			Console.WriteLine(OutOfProcessSilo.Constants.BootingMessage);
 
-			const ulong subjectHostId = ProcessSiloClient.Constants.SubjectHostId;
-			const ulong firstServantId = subjectHostId + 1;
+			const ulong firstServantId = 0;
 
 			try
 			{
 				using (_endPoint)
 				using (var host = new SubjectHost(_endPoint, firstServantId, OnSubjectHostDisposed))
 				{
-					_endPoint.CreateServant(subjectHostId, (ISubjectHost) host);
+					var heartbeat = new Heartbeat();
+
+					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost) host);
+					_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat) heartbeat);
 
 					_endPoint.Bind(IPAddress.Loopback);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);
-					Console.WriteLine(ProcessSiloClient.Constants.ReadyMessage);
+					Console.WriteLine(OutOfProcessSilo.Constants.ReadyMessage);
 
 					_waitHandle.WaitOne();
-					Console.WriteLine(ProcessSiloClient.Constants.ShutdownMessage);
+					Console.WriteLine(OutOfProcessSilo.Constants.ShutdownMessage);
 				}
 			}
 			catch (Exception e)

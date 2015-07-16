@@ -2,8 +2,10 @@
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
+using SharpRemote.Test.CodeGeneration.Serialization;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Hosting
@@ -51,6 +53,22 @@ namespace SharpRemote.Test.Hosting
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(KillsProcess));
 				new Action(proxy.Do)
 					.ShouldThrow<ConnectionLostException>("Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
+		public void TestCreate()
+		{
+			var customTypeResolver = new CustomTypeResolver1();
+			using (var silo = new ProcessSiloClient(customTypeResolver: customTypeResolver))
+			{
+				customTypeResolver.GetTypeCalled.Should().Be(0);
+				var grain = silo.CreateGrain<IReturnsType>(typeof(ReturnsTypeofString));
+				customTypeResolver.GetTypeCalled.Should().Be(0, "because the custom type resolver in this process didn't need to resolve anything yet");
+
+				grain.Do().Should().Be<string>();
+				customTypeResolver.GetTypeCalled.Should().Be(1, "Because the custom type resolver in this process should've been used to resolve typeof(string)");
 			}
 		}
 	}

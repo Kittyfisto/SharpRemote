@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using SharpRemote.CodeGeneration;
 using SharpRemote.Extensions;
 
 namespace SharpRemote.Hosting
@@ -10,16 +11,29 @@ namespace SharpRemote.Hosting
 	public sealed class InProcessRemotingSilo
 		: ISilo
 	{
+		private readonly ITypeResolver _customTypeResolver;
 		private readonly SocketRemotingEndPoint _localEndPoint;
 		private readonly SocketRemotingEndPoint _remoteEndPoint;
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
 
-		/// <summary>
-		/// 
-		/// </summary>
-		public InProcessRemotingSilo()
+		private Type GetType(string assemblyQualifiedName)
 		{
+			if (_customTypeResolver != null)
+				return _customTypeResolver.GetType(assemblyQualifiedName);
+
+			return TypeResolver.GetType(assemblyQualifiedName);
+		}
+
+		/// <summary>
+		/// Initializes a new silo that hosts all objects in the same process it is used in, but with
+		/// proxy & servant implementations in between.
+		/// Is only really useful for debugging remoting.
+		/// </summary>
+		/// <param name="customTypeResolver">The type resolver, if any, that is used to resolve types by their assembly qualified name</param>
+		public InProcessRemotingSilo(ITypeResolver customTypeResolver = null)
+		{
+			_customTypeResolver = customTypeResolver;
 			const int subjectHostId = 0;
 
 			_localEndPoint = new SocketRemotingEndPoint();
@@ -35,7 +49,8 @@ namespace SharpRemote.Hosting
 
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class
 		{
-			return CreateGrain<TInterface>(Type.GetType(assemblyQualifiedTypeName), parameters);
+			var type = GetType(assemblyQualifiedTypeName);
+			return CreateGrain<TInterface>(type, parameters);
 		}
 
 		public TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters) where TInterface : class

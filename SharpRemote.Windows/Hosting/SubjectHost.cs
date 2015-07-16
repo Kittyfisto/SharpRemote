@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using SharpRemote.CodeGeneration;
 using SharpRemote.Extensions;
 
 namespace SharpRemote.Hosting
@@ -11,6 +12,7 @@ namespace SharpRemote.Hosting
 	internal sealed class SubjectHost
 		: ISubjectHost
 	{
+		private readonly ITypeResolver _customTypeResolver;
 		private readonly IRemotingEndPoint _endpoint;
 		private readonly Dictionary<ulong, IServant> _subjects;
 		private readonly object _syncRoot;
@@ -18,10 +20,22 @@ namespace SharpRemote.Hosting
 		private readonly Action _onDisposed;
 		private bool _isDisposed;
 
-		public SubjectHost(IRemotingEndPoint endpoint, ulong firstServantId, Action onDisposed = null)
+		private Type GetType(string assemblyQualifiedName)
+		{
+			if (_customTypeResolver != null)
+				return _customTypeResolver.GetType(assemblyQualifiedName);
+
+			return TypeResolver.GetType(assemblyQualifiedName);
+		}
+
+		public SubjectHost(IRemotingEndPoint endpoint,
+			ulong firstServantId,
+			Action onDisposed = null,
+			ITypeResolver customTypeResolver = null)
 		{
 			if (endpoint == null) throw new ArgumentNullException("endpoint");
 
+			_customTypeResolver = customTypeResolver;
 			_endpoint = endpoint;
 			_nextServantId = firstServantId;
 			_onDisposed = onDisposed;
@@ -46,7 +60,7 @@ namespace SharpRemote.Hosting
 
 		public ulong CreateSubject2(string assemblyQualifiedTypeName, Type interfaceType)
 		{
-			var type = Type.GetType(assemblyQualifiedTypeName);
+			var type = GetType(assemblyQualifiedTypeName);
 			return CreateSubject1(type, interfaceType);
 		}
 

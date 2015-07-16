@@ -54,7 +54,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
+    <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />
+    <Compile Include="Hosting\InProcessRemotingSiloTest.cs" />
+    <Compile Include="Hosting\InProcessSiloTest.cs" />
     <Compile Include="LocalTest.cs" />
     <Compile Include="TestAuthenticator.cs" />
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
@@ -97,7 +101,9 @@
     <Compile Include="Types\Interfaces\IReturnComplexType.cs" />
     <Compile Include="Types\Interfaces\IReturnsIntTask.cs" />
     <Compile Include="Types\Interfaces\IReturnsTask.cs" />
+    <Compile Include="Types\Interfaces\NativeTypes\IReturnsType.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IVoidMethodTypeParameter.cs" />
+    <Compile Include="Types\Interfaces\NativeTypes\ReturnsTypeofString.cs" />
     <Compile Include="Types\Interfaces\OrderedInterface.cs" />
     <Compile Include="Types\Interfaces\PrimitiveTypes\IGetDoubleProperty.cs" />
     <Compile Include="Types\Interfaces\PrimitiveTypes\IGetFloatProperty.cs" />

@@ -16,8 +16,10 @@ namespace SharpRemote.Hosting
 		private readonly IRemotingEndPoint _endpoint;
 		private readonly Dictionary<ulong, IServant> _subjects;
 		private readonly object _syncRoot;
-		private ulong _nextServantId;
+		private readonly DefaultImplementationRegistry _registry;
 		private readonly Action _onDisposed;
+
+		private ulong _nextServantId;
 		private bool _isDisposed;
 
 		private Type GetType(string assemblyQualifiedName)
@@ -30,17 +32,31 @@ namespace SharpRemote.Hosting
 
 		public SubjectHost(IRemotingEndPoint endpoint,
 			ulong firstServantId,
+			DefaultImplementationRegistry registry,
 			Action onDisposed = null,
 			ITypeResolver customTypeResolver = null)
 		{
 			if (endpoint == null) throw new ArgumentNullException("endpoint");
+			if (registry == null) throw new ArgumentNullException("registry");
 
+			_registry = registry;
 			_customTypeResolver = customTypeResolver;
 			_endpoint = endpoint;
 			_nextServantId = firstServantId;
 			_onDisposed = onDisposed;
 			_syncRoot = new object();
 			_subjects = new Dictionary<ulong, IServant>();
+		}
+
+		public ulong CreateSubject3(Type interfaceType)
+		{
+			var type = _registry.GetImplementation(interfaceType);
+			return CreateSubject1(type, interfaceType);
+		}
+
+		public void RegisterDefaultImplementation(Type implementation, Type interfaceType)
+		{
+			_registry.RegisterDefaultImplementation(implementation, interfaceType);
 		}
 
 		public ulong CreateSubject1(Type type, Type interfaceType)

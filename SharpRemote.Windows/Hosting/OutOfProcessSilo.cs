@@ -10,12 +10,12 @@ using log4net;
 namespace SharpRemote.Hosting
 {
 	/// <summary>
-	///     <see cref="ISilo"/> implementation that allows client code to host objects in a remote
-	/// process via <see cref="ProcessSiloServer"/>.
+	///     <see cref="ISilo"/> implementation that allows client code to host objects in another
+	/// process via <see cref="OutOfProcessSiloServer"/>.
 	/// </summary>
 	/// <remarks>
 	/// Can be used to host objects either in the SharpRemote.Host.exe or in a custom application
-	/// of your choice by creating a <see cref="ProcessSiloServer"/> and calling <see cref="ProcessSiloServer.Run"/>.
+	/// of your choice by creating a <see cref="OutOfProcessSiloServer"/> and calling <see cref="OutOfProcessSiloServer.Run"/>.
 	/// </remarks>
 	/// <example>
 	/// using (var silo = new OutOfProcessSilo())
@@ -193,6 +193,21 @@ namespace SharpRemote.Hosting
 		public bool IsDisposed
 		{
 			get { return _isDisposed; }
+		}
+
+		public void RegisterDefaultImplementation<TInterface, TImplementation>()
+			where TImplementation : TInterface
+			where TInterface : class
+		{
+			_subjectHost.RegisterDefaultImplementation(typeof(TImplementation), typeof (TInterface));
+		}
+
+		public TInterface CreateGrain<TInterface>(params object[] parameters) where TInterface : class
+		{
+			Type interfaceType = typeof(TInterface);
+			ulong id = _subjectHost.CreateSubject3(interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			return proxy;
 		}
 
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters)

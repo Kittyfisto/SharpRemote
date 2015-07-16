@@ -81,6 +81,7 @@
     <Compile Include="Dispatch.cs" />
     <Compile Include="EndPoints\AbstractSocketRemotingEndPoint.cs" />
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
+    <Compile Include="Hosting\DefaultImplementationRegistry.cs" />
     <Compile Include="Hosting\HeartbeatMonitor.cs" />
     <Compile Include="Hosting\Heartbeat.cs" />
     <Compile Include="HeartbeatSettings.cs" />
@@ -101,7 +102,7 @@
     <Compile Include="Exceptions\UnserializableException.cs" />
     <Compile Include="Hosting\HostState.cs" />
     <Compile Include="Hosting\ProcessOptions.cs" />
-    <Compile Include="Hosting\ProcessSiloServer.cs" />
+    <Compile Include="Hosting\OutOfProcessSiloServer.cs" />
     <Compile Include="IAuthenticator.cs" />
     <Compile Include="IGrain.cs" />
     <Compile Include="Attributes\InvokeAttribute.cs" />

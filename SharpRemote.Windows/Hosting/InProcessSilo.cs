@@ -11,6 +11,7 @@ namespace SharpRemote.Hosting
 		: ISilo
 	{
 		private readonly ITypeResolver _customTypeResolver;
+		private readonly DefaultImplementationRegistry _registry;
 		private bool _isDisposed;
 
 		/// <summary>
@@ -20,11 +21,23 @@ namespace SharpRemote.Hosting
 		public InProcessSilo(ITypeResolver customTypeResolver = null)
 		{
 			_customTypeResolver = customTypeResolver;
+			_registry = new DefaultImplementationRegistry();
 		}
 
 		public bool IsDisposed
 		{
 			get { return _isDisposed; }
+		}
+
+		public void RegisterDefaultImplementation<TInterface, TImplementation>() where TInterface : class where TImplementation : TInterface
+		{
+			_registry.RegisterDefaultImplementation(typeof(TImplementation), typeof(TInterface));
+		}
+
+		public TInterface CreateGrain<TInterface>(params object[] parameters) where TInterface : class
+		{
+			var type = _registry.GetImplementation(typeof (TInterface));
+			return CreateGrain<TInterface>(type, parameters);
 		}
 
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters)

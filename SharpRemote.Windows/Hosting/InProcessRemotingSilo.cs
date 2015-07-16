@@ -17,6 +17,7 @@ namespace SharpRemote.Hosting
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
 		private bool _isDisposed;
+		private readonly DefaultImplementationRegistry _registry;
 
 		private Type GetType(string assemblyQualifiedName)
 		{
@@ -41,7 +42,8 @@ namespace SharpRemote.Hosting
 			_subjectHostProxy = _localEndPoint.CreateProxy<ISubjectHost>(subjectHostId);
 
 			_remoteEndPoint = new SocketRemotingEndPoint();
-			_subjectHost = new SubjectHost(_remoteEndPoint, subjectHostId + 1);
+			_registry = new DefaultImplementationRegistry();
+			_subjectHost = new SubjectHost(_remoteEndPoint, subjectHostId + 1, _registry);
 			_remoteEndPoint.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);
 			_remoteEndPoint.Bind(IPAddress.Loopback);
 
@@ -51,6 +53,17 @@ namespace SharpRemote.Hosting
 		public bool IsDisposed
 		{
 			get { return _isDisposed; }
+		}
+
+		public void RegisterDefaultImplementation<TInterface, TImplementation>() where TInterface : class where TImplementation : TInterface
+		{
+			_registry.RegisterDefaultImplementation(typeof(TImplementation), typeof(TInterface));
+		}
+
+		public TInterface CreateGrain<TInterface>(params object[] parameters) where TInterface : class
+		{
+			var type = _registry.GetImplementation(typeof (TInterface));
+			return CreateGrain<TInterface>(type, parameters);
 		}
 
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class

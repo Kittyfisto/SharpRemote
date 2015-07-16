@@ -6,7 +6,7 @@ namespace SharpRemote.Host
 	{
 		private static void Main(string[] args)
 		{
-			using (var silo = new ProcessSiloServer(args))
+			using (var silo = new OutOfProcessSiloServer(args))
 			{
 				silo.Run();
 			}

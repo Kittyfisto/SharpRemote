@@ -20,6 +20,26 @@ namespace SharpRemote.Hosting
 		bool IsDisposed { get; }
 
 		/// <summary>
+		/// Registers the default
+		/// </summary>
+		/// <typeparam name="TInterface"></typeparam>
+		/// <typeparam name="TImplementation"></typeparam>
+		void RegisterDefaultImplementation<TInterface, TImplementation>()
+			where TImplementation : TInterface
+			where TInterface : class;
+
+		/// <summary>
+		/// Creates a new object that implements the given interface.
+		/// The type of the implementation is defined via <see cref="RegisterDefaultImplementation{TInterface, TImplementation}()"/>
+		/// or via <see cref="OutOfProcessSiloServer.RegisterDefaultImplementation{T, TImplementation}()"/>.
+		/// </summary>
+		/// <typeparam name="TInterface"></typeparam>
+		/// <param name="parameters"></param>
+		/// <returns></returns>
+		TInterface CreateGrain<TInterface>(params object[] parameters)
+			where TInterface : class;
+
+		/// <summary>
 		/// Creates a new instance of the given type and returns an interface to it.
 		/// </summary>
 		/// <typeparam name="TInterface"></typeparam>

@@ -72,7 +72,7 @@ namespace SharpRemote.Test.Hosting
 						  }));
 
 			HeartbeatMonitor monitor;
-			using (monitor = new HeartbeatMonitor(_heartbeat.Object, TimeSpan.FromSeconds(0.01), 1, true))
+			using (monitor = new HeartbeatMonitor(_heartbeat.Object, TimeSpan.FromSeconds(0.1), 1, true))
 			{
 				bool failureDetected = false;
 				monitor.OnFailure += () => failureDetected = true;
@@ -85,8 +85,8 @@ namespace SharpRemote.Test.Hosting
 				failureDetected.Should().BeFalse();
 			}
 
-			// There should be 100 heartbeats in a perfect world, let's just verify that we've got half of that
-			monitor.NumHeartbeats.Should().BeGreaterOrEqualTo(50);
+			// There should be 10 heartbeats in a perfect world, let's just verify that we've got half of that
+			monitor.NumHeartbeats.Should().BeGreaterOrEqualTo(5);
 			monitor.NumHeartbeats.Should().Be(actualNumHeartbeats);
 		}
 

@@ -12,7 +12,7 @@ using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 namespace SharpRemote.Test.Hosting
 {
 	[TestFixture]
-	public sealed class ProcessSiloTest
+	public sealed class OutOfProcessSiloTest
 	{
 		[Test]
 		public void TestCreateGrain1()
@@ -77,6 +77,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[LocalTest]
 		[Description("Verifies that a complete deadlock of the important remoting threads is detected")]
 		public void TestFailureDetection3()
 		{

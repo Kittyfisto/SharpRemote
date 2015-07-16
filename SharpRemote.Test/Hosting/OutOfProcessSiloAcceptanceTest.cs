@@ -4,7 +4,7 @@ using SharpRemote.Hosting;
 namespace SharpRemote.Test.Hosting
 {
 	[TestFixture]
-	public sealed class ProcessSiloAcceptanceTest
+	public sealed class OutOfProcessSiloAcceptanceTest
 		: AbstractSiloAcceptanceTest
 	{
 		protected override ISilo Create()

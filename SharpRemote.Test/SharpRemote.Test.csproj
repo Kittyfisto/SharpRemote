@@ -76,8 +76,8 @@
     <Compile Include="Hosting\GetStringPropertyImplementation.cs" />
     <Compile Include="Hosting\InProcessSiloAcceptanceTest.cs" />
     <Compile Include="Hosting\InProcessRemotingSiloAcceptanceTest.cs" />
-    <Compile Include="Hosting\ProcessSiloAcceptanceTest.cs" />
-    <Compile Include="Hosting\ProcessSiloTest.cs" />
+    <Compile Include="Hosting\OutOfProcessSiloAcceptanceTest.cs" />
+    <Compile Include="Hosting\OutOfProcessSiloTest.cs" />
     <Compile Include="PerformanceTestAttribute.cs" />
     <Compile Include="Tasks\SerialTaskSchedulerTest.cs" />
     <Compile Include="TestLogger.cs" />

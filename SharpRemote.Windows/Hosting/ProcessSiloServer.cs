@@ -31,6 +31,7 @@ namespace SharpRemote.Hosting
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
 		private readonly ManualResetEvent _waitHandle;
+		private readonly ITypeResolver _customTypeResolver;
 
 		/// <summary>
 		///     Initializes a new silo server.
@@ -49,7 +50,7 @@ namespace SharpRemote.Hosting
 			}
 
 			_waitHandle = new ManualResetEvent(false);
-
+			_customTypeResolver = customTypeResolver;
 			_endPoint = new SocketRemotingEndPoint(customTypeResolver: customTypeResolver);
 		}
 
@@ -121,7 +122,10 @@ namespace SharpRemote.Hosting
 			try
 			{
 				using (_endPoint)
-				using (var host = new SubjectHost(_endPoint, firstServantId, OnSubjectHostDisposed))
+				using (var host = new SubjectHost(_endPoint,
+				                                  firstServantId,
+				                                  OnSubjectHostDisposed,
+				                                  _customTypeResolver))
 				{
 					var heartbeat = new Heartbeat();
 

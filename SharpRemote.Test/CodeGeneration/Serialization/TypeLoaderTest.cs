@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
@@ -9,34 +8,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	[TestFixture]
 	public sealed class TypeLoaderTest
 	{
-		sealed class CustomTypeResolver1
-			: ITypeResolver
-		{
-			public Type GetType(string assemblyQualifiedTypeName)
-			{
-				++GetTypeCalled;
-				return Type.GetType(assemblyQualifiedTypeName);
-			}
-
-			public int GetTypeCalled;
-		}
-
-		sealed class CustomTypeResolver2
-			: ITypeResolver
-		{
-			private readonly Func<string, Type> _fn;
-
-			public CustomTypeResolver2(Func<string, Type> fn)
-			{
-				_fn = fn;
-			}
-
-			public Type GetType(string assemblyQualifiedTypeName)
-			{
-				return _fn(assemblyQualifiedTypeName);
-			}
-		}
-
 		[Test]
 		[Description("Verifies that the specified custom type resolver is called upon deserialization")]
 		public void TestCustomTypeResolver1()

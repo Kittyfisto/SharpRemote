@@ -3,8 +3,10 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
+using SharpRemote.Test.CodeGeneration.Serialization;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Hosting
@@ -97,6 +99,22 @@ namespace SharpRemote.Test.Hosting
 
 				silo.HasProcessFailed.Should().BeTrue("Because the heartbeat mechanism should have detected that the endpoint doesn't respond anymore");
 				silo.IsProcessRunning.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
+		public void TestCreate()
+		{
+			var customTypeResolver = new CustomTypeResolver1();
+			using (var silo = new OutOfProcessSilo(customTypeResolver: customTypeResolver))
+			{
+				customTypeResolver.GetTypeCalled.Should().Be(0);
+				var grain = silo.CreateGrain<IReturnsType>(typeof(ReturnsTypeofString));
+				customTypeResolver.GetTypeCalled.Should().Be(0, "because the custom type resolver in this process didn't need to resolve anything yet");
+
+				grain.Do().Should().Be<string>();
+				customTypeResolver.GetTypeCalled.Should().Be(1, "Because the custom type resolver in this process should've been used to resolve typeof(string)");
 			}
 		}
 	}

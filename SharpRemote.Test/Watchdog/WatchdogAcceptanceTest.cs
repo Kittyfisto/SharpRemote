@@ -201,10 +201,20 @@ namespace SharpRemote.Test.Watchdog
 
 				string browser = Path.Combine(SharpRemoteFolder, "SampleBrowser.exe");
 				installer.AddFile(browser, Environment.SpecialFolder.LocalApplicationData);
-				new Action(() => installer.Commit())
-					.ShouldThrow<InstallationFailedException>()
-					.WithMessage("Application of 'SharpRemote 0.7' failed")
-					.WithInnerException<UnauthorizedAccessException>();
+
+				InstallationFailedException exception = null;
+				try
+				{
+					installer.Commit();
+				}
+				catch (InstallationFailedException e)
+				{
+					exception = e;
+				}
+				exception.Should().NotBeNull();
+				exception.Message.Should().Be("Application of 'SharpRemote 0.7' failed");
+				var inner = exception.InnerException;
+				(inner is IOException || inner is UnauthorizedAccessException).Should().BeTrue();
 			}
 		}
 

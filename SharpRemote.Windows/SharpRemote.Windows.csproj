@@ -81,6 +81,7 @@
     <Compile Include="Dispatch.cs" />
     <Compile Include="EndPoints\AbstractSocketRemotingEndPoint.cs" />
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
+    <Compile Include="EndPoints\EndPointDisconnectReason.cs" />
     <Compile Include="Hosting\DefaultImplementationRegistry.cs" />
     <Compile Include="Hosting\HeartbeatMonitor.cs" />
     <Compile Include="Hosting\Heartbeat.cs" />
@@ -96,7 +97,7 @@
     <Compile Include="Exceptions\NoSuchIPEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchServantException.cs" />
     <Compile Include="Exceptions\NotConnectedException.cs" />
-    <Compile Include="Exceptions\RemotingException.cs" />
+    <Compile Include="Exceptions\SharpRemoteException.cs" />
     <Compile Include="Exceptions\SerializationException.cs" />
     <Compile Include="Exceptions\TypeMismatchException.cs" />
     <Compile Include="Exceptions\UnserializableException.cs" />

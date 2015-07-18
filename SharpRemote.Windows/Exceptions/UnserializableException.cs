@@ -14,7 +14,7 @@ namespace SharpRemote
 	/// </summary>
 	[Serializable]
 	public class UnserializableException
-		: RemotingException
+		: SharpRemoteException
 	{
 		private readonly string _originalMessage;
 		private readonly string _originalSource;

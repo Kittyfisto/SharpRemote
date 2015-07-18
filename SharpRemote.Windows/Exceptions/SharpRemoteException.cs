@@ -9,13 +9,13 @@ namespace SharpRemote
 	/// Base exception for various exceptions (but not all) thrown by this library.
 	/// </summary>
 	[Serializable]
-	public class RemotingException
+	public class SharpRemoteException
 		: SystemException
 	{
 		/// <summary>
 		/// 
 		/// </summary>
-		public RemotingException()
+		public SharpRemoteException()
 		{}
 
 #if !WINDOWS_PHONE_APP
@@ -25,7 +25,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="info"></param>
 		/// <param name="context"></param>
-		public RemotingException(SerializationInfo info, StreamingContext context)
+		public SharpRemoteException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
 #endif
@@ -37,7 +37,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="message"></param>
 		/// <param name="innerException"></param>
-		public RemotingException(string message, Exception innerException = null)
+		public SharpRemoteException(string message, Exception innerException = null)
 			: base(message, innerException)
 		{}
 	}

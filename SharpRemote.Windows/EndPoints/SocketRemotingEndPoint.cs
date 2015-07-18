@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
@@ -7,7 +6,6 @@ using System.Net.PeerToPeer;
 using System.Net.Sockets;
 using System.Reflection;
 using System.ServiceProcess;
-using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
@@ -29,7 +27,6 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private CancellationTokenSource _cancellationTokenSource;
 		private IPEndPoint _localEndPoint;
 		private PeerNameRegistration _peerNameRegistration;
 		private Task _readTask;
@@ -232,6 +229,12 @@ namespace SharpRemote
 		///     - The given endPoint is no <see cref="SocketRemotingEndPoint" />
 		///     - The given endPoint failed authentication
 		/// </exception>
+		/// <exception cref="AuthenticationRequiredException">
+		///     - The given endPoint requires authentication, but this one didn't provide any
+		/// </exception>
+		/// <exception cref="HandshakeException">
+		///     - The handshake between this and the given endpoint failed
+		/// </exception>
 		public void Connect(IPEndPoint endPoint, TimeSpan timeout)
 		{
 			if (endPoint == null) throw new ArgumentNullException("endPoint");
@@ -357,8 +360,7 @@ namespace SharpRemote
 			{
 				Socket = socket;
 				_remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
-				_cancellationTokenSource = new CancellationTokenSource();
-				_readTask = new Task(ReadLoop, new KeyValuePair<Socket, CancellationToken>(Socket, _cancellationTokenSource.Token));
+				_readTask = new Task(ReadLoop, socket);
 				_readTask.Start();
 
 				Log.InfoFormat("{0}: Connected to {1}", Name, _remoteEndPoint);

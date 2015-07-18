@@ -72,11 +72,26 @@ namespace SharpRemote
 		private long _nextRpcId;
 		private Socket _socket;
 		private readonly string _name;
+		private EndPointDisconnectReason? _disconnectReason;
+		private bool _isDisconnecting;
 
 		protected abstract EndPoint InternalLocalEndPoint { get; }
 		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
 		protected object SyncRoot{get { return _syncRoot; }}
 		protected Socket Socket { get { return _socket; } set { _socket = value; } }
+
+		protected static bool IsFailure(EndPointDisconnectReason reason)
+		{
+			switch (reason)
+			{
+				case EndPointDisconnectReason.RequestedByEndPoint:
+				case EndPointDisconnectReason.RequestedByRemotEndPoint:
+					return false;
+
+				default:
+					return true;
+			}
+		}
 
 		protected AbstractSocketRemotingEndPoint(string name,
 		                                         IAuthenticator clientAuthenticator = null,
@@ -108,26 +123,18 @@ namespace SharpRemote
 
 		protected void ReadLoop(object sock)
 		{
-			var pair = (KeyValuePair<Socket, CancellationToken>)sock;
-			Socket socket = pair.Key;
-			CancellationToken token = pair.Value;
-			bool failed = false;
+			var socket = (Socket)sock;
+			EndPointDisconnectReason reason;
 
 			try
 			{
 				var size = new byte[4];
 				while (true)
 				{
-					if (token.IsCancellationRequested)
-					{
-						Log.InfoFormat("Cancellation was requested: Stopping read and disconnecting '{0}'", _name);
-						break;
-					}
-
 					SocketError err;
 					if (!SynchronizedRead(socket, size, out err))
 					{
-						failed = true;
+						reason = EndPointDisconnectReason.ReadFailure;
 						break;
 					}
 
@@ -137,7 +144,7 @@ namespace SharpRemote
 						var buffer = new byte[length];
 						if (!SynchronizedRead(socket, buffer, out err))
 						{
-							failed = true;
+							reason = EndPointDisconnectReason.ReadFailure;
 							break;
 						}
 
@@ -145,17 +152,26 @@ namespace SharpRemote
 						var reader = new BinaryReader(stream);
 						long rpcId = reader.ReadInt64();
 						var type = (MessageType)reader.ReadByte();
-						HandleMessage(rpcId, type, reader);
+
+						EndPointDisconnectReason? r;
+						if (!HandleMessage(rpcId, type, reader, out r))
+						{
+// ReSharper disable PossibleInvalidOperationException
+							reason = (EndPointDisconnectReason) r;
+// ReSharper restore PossibleInvalidOperationException
+
+							break;
+						}
 					}
 				}
 			}
 			catch (Exception e)
 			{
-				failed = true;
+				reason = EndPointDisconnectReason.UnhandledException;
 				Log.ErrorFormat("Caught exception while reading/handling messages: {0}", e);
 			}
 
-			Disconnect(dueToFailure: failed);
+			Disconnect(reason);
 		}
 
 		private bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
@@ -188,7 +204,7 @@ namespace SharpRemote
 				if (!socket.Connected)
 				{
 					err = SocketError.NotConnected;
-					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
 									buffer.Length, err, socket.Connected);
 					return false;
 				}
@@ -197,7 +213,7 @@ namespace SharpRemote
 				if (remaining <= TimeSpan.Zero)
 				{
 					err = SocketError.TimedOut;
-					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
 									buffer.Length, err, socket.Connected);
 					return false;
 				}
@@ -206,7 +222,7 @@ namespace SharpRemote
 				if (!socket.Poll(t, SelectMode.SelectRead))
 				{
 					err = SocketError.TimedOut;
-					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
 									buffer.Length, err, socket.Connected);
 					return false;
 				}
@@ -228,7 +244,7 @@ namespace SharpRemote
 
 				if (err != SocketError.Success || read == 0 || !socket.Connected)
 				{
-					Log.ErrorFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read,
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read,
 									buffer.Length, err, socket.Connected);
 					return false;
 				}
@@ -340,43 +356,99 @@ namespace SharpRemote
 			get { return InternalRemoteEndPoint != null; }
 		}
 
-		private void Disconnect(bool dueToFailure)
+		private void Disconnect(EndPointDisconnectReason reason)
 		{
-			if (dueToFailure)
+			if (_isDisconnecting)
+				throw new InvalidOperationException("Disconnect may not be called from the OnFailure event");
+
+			try
 			{
-				var fn = OnFailure;
-				if (fn != null)
+				_isDisconnecting = true;
+
+				lock (_syncRoot)
 				{
-					try
+					if (_socket != null)
 					{
-						fn();
-					}
-					catch (Exception e)
-					{
-						Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
+						_disconnectReason = reason;
+						if (IsFailure(reason))
+						{
+							var fn = OnFailure;
+							if (fn != null)
+							{
+								try
+								{
+									fn(reason);
+								}
+								catch (Exception e)
+								{
+									Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
+								}
+							}
+						}
+
+						Log.InfoFormat("Disconnecting socket '{0}' from {1}", _name, InternalRemoteEndPoint);
+
+						InterruptOngoingCalls();
+
+						// If we are disconnecting because of a failure, then we don't notify the other end
+						// and drop the connection immediately. Also there's no need to notify the other
+						// end when it requested the disconnect
+						if (!IsFailure(reason) && reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
+						{
+							SendGoodbye();
+						}
+
+						try
+						{
+							_socket.Disconnect(false);
+						}
+						catch (SocketException)
+						{
+						}
+
+						_socket = null;
+						InternalRemoteEndPoint = null;
 					}
 				}
 			}
-
-			lock (_syncRoot)
+			finally
 			{
-				if (_socket != null)
+				_isDisconnecting = false;
+			}
+		}
+
+		/// <summary>
+		/// Contains the reason why the socket was disconnected, or null if it wasn't disconnected / never established
+		/// a connection.
+		/// </summary>
+		public EndPointDisconnectReason? DisconnectReason
+		{
+			get { return _disconnectReason; }
+		}
+
+		private void SendGoodbye()
+		{
+			try
+			{
+				var rpcId = _nextRpcId++;
+				const int messageSize = 9;
+
+				using (var stream = new MemoryStream())
+				using (var writer = new BinaryWriter(stream, Encoding.UTF8))
 				{
-					Log.InfoFormat("Disconnecting socket '{0}' from {1}", _name, InternalRemoteEndPoint);
+					writer.Write(messageSize);
+					writer.Write(rpcId);
+					writer.Write((byte)MessageType.Goodbye);
 
-					InterruptOngoingCalls();
+					writer.Flush();
+					stream.Position = 0;
 
-					try
-					{
-						_socket.Disconnect(false);
-					}
-					catch (SocketException)
-					{
-					}
-
-					_socket = null;
-					InternalRemoteEndPoint = null;
+					_socket.Send(stream.GetBuffer(), 0, messageSize + 4, SocketFlags.None);
 				}
+			}
+			catch (SocketException)
+			{
+
 			}
 		}
 
@@ -387,11 +459,11 @@ namespace SharpRemote
 		/// - a failure of SharpRemote
 		/// - something else ;)
 		/// </summary>
-		public event Action OnFailure;
+		public event Action<EndPointDisconnectReason> OnFailure;
 
 		public void Disconnect()
 		{
-			Disconnect(dueToFailure: false);
+			Disconnect(EndPointDisconnectReason.RequestedByEndPoint);
 		}
 
 		public T CreateProxy<T>(ulong objectId) where T : class
@@ -439,24 +511,36 @@ namespace SharpRemote
 			throw new NotImplementedException();
 		}
 
-		private void HandleMessage(long rpcId, MessageType type, BinaryReader reader)
+		private bool HandleMessage(long rpcId, MessageType type, BinaryReader reader, out EndPointDisconnectReason? reason)
 		{
 			if (type == MessageType.Call)
 			{
 				HandleRequest(rpcId, reader);
+
+				reason = null;
+				return true;
 			}
-			else if ((type & MessageType.Return) != 0)
+			if ((type & MessageType.Return) != 0)
 			{
 				if (!HandleResponse(rpcId, type, reader))
 				{
 					Log.ErrorFormat("There is no pending RPC of id '{0}' - disconnecting...", rpcId);
-					Disconnect();
+					reason = EndPointDisconnectReason.RpcInvalidResponse;
+					return false;
 				}
+
+				reason = null;
+				return true;
 			}
-			else
+			if ((type & MessageType.Goodbye) != 0)
 			{
-				throw new NotImplementedException();
+				Log.InfoFormat("Connection about to be closed by the other side - disconnecting...");
+
+				reason = EndPointDisconnectReason.RequestedByRemotEndPoint;
+				return false;
 			}
+
+			throw new NotImplementedException();
 		}
 
 		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName, BinaryReader reader)
@@ -792,7 +876,13 @@ namespace SharpRemote
 			}
 			else if (messageType != NoAuthenticationRequiredMessage)
 			{
-				throw new HandshakeException();
+				throw new HandshakeException(string.Format("EndPoint '{0}' sent unknown message '{1}: {2}', expected either {3} or {4}",
+					remoteEndPoint,
+					messageType,
+					message,
+					AuthenticationRequiredMessage,
+					NoAuthenticationRequiredMessage
+					));
 			}
 
 			if (_serverAuthenticator != null)
@@ -866,6 +956,7 @@ namespace SharpRemote
 			Call = 0x1,
 			Return = 0x2,
 			Exception = 0x4,
+			Goodbye = 0x8
 		}
 
 		public override string ToString()

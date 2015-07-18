@@ -12,7 +12,7 @@ namespace SharpRemote
 	/// </summary>
 	[Serializable]
 	public class TypeMismatchException
-		: RemotingException
+		: SharpRemoteException
 	{
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT

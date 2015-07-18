@@ -11,7 +11,7 @@ namespace SharpRemote
 	/// </summary>
 	[Serializable]
 	public sealed class NoSuchIPEndPointException
-		: RemotingException
+		: SharpRemoteException
 	{
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT

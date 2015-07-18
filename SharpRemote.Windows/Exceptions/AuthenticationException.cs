@@ -8,7 +8,7 @@ namespace SharpRemote.Exceptions
 	/// </summary>
 	[Serializable]
 	public class AuthenticationException
-		: SystemException
+		: SharpRemoteException
 	{
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT

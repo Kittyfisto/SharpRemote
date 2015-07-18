@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Net;
 using System.Reflection;
 using System.Threading;
+using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using log4net;
 
@@ -33,7 +34,7 @@ namespace SharpRemote.Hosting
 		private readonly HeartbeatMonitor _monitor;
 		private readonly SocketRemotingEndPoint _endPoint;
 		private readonly Action<string> _hostOutputWritten;
-		private readonly Process _process;
+		private Process _process;
 		private readonly ISubjectHost _subjectHost;
 		private readonly ManualResetEvent _waitHandle;
 		private HostState _hostState;
@@ -42,6 +43,14 @@ namespace SharpRemote.Hosting
 		private bool _isDisposed;
 		private bool _hasProcessExited;
 		private bool _hasProcessFailed;
+		private readonly int _parentPid;
+		private readonly ProcessStartInfo _startInfo;
+
+		/// <summary>
+		/// Is invoked when a fault in the remote process has been detected and is invoked prior to handling
+		/// this failure.
+		/// </summary>
+		public event Action OnFaultDetected;
 
 		/// <summary>
 		/// Whether or not the remote process has exited
@@ -98,59 +107,80 @@ namespace SharpRemote.Hosting
 			_waitHandle = new ManualResetEvent(false);
 			_hostState = HostState.BootPending;
 
-			int parentPid = Process.GetCurrentProcess().Id;
-			_process = new Process
+			_parentPid = Process.GetCurrentProcess().Id;
+			_startInfo = new ProcessStartInfo(process)
 				{
-					StartInfo = new ProcessStartInfo(process)
-						{
-							Arguments = string.Format("{0}", parentPid),
-							RedirectStandardOutput = true,
-							UseShellExecute = false,
-						}
+					Arguments = string.Format("{0}", _parentPid),
+					RedirectStandardOutput = true,
+					UseShellExecute = false,
 				};
 			switch (options)
 			{
 				case ProcessOptions.HideConsole:
-					_process.StartInfo.CreateNoWindow = true;
+					_startInfo.CreateNoWindow = true;
 					break;
 
 				case ProcessOptions.ShowConsole:
-					_process.StartInfo.CreateNoWindow = false;
+					_startInfo.CreateNoWindow = false;
 					break;
 			}
+
+			
+			_hasProcessExited = true;
+		}
+
+		/// <summary>
+		/// Starts this silo 
+		/// </summary>
+		/// <exception cref="HandshakeException">The handshake between this and the <see cref="OutOfProcessSiloServer"/> of the remote process failed</exception>
+		public void Start()
+		{
+			_process = new Process
+			{
+				StartInfo = _startInfo
+			};
 
 			_process.Exited += ProcessOnExited;
 			_process.OutputDataReceived += ProcessOnOutputDataReceived;
 
-			Log.InfoFormat("Starting host '{0}' for parent process (PID: {1})",
-			               _process.StartInfo.FileName,
-			               parentPid);
+			Log.DebugFormat("Starting host '{0}' for parent process (PID: {1})",
+							  _startInfo.FileName,
+							  _parentPid);
 
 			if (!_process.Start())
-				throw new NotImplementedException();
+				throw new SharpRemoteException(string.Format("Failed to start process {0}", _process.StartInfo.FileName));
+			_hasProcessExited = false;
 
 			_process.BeginOutputReadLine();
 
 			if (!_waitHandle.WaitOne(Constants.ProcessReadyTimeout))
-				throw new NotImplementedException();
+				throw new HandshakeException(string.Format("Process {0} failed to communicate used port number in time ({1}s)",
+				                                           _process.StartInfo.FileName,
+				                                           Constants.ProcessReadyTimeout.TotalSeconds));
 
 			int? port = _remotePort;
 			if (port == null)
-				throw new NotImplementedException();
+				throw new HandshakeException(string.Format("Process {0} sent the ready signal, but failed to communicate the used port number",
+														   _process.StartInfo.FileName));
 
 			_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
 
 			// After a successful connection, we can enable the heartbeat monitor so we're notified of failures
 			_monitor.Start();
+
+			Log.InfoFormat("Host '{0}' (PID: {1}) successfully started and connection to {2} established",
+							  _process.StartInfo.FileName,
+							  _process.Id,
+							  _endPoint.RemoteEndPoint);
 		}
 
 		/// <summary>
 		/// Is called when the endpoint reports a failure.
 		/// </summary>
-		private void EndPointOnOnFailure()
+		private void EndPointOnOnFailure(EndPointDisconnectReason reason)
 		{
-			Log.ErrorFormat("SocketEndPoint detected a failure of the connection to the host process");
-			HandleFailure();
+			Log.ErrorFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
+			HandleFailure(reason);
 		}
 
 		/// <summary>
@@ -162,15 +192,32 @@ namespace SharpRemote.Hosting
 		private void MonitorOnOnFailure()
 		{
 			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process");
-			HandleFailure();
+			HandleFailure(null);
 		}
 
-		private void HandleFailure()
+		private void HandleFailure(EndPointDisconnectReason? reason)
 		{
+			try
+			{
+				var fn = OnFaultDetected;
+				if (fn != null)
+					fn();
+			}
+			catch (Exception e)
+			{
+				Log.WarnFormat("OnFaultDetected threw an exception - ignoring it: {0}", e);
+			}
+
 			// TODO: Think of a better way to handle failures thant to quit ;)
 			_process.TryKill();
-			_endPoint.Disconnect();
+			_hasProcessExited = true;
 			_hasProcessFailed = true;
+
+			// We don't want to call disconnect in case this method is executing because 
+			// of an endpoint failure - because we're called from the endpoint's Disconnect method.
+			// Calling disconnect again would overwrite the disconnect reason...
+			if (reason == null)
+				_endPoint.Disconnect();
 		}
 
 		/// <summary>

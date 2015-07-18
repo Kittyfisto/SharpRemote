@@ -68,7 +68,15 @@ namespace SharpRemote.Hosting
 					break;
 				}
 
-				if (!task.Wait(_failureInterval) && _enabledWithAttachedDebugger)
+				try
+				{
+					if (!task.Wait(_failureInterval) && _enabledWithAttachedDebugger)
+					{
+						ReportFailure();
+						break;
+					}
+				}
+				catch (AggregateException)
 				{
 					ReportFailure();
 					break;

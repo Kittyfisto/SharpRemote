@@ -10,7 +10,8 @@ namespace SharpRemote
 	/// does not have a servant with the given id registered.
 	/// </summary>
 	[Serializable]
-	public class NoSuchServantException : RemotingException
+	public class NoSuchServantException
+		: SharpRemoteException
 	{
 		/// <summary>
 		/// The <see cref="IGrain.ObjectId"/> that could not be found on the callee's side.

@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
@@ -235,7 +235,7 @@ namespace SharpRemote.Test.Hosting
 
 		[Test]
 		[LocalTest("")]
-		public void TestPerformanceSynchronous()
+		public void TestPerformanceOneClientSync()
 		{
 			var time = TimeSpan.FromSeconds(5);
 			var watch = new Stopwatch();
@@ -284,7 +284,7 @@ namespace SharpRemote.Test.Hosting
 
 		[Test]
 		[LocalTest("There is no point in running these on the CI server")]
-		public void TestPerformanceAsynchronous()
+		public void TestPerformanceOneClientAsync()
 		{
 			var time = TimeSpan.FromSeconds(5);
 			var watch = new Stopwatch();
@@ -325,6 +325,67 @@ namespace SharpRemote.Test.Hosting
 				watch.Stop();
 
 				var numSeconds = watch.Elapsed.TotalSeconds;
+				var ops = 1.0 * num / numSeconds;
+				Console.WriteLine("Total calls: {0}", num);
+				Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
+				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long)(silo.NumBytesSent / numSeconds)));
+				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived / numSeconds)));
+			}
+		}
+
+		[Test]
+		[LocalTest("There is no point in running these on the CI server")]
+		public void TestPerformanceManyClients()
+		{
+			var time = TimeSpan.FromSeconds(5);
+			int num = 0;
+
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+
+				var grain = silo.CreateGrain<IGetInt64Property, ReturnsNearlyInt64Max>();
+				// Optimization phase
+				const int numOptPasses = 100;
+				long sum = 0;
+				for (int i = 0; i < numOptPasses; ++i)
+				{
+					sum += grain.Value;
+				}
+
+				// Measurement phase
+				const int numClients = 16;
+				var clients = new Thread[numClients];
+				for (int clientIndex = 0; clientIndex < numClients; ++clientIndex)
+				{
+					clients[clientIndex] = new Thread(() =>
+						{
+							var watch = new Stopwatch();
+							const int batchSize = 64;
+							watch.Start();
+							while (watch.Elapsed < time)
+							{
+								for (int i = 0; i < batchSize; ++i)
+								{
+									unchecked
+									{
+										sum += grain.Value;
+									}
+								}
+								num += batchSize;
+							}
+							watch.Stop();
+						});
+					clients[clientIndex].Start();
+				}
+
+
+				foreach (var thread in clients)
+				{
+					thread.Join();
+				}
+
+				var numSeconds = 5;
 				var ops = 1.0 * num / numSeconds;
 				Console.WriteLine("Total calls: {0}", num);
 				Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);

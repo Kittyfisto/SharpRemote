@@ -360,7 +360,7 @@ namespace SharpRemote
 			{
 				Socket = socket;
 				_remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
-				_readTask = new Task(ReadLoop, socket);
+				_readTask = new Task(ReadLoop, socket, TaskCreationOptions.LongRunning);
 				_readTask.Start();
 
 				Log.InfoFormat("{0}: Connected to {1}", Name, _remoteEndPoint);

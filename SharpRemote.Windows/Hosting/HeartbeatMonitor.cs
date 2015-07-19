@@ -62,27 +62,7 @@ namespace SharpRemote.Hosting
 			{
 				var started = DateTime.Now;
 				var task = _heartbeat.Beat();
-				if (task == null)
-				{
-					ReportFailure();
-					break;
-				}
-
-				try
-				{
-					if (!task.Wait(_failureInterval) && _enabledWithAttachedDebugger)
-					{
-						ReportFailure();
-						break;
-					}
-				}
-				catch (AggregateException)
-				{
-					ReportFailure();
-					break;
-				}
-
-				if (task.IsFaulted)
+				if (!PerformHeartbeat(task))
 				{
 					ReportFailure();
 					break;
@@ -103,6 +83,37 @@ namespace SharpRemote.Hosting
 				if (remainingSleep > TimeSpan.Zero)
 					Thread.Sleep(remainingSleep);
 			}
+		}
+
+		/// <summary>
+		/// Performs a single heartbeat.
+		/// </summary>
+		/// <param name="task"></param>
+		/// <returns>True when the heartbeat succeeded, false otherwise</returns>
+		private bool PerformHeartbeat(Task task)
+		{
+			if (task == null)
+			{
+				return false;
+			}
+
+			try
+			{
+				if (!task.Wait(_failureInterval) && _enabledWithAttachedDebugger)
+				{
+					return false;
+				}
+			}
+			catch (AggregateException)
+			{
+				return false;
+			}
+
+			if (task.IsFaulted)
+			{
+				return false;
+			}
+			return true;
 		}
 
 		public long NumHeartbeats

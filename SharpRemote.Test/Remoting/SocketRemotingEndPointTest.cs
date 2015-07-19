@@ -134,7 +134,6 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Ignore("TODO: Find out why this test wont work - it should :P")]
-		[LocalTest]
 		[Description("Verifies that Connect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect2()
 		{
@@ -210,7 +209,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
 		public void TestConnect5()
 		{
@@ -492,7 +491,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
 			)]
@@ -520,7 +519,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
 			)]
@@ -547,7 +546,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
 		public void TestDisconnect3()
 		{

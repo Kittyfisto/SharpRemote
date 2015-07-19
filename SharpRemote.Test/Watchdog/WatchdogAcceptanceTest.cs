@@ -10,7 +10,7 @@ using SharpRemote.Watchdog;
 
 namespace SharpRemote.Test.Watchdog
 {
-	[LocalTest]
+	[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 	[TestFixture]
 	public sealed class WatchdogAcceptanceTest
 	{

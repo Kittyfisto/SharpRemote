@@ -182,7 +182,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[LocalTest]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[NUnit.Framework.Description("Verifies that a complete deadlock of the important remoting threads is detected")]
 		public void TestFailureDetection3()
 		{

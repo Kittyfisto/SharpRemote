@@ -4,6 +4,7 @@ using System.Windows;
 using SampleBrowser.Scenarios;
 using SampleBrowser.Scenarios.BluetoothPairing;
 using SampleBrowser.Scenarios.Host;
+using SampleBrowser.Scenarios.InProcessHost;
 using SampleBrowser.Scenarios.LongTermUsage;
 using SampleBrowser.Scenarios.WatchdogInstallation;
 
@@ -24,6 +25,7 @@ namespace SampleBrowser
 			_scenarios = new IScenario[]
 				{
 					new HostScenario(),
+					new InProcessHostScenario(), 
 					new RemoteHostScenario(),
 					new BluetoothPairingScenario(),
 					new LongTermScenario()

@@ -16,13 +16,20 @@ namespace SharpRemote
 		private readonly Action<LoggingEvent> _logAction;
 		private IAppenderAttachable _root;
 
+		public LogInterceptor(Action<LoggingEvent> logAction)
+			: this(logAction, Level.All)
+		{
+			
+		}
+
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="logAction"></param>
-		public LogInterceptor(Action<LoggingEvent> logAction)
+		/// <param name="level"></param>
+		public LogInterceptor(Action<LoggingEvent> logAction, Level level)
 		{
-			Threshold = Level.All;
+			Threshold = level;
 
 			_logAction = logAction;
 			_root = ((Hierarchy) LogManager.GetRepository()).Root;

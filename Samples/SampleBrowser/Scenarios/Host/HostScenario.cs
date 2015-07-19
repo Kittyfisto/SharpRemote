@@ -14,7 +14,7 @@ namespace SampleBrowser.Scenarios.Host
 		private readonly ObservableCollection<string> _hostOutput;
 
 		public HostScenario()
-			: base("Host",
+			: base("Out of process Host",
 			       "Start and connect to a host application on the same computer and run a test suite over the network")
 		{
 			_hostOutput = new ObservableCollection<string>();

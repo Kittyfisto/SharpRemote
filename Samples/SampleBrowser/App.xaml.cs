@@ -1,5 +1,8 @@
-﻿using System.Windows.Threading;
+﻿using System;
+using System.Windows.Threading;
+using log4net;
 using log4net.Config;
+using log4net.Core;
 
 namespace SampleBrowser
 {
@@ -14,6 +17,9 @@ namespace SampleBrowser
 		public App()
 		{
 			BasicConfigurator.Configure();
+
+			((log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository()).Root.Level = Level.Info;
+			((log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository()).RaiseConfigurationChanged(EventArgs.Empty);
 		}
 	}
 }

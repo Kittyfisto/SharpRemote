@@ -61,6 +61,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that the monitor invokes the heartbeat interface once started and correctly counts the amount of invocations")]
 		public void TestSuccess()
 		{
@@ -91,6 +92,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that the monitor detects skipped beats and reports a failure, once enough are skipped")]
 		public void TestDetectFailure()
 		{

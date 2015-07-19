@@ -8,7 +8,7 @@ namespace SharpRemote.Test
 	public sealed class LocalTest
 		: CategoryAttribute
 	{
-		public LocalTest()
+		public LocalTest(string description)
 			: base("LocalTest")
 		{
 			

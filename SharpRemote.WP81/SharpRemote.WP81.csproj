@@ -122,8 +122,8 @@
     <Compile Include="..\SharpRemote.Windows\Exceptions\NotConnectedException.cs">
       <Link>Exceptions\NotConnectedException.cs</Link>
     </Compile>
-    <Compile Include="..\SharpRemote.Windows\Exceptions\RemotingException.cs">
-      <Link>Exceptions\RemotingException.cs</Link>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\SharpRemoteException.cs">
+      <Link>Exceptions\SharpRemoteException.cs</Link>
     </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\TypeMismatchException.cs">
       <Link>Exceptions\TypeMismatchException.cs</Link>

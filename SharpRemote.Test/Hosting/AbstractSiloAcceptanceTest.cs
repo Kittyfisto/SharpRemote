@@ -44,8 +44,15 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[Description("Verifies that the create method is thread-safe")]
 		public void TestCreate3()
+		{
+			var subject = _silo.CreateGrain<IGetStringProperty, GetStringPropertyImplementation>();
+			subject.Value.Should().Be("Foobar");
+		}
+
+		[Test]
+		[Description("Verifies that the create method is thread-safe")]
+		public void TestCreate4()
 		{
 			const int numTries = 1000;
 			Action fn = () =>

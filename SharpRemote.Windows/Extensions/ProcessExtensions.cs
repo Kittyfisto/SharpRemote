@@ -10,8 +10,10 @@ namespace SharpRemote.Extensions
 		{
 			try
 			{
-				if (!that.HasExited)
+				if (that != null && !that.HasExited)
+				{
 					that.Kill();
+				}
 			}
 			catch (Win32Exception)
 			{

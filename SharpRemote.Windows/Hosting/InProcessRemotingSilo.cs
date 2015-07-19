@@ -79,6 +79,13 @@ namespace SharpRemote.Hosting
 			return proxy;
 		}
 
+		public TInterface CreateGrain<TInterface, TImplementation>(params object[] parameters) where TInterface : class where TImplementation : TInterface
+		{
+			var id = _subjectHostProxy.CreateSubject1(typeof(TImplementation), typeof(TInterface));
+			var proxy = _localEndPoint.CreateProxy<TInterface>(id);
+			return proxy;
+		}
+
 		public void Dispose()
 		{
 			_subjectHostProxy.TryDispose();

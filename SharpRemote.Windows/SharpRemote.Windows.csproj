@@ -86,6 +86,8 @@
     <Compile Include="Hosting\HeartbeatMonitor.cs" />
     <Compile Include="Hosting\Heartbeat.cs" />
     <Compile Include="HeartbeatSettings.cs" />
+    <Compile Include="Hosting\OutOfProcessSiloFaultReason.cs" />
+    <Compile Include="Hosting\OutOfProcessSiloFaultHandling.cs" />
     <Compile Include="IHeartbeat.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />
@@ -150,6 +152,7 @@
     <Compile Include="Watchdog\InternalWatchdog.cs" />
     <Compile Include="Watchdog\Watchdog.cs" />
     <Compile Include="Watchdog\WatchdogHost.cs" />
+    <Compile Include="Win32Error.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -33,8 +33,10 @@ namespace SampleBrowser.Scenarios.Host
 		protected override bool RunTest()
 		{
 			using (var appender = new LogInterceptor(Log))
-			using (var silo = new OutOfProcessSilo(hostOutputWritten: LogHost))
+			using (var silo = new OutOfProcessSilo())
 			{
+				silo.HostOutputWritten += LogHost;
+				silo.Start();
 				var instance = silo.CreateGrain<ISample>(typeof (Sample));
 				Log(string.Format("Have you been called yet? - {0}", instance.HaveYouBeenCalledYet()));
 				instance.Call("This message is sent via a remote procedure call through the ISample interface");

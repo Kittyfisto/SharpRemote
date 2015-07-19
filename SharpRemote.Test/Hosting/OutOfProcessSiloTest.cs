@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
@@ -25,6 +27,60 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[NUnit.Framework.Description("Verifies that starting the default host process succeeds")]
+		public void TestStart1()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.IsProcessRunning.Should().BeFalse();
+				silo.Start();
+
+				silo.IsProcessRunning.Should().BeTrue();
+				silo.HasProcessFailed.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that starting a non-existant executable throws")]
+		public void TestStart2()
+		{
+			using (var silo = new OutOfProcessSilo("Doesntexist.exe"))
+			{
+				silo.IsProcessRunning.Should().BeFalse();
+
+				new Action(silo.Start)
+					.ShouldThrow<FileNotFoundException>()
+					.WithMessage("The system cannot find the file specified");
+
+				silo.IsProcessRunning.Should().BeFalse();
+				silo.HasProcessFailed.Should().BeFalse();
+
+				new Action(() => silo.CreateGrain<IVoidMethodInt32Parameter>())
+					.ShouldThrow<NotConnectedException>();
+			}
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that starting a non executable throws")]
+		public void TestStart3()
+		{
+			using (var silo = new OutOfProcessSilo("SharpRemote.dll"))
+			{
+				silo.IsProcessRunning.Should().BeFalse();
+
+				new Action(silo.Start)
+					.ShouldThrow<Win32Exception>()
+					.WithMessage("The specified executable is not a valid application for this OS platform.");
+
+				silo.IsProcessRunning.Should().BeFalse();
+				silo.HasProcessFailed.Should().BeFalse();
+
+				new Action(() => silo.CreateGrain<IVoidMethodInt32Parameter>())
+					.ShouldThrow<NotConnectedException>();
+			}
+		}
+
+		[Test]
 		public void TestCreateGrain1()
 		{
 			using (var silo = new OutOfProcessSilo())
@@ -37,14 +93,38 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		public void TestCtor()
+		public void TestCtor1()
 		{
 			using (var silo = new OutOfProcessSilo())
 			{
+				silo.IsDisposed.Should().BeFalse();
+				silo.HasProcessFailed.Should().BeFalse();
 				silo.IsProcessRunning.Should().BeFalse();
-				silo.Start();
-				silo.IsProcessRunning.Should().BeTrue();
 			}
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that specifying a null executable name is not allowed")]
+		public void TestCtor2()
+		{
+			new Action(() => new OutOfProcessSilo(null))
+				.ShouldThrow<ArgumentNullException>();
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that specifying an empty executable name is not allowed")]
+		public void TestCtor3()
+		{
+			new Action(() => new OutOfProcessSilo(""))
+				.ShouldThrow<ArgumentException>();
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that specifying a whitespace executable name is not allowed")]
+		public void TestCtor4()
+		{
+			new Action(() => new OutOfProcessSilo("	"))
+				.ShouldThrow<ArgumentException>();
 		}
 
 		[Test]
@@ -62,13 +142,13 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[Description("Verifies that a crash of the host process is detected when it happens while a method call")]
+		[NUnit.Framework.Description("Verifies that a crash of the host process is detected when it happens while a method call")]
 		public void TestFailureDetection1()
 		{
 			using (var silo = new OutOfProcessSilo())
 			{
-				bool faultDetected = false;
-				silo.OnFaultDetected += () => faultDetected = true;
+				OutOfProcessSiloFaultReason? reason = null;
+				silo.OnFaultDetected += x => reason = x;
 				silo.Start();
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof (KillsProcess));
@@ -77,18 +157,18 @@ namespace SharpRemote.Test.Hosting
 
 				silo.HasProcessFailed.Should().BeTrue("Because an aborted thread that is currently invoking a remote method call should cause SharpRemote to kill the host process and report failure");
 				silo.IsProcessRunning.Should().BeFalse();
-				faultDetected.Should().BeTrue();
+				reason.Should().Be(OutOfProcessSiloFaultReason.ConnectionFailure);
 			}
 		}
 
 		[Test]
-		[Description("Verifies that an abortion of the executing thread of a remote method invocation is detected and that it causes a connection loss")]
+		[NUnit.Framework.Description("Verifies that an abortion of the executing thread of a remote method invocation is detected and that it causes a connection loss")]
 		public void TestFailureDetection2()
 		{
 			using (var silo = new OutOfProcessSilo())
 			{
-				bool faultDetected = false;
-				silo.OnFaultDetected += () => faultDetected = true;
+				OutOfProcessSiloFaultReason? reason = null;
+				silo.OnFaultDetected += x => reason = x;
 				silo.Start();
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(KillsProcess));
@@ -97,13 +177,13 @@ namespace SharpRemote.Test.Hosting
 
 				silo.HasProcessFailed.Should().BeTrue("Because an unexpected exit of the host process counts as a failure");
 				silo.IsProcessRunning.Should().BeFalse();
-				faultDetected.Should().BeTrue();
+				reason.Should().Be(OutOfProcessSiloFaultReason.ConnectionFailure);
 			}
 		}
 
 		[Test]
 		[LocalTest]
-		[Description("Verifies that a complete deadlock of the important remoting threads is detected")]
+		[NUnit.Framework.Description("Verifies that a complete deadlock of the important remoting threads is detected")]
 		public void TestFailureDetection3()
 		{
 			var settings = new HeartbeatSettings
@@ -114,8 +194,8 @@ namespace SharpRemote.Test.Hosting
 				};
 			using (var silo = new OutOfProcessSilo(heartbeatSettings: settings))
 			{
-				bool faultDetected = false;
-				silo.OnFaultDetected += () => faultDetected = true;
+				OutOfProcessSiloFaultReason? reason = null;
+				silo.OnFaultDetected += x => reason = x;
 				silo.Start();
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(DeadlocksProcess));
@@ -129,12 +209,12 @@ namespace SharpRemote.Test.Hosting
 
 				silo.HasProcessFailed.Should().BeTrue("Because the heartbeat mechanism should have detected that the endpoint doesn't respond anymore");
 				silo.IsProcessRunning.Should().BeFalse();
-				faultDetected.Should().BeTrue();
+				reason.Should().Be(OutOfProcessSiloFaultReason.HeartbeatFailure);
 			}
 		}
 
 		[Test]
-		[Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
+		[NUnit.Framework.Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
 		public void TestCreate()
 		{
 			var customTypeResolver = new CustomTypeResolver1();
@@ -149,11 +229,6 @@ namespace SharpRemote.Test.Hosting
 				grain.Do().Should().Be<string>();
 				customTypeResolver.GetTypeCalled.Should().Be(1, "Because the custom type resolver in this process should've been used to resolve typeof(string)");
 			}
-		}
-
-		public void TestStart1()
-		{
-			
 		}
 	}
 }

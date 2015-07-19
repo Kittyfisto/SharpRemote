@@ -58,5 +58,16 @@ namespace SharpRemote.Hosting
 		/// <returns></returns>
 		TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters)
 			where TInterface : class;
+
+		/// <summary>
+		/// Creates a new instance of the given type and returns an interface to it.
+		/// </summary>
+		/// <typeparam name="TInterface"></typeparam>
+		/// <typeparam name="TImplementation">The type to instantiate</typeparam>
+		/// <param name="parameters"></param>
+		/// <returns></returns>
+		TInterface CreateGrain<TInterface, TImplementation>(params object[] parameters)
+			where TInterface : class
+			where TImplementation : TInterface;
 	}
 }

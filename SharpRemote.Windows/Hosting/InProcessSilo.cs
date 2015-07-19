@@ -53,6 +53,12 @@ namespace SharpRemote.Hosting
 			return (TInterface) subject;
 		}
 
+		public TInterface CreateGrain<TInterface, TImplementation>(params object[] parameters) where TInterface : class where TImplementation : TInterface
+		{
+			object subject = Activator.CreateInstance(typeof(TImplementation), parameters);
+			return (TInterface)subject;
+		}
+
 		public void Dispose()
 		{
 			_isDisposed = true;

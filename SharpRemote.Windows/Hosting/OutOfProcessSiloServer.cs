@@ -53,7 +53,11 @@ namespace SharpRemote.Hosting
 			_registry = new DefaultImplementationRegistry();
 			_waitHandle = new ManualResetEvent(false);
 			_customTypeResolver = customTypeResolver;
+
 			_endPoint = new SocketRemotingEndPoint(customTypeResolver: customTypeResolver);
+
+			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat)new Heartbeat());
+			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency)new Latency());
 		}
 
 		/// <summary>
@@ -143,10 +147,8 @@ namespace SharpRemote.Hosting
 				                                  OnSubjectHostDisposed,
 				                                  _customTypeResolver))
 				{
-					var heartbeat = new Heartbeat();
 
-					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost) host);
-					_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat) heartbeat);
+					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost)host);
 
 					_endPoint.Bind(IPAddress.Loopback);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);

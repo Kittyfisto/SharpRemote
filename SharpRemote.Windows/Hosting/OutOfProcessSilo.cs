@@ -33,11 +33,13 @@ namespace SharpRemote.Hosting
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private const string SharpRemoteHost = "SharpRemote.Host.exe";
 
-		private readonly HeartbeatMonitor _monitor;
+		private readonly HeartbeatMonitor _heartbeatMonitor;
+		private readonly LatencyMonitor _latencyMonitor;
 		private readonly SocketRemotingEndPoint _endPoint;
-		private Process _process;
 		private readonly ISubjectHost _subjectHost;
 		private readonly ManualResetEvent _waitHandle;
+
+		private Process _process;
 		private HostState _hostState;
 
 		private int? _remotePort;
@@ -119,13 +121,15 @@ namespace SharpRemote.Hosting
 		/// <param name="options"></param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
+		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
 			string process = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
 			ITypeResolver customTypeResolver = null,
-			HeartbeatSettings heartbeatSettings = null
+			HeartbeatSettings heartbeatSettings = null,
+			LatencySettings latencySettings = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -137,8 +141,11 @@ namespace SharpRemote.Hosting
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 
 			var heartbeat = _endPoint.CreateProxy<IHeartbeat>(Constants.HeartbeatId);
-			_monitor = new HeartbeatMonitor(heartbeat, heartbeatSettings ?? new HeartbeatSettings());
-			_monitor.OnFailure += MonitorOnOnFailure;
+			_heartbeatMonitor = new HeartbeatMonitor(heartbeat, heartbeatSettings ?? new HeartbeatSettings());
+			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
+
+			var latency = _endPoint.CreateProxy<ILatency>(Constants.LatencyProbeId);
+			_latencyMonitor = new LatencyMonitor(latency, latencySettings ?? new LatencySettings());
 
 			_waitHandle = new ManualResetEvent(false);
 			_hostState = HostState.BootPending;
@@ -206,7 +213,8 @@ namespace SharpRemote.Hosting
 				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
 
 				// After a successful connection, we can enable the heartbeat monitor so we're notified of failures
-				_monitor.Start();
+				_heartbeatMonitor.Start();
+				_latencyMonitor.Start();
 			}
 			catch (Exception e)
 			{
@@ -223,6 +231,15 @@ namespace SharpRemote.Hosting
 							  _process.StartInfo.FileName,
 							  _process.Id,
 							  _endPoint.RemoteEndPoint);
+		}
+
+		/// <summary>
+		/// The current average round trip time or <see cref="TimeSpan.Zero"/> in
+		/// case nothing was measured.
+		/// </summary>
+		public TimeSpan RoundtripTime
+		{
+			get { return _latencyMonitor.RoundTripTime; }
 		}
 
 		private void StartHostProcess()
@@ -263,7 +280,7 @@ namespace SharpRemote.Hosting
 		/// - lack of heartbeats
 		/// - exception during heartbeats
 		/// </summary>
-		private void MonitorOnOnFailure()
+		private void HeartbeatMonitorOnOnFailure()
 		{
 			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process");
 			HandleFailure(null);
@@ -433,11 +450,13 @@ namespace SharpRemote.Hosting
 
 		public void Dispose()
 		{
+			_heartbeatMonitor.TryDispose();
+			_latencyMonitor.TryDispose();
 			_subjectHost.TryDispose();
+
 			_endPoint.TryDispose();
 			_process.TryKill();
 			_process.TryDispose();
-			_monitor.TryDispose();
 			_hasProcessExited = true;
 			_isDisposed = true;
 		}
@@ -492,6 +511,11 @@ namespace SharpRemote.Hosting
 			/// has failed.
 			/// </summary>
 			public const ulong HeartbeatId = ulong.MaxValue - 1;
+
+			/// <summary>
+			/// 
+			/// </summary>
+			public const ulong LatencyProbeId = ulong.MaxValue - 2;
 
 			public const string BootingMessage = "booting";
 			public const string ReadyMessage = "ready";

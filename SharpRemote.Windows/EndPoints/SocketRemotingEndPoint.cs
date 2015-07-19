@@ -12,7 +12,6 @@ using SharpRemote.Extensions;
 using log4net;
 
 // ReSharper disable CheckNamespace
-
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {

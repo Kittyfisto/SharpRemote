@@ -82,10 +82,14 @@
     <Compile Include="EndPoints\AbstractSocketRemotingEndPoint.cs" />
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
     <Compile Include="EndPoints\EndPointDisconnectReason.cs" />
+    <Compile Include="Hosting\LatencySettings.cs" />
+    <Compile Include="RingBuffer.cs" />
     <Compile Include="Hosting\DefaultImplementationRegistry.cs" />
     <Compile Include="Hosting\HeartbeatMonitor.cs" />
     <Compile Include="Hosting\Heartbeat.cs" />
     <Compile Include="HeartbeatSettings.cs" />
+    <Compile Include="Hosting\ILatency.cs" />
+    <Compile Include="Hosting\LatencyMonitor.cs" />
     <Compile Include="Hosting\OutOfProcessSiloFaultReason.cs" />
     <Compile Include="Hosting\OutOfProcessSiloFaultHandling.cs" />
     <Compile Include="IHeartbeat.cs" />

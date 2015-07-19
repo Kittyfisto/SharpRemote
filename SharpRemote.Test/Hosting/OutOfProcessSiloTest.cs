@@ -83,6 +83,31 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[LocalTest("Time critical tests dont run on the C/I server")]
+		[NUnit.Framework.Description("Verifies that latency measurements are performed and that they are sound")]
+		public void TestRoundtripTime()
+		{
+			var settings = new LatencySettings
+				{
+					Interval = TimeSpan.FromMilliseconds(1),
+					NumSamples = 100
+				};
+
+			OutOfProcessSilo silo;
+			using (silo = new OutOfProcessSilo(latencySettings: settings))
+			{
+				silo.RoundtripTime.Should().Be(TimeSpan.Zero, "because without being started, no latency is measured");
+				silo.Start();
+
+				Thread.Sleep(TimeSpan.FromMilliseconds(200));
+				var rtt = silo.RoundtripTime;
+				Console.WriteLine("RTT: {0}Ticks", rtt.Ticks);
+				rtt.Should().BeGreaterThan(TimeSpan.Zero);
+				rtt.Should().BeLessOrEqualTo(TimeSpan.FromMilliseconds(10));
+			}
+		}
+
+		[Test]
 		public void TestCreateGrain1()
 		{
 			using (var silo = new OutOfProcessSilo())
@@ -279,6 +304,7 @@ namespace SharpRemote.Test.Hosting
 				Console.WriteLine("OP/s: {0:F2}k/s", ops/1000);
 				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long) (silo.NumBytesSent/numSeconds)));
 				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived/numSeconds)));
+				Console.WriteLine("RTT: {0}ms", (int)silo.RoundtripTime.TotalMilliseconds);
 			}
 		}
 
@@ -330,6 +356,7 @@ namespace SharpRemote.Test.Hosting
 				Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
 				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long)(silo.NumBytesSent / numSeconds)));
 				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived / numSeconds)));
+				Console.WriteLine("RTT: {0}ms", (int)silo.RoundtripTime.TotalMilliseconds);
 			}
 		}
 
@@ -389,8 +416,9 @@ namespace SharpRemote.Test.Hosting
 				var ops = 1.0 * num / numSeconds;
 				Console.WriteLine("Total calls: {0}", num);
 				Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
-				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long)(silo.NumBytesSent / numSeconds)));
-				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived / numSeconds)));
+				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize(silo.NumBytesSent / numSeconds));
+				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize(silo.NumBytesReceived / numSeconds));
+				Console.WriteLine("RTT: {0}ms", (int)silo.RoundtripTime.TotalMilliseconds);
 			}
 		}
 

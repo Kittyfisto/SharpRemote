@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -229,6 +231,124 @@ namespace SharpRemote.Test.Hosting
 				grain.Do().Should().Be<string>();
 				customTypeResolver.GetTypeCalled.Should().Be(1, "Because the custom type resolver in this process should've been used to resolve typeof(string)");
 			}
+		}
+
+		[Test]
+		[LocalTest("")]
+		public void TestPerformanceSynchronous()
+		{
+			var time = TimeSpan.FromSeconds(5);
+			var watch = new Stopwatch();
+			int num = 0;
+
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+
+				var grain = silo.CreateGrain<IGetInt64Property, ReturnsNearlyInt64Max>();
+
+				long sum = 0;
+
+				// Optimization phase
+				for (int i = 0; i < 100; ++i)
+				{
+					unchecked
+					{
+						sum += grain.Value;
+					}
+				}
+
+				// Measurement phase
+				watch.Start();
+				while (watch.Elapsed < time)
+				{
+					for (int i = 0; i < 100; ++i)
+					{
+						unchecked
+						{
+							sum += grain.Value;
+						}
+					}
+					num += 100;
+				}
+				watch.Stop();
+
+				var numSeconds = watch.Elapsed.TotalSeconds;
+				var ops = 1.0 * num / numSeconds;
+				Console.WriteLine("Total calls: {0} (sum: {1})", num, sum);
+				Console.WriteLine("OP/s: {0:F2}k/s", ops/1000);
+				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long) (silo.NumBytesSent/numSeconds)));
+				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived/numSeconds)));
+			}
+		}
+
+		[Test]
+		[LocalTest("There is no point in running these on the CI server")]
+		public void TestPerformanceAsynchronous()
+		{
+			var time = TimeSpan.FromSeconds(5);
+			var watch = new Stopwatch();
+			int num = 0;
+
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+
+				var grain = silo.CreateGrain<IReturnsIntTask, ReturnsIntMaxTask>();
+
+				// Optimization phase
+				const int numOptPasses = 100;
+				var opts = new Task[numOptPasses];
+				for (int i = 0; i < numOptPasses; ++i)
+				{
+					opts[i] = grain.DoStuff();
+				}
+
+				Task.WaitAll(opts);
+
+				// Measurement phase
+
+				const int batchSize = 64;
+				var tasks = new Task[batchSize];
+
+				watch.Start();
+				while (watch.Elapsed < time)
+				{
+					for (int i = 0; i < batchSize; ++i)
+					{
+						tasks[i] = grain.DoStuff();
+					}
+					Task.WaitAll(tasks);
+
+					num += batchSize;
+				}
+				watch.Stop();
+
+				var numSeconds = watch.Elapsed.TotalSeconds;
+				var ops = 1.0 * num / numSeconds;
+				Console.WriteLine("Total calls: {0}", num);
+				Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
+				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long)(silo.NumBytesSent / numSeconds)));
+				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived / numSeconds)));
+			}
+		}
+
+		private string FormatSize(long numBytesSent)
+		{
+			const long oneKilobyte = 1024;
+			const long oneMegabyte = 1024*oneKilobyte;
+			const long oneGigabyte = 1024*oneMegabyte;
+
+			if (numBytesSent > oneGigabyte)
+				return string.Format("{0:F2} Gb", 1.0*numBytesSent/oneGigabyte);
+
+			if (numBytesSent > oneMegabyte)
+				return string.Format("{0:F2} Mb", 1.0 * numBytesSent / oneMegabyte);
+
+			if (numBytesSent > oneKilobyte)
+				return string.Format("{0:F2} Kb", 1.0 * numBytesSent / oneKilobyte);
+
+			return string.Format("{0} bytes", numBytesSent);
 		}
 	}
 }

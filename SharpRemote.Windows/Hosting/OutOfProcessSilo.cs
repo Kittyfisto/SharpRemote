@@ -75,6 +75,42 @@ namespace SharpRemote.Hosting
 			get { return _hasProcessFailed; }
 		}
 
+		#region Statistics
+
+		/// <summary>
+		/// The total amount of bytes that have been sent over the underlying socket endpoint.
+		/// </summary>
+		public long NumBytesSent
+		{
+			get { return _endPoint.NumBytesSent; }
+		}
+
+		/// <summary>
+		/// The total amount of bytes that have been received over the underlying endpoint.
+		/// </summary>
+		public long NumBytesReceived
+		{
+			get { return _endPoint.NumBytesReceived; }
+		}
+
+		/// <summary>
+		/// The total amount of remote procedure calls that have been invoked from this end.
+		/// </summary>
+		public long NumCallsInvoked
+		{
+			get { return _endPoint.NumCallsInvoked; }
+		}
+
+		/// <summary>
+		/// The total amount of remote procedure calls that have been invoked from the other end.
+		/// </summary>
+		public long NumCallsAnswered
+		{
+			get { return _endPoint.NumCallsAnswered; }
+		}
+
+		#endregion
+
 		/// <summary>
 		/// Initializes a new instance of this silo with the specified options.
 		/// The given host process will only be started once <see cref="Start"/> is called.

@@ -73,7 +73,47 @@ namespace SharpRemote
 		private Socket _socket;
 		private readonly string _name;
 		private EndPointDisconnectReason? _disconnectReason;
-		private bool _isDisconnecting;
+
+		#region Statistics
+
+		private long _numBytesSent;
+		private long _numBytesReceived;
+		private long _numCallsInvoked;
+		private long _numCallsAnswered;
+
+		/// <summary>
+		/// The total amount of bytes that have been sent over the underlying socket.
+		/// </summary>
+		public long NumBytesSent
+		{
+			get { return Interlocked.Read(ref _numBytesSent); }
+		}
+
+		/// <summary>
+		/// The total amount of bytes that have been received over the underlying socket.
+		/// </summary>
+		public long NumBytesReceived
+		{
+			get { return Interlocked.Read(ref _numBytesReceived); }
+		}
+
+		/// <summary>
+		/// The total amount of remote procedure calls that have been invoked from this end.
+		/// </summary>
+		public long NumCallsInvoked
+		{
+			get { return Interlocked.Read(ref _numCallsInvoked); }
+		}
+
+		/// <summary>
+		/// The total amount of remote procedure calls that have been invoked from the other end.
+		/// </summary>
+		public long NumCallsAnswered
+		{
+			get { return Interlocked.Read(ref _numCallsAnswered); }
+		}
+
+		#endregion
 
 		protected abstract EndPoint InternalLocalEndPoint { get; }
 		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
@@ -152,6 +192,8 @@ namespace SharpRemote
 						var reader = new BinaryReader(stream);
 						long rpcId = reader.ReadInt64();
 						var type = (MessageType)reader.ReadByte();
+
+						Interlocked.Add(ref _numBytesReceived, length + 4);
 
 						EndPointDisconnectReason? r;
 						if (!HandleMessage(rpcId, type, reader, out r))
@@ -297,6 +339,9 @@ namespace SharpRemote
 						Log.ErrorFormat("Error while sending message: {0}", err);
 						throw new ConnectionLostException();
 					}
+
+					Interlocked.Add(ref _numBytesSent, messageLength);
+					Interlocked.Increment(ref _numCallsInvoked);
 
 					if (!handle.WaitOne())
 						throw new NotImplementedException();
@@ -503,12 +548,10 @@ namespace SharpRemote
 		{
 			if (type == MessageType.Call)
 			{
+				Interlocked.Increment(ref _numCallsAnswered);
 				HandleRequest(rpcId, reader);
-
-				reason = null;
-				return true;
 			}
-			if ((type & MessageType.Return) != 0)
+			else if ((type & MessageType.Return) != 0)
 			{
 				if (!HandleResponse(rpcId, type, reader))
 				{
@@ -516,19 +559,21 @@ namespace SharpRemote
 					reason = EndPointDisconnectReason.RpcInvalidResponse;
 					return false;
 				}
-
-				reason = null;
-				return true;
 			}
-			if ((type & MessageType.Goodbye) != 0)
+			else if ((type & MessageType.Goodbye) != 0)
 			{
 				Log.InfoFormat("Connection about to be closed by the other side - disconnecting...");
 
 				reason = EndPointDisconnectReason.RequestedByRemotEndPoint;
 				return false;
 			}
+			else
+			{
+				throw new NotImplementedException();
+			}
 
-			throw new NotImplementedException();
+			reason = null;
+			return true;
 		}
 
 		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName, BinaryReader reader)

@@ -92,6 +92,7 @@
     <Compile Include="Types\Classes\Returns0.cs" />
     <Compile Include="Types\Classes\Returns42.cs" />
     <Compile Include="Types\Classes\ReturnsInt64Max.cs" />
+    <Compile Include="Types\Classes\ReturnsIntMaxTask.cs" />
     <Compile Include="Types\Classes\ReturnsNearlyInt64Max.cs" />
     <Compile Include="Types\Classes\Singleton.cs" />
     <Compile Include="Types\Classes\DeadlocksProcess.cs" />

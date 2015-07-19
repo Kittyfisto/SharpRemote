@@ -358,62 +358,50 @@ namespace SharpRemote
 
 		private void Disconnect(EndPointDisconnectReason reason)
 		{
-			if (_isDisconnecting)
-				throw new InvalidOperationException("Disconnect may not be called from the OnFailure event");
-
-			try
+			lock (_syncRoot)
 			{
-				_isDisconnecting = true;
-
-				lock (_syncRoot)
+				if (_socket != null)
 				{
-					if (_socket != null)
+					_disconnectReason = reason;
+					if (IsFailure(reason))
 					{
-						_disconnectReason = reason;
-						if (IsFailure(reason))
+						var fn = OnFailure;
+						if (fn != null)
 						{
-							var fn = OnFailure;
-							if (fn != null)
+							try
 							{
-								try
-								{
-									fn(reason);
-								}
-								catch (Exception e)
-								{
-									Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
-								}
+								fn(reason);
+							}
+							catch (Exception e)
+							{
+								Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
 							}
 						}
-
-						Log.InfoFormat("Disconnecting socket '{0}' from {1}", _name, InternalRemoteEndPoint);
-
-						InterruptOngoingCalls();
-
-						// If we are disconnecting because of a failure, then we don't notify the other end
-						// and drop the connection immediately. Also there's no need to notify the other
-						// end when it requested the disconnect
-						if (!IsFailure(reason) && reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
-						{
-							SendGoodbye();
-						}
-
-						try
-						{
-							_socket.Disconnect(false);
-						}
-						catch (SocketException)
-						{
-						}
-
-						_socket = null;
-						InternalRemoteEndPoint = null;
 					}
+
+					Log.InfoFormat("Disconnecting socket '{0}' from {1}", _name, InternalRemoteEndPoint);
+
+					InterruptOngoingCalls();
+
+					// If we are disconnecting because of a failure, then we don't notify the other end
+					// and drop the connection immediately. Also there's no need to notify the other
+					// end when it requested the disconnect
+					if (!IsFailure(reason) && reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
+					{
+						SendGoodbye();
+					}
+
+					try
+					{
+						_socket.Disconnect(false);
+					}
+					catch (SocketException)
+					{
+					}
+
+					_socket = null;
+					InternalRemoteEndPoint = null;
 				}
-			}
-			finally
-			{
-				_isDisconnecting = false;
 			}
 		}
 

@@ -9,7 +9,7 @@ using System.Reflection.Emit;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	internal partial class Serializer
 	{
 		/// <summary>
 		///     Emits the code necessary to write an enumeration into a <see cref="BinaryWriter" />.
@@ -19,11 +19,13 @@ namespace SharpRemote
 		/// <param name="loadWriter"></param>
 		/// <param name="loadValue"></param>
 		/// <param name="loadSerializer"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		private void EmitWriteEnumeration(ILGenerator gen,
 			TypeInformation typeInformation,
 			Action loadWriter,
 			Action loadValue,
-			Action loadSerializer)
+			Action loadSerializer,
+			Action loadRemotingEndPoint)
 		{
 			Type elementType = typeInformation.ElementType;
 			Type enumerableType = typeof (IEnumerable<>).MakeGenericType(elementType);
@@ -71,6 +73,7 @@ namespace SharpRemote
 				loadCurrentValue,
 				loadCurrentValueAddress,
 				loadSerializer,
+				loadRemotingEndPoint,
 				elementType);
 
 			// goto loop

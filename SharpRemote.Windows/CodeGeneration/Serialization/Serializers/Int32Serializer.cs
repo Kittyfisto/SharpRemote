@@ -11,14 +11,28 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type == typeof (Int32);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
+		public override void EmitWriteValue(ILGenerator gen,
+		                                    Serializer serializerCompiler,
+		                                    Action loadWriter,
+		                                    Action loadValue,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
+		                                    bool valueCanBeNull = true)
 		{
 			loadWriter();
 			loadValue();
 			gen.Emit(OpCodes.Call, Methods.WriteInt32);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen,
+		                                   Serializer serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
+		                                   bool valueCanBeNull = true)
 		{
 			loadReader();
 			gen.Emit(OpCodes.Call, Methods.ReadInt32);

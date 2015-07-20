@@ -10,8 +10,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 	{
 		#region Public Methods
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader,
-			Action loadSerializer, Type type, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen,
+			Serializer serializerCompiler,
+			Action loadReader,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			Type type,
+			bool valueCanBeNull = true)
 		{
 			Type keyType = type.GenericTypeArguments[0];
 			Type valueType = type.GenericTypeArguments[1];
@@ -20,22 +25,27 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			serializerCompiler.EmitReadValue(gen,
 				loadReader,
 				loadSerializer,
+				loadRemotingEndPoint,
 				keyType);
+
 			serializerCompiler.EmitReadValue(gen,
 				loadReader,
 				loadSerializer,
+				loadRemotingEndPoint,
 				valueType);
+
 			gen.Emit(OpCodes.Newobj, ctor);
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-			Serializer serializerCompiler,
-			Action loadWriter,
-			Action loadValue,
-			Action loadValueAddress,
-			Action loadSerializer,
-			Type type,
-			bool valueCanBeNull = true)
+		                                    Serializer serializerCompiler,
+		                                    Action loadWriter,
+		                                    Action loadValue,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
+		                                    bool valueCanBeNull = true)
 		{
 			Type keyType = type.GenericTypeArguments[0];
 			Type valueType = type.GenericTypeArguments[1];
@@ -43,54 +53,56 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			MethodInfo getValue = type.GetProperty("Value").GetMethod;
 
 			Action loadKeyValue = () =>
-			{
-				loadValueAddress();
-				gen.Emit(OpCodes.Call, getKey);
-			};
+				{
+					loadValueAddress();
+					gen.Emit(OpCodes.Call, getKey);
+				};
 			LocalBuilder key = null;
 			Action loadKeyValueAddress = () =>
-			{
-				if (key == null)
 				{
-					key = gen.DeclareLocal(keyType);
-					loadValue();
-					gen.Emit(OpCodes.Stloc, key);
-				}
+					if (key == null)
+					{
+						key = gen.DeclareLocal(keyType);
+						loadValue();
+						gen.Emit(OpCodes.Stloc, key);
+					}
 
-				gen.Emit(OpCodes.Ldloca, key);
-			};
+					gen.Emit(OpCodes.Ldloca, key);
+				};
 
 			serializerCompiler.EmitWriteValue(gen,
-				loadWriter,
-				loadKeyValue,
-				loadKeyValueAddress,
-				loadSerializer,
-				keyType
+			                                  loadWriter,
+			                                  loadKeyValue,
+			                                  loadKeyValueAddress,
+			                                  loadSerializer,
+			                                  loadRemotingEndPoint,
+			                                  keyType
 				);
 
 			Action loadValueValue = () =>
-			{
-				loadValueAddress();
-				gen.Emit(OpCodes.Call, getValue);
-			};
+				{
+					loadValueAddress();
+					gen.Emit(OpCodes.Call, getValue);
+				};
 			LocalBuilder value = null;
 			Action loadValueValueAddress = () =>
-			{
-				if (value == null)
 				{
-					value = gen.DeclareLocal(valueType);
-					loadValueValue();
-					gen.Emit(OpCodes.Stloc, value);
-				}
-				gen.Emit(OpCodes.Ldloca, value);
-			};
+					if (value == null)
+					{
+						value = gen.DeclareLocal(valueType);
+						loadValueValue();
+						gen.Emit(OpCodes.Stloc, value);
+					}
+					gen.Emit(OpCodes.Ldloca, value);
+				};
 
 			serializerCompiler.EmitWriteValue(gen,
-				loadWriter,
-				loadValueValue,
-				loadValueValueAddress,
-				loadSerializer,
-				valueType);
+			                                  loadWriter,
+			                                  loadValueValue,
+			                                  loadValueValueAddress,
+			                                  loadSerializer,
+			                                  loadRemotingEndPoint,
+			                                  valueType);
 		}
 
 		public override bool Supports(Type type)

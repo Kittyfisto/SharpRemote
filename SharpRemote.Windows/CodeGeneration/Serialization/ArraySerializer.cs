@@ -7,7 +7,7 @@ using SharpRemote.CodeGeneration;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	internal partial class Serializer
 	{
 		private enum ArrayOrder
 		{
@@ -20,6 +20,7 @@ namespace SharpRemote
 			Action loadWriter,
 			Action loadValue,
 			Action loadSerializer,
+			Action loadRemotingEndPoint,
 			ArrayOrder order = ArrayOrder.Forward)
 		{
 			var elementType = typeInformation.ElementType;
@@ -99,6 +100,7 @@ namespace SharpRemote
 				loadCurrentValue,
 				loadCurrentValueAddress,
 				loadSerializer,
+				loadRemotingEndPoint,
 				elementType);
 
 			switch (order)
@@ -124,7 +126,11 @@ namespace SharpRemote
 			gen.MarkLabel(end);
 		}
 
-		private void EmitReadArray(ILGenerator gen, TypeInformation typeInformation)
+		private void EmitReadArray(ILGenerator gen,
+			Action loadReader,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			TypeInformation typeInformation)
 		{
 			var elementType = typeInformation.ElementType;
 
@@ -162,8 +168,9 @@ namespace SharpRemote
 			gen.Emit(OpCodes.Ldloc, i);
 
 			EmitReadValue(gen,
-				() => gen.Emit(OpCodes.Ldarg_0),
-				() => gen.Emit(OpCodes.Ldarg_1),
+				loadReader,
+				loadSerializer,
+				loadRemotingEndPoint,
 				elementType);
 
 			gen.Emit(OpCodes.Stelem, elementType);

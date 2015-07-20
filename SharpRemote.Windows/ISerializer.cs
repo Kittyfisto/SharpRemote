@@ -75,17 +75,19 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
+		/// <param name="endPoint"></param>
 		/// <exception cref="SerializationException">In case there was an error while generating the code necessary for serialization / deserialization</exception>
-		void WriteObject(BinaryWriter writer, object value);
+		void WriteObject(BinaryWriter writer, object value, IRemotingEndPoint endPoint);
 
 		/// <summary>
 		/// Reads the next object graph using the given <paramref name="reader"/>.
 		/// If the type is not registered yet, then it will be.
 		/// </summary>
 		/// <param name="reader"></param>
+		/// <param name="endPoint"></param>
 		/// <returns></returns>
 		/// <exception cref="SerializationException">In case there was an error while generating the code necessary for serialization / deserialization</exception>
-		object ReadObject(BinaryReader reader);
+		object ReadObject(BinaryReader reader, IRemotingEndPoint endPoint);
 
 		/// <summary>
 		/// Resolves a type by its name.

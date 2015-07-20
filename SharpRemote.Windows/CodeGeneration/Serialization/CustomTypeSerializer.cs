@@ -10,7 +10,7 @@ using SerializationException = SharpRemote.Exceptions.SerializationException;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	internal partial class Serializer
 	{
 		#region Writing
 
@@ -18,24 +18,38 @@ namespace SharpRemote
 		///     Emits the code to write an object of the given type to a <see cref="BinaryWriter"/>.
 		/// </summary>
 		/// <param name="gen"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
-		private void WriteCustomType(ILGenerator gen, Type type)
+		private void WriteCustomType(ILGenerator gen,
+			Action loadRemotingEndPoint,
+			Type type)
 		{
-			if (type.GetCustomAttribute<DataContractAttribute>() == null)
+			if (type.GetCustomAttribute<DataContractAttribute>() != null)
+			{
+				EmitWriteFields(gen, loadRemotingEndPoint, type);
+				EmitWriteProperties(gen, loadRemotingEndPoint, type);
+			}
+			else if (type.GetCustomAttribute<ByReferenceAttribute>() != null)
+			{
+				
+			}
+			else
+			{
 				throw new ArgumentException(
-					string.Format("The type '{0}.{1}' is missing the [DataContract] attribute, nor is there a custom-serializer available for this type", type.Namespace,
+					string.Format("The type '{0}.{1}' is missing the [DataContract] or [ByReference] attribute, nor is there a custom-serializer available for this type", type.Namespace,
 						type.Name));
-
-			EmitWriteFields(gen, type);
-			EmitWriteProperties(gen, type);
+			}
 		}
 
 		/// <summary>
 		///     Emits code to write all properties of the given type into a <see cref="BinaryWriter" />.
 		/// </summary>
 		/// <param name="gen"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
-		private void EmitWriteProperties(ILGenerator gen, Type type)
+		private void EmitWriteProperties(ILGenerator gen,
+			Action loadRemotingEndPoint,
+			Type type)
 		{
 			PropertyInfo[] allProperties =
 				type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -77,6 +91,7 @@ namespace SharpRemote
 						loadValue,
 						loadValueAddress,
 						() => gen.Emit(OpCodes.Ldarg_2),
+						loadRemotingEndPoint,
 						property.PropertyType
 						);
 				}
@@ -100,8 +115,11 @@ namespace SharpRemote
 		///     Emits code to write all fields of the given type into a <see cref="BinaryWriter" />.
 		/// </summary>
 		/// <param name="gen"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
-		public void EmitWriteFields(ILGenerator gen, Type type)
+		public void EmitWriteFields(ILGenerator gen,
+			Action loadRemotingEndPoint,
+			Type type)
 		{
 			FieldInfo[] allFields =
 				type.GetFields(BindingFlags.Public | BindingFlags.Instance)
@@ -142,6 +160,7 @@ namespace SharpRemote
 					               loadField,
 					               loadFieldAddress,
 					               loadSerializer,
+								   loadRemotingEndPoint,
 					               field.FieldType
 						);
 				}
@@ -170,12 +189,14 @@ namespace SharpRemote
 		/// <param name="loadValue"></param>
 		/// <param name="loadValueAddress"></param>
 		/// <param name="loadSerializer"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="valueType"></param>
 		public void EmitWriteValue(ILGenerator gen,
 			Action loadWriter,
 			Action loadValue,
 			Action loadValueAddress,
 			Action loadSerializer,
+			Action loadRemotingEndPoint,
 			Type valueType)
 		{
 			// For now, let's inline everything that the Methods class can write and everything
@@ -184,6 +205,8 @@ namespace SharpRemote
 				loadWriter,
 				loadValue,
 				loadValueAddress,
+				loadSerializer,
+				loadRemotingEndPoint,
 				valueType))
 			{
 				// Nothing to do...
@@ -191,18 +214,20 @@ namespace SharpRemote
 			else
 			{
 				var method = GetWriteValueMethodInfo(valueType);
-				if (method.IsStatic) //< Signature: void Write(BinaryWriter, T, ISerializer)
+				if (method.IsStatic) //< Signature: void Write(BinaryWriter, T, ISerializer, IRemotingEndPoint)
 				{
 					loadWriter();
 					loadValue();
 					loadSerializer();
+					loadRemotingEndPoint();
 					gen.Emit(OpCodes.Call, method);
 				}
-				else //< Signature: ISerializer.WriteObject(BinaryWriter, object)
+				else //< Signature: ISerializer.WriteObject(BinaryWriter, object, IRemotingEndPoint)
 				{
 					loadSerializer();
 					loadWriter();
 					loadValue();
+					loadRemotingEndPoint();
 					gen.Emit(OpCodes.Callvirt, method);
 				}
 			}
@@ -219,39 +244,60 @@ namespace SharpRemote
 		/// <param name="gen"></param>
 		/// <param name="loadReader"></param>
 		/// <param name="loadSerializer"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="valueType"></param>
 		public void EmitReadValue(ILGenerator gen,
 			Action loadReader,
 			Action loadSerializer,
+			Action loadRemotingEndPoint,
 			Type valueType)
 		{
-			if (EmitReadNativeType(gen, loadReader, loadSerializer, valueType))
+			if (EmitReadNativeType(gen, loadReader, loadSerializer, loadRemotingEndPoint, valueType))
 			{
 				// Nothing to do...
 			}
 			else
 			{
 				var method = GetReadValueMethodInfo(valueType);
-				if (method.IsStatic) //< Signature: T Read(BinaryReader, ISerializer
+				if (method.IsStatic) //< Signature: T Read(BinaryReader, ISerializer, IRemotingEndPoint)
 				{
 					loadReader();
 					loadSerializer();
+					loadRemotingEndPoint();
 					gen.Emit(OpCodes.Call, method);
 				}
-				else //< Signature: T ISerializer.Read(BinaryReader)
+				else //< Signature: T ISerializer.Read(BinaryReader, IRemotingEndPoint)
 				{
 					loadSerializer();
 					loadReader();
+					loadRemotingEndPoint();
 					gen.Emit(OpCodes.Callvirt, method);
 				}
 			}
 		}
 
-		private void EmitReadCustomType(ILGenerator gen, TypeInformation type, LocalBuilder target)
+		private void EmitReadCustomType(ILGenerator gen,
+			Action loadReader,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			TypeInformation type,
+			LocalBuilder target)
 		{
 			CreateAndStoreNewInstance(gen, type, target);
-			EmitReadAllFields(gen, type, target);
-			EmitReadAllProperties(gen, type, target);
+			EmitReadAllFields(gen,
+			                  loadReader,
+			                  loadSerializer,
+			                  loadRemotingEndPoint,
+			                  type,
+			                  target);
+
+			EmitReadAllProperties(gen,
+				loadReader,
+				loadSerializer,
+				loadRemotingEndPoint,
+				type,
+				target);
+
 			gen.Emit(OpCodes.Ldloc, target);
 		}
 
@@ -279,7 +325,12 @@ namespace SharpRemote
 			}
 		}
 
-		private void EmitReadAllProperties(ILGenerator gen, TypeInformation type, LocalBuilder target)
+		private void EmitReadAllProperties(ILGenerator gen,
+			Action loadReader,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			TypeInformation type,
+			LocalBuilder target)
 		{
 			PropertyInfo[] allProperties = type.Type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 			                                   .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
@@ -293,8 +344,9 @@ namespace SharpRemote
 				try
 				{
 					EmitReadValue(gen,
-					              () => gen.Emit(OpCodes.Ldarg_0),
-					              () => gen.Emit(OpCodes.Ldarg_1),
+					              loadReader,
+					              loadSerializer,
+					              loadRemotingEndPoint,
 					              propertyType);
 				}
 				catch (SerializationException)
@@ -315,7 +367,12 @@ namespace SharpRemote
 			}
 		}
 
-		private void EmitReadAllFields(ILGenerator gen, TypeInformation type, LocalBuilder target)
+		private void EmitReadAllFields(ILGenerator gen,
+			Action loadReader,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			TypeInformation type,
+			LocalBuilder target)
 		{
 			FieldInfo[] allFields = type.Type.GetFields(BindingFlags.Public | BindingFlags.Instance)
 			                         .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
@@ -330,8 +387,9 @@ namespace SharpRemote
 				try
 				{
 					EmitReadValue(gen,
-					              () => gen.Emit(OpCodes.Ldarg_0),
-					              () => gen.Emit(OpCodes.Ldarg_1),
+					              loadReader,
+					              loadSerializer,
+					              loadRemotingEndPoint,
 					              fieldType);
 				}
 				catch (SerializationException)

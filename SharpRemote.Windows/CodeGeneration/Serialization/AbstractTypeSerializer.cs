@@ -11,7 +11,7 @@ namespace SharpRemote
 	/// Base class for <see cref="ITypeSerializer"/> implementations.
 	/// Adds methods to read / write nullable values.
 	/// </summary>
-	public abstract class AbstractTypeSerializer
+	internal abstract class AbstractTypeSerializer
 		: ITypeSerializer
 	{
 		protected static void EmitReadNullableValue(ILGenerator gen,
@@ -87,7 +87,23 @@ namespace SharpRemote
 
 		[Pure]
 		public abstract bool Supports(Type type);
-		public abstract void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true);
-		public abstract void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true);
+
+		public abstract void EmitWriteValue(ILGenerator gen,
+			Serializer serializerCompiler,
+			Action loadWriter,
+			Action loadValue,
+			Action loadValueAddress,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			Type type,
+			bool valueCanBeNull = true);
+
+		public abstract void EmitReadValue(ILGenerator gen,
+			Serializer serializerCompiler,
+			Action loadReader,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			Type type,
+			bool valueCanBeNull = true);
 	}
 }

@@ -29,7 +29,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestNoDataContractStruct()
 		{
 			TestFailRegister<MissingDataContractStruct>(
-				"The type 'SharpRemote.Test.Types.Structs.MissingDataContractStruct' is missing the [DataContract] attribute, nor is there a custom-serializer available for this type");
+				"The type 'SharpRemote.Test.Types.Structs.MissingDataContractStruct' is missing the [DataContract] or [ByReference] attribute, nor is there a custom-serializer available for this type");
 		}
 
 		[Test]

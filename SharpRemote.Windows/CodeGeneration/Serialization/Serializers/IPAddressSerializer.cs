@@ -22,47 +22,61 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type == typeof (IPAddress);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
+		public override void EmitWriteValue(ILGenerator gen,
+		                                    Serializer serializerCompiler,
+		                                    Action loadWriter,
+		                                    Action loadValue,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
+		                                    bool valueCanBeNull = true)
 		{
 			EmitWriteNullableValue(
 				gen,
-					   loadWriter,
-					   loadValue,
-					   () =>
-					   {
-						   var data = gen.DeclareLocal(typeof(byte[]));
+				loadWriter,
+				loadValue,
+				() =>
+					{
+						var data = gen.DeclareLocal(typeof (byte[]));
 
-						   loadValue();
-						   gen.Emit(OpCodes.Call, _ipAddressGetAddressBytes);
-						   gen.Emit(OpCodes.Stloc, data);
+						loadValue();
+						gen.Emit(OpCodes.Call, _ipAddressGetAddressBytes);
+						gen.Emit(OpCodes.Stloc, data);
 
-						   loadWriter();
-						   gen.Emit(OpCodes.Ldloc, data);
-						   gen.Emit(OpCodes.Call, Methods.ArrayGetLength);
+						loadWriter();
+						gen.Emit(OpCodes.Ldloc, data);
+						gen.Emit(OpCodes.Call, Methods.ArrayGetLength);
 
-						   gen.Emit(OpCodes.Call, Methods.WriteInt32);
+						gen.Emit(OpCodes.Call, Methods.WriteInt32);
 
-						   loadWriter();
-						   gen.Emit(OpCodes.Ldloc, data);
-						   gen.Emit(OpCodes.Call, Methods.WriteBytes);
-					   },
-					   valueCanBeNull);
+						loadWriter();
+						gen.Emit(OpCodes.Ldloc, data);
+						gen.Emit(OpCodes.Call, Methods.WriteBytes);
+					},
+				valueCanBeNull);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen,
+		                                   Serializer serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
+		                                   bool valueCanBeNull = true)
 		{
 			EmitReadNullableValue(
 				gen,
 				loadReader,
 				() =>
-				{
-					// new IPAddress(writer.ReadBytes(writer.ReadInt()));
-					loadReader();
-					loadReader();
-					gen.Emit(OpCodes.Call, Methods.ReadInt32);
-					gen.Emit(OpCodes.Call, Methods.ReadBytes);
-					gen.Emit(OpCodes.Newobj, _ipAddressFromBytes);
-				},
+					{
+						// new IPAddress(writer.ReadBytes(writer.ReadInt()));
+						loadReader();
+						loadReader();
+						gen.Emit(OpCodes.Call, Methods.ReadInt32);
+						gen.Emit(OpCodes.Call, Methods.ReadBytes);
+						gen.Emit(OpCodes.Newobj, _ipAddressFromBytes);
+					},
 				valueCanBeNull
 				);
 		}

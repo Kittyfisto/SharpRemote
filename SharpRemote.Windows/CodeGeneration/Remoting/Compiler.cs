@@ -34,6 +34,11 @@ namespace SharpRemote.CodeGeneration.Remoting
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, Serializer);
 			};
+			Action loadRemotingEndPoint = () =>
+			{
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, EndPoint);
+			};
 
 			ParameterInfo[] allParameters = methodInfo.GetParameters();
 			foreach (ParameterInfo parameter in allParameters)
@@ -58,6 +63,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 						gen,
 						loadReader,
 						loadSerializer,
+						loadRemotingEndPoint,
 						parameterType
 						);
 				}
@@ -89,6 +95,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 						() => gen.Emit(OpCodes.Ldloc, taskResult),
 						() => gen.Emit(OpCodes.Ldloca, taskResult),
 						loadSerializer,
+						loadRemotingEndPoint,
 						taskReturnType);
 				}
 				else
@@ -108,11 +115,12 @@ namespace SharpRemote.CodeGeneration.Remoting
 				gen.Emit(OpCodes.Stloc, tmp);
 
 				SerializerCompiler.EmitWriteValue(gen,
-					loadWriter,
-					() => gen.Emit(OpCodes.Ldloc, tmp),
-					() => gen.Emit(OpCodes.Ldloca, tmp),
-					loadSerializer,
-					returnType);
+				                                  loadWriter,
+				                                  () => gen.Emit(OpCodes.Ldloc, tmp),
+				                                  () => gen.Emit(OpCodes.Ldloca, tmp),
+				                                  loadSerializer,
+				                                  loadRemotingEndPoint,
+				                                  returnType);
 			}
 			else
 			{
@@ -174,6 +182,12 @@ namespace SharpRemote.CodeGeneration.Remoting
 						gen.Emit(OpCodes.Ldarg_0);
 						gen.Emit(OpCodes.Ldfld, Serializer);
 					};
+				Action loadRemotingEndPoint =
+					() =>
+						{
+							gen.Emit(OpCodes.Ldarg_0);
+							gen.Emit(OpCodes.Ldfld, EndPoint);
+						};
 
 				for (int i = 0; i < parameters.Length; ++i)
 				{
@@ -213,6 +227,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 							loadValue,
 							loadValueAddress,
 							loadSerializer,
+							loadRemotingEndPoint,
 							parameterType);
 					}
 				}
@@ -375,10 +390,15 @@ namespace SharpRemote.CodeGeneration.Remoting
 					gen,
 					loadReader,
 					() =>
-					{
-						gen.Emit(OpCodes.Ldarg_0);
-						gen.Emit(OpCodes.Ldfld, Serializer);
-					},
+						{
+							gen.Emit(OpCodes.Ldarg_0);
+							gen.Emit(OpCodes.Ldfld, Serializer);
+						},
+					() =>
+						{
+							gen.Emit(OpCodes.Ldarg_0);
+							gen.Emit(OpCodes.Ldfld, EndPoint);
+						},
 					returnType
 					);
 			}

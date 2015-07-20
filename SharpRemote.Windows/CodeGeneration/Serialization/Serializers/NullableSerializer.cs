@@ -11,9 +11,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type.IsGenericType && type.GetGenericTypeDefinition() == typeof (Nullable<>);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter,
+		public override void EmitWriteValue(ILGenerator gen,
+		                                    Serializer serializerCompiler,
+		                                    Action loadWriter,
 		                                    Action loadValue,
-		                                    Action loadValueAddress, Action loadSerializer, Type type,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
 			var valueType = type.GenericTypeArguments[0];
@@ -55,17 +60,22 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					                                  gen.Emit(OpCodes.Ldloc, value);
 				                                  },
 			                                  loadSerializer,
+			                                  loadRemotingEndPoint,
 			                                  valueType);
 
 			gen.MarkLabel(end);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader,
-		                                   Action loadSerializer, Type type,
+		public override void EmitReadValue(ILGenerator gen,
+		                                   Serializer serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
 			var valueType = type.GenericTypeArguments[0];
-			var ctor = type.GetConstructor(new[] { valueType });
+			var ctor = type.GetConstructor(new[] {valueType});
 
 			var end = gen.DefineLabel();
 			var noValue = gen.DefineLabel();
@@ -77,6 +87,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
 			                                 valueType);
 			gen.Emit(OpCodes.Newobj, ctor);
 

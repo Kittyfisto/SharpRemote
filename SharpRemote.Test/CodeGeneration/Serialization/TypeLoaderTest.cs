@@ -48,7 +48,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				writer.Flush();
 				stream.Position = 0;
 
-				var tree = serializer.ReadObject(new BinaryReader(stream));
+				var tree = serializer.ReadObject(new BinaryReader(stream), null);
 				tree.Should().BeOfType<Birke>();
 				var birke = (Birke)tree;
 				birke.A.Should().Be(42.0);

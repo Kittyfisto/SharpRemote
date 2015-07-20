@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// <summary>
 	/// Responsible for providing the IL-code to serialize a value of the given type <see cref="Type"/>.
 	/// </summary>
-	public interface ITypeSerializer
+	internal interface ITypeSerializer
 	{
 		/// <summary>
 		/// 
@@ -27,9 +27,10 @@ namespace SharpRemote
 		/// <param name="loadValue"></param>
 		/// <param name="loadValueAddress"></param>
 		/// <param name="loadSerializer"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
 		/// <param name="valueCanBeNull"></param>
-		void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true);
+		void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Action loadRemotingEndPoint, Type type, bool valueCanBeNull = true);
 
 		/// <summary>
 		/// Emits the code necessary to read a value of type <see cref="Type"/> from <see cref="BinaryReader"/> that was previously
@@ -39,8 +40,9 @@ namespace SharpRemote
 		/// <param name="serializerCompiler"></param>
 		/// <param name="loadReader"></param>
 		/// <param name="loadSerializer"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
 		/// <param name="valueCanBeNull"></param>
-		void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true);
+		void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Action loadRemotingEndPoint, Type type, bool valueCanBeNull = true);
 	}
 }

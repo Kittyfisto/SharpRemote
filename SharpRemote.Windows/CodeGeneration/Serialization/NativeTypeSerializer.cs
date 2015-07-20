@@ -7,11 +7,12 @@ using SharpRemote.CodeGeneration;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	internal partial class Serializer
 	{
 		private bool EmitReadNativeType(ILGenerator gen,
 			Action loadReader,
 			Action loadSerializer,
+			Action loadRemotingEndPoint,
 			Type valueType,
 			bool valueCanBeNull = true)
 		{
@@ -75,7 +76,7 @@ namespace SharpRemote
 					this,
 					loadReader,
 					loadSerializer,
-					//() => gen.Emit(OpCodes.Ldarg_1),
+					loadRemotingEndPoint,
 					valueType,
 					valueCanBeNull);
 			}
@@ -87,6 +88,8 @@ namespace SharpRemote
 			Action loadWriter,
 			Action loadValue,
 			Action loadValueAddress,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
 			Type valueType,
 			bool valueCanBeNull = true)
 		{
@@ -161,7 +164,8 @@ namespace SharpRemote
 					loadWriter,
 					loadValue,
 					loadValueAddress,
-					() => gen.Emit(OpCodes.Ldarg_2),
+					loadSerializer,
+					loadRemotingEndPoint,
 					valueType,
 					valueCanBeNull);
 			}

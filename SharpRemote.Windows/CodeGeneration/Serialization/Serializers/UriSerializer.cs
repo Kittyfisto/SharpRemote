@@ -27,33 +27,37 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
 		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
 		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
 			serializerCompiler.EmitWriteValue(gen,
-				loadWriter,
-				() =>
-					{
-						loadValue();
-						gen.Emit(OpCodes.Call, _getOriginalString);
-					},
-					null,
-					loadSerializer,
-					typeof(string));
+			                                  loadWriter,
+			                                  () =>
+				                                  {
+					                                  loadValue();
+					                                  gen.Emit(OpCodes.Call, _getOriginalString);
+				                                  },
+			                                  null,
+			                                  loadSerializer,
+			                                  loadRemotingEndPoint,
+			                                  typeof (string));
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
 		                                   Serializer serializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
 		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
 			serializerCompiler.EmitReadValue(gen,
-				loadReader,
-				loadSerializer,
-				typeof(string));
-			gen.Emit(OpCodes.Ldc_I4, (int)UriKind.RelativeOrAbsolute);
+			                                 loadReader,
+			                                 loadSerializer,
+			                                 loadSerializer,
+			                                 typeof (string));
+			gen.Emit(OpCodes.Ldc_I4, (int) UriKind.RelativeOrAbsolute);
 			gen.Emit(OpCodes.Newobj, _ctor);
 		}
 	}

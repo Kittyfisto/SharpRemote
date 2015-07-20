@@ -36,9 +36,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type == typeof (ApplicationId);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter,
+		public override void EmitWriteValue(ILGenerator gen,
+		                                    Serializer serializerCompiler,
+		                                    Action loadWriter,
 		                                    Action loadValue,
-		                                    Action loadValueAddress, Action loadSerializer, Type type,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
 			serializerCompiler.EmitWriteValue(gen,
@@ -50,81 +55,95 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 				                                  },
 			                                  null,
 			                                  loadSerializer,
+											  loadRemotingEndPoint,
 			                                  typeof (byte[]));
 
 			serializerCompiler.EmitWriteValue(gen,
-											  loadWriter,
-											  () =>
-											  {
-												  loadValue();
-												  gen.Emit(OpCodes.Call, _getName);
-											  },
-											  null,
-											  loadSerializer,
-											  typeof(string));
+			                                  loadWriter,
+			                                  () =>
+				                                  {
+					                                  loadValue();
+					                                  gen.Emit(OpCodes.Call, _getName);
+				                                  },
+			                                  null,
+			                                  loadSerializer,
+											  loadRemotingEndPoint,
+			                                  typeof (string));
 
 			serializerCompiler.EmitWriteValue(gen,
-											  loadWriter,
-											  () =>
-											  {
-												  loadValue();
-												  gen.Emit(OpCodes.Call, _getVersion);
-											  },
-											  null,
-											  loadSerializer,
-											  typeof(Version));
+			                                  loadWriter,
+			                                  () =>
+				                                  {
+					                                  loadValue();
+					                                  gen.Emit(OpCodes.Call, _getVersion);
+				                                  },
+			                                  null,
+			                                  loadSerializer,
+											  loadRemotingEndPoint,
+			                                  typeof (Version));
 
 			serializerCompiler.EmitWriteValue(gen,
-											  loadWriter,
-											  () =>
-											  {
-												  loadValue();
-												  gen.Emit(OpCodes.Call, _getProcessorArchitecture);
-											  },
-											  null,
-											  loadSerializer,
-											  typeof(string));
+			                                  loadWriter,
+			                                  () =>
+				                                  {
+					                                  loadValue();
+					                                  gen.Emit(OpCodes.Call, _getProcessorArchitecture);
+				                                  },
+			                                  null,
+			                                  loadSerializer,
+											  loadRemotingEndPoint,
+			                                  typeof (string));
 
 			serializerCompiler.EmitWriteValue(gen,
-											  loadWriter,
-											  () =>
-											  {
-												  loadValue();
-												  gen.Emit(OpCodes.Call, _getCulture);
-											  },
-											  null,
-											  loadSerializer,
-											  typeof(string));
+			                                  loadWriter,
+			                                  () =>
+				                                  {
+					                                  loadValue();
+					                                  gen.Emit(OpCodes.Call, _getCulture);
+				                                  },
+			                                  null,
+			                                  loadSerializer,
+											  loadRemotingEndPoint,
+			                                  typeof (string));
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader,
-		                                   Action loadSerializer, Type type,
+		public override void EmitReadValue(ILGenerator gen,
+		                                   Serializer serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
 			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
 			                                 typeof (byte[]));
 
 			serializerCompiler.EmitReadValue(gen,
-											 loadReader,
-											 loadSerializer,
-											 typeof(string));
+			                                 loadReader,
+			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
+			                                 typeof (string));
 
 			serializerCompiler.EmitReadValue(gen,
-											 loadReader,
-											 loadSerializer,
-											 typeof(Version));
+			                                 loadReader,
+			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
+			                                 typeof (Version));
 
 			serializerCompiler.EmitReadValue(gen,
-											 loadReader,
-											 loadSerializer,
-											 typeof(string));
+			                                 loadReader,
+			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
+			                                 typeof (string));
 
 			serializerCompiler.EmitReadValue(gen,
-											 loadReader,
-											 loadSerializer,
-											 typeof(string));
+			                                 loadReader,
+			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
+			                                 typeof (string));
 
 			gen.Emit(OpCodes.Newobj, _ctor);
 		}

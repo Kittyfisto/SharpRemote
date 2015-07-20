@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using FluentAssertions;
+using Moq;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Structs;
 
@@ -31,7 +32,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[Description("Verifies the binary output of serializing a null value")]
 		public void TestWriteNull()
 		{
-			_serializer.WriteObject(_writer, null);
+			_serializer.WriteObject(_writer, null, null);
 			_data.Position = 0;
 
 			_reader.ReadString().Should().Be("null");
@@ -42,7 +43,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestWriteObjectFieldWithString()
 		{
 			var value = new FieldObjectStruct {Value = "I'm your father, Luke"};
-			_serializer.WriteObject(_writer, value);
+			_serializer.WriteObject(_writer, value, null);
 			_data.Position = 0;
 
 			_reader.ReadString().Should().Be(typeof (FieldObjectStruct).AssemblyQualifiedName);
@@ -56,7 +57,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[Description("Verifies the binary output of serializing a type object")]
 		public void TestWriteType()
 		{
-			_serializer.WriteObject(_writer, typeof (int));
+			_serializer.WriteObject(_writer, typeof (int), null);
 			_data.Position = 0;
 
 			_reader.ReadString().Should().Be(typeof (int).GetType().AssemblyQualifiedName);

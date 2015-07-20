@@ -6,13 +6,14 @@ using SharpRemote.CodeGeneration;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	internal partial class Serializer
 	{
 		private void EmitWriteCollection(ILGenerator gen,
 			TypeInformation typeInformation,
 			Action loadWriter,
 			Action loadValue,
-			Action loadSerializer)
+			Action loadSerializer,
+			Action loadRemotingEndPoint)
 		{
 			var type = typeInformation.CollectionType;
 			var getCount = type.GetProperty("Count").GetMethod;
@@ -27,10 +28,15 @@ namespace SharpRemote
 				typeInformation,
 				loadWriter,
 				loadValue,
-				loadSerializer);
+				loadSerializer,
+				loadRemotingEndPoint);
 		}
 
-		private void EmitReadCollection(ILGenerator gen, TypeInformation typeInformation)
+		private void EmitReadCollection(ILGenerator gen,
+			Action loadReader,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			TypeInformation typeInformation)
 		{
 			var ctor = typeInformation.Type.GetConstructor(new Type[0]);
 			var collectionType = typeInformation.CollectionType;
@@ -62,8 +68,9 @@ namespace SharpRemote
 
 			gen.Emit(OpCodes.Ldloc, result);
 			EmitReadValue(gen,
-				() => gen.Emit(OpCodes.Ldarg_0),
-				() => gen.Emit(OpCodes.Ldarg_1),
+				loadReader,
+				loadSerializer,
+				loadRemotingEndPoint,
 				elementType);
 			gen.Emit(OpCodes.Callvirt, add);
 

@@ -11,7 +11,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type == typeof (byte[]);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Type type, bool valueCanBeNull = true)
+		public override void EmitWriteValue(ILGenerator gen,
+			Serializer serializerCompiler,
+			Action loadWriter,
+			Action loadValue,
+			Action loadValueAddress,
+			Action loadSerializer,
+			Action loadRemotingEndPoint,
+			Type type,
+			bool valueCanBeNull = true)
 		{
 			EmitWriteNullableValue(gen, loadWriter, loadValue, () =>
 				{
@@ -28,7 +36,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			                       valueCanBeNull);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Type type, bool valueCanBeNull = true)
+		public override void EmitReadValue(ILGenerator gen,
+		                                   Serializer serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
+		                                   bool valueCanBeNull = true)
 		{
 			EmitReadNullableValue(gen, loadReader, () =>
 				{
@@ -37,7 +51,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					gen.Emit(OpCodes.Call, Methods.ReadInt32);
 					gen.Emit(OpCodes.Call, Methods.ReadBytes);
 				},
-				valueCanBeNull);
+			                      valueCanBeNull);
 		}
 	}
 }

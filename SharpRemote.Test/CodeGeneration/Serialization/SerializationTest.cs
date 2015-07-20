@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using Moq;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
+using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
@@ -258,6 +261,22 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer.RegisterType<ClassWithNullableStructProperty>();
 			_serializer.ShouldRoundtrip(new ClassWithNullableStructProperty {Value = 42});
 			_serializer.ShouldRoundtrip(new ClassWithNullableStructProperty { Value = null });
+		}
+
+		[Test]
+		[Ignore("Feature isn't implemented yet")]
+		public void TestByReference()
+		{
+			_serializer.RegisterType<IByReferenceType>();
+
+			var value = new ByReferenceType();
+
+			var endPoint = new Mock<IRemotingEndPoint>();
+			using (var stream = new MemoryStream())
+			using (var writer = new BinaryWriter(stream))
+			{
+				_serializer.WriteObject(writer, value, endPoint.Object);
+			}
 		}
 	}
 }

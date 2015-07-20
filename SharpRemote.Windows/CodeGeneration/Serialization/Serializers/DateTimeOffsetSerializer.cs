@@ -23,9 +23,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type == typeof (DateTimeOffset);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter,
+		public override void EmitWriteValue(ILGenerator gen,
+		                                    Serializer serializerCompiler,
+		                                    Action loadWriter,
 		                                    Action loadValue,
-		                                    Action loadValueAddress, Action loadSerializer, Type type,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
 			LocalBuilder dateTime = null;
@@ -40,8 +45,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			                                  () =>
 				                                  {
 					                                  if (dateTime == null)
-													  {
-														  loadValueAddress();
+					                                  {
+						                                  loadValueAddress();
 						                                  dateTime = gen.DeclareLocal(typeof (DateTime));
 						                                  gen.Emit(OpCodes.Call, _getDateTime);
 						                                  gen.Emit(OpCodes.Stloc, dateTime);
@@ -50,45 +55,53 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					                                  gen.Emit(OpCodes.Ldloca, dateTime);
 				                                  },
 			                                  loadSerializer,
+			                                  loadRemotingEndPoint,
 			                                  typeof (DateTime));
 
 			LocalBuilder offset = null;
 
 			serializerCompiler.EmitWriteValue(gen,
-											  loadWriter,
-											  () =>
-											  {
-												  loadValueAddress();
-												  gen.Emit(OpCodes.Call, _getOffset);
-											  },
-											  () =>
-											  {
-												  if (offset == null)
-												  {
-													  loadValueAddress();
-													  offset = gen.DeclareLocal(typeof(TimeSpan));
-													  gen.Emit(OpCodes.Call, _getOffset);
-													  gen.Emit(OpCodes.Stloc, offset);
-												  }
+			                                  loadWriter,
+			                                  () =>
+				                                  {
+					                                  loadValueAddress();
+					                                  gen.Emit(OpCodes.Call, _getOffset);
+				                                  },
+			                                  () =>
+				                                  {
+					                                  if (offset == null)
+					                                  {
+						                                  loadValueAddress();
+						                                  offset = gen.DeclareLocal(typeof (TimeSpan));
+						                                  gen.Emit(OpCodes.Call, _getOffset);
+						                                  gen.Emit(OpCodes.Stloc, offset);
+					                                  }
 
-												  gen.Emit(OpCodes.Ldloca, offset);
-											  },
-											  loadSerializer,
-											  typeof(TimeSpan));
+					                                  gen.Emit(OpCodes.Ldloca, offset);
+				                                  },
+			                                  loadSerializer,
+			                                  loadRemotingEndPoint,
+			                                  typeof (TimeSpan));
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader,
-		                                   Action loadSerializer, Type type,
+		public override void EmitReadValue(ILGenerator gen,
+		                                   Serializer serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
 			serializerCompiler.EmitReadValue(gen,
-				loadReader,
-				loadSerializer,
-				typeof(DateTime));
+			                                 loadReader,
+			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
+			                                 typeof (DateTime));
 			serializerCompiler.EmitReadValue(gen,
-				loadReader,
-				loadSerializer,
-				typeof(TimeSpan));
+			                                 loadReader,
+			                                 loadSerializer,
+			                                 loadRemotingEndPoint,
+			                                 typeof (TimeSpan));
 			gen.Emit(OpCodes.Newobj, _ctor);
 		}
 	}

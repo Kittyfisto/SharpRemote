@@ -11,9 +11,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type.IsEnum;
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter,
+		public override void EmitWriteValue(ILGenerator gen,
+		                                    Serializer serializerCompiler,
+		                                    Action loadWriter,
 		                                    Action loadValue,
-		                                    Action loadValueAddress, Action loadSerializer, Type type,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
 			loadWriter();
@@ -21,8 +26,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			gen.Emit(OpCodes.Call, Methods.WriteInt32);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader,
-		                                   Action loadSerializer, Type type,
+		public override void EmitReadValue(ILGenerator gen,
+		                                   Serializer serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
 			loadReader();

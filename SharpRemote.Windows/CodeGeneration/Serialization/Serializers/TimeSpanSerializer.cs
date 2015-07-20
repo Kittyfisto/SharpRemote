@@ -27,6 +27,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
 		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
 		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
@@ -40,6 +41,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                   Serializer serializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
 		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{

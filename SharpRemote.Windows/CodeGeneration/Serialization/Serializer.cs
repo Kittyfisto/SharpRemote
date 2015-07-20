@@ -23,7 +23,7 @@ namespace SharpRemote
 	/// - Natively supported: <see cref="string"/>, <see cref="TimeSpan"/>, etc...
 	/// - Attributed with the <see cref="DataContractAttribute"/> and <see cref="DataMemberAttribute"/>
 	/// </remarks>
-	public sealed partial class Serializer
+	internal sealed partial class Serializer
 		: ISerializer
 	{
 		private readonly ModuleBuilder _module;
@@ -94,7 +94,7 @@ namespace SharpRemote
 			RegisterType(type);
 		}
 
-		public void WriteObject(BinaryWriter writer, object value)
+		public void WriteObject(BinaryWriter writer, object value, IRemotingEndPoint remotingEndPoint)
 		{
 			if (value == null)
 			{
@@ -103,19 +103,19 @@ namespace SharpRemote
 			else
 			{
 				Type type = value.GetType();
-				Action<BinaryWriter, object, ISerializer> fn = GetWriteObjectDelegate(type);
-				fn(writer, value, this);
+				Action<BinaryWriter, object, ISerializer, IRemotingEndPoint> fn = GetWriteObjectDelegate(type);
+				fn(writer, value, this, remotingEndPoint);
 			}
 		}
 
-		public object ReadObject(BinaryReader reader)
+		public object ReadObject(BinaryReader reader, IRemotingEndPoint remotingEndPoint)
 		{
 			string typeName = reader.ReadString();
 			if (typeName != "null")
 			{
 				Type type = GetType(typeName);
-				Func<BinaryReader, ISerializer, object> fn = GetReadObjectDelegate(type);
-				return fn(reader, this);
+				Func<BinaryReader, ISerializer, IRemotingEndPoint, object> fn = GetReadObjectDelegate(type);
+				return fn(reader, this, remotingEndPoint);
 			}
 
 			return null;
@@ -171,14 +171,14 @@ namespace SharpRemote
 			return Methods.SerializerReadObject;
 		}
 
-		private Action<BinaryWriter, object, ISerializer> GetWriteObjectDelegate(Type type)
+		private Action<BinaryWriter, object, ISerializer, IRemotingEndPoint> GetWriteObjectDelegate(Type type)
 		{
 			SerializationMethods methods;
 			RegisterType(type, out methods);
 			return methods.WriteDelegate;
 		}
 
-		private Func<BinaryReader, ISerializer, object> GetReadObjectDelegate(Type type)
+		private Func<BinaryReader, ISerializer, IRemotingEndPoint, object> GetReadObjectDelegate(Type type)
 		{
 			SerializationMethods methods;
 			RegisterType(type, out methods);
@@ -191,22 +191,26 @@ namespace SharpRemote
 			string typeName = BuildTypeName(typeInformation);
 			TypeBuilder typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
 			MethodBuilder writeValueNotNullMethod = typeBuilder.DefineMethod("WriteValueNotNull",
-																		MethodAttributes.Public | MethodAttributes.Static,
-																		CallingConventions.Standard, typeof(void), new[]
-				                                                            {
-					                                                            typeof (BinaryWriter),
-					                                                            typeInformation.Type,
-					                                                            typeof (ISerializer)
-				                                                            });
+			                                                                 MethodAttributes.Public | MethodAttributes.Static,
+			                                                                 CallingConventions.Standard, typeof (void), new[]
+				                                                                 {
+					                                                                 typeof (BinaryWriter),
+					                                                                 typeInformation.Type,
+					                                                                 typeof (ISerializer),
+					                                                                 typeof (IRemotingEndPoint)
+				                                                                 });
+
 			CreateWriteValueWithTypeInformation(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
 			MethodInfo writeValueMethod = CreateWriteValue(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
 			MethodBuilder readValueNotNullMethod = typeBuilder.DefineMethod("ReadValueNotNull",
-																	  MethodAttributes.Public | MethodAttributes.Static,
-																	  CallingConventions.Standard, typeInformation.Type, new[]
-				                                                          {
-					                                                          typeof (BinaryReader),
-					                                                          typeof (ISerializer)
-				                                                          });
+			                                                                MethodAttributes.Public | MethodAttributes.Static,
+			                                                                CallingConventions.Standard, typeInformation.Type,
+			                                                                new[]
+				                                                                {
+					                                                                typeof (BinaryReader),
+					                                                                typeof (ISerializer),
+					                                                                typeof (IRemotingEndPoint)
+				                                                                });
 
 			CreateReadObject(typeBuilder, readValueNotNullMethod, typeInformation.Type);
 			MethodInfo readValueMethod = CreateReadValue(typeBuilder, readValueNotNullMethod, typeInformation.Type);
@@ -224,12 +228,12 @@ namespace SharpRemote
 				typeBuilder.CreateType();
 
 				m.WriteDelegate =
-					(Action<BinaryWriter, object, ISerializer>)
-					typeBuilder.GetMethod("WriteObject").CreateDelegate(typeof(Action<BinaryWriter, object, ISerializer>));
+					(Action<BinaryWriter, object, ISerializer, IRemotingEndPoint>)
+					typeBuilder.GetMethod("WriteObject").CreateDelegate(typeof(Action<BinaryWriter, object, ISerializer, IRemotingEndPoint>));
 
 				m.ReadObjectDelegate =
-					(Func<BinaryReader, ISerializer, object>)
-					typeBuilder.GetMethod("ReadObject").CreateDelegate(typeof(Func<BinaryReader, ISerializer, object>));
+					(Func<BinaryReader, ISerializer, IRemotingEndPoint, object>)
+					typeBuilder.GetMethod("ReadObject").CreateDelegate(typeof(Func<BinaryReader, ISerializer, IRemotingEndPoint, object>));
 
 				return m;
 			}
@@ -266,40 +270,67 @@ namespace SharpRemote
 			return builder.ToString();
 		}
 
-		private void EmitReadValueNotNullMethod(ILGenerator gen, TypeInformation typeInformation)
+		private void EmitReadValueNotNullMethod(ILGenerator gen,
+			TypeInformation typeInformation)
 		{
+			Action loadReader = () => gen.Emit(OpCodes.Ldarg_0);
+			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_1);
+			Action loadRemotingEndPoint = () => gen.Emit(OpCodes.Ldarg_2);
+
 			MethodInfo method;
 			if (IsSingleton(typeInformation, out method))
 			{
 				EmitReadSingleton(gen, method);
 			}
 			else if (EmitReadNativeType(gen,
-			                                () => gen.Emit(OpCodes.Ldarg_0),
-			                                () => gen.Emit(OpCodes.Ldarg_1),
-			                                typeInformation.Type,
-			                                false))
+			                            loadReader,
+			                            loadSerializer,
+			                            loadRemotingEndPoint,
+			                            typeInformation.Type,
+			                            false))
 			{
 			}
 			else if (typeInformation.IsArray)
 			{
-				EmitReadArray(gen, typeInformation);
+				EmitReadArray(gen,
+				              loadReader,
+				              loadSerializer,
+				              loadRemotingEndPoint,
+				              typeInformation);
 			}
 			else if (typeInformation.IsCollection)
 			{
-				EmitReadCollection(gen, typeInformation);
+				EmitReadCollection(gen,
+				                   loadReader,
+				                   loadSerializer,
+				                   loadRemotingEndPoint,
+				                   typeInformation);
 			}
 			else if (typeInformation.IsStack)
 			{
-				EmitReadStack(gen, typeInformation);
+				EmitReadStack(gen,
+				              loadReader,
+				              loadSerializer,
+				              loadRemotingEndPoint,
+				              typeInformation);
 			}
 			else if (typeInformation.IsQueue)
 			{
-				EmitReadQueue(gen, typeInformation);
+				EmitReadQueue(gen,
+				              loadReader,
+				              loadSerializer,
+				              loadRemotingEndPoint,
+				              typeInformation);
 			}
 			else
 			{
 				LocalBuilder value = gen.DeclareLocal(typeInformation.Type);
-				EmitReadCustomType(gen, typeInformation, value);
+				EmitReadCustomType(gen,
+				                   loadReader,
+				                   loadSerializer,
+				                   loadRemotingEndPoint,
+				                   typeInformation,
+				                   value);
 			}
 
 			gen.Emit(OpCodes.Ret);
@@ -314,7 +345,8 @@ namespace SharpRemote
 			                                                CallingConventions.Standard, type, new[]
 				                                                {
 					                                                typeof (BinaryReader),
-					                                                typeof (ISerializer)
+					                                                typeof (ISerializer),
+					                                                typeof (IRemotingEndPoint)
 				                                                });
 
 			ILGenerator gen = method.GetILGenerator();
@@ -325,8 +357,10 @@ namespace SharpRemote
 			Label @null = gen.DefineLabel();
 			gen.Emit(OpCodes.Brfalse, @null);
 
+			// ReadValueNotNull(reader, serializer, remotingEndPoint);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Ldarg_2);
 			gen.Emit(OpCodes.Call, readValueNotNull);
 			gen.Emit(OpCodes.Br_S, end);
 
@@ -339,21 +373,24 @@ namespace SharpRemote
 			return method;
 		}
 
-		private void CreateReadObject(TypeBuilder typeBuilder, MethodBuilder methodInfo, Type type)
+		private void CreateReadObject(TypeBuilder typeBuilder, MethodBuilder readValueNotNull, Type type)
 		{
 			MethodBuilder method = typeBuilder.DefineMethod("ReadObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                                CallingConventions.Standard, typeof (object), new[]
 				                                                {
 					                                                typeof (BinaryReader),
-					                                                typeof (ISerializer)
+					                                                typeof (ISerializer),
+					                                                typeof (IRemotingEndPoint)
 				                                                });
 
 			bool requiresBoxing = type.IsPrimitive || type.IsValueType;
 			ILGenerator gen = method.GetILGenerator();
 
+			// return ReadValueNotNull(reader, serializer, remoteEndPoint);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Call, methodInfo);
+			gen.Emit(OpCodes.Ldarg_2);
+			gen.Emit(OpCodes.Call, readValueNotNull);
 
 			if (requiresBoxing)
 			{
@@ -369,6 +406,7 @@ namespace SharpRemote
 			Action loadValue = () => gen.Emit(OpCodes.Ldarg_1);
 			Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, 1);
 			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_2);
+			Action loadRemotingEndPoint = () => gen.Emit(OpCodes.Ldarg_3);
 
 			MethodInfo method;
 			if (IsSingleton(typeInformation, out method))
@@ -380,29 +418,31 @@ namespace SharpRemote
 				loadWriter,
 				loadValue,
 				loadValueAddress,
+				loadSerializer,
+				loadRemotingEndPoint,
 				typeInformation.Type,
 				false))
 			{
 			}
 			else if (typeInformation.IsArray)
 			{
-				EmitWriteArray(gen, typeInformation, loadWriter, loadValue, loadSerializer);
+				EmitWriteArray(gen, typeInformation, loadWriter, loadValue, loadSerializer, loadRemotingEndPoint);
 			}
 			else if (typeInformation.IsCollection)
 			{
-				EmitWriteCollection(gen, typeInformation, loadWriter, loadValue, loadSerializer);
+				EmitWriteCollection(gen, typeInformation, loadWriter, loadValue, loadSerializer, loadRemotingEndPoint);
 			}
 			else if (typeInformation.IsStack)
 			{
-				EmitWriteStack(gen, typeInformation, loadWriter, loadValue, loadSerializer);
+				EmitWriteStack(gen, typeInformation, loadWriter, loadValue, loadSerializer, loadRemotingEndPoint);
 			}
 			else if (typeInformation.IsQueue)
 			{
-				EmitWriteQueue(gen, typeInformation, loadWriter, loadValue, loadSerializer);
+				EmitWriteQueue(gen, typeInformation, loadWriter, loadValue, loadSerializer, loadRemotingEndPoint);
 			}
-			else 
+			else
 			{
-				WriteCustomType(gen, typeInformation.Type);
+				WriteCustomType(gen, loadRemotingEndPoint, typeInformation.Type);
 			}
 
 			gen.Emit(OpCodes.Ret);
@@ -418,7 +458,8 @@ namespace SharpRemote
 				                                                {
 					                                                typeof (BinaryWriter),
 					                                                type,
-					                                                typeof (ISerializer)
+					                                                typeof (ISerializer),
+					                                                typeof (IRemotingEndPoint)
 				                                                });
 
 			ILGenerator gen = method.GetILGenerator();
@@ -450,10 +491,11 @@ namespace SharpRemote
 			gen.Emit(OpCodes.Ldc_I4_1);
 			gen.Emit(OpCodes.Call, Methods.WriteBool);
 
-			// WriteValueNotNull(writer, value, serializer)
+			// WriteValueNotNull(writer, value, serializer, remotingEndPoint)
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Ldarg_2);
+			gen.Emit(OpCodes.Ldarg_3);
 			gen.Emit(OpCodes.Call, valueNotNullMethod);
 
 			gen.MarkLabel(@end);
@@ -462,19 +504,21 @@ namespace SharpRemote
 			return method;
 		}
 
-		private void CreateWriteValueWithTypeInformation(TypeBuilder typeBuilder, MethodInfo methodInfo, Type type)
+		private void CreateWriteValueWithTypeInformation(TypeBuilder typeBuilder, MethodInfo writeValueNotNull, Type type)
 		{
 			MethodBuilder method = typeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                                CallingConventions.Standard, typeof (void), new[]
 				                                                {
 					                                                typeof (BinaryWriter),
 					                                                typeof (object),
-					                                                typeof (ISerializer)
+					                                                typeof (ISerializer),
+					                                                typeof (IRemotingEndPoint)
 				                                                });
 			ILGenerator gen = method.GetILGenerator();
 
 			EmitWriteTypeInformationOrNull(gen, () =>
 				{
+					// WriteValueNotNull(writer, value, serializer, remotingEndPoint);
 					gen.Emit(OpCodes.Ldarg_0);
 					gen.Emit(OpCodes.Ldarg_1);
 
@@ -488,7 +532,8 @@ namespace SharpRemote
 					}
 
 					gen.Emit(OpCodes.Ldarg_2);
-					gen.Emit(OpCodes.Call, methodInfo);
+					gen.Emit(OpCodes.Ldarg_3);
+					gen.Emit(OpCodes.Call, writeValueNotNull);
 				});
 		}
 
@@ -586,8 +631,8 @@ namespace SharpRemote
 			/// </summary>
 			public readonly MethodInfo WriteValueMethod;
 			public readonly MethodInfo ReadValueMethod;
-			public Func<BinaryReader, ISerializer, object> ReadObjectDelegate;
-			public Action<BinaryWriter, object, ISerializer> WriteDelegate;
+			public Func<BinaryReader, ISerializer, IRemotingEndPoint, object> ReadObjectDelegate;
+			public Action<BinaryWriter, object, ISerializer, IRemotingEndPoint> WriteDelegate;
 
 			public SerializationMethods(
 				MethodInfo writeValueMethod,

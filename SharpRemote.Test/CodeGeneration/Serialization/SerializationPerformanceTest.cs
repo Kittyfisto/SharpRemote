@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization;
+using Moq;
 using NUnit.Framework;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
@@ -36,7 +37,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				for (int i = 0; i < numSamples; ++i)
 				{
-					_serializer.WriteObject(writer, value);
+					_serializer.WriteObject(writer, value, null);
 				}
 
 				sw.Stop();
@@ -77,7 +78,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				for (int i = 0; i < 100; ++i)
 				{
-					_serializer.WriteObject(writer, value);
+					_serializer.WriteObject(writer, value, null);
 					_contractSerializer.WriteObject(data, value);
 				}
 			}

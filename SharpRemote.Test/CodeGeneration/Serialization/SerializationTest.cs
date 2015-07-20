@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
@@ -264,18 +265,34 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Ignore("Feature isn't implemented yet")]
-		public void TestByReference()
+		[Description("Verifies that serializing a [ByReference] type queries the endpoint for the servant and serializes the id to the stream")]
+		public void TestByReference1()
 		{
 			_serializer.RegisterType<IByReferenceType>();
 
-			var value = new ByReferenceType();
-
+			var value = new ByReferenceClass();
+			const long objectId = 42;
 			var endPoint = new Mock<IRemotingEndPoint>();
+
+			endPoint.Setup(x => x.GetExistingOrCreateNewServant(It.IsAny<IByReferenceType>()))
+			        .Returns((IByReferenceType x) =>
+				        {
+					        x.Should().BeSameAs(value);
+					        var servant = new Mock<IServant>();
+					        servant.Setup(y => y.ObjectId).Returns(objectId);
+					        return servant.Object;
+				        });
+
 			using (var stream = new MemoryStream())
 			using (var writer = new BinaryWriter(stream))
+			using (var reader = new BinaryReader(stream))
 			{
 				_serializer.WriteObject(writer, value, endPoint.Object);
+				writer.Flush();
+				stream.Position = 0;
+
+				reader.ReadString().Should().Be(typeof(ByReferenceClass).AssemblyQualifiedName);
+				reader.ReadInt64().Should().Be(objectId);
 			}
 		}
 	}

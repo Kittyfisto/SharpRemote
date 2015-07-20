@@ -1,6 +1,8 @@
-﻿using System;
+using System;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// Can be used to signal that a specific parameter, return value, class- or interface type shall not be marshalled by value
@@ -8,7 +10,9 @@ namespace SharpRemote
 	/// and the other side (caller/callee depending on whether its a parameter or a return value) will obtain a proxy (either newly
 	/// created or re-used if one already exists) to the value.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue | AttributeTargets.Class | AttributeTargets.Interface)]
+	[AttributeUsage(AttributeTargets.Parameter |
+		AttributeTargets.ReturnValue |
+		AttributeTargets.Interface)]
 	public class ByReferenceAttribute
 		: Attribute
 	{

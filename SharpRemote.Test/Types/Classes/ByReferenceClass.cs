@@ -2,7 +2,7 @@
 
 namespace SharpRemote.Test.Types.Classes
 {
-	internal sealed class ByReferenceType
+	public sealed class ByReferenceClass
 		: IByReferenceType
 	{
 		public int HashCode

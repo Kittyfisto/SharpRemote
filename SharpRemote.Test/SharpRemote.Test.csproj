@@ -56,7 +56,7 @@
   <ItemGroup>
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
-    <Compile Include="Types\Classes\ByReferenceType.cs" />
+    <Compile Include="Types\Classes\ByReferenceClass.cs" />
     <Compile Include="Types\Interfaces\IByReferenceType.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />
     <Compile Include="Hosting\InProcessRemotingSiloTest.cs" />

@@ -45,7 +45,6 @@ namespace SharpRemote
 			_module = module;
 			_customTypeResolver = customTypeResolver;
 			_serializationMethods = new Dictionary<Type, SerializationMethods>();
-			
 
 			_customSerializers = new List<ITypeSerializer>
 			{
@@ -442,7 +441,7 @@ namespace SharpRemote
 			}
 			else
 			{
-				WriteCustomType(gen, loadRemotingEndPoint, typeInformation.Type);
+				WriteCustomType(gen, typeInformation.Type, loadWriter, loadRemotingEndPoint);
 			}
 
 			gen.Emit(OpCodes.Ret);

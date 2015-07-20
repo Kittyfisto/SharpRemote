@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
+using SharpRemote.CodeGeneration;
 using SerializationException = SharpRemote.Exceptions.SerializationException;
 
 // ReSharper disable CheckNamespace
@@ -18,20 +19,37 @@ namespace SharpRemote
 		///     Emits the code to write an object of the given type to a <see cref="BinaryWriter"/>.
 		/// </summary>
 		/// <param name="gen"></param>
-		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
+		/// <param name="loadWriter"></param>
+		/// <param name="loadRemotingEndPoint"></param>
 		private void WriteCustomType(ILGenerator gen,
-			Action loadRemotingEndPoint,
-			Type type)
+			Type type,
+			Action loadWriter,
+			Action loadRemotingEndPoint)
 		{
 			if (type.GetCustomAttribute<DataContractAttribute>() != null)
 			{
+				// The type should be serialized by value, e.g. we simply serialize all fields and properties
+				// marked with the [DataMember] attribute
 				EmitWriteFields(gen, loadRemotingEndPoint, type);
 				EmitWriteProperties(gen, loadRemotingEndPoint, type);
 			}
-			else if (type.GetCustomAttribute<ByReferenceAttribute>() != null)
+			else if (type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
 			{
-				
+				// The type should be serialized by reference, e.g. we create a servant for it
+				// (or retrieve an existing one) and then write its (unique) object id to the stream.
+
+				var proxyInterface = FindProxyInterface(type);
+
+				var method = typeof(IRemotingEndPoint).GetMethod("GetExistingOrCreateNewServant").MakeGenericMethod(proxyInterface);
+
+				// writer.Write(_remotingEndPoint.GetExistingOrCreateNewServant<T>(value).ObjectId);
+				loadWriter();
+				loadRemotingEndPoint();
+				gen.Emit(OpCodes.Ldarg_1);
+				gen.Emit(OpCodes.Callvirt, method);
+				gen.Emit(OpCodes.Callvirt, Methods.GrainGetObjectId);
+				gen.Emit(OpCodes.Call, Methods.WriteLong);
 			}
 			else
 			{
@@ -39,6 +57,34 @@ namespace SharpRemote
 					string.Format("The type '{0}.{1}' is missing the [DataContract] or [ByReference] attribute, nor is there a custom-serializer available for this type", type.Namespace,
 						type.Name));
 			}
+		}
+
+		private static Type FindProxyInterface(Type type)
+		{
+			Type proxyInterface;
+			var attributed = type.GetInterfaces().Where(x => x.GetCustomAttribute<ByReferenceAttribute>() != null).ToList();
+			if (attributed.Count > 1)
+				throw new ArgumentException(
+					string.Format(
+						"Currently a type may implement only one interface marked with the [ByReference] attribute, but '{0}' implements more than that: {1}",
+						type.FullName,
+						string.Join(", ", attributed.Select(x => x.FullName))
+						)
+					);
+
+			if (attributed.Count == 0)
+			{
+				if (type.GetCustomAttribute<ByReferenceAttribute>(false) == null)
+					throw new SystemException(string.Format("Unable to extract the correct proxy interface for type '{0}'",
+					                                        type.FullName));
+
+				proxyInterface = type;
+			}
+			else
+			{
+				proxyInterface = attributed[0];
+			}
+			return proxyInterface;
 		}
 
 		/// <summary>
@@ -283,22 +329,43 @@ namespace SharpRemote
 			TypeInformation type,
 			LocalBuilder target)
 		{
-			CreateAndStoreNewInstance(gen, type, target);
-			EmitReadAllFields(gen,
-			                  loadReader,
-			                  loadSerializer,
-			                  loadRemotingEndPoint,
-			                  type,
-			                  target);
+			if (type.Type.GetCustomAttribute<DataContractAttribute>() != null)
+			{
+				CreateAndStoreNewInstance(gen, type, target);
+				EmitReadAllFields(gen,
+								  loadReader,
+								  loadSerializer,
+								  loadRemotingEndPoint,
+								  type,
+								  target);
 
-			EmitReadAllProperties(gen,
-				loadReader,
-				loadSerializer,
-				loadRemotingEndPoint,
-				type,
-				target);
+				EmitReadAllProperties(gen,
+					loadReader,
+					loadSerializer,
+					loadRemotingEndPoint,
+					type,
+					target);
 
-			gen.Emit(OpCodes.Ldloc, target);
+				gen.Emit(OpCodes.Ldloc, target);
+			}
+			else if (type.Type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
+			{
+				var proxyInterface = FindProxyInterface(type.Type);
+				var method = typeof(IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy").MakeGenericMethod(proxyInterface);
+
+				// result = _remotingEndPoint.GetExistingOrCreateNewProxy<T>(serializer.ReadLong());
+				loadRemotingEndPoint();
+				loadSerializer();
+				gen.Emit(OpCodes.Call, Methods.ReadLong);
+				gen.Emit(OpCodes.Callvirt, method);
+
+				gen.Emit(OpCodes.Stloc, target);
+				gen.Emit(OpCodes.Ldloc, target);
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
 		}
 
 		/// <summary>

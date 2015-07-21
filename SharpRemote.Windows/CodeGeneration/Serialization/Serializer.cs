@@ -602,10 +602,14 @@ namespace SharpRemote
 		private void RegisterType(Type type, out SerializationMethods serializationMethods)
 		{
 			type = PatchType(type);
-			if (!_serializationMethods.TryGetValue(type, out serializationMethods))
+
+			lock (_serializationMethods)
 			{
-				var typeInfo = new TypeInformation(type);
-				serializationMethods = CreateSerializationMethods(typeInfo);
+				if (!_serializationMethods.TryGetValue(type, out serializationMethods))
+				{
+					var typeInfo = new TypeInformation(type);
+					serializationMethods = CreateSerializationMethods(typeInfo);
+				}
 			}
 		}
 
@@ -620,7 +624,10 @@ namespace SharpRemote
 		{
 			if (type == null) throw new ArgumentNullException("type");
 
-			return _serializationMethods.ContainsKey(type);
+			lock (_serializationMethods)
+			{
+				return _serializationMethods.ContainsKey(type);
+			}
 		}
 
 		private sealed class SerializationMethods

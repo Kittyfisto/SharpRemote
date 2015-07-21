@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -497,6 +498,49 @@ namespace SharpRemote.Test.Remoting
 			processor.Listeners.Count.Should().Be(2);
 			processor.Listeners[0].Should().BeSameAs(processor.Listeners[1], "Because we passed the same [ByReference] object to AddListener and thus the same proxy object should've been given to IProcessor.AddListener()");
 			processor.Listeners[0].Should().NotBeSameAs(listener, "Because a proxy must have been added, not the real listener");
+		}
+
+		[Test]
+		[Description("Verifies that creating proxies & servants for serialized objects is thread safe")]
+		public void TestAddByReference3()
+		{
+			const ulong servantId = 23;
+			var processor = new Processor();
+			processor.Listeners.Should().BeEmpty();
+
+			_server.CreateServant(servantId, (IProcessor)processor);
+			var proxy = _client.CreateProxy<IProcessor>(servantId);
+
+			const int numTasks = 16;
+			const int numListenersPerTask = 100;
+
+			Console.WriteLine("Adding {0} listeners in each of {1} parallel tasks",
+			                  numListenersPerTask,
+			                  numTasks);
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var tasks = new Task[numTasks];
+			for (int i = 0; i < numTasks; ++i)
+			{
+				tasks[i] = new Task(() =>
+					{
+						for (int x = 0; x < numListenersPerTask; ++x)
+						{
+							var listener = new Listener();
+							proxy.AddListener(listener);
+							proxy.AddListener(listener);
+						}
+					});
+				tasks[i].Start();
+			}
+			Task.WaitAll(tasks);
+
+			sw.Stop();
+			Console.WriteLine("Took {0}ms", sw.ElapsedMilliseconds);
+
+			const int numUniqueListeners = numTasks*numListenersPerTask;
+			processor.Listeners.Count.Should().Be(numUniqueListeners * 2, "Because each unique listener instance is added twice");
 		}
 	}
 }

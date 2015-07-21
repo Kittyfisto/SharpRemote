@@ -23,7 +23,7 @@ namespace SharpRemote
 	/// - Natively supported: <see cref="string"/>, <see cref="TimeSpan"/>, etc...
 	/// - Attributed with the <see cref="DataContractAttribute"/> and <see cref="DataMemberAttribute"/>
 	/// </remarks>
-	internal sealed partial class Serializer
+	public sealed partial class Serializer
 		: ISerializer
 	{
 		private readonly ModuleBuilder _module;

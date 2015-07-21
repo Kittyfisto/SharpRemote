@@ -8,7 +8,7 @@ using System.Reflection.Emit;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	internal partial class Serializer
+	public partial class Serializer
 	{
 		private void EmitReadSingleton(ILGenerator gen, MethodInfo factoryMethod)
 		{

@@ -9,7 +9,7 @@ using System.Reflection.Emit;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	internal partial class Serializer
+	public partial class Serializer
 	{
 		/// <summary>
 		///     Emits the code necessary to write an enumeration into a <see cref="BinaryWriter" />.

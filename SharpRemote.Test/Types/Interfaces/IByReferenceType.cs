@@ -3,6 +3,6 @@
 	[ByReference]
 	public interface IByReferenceType
 	{
-		int HashCode { get; }
+		int Value { get; }
 	}
 }

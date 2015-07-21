@@ -542,5 +542,62 @@ namespace SharpRemote.Test.Remoting
 			const int numUniqueListeners = numTasks*numListenersPerTask;
 			processor.Listeners.Count.Should().Be(numUniqueListeners * 2, "Because each unique listener instance is added twice");
 		}
+
+		[Test]
+		[Description("Verifies that a method returning a [ByReference] type is marshalled correctly")]
+		public void TestReturnByReference()
+		{
+			const ulong servantId = 24;
+
+			var subject = new Mock<IReturnsByReferenceType>();
+			var foo = new ByReferenceClass();
+			subject.Setup(x => x.GetFoo()).Returns(foo);
+
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsByReferenceType>(servantId);
+
+			var actualFoo1 = proxy.GetFoo();
+			actualFoo1.Should().NotBeNull();
+			actualFoo1.Value.Should().Be(foo.Value);
+
+			proxy.GetFoo().Should().BeSameAs(actualFoo1, "because [ByReference] types must be marshalled with referential equality in mind - GetFoo() always returns the same instance and thus the proxy should as well");
+		}
+
+		[Test]
+		[Description("Verifies that a method returning a list of objects where some are a [ByReference] types is marshalled correctly")]
+		public void TestReturnListOfByReferences()
+		{
+			const ulong servantId = 25;
+
+			var subject = new Mock<IReturnsObjectArray>();
+			var foo1 = new ByReferenceClass(42);
+			var foo2 = new ByReferenceClass(9001);
+			subject.Setup(x => x.Objects).Returns(new object[]
+				{
+					foo1,
+					foo2,
+					foo1,
+					42,
+					"Hello World!"
+				});
+
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsObjectArray>(servantId);
+
+			var objects = proxy.Objects;
+			objects.Should().NotBeNull();
+			objects.Length.Should().Be(5);
+			objects[0].Should().NotBeNull();
+			(objects[0] is IByReferenceType).Should().BeTrue();
+			((IByReferenceType) objects[0]).Value.Should().Be(foo1.Value);
+
+			objects[1].Should().NotBeNull();
+			(objects[1] is IByReferenceType).Should().BeTrue();
+			((IByReferenceType)objects[1]).Value.Should().Be(foo2.Value);
+
+			objects[2].Should().BeSameAs(objects[0]);
+			objects[3].Should().Be(42);
+			objects[4].Should().Be("Hello World!");
+		}
 	}
 }

@@ -112,7 +112,9 @@
     <Compile Include="Types\Interfaces\IOrderInterface.cs" />
     <Compile Include="Types\Interfaces\IProcessor.cs" />
     <Compile Include="Types\Interfaces\IReturnComplexType.cs" />
+    <Compile Include="Types\Interfaces\IReturnsByReferenceType.cs" />
     <Compile Include="Types\Interfaces\IReturnsIntTask.cs" />
+    <Compile Include="Types\Interfaces\IReturnsObjectArray.cs" />
     <Compile Include="Types\Interfaces\IReturnsTask.cs" />
     <Compile Include="Types\Classes\Listener.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IReturnsType.cs" />

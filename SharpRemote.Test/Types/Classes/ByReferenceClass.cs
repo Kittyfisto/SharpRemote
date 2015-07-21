@@ -5,9 +5,16 @@ namespace SharpRemote.Test.Types.Classes
 	public sealed class ByReferenceClass
 		: IByReferenceType
 	{
-		public int HashCode
+		private readonly int _value;
+
+		public ByReferenceClass(int value = 0)
 		{
-			get { return GetHashCode(); }
+			_value = value;
+		}
+
+		public int Value
+		{
+			get { return _value; }
 		}
 	}
 }

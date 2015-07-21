@@ -7,7 +7,7 @@ namespace SharpRemote.Test.Types.Classes
 	public sealed class ByReferenceAndDataContract
 		: IByReferenceType
 	{
-		public int HashCode
+		public int Value
 		{
 			get { return GetHashCode(); }
 		}

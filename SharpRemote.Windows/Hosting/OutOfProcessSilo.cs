@@ -448,6 +448,60 @@ namespace SharpRemote.Hosting
 			return proxy;
 		}
 
+		/// <summary>
+		///     Creates and registers an object that implements the given interface <typeparamref name="T" />.
+		///     Calls to properties / methods of the given interface are marshalled to connected endpoint, if an appropriate
+		///     servant of the same interface an <paramref name="objectId" /> has been created using <see cref="CreateServant{T}" />.
+		/// </summary>
+		/// <remarks>
+		///     A proxy can be created independent from its servant and the order in which both are created is unimportant, for as long
+		///     as no interface methods / properties are invoked.
+		/// </remarks>
+		/// <remarks>
+		///     Every method / property on the given object is now capable of throwing an additional set of exceptions, in addition
+		///     to whatever exceptions any implementation already throws:
+		///     - <see cref="NoSuchServantException" />: There's no servant with the id of the proxy and therefore no subject on which the method could possibly be executed
+		///     - <see cref="NotConnectedException" />: At the time of calling the proxy's method, no connection to a remote end point was available
+		///     - <see cref="ConnectionLostException" />: The method call was cancelled because the connection between proxy and servant was interrupted / lost / disconnected
+		///     - <see cref="UnserializableException" />: The remote method was executed, threw an exception, but the exception could not be serialized
+		/// </remarks>
+		/// <remarks>
+		///     This method is thread-safe.
+		/// </remarks>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentOutOfRangeException">
+		///     When there already exists a proxy of id <paramref name="objectId" />.
+		/// </exception>
+		/// <exception cref="ArgumentException">
+		///     When <typeparamref name="T" /> does not refer to an interface.
+		/// </exception>
+		public T CreateProxy<T>(ulong objectId) where T : class
+		{
+			return _endPoint.CreateProxy<T>(objectId);
+		}
+
+		/// <summary>
+		///     Creates and registers an object for the given subject <paramref name="subject" /> and invokes its methods, when they
+		///     have been called on the corresponding proxy.
+		/// </summary>
+		/// <remarks>
+		///     A servant can be created independent from any proxy and the order in which both are created is unimportant, for as long
+		///     as no interface methods / properties are invoked.
+		/// </remarks>
+		/// <remarks>
+		///     This method is thread-safe.
+		/// </remarks>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId"></param>
+		/// <param name="subject"></param>
+		/// <returns></returns>
+		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
+		{
+			return _endPoint.CreateServant(objectId, subject);
+		}
+
 		public void Dispose()
 		{
 			_heartbeatMonitor.TryDispose();

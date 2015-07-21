@@ -266,7 +266,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		[Test]
 		[Description("Verifies that serializing a [ByReference] type queries the endpoint for the servant and serializes the id to the stream")]
-		public void TestByReference1()
+		public void TestByReferenceSerialize()
 		{
 			_serializer.RegisterType<IByReferenceType>();
 
@@ -293,6 +293,36 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				reader.ReadString().Should().Be(typeof(ByReferenceClass).AssemblyQualifiedName);
 				reader.ReadInt64().Should().Be(objectId);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that deserializing a [ByReference] type queries the endpoint for the proxy by the id embedded in the stream")]
+		public void TestByReferenceDeserialize()
+		{
+			var endPoint = new Mock<IRemotingEndPoint>();
+
+			const ulong objectId = 42;
+			var value = new ByReferenceClass();
+			endPoint.Setup(x => x.GetExistingOrCreateNewProxy<IByReferenceType>(It.IsAny<ulong>()))
+					.Returns((ulong id) =>
+					{
+						id.Should().Be(objectId);
+						return value;
+					});
+
+			using (var stream = new MemoryStream())
+			using (var writer = new BinaryWriter(stream))
+			using (var reader = new BinaryReader(stream))
+			{
+				writer.Write(typeof(ByReferenceClass).AssemblyQualifiedName);
+				writer.Write(objectId);
+
+				writer.Flush();
+				stream.Position = 0;
+
+				var actualValue = _serializer.ReadObject(reader, endPoint.Object);
+				actualValue.Should().BeSameAs(value);
 			}
 		}
 	}

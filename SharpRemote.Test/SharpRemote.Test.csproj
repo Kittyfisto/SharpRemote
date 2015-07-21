@@ -56,7 +56,9 @@
   <ItemGroup>
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
+    <Compile Include="Types\Classes\ByReferenceAndDataContract.cs" />
     <Compile Include="Types\Classes\ByReferenceClass.cs" />
+    <Compile Include="Types\Classes\VoidMethodStringParameter.cs" />
     <Compile Include="Types\Interfaces\IByReferenceType.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />
     <Compile Include="Hosting\InProcessRemotingSiloTest.cs" />
@@ -106,10 +108,13 @@
     <Compile Include="Types\Interfaces\IEventInt32.cs" />
     <Compile Include="Types\Interfaces\IInvokeAttributeEvents.cs" />
     <Compile Include="Types\Interfaces\IInvokeAttributeMethods.cs" />
+    <Compile Include="Types\Interfaces\IListener.cs" />
     <Compile Include="Types\Interfaces\IOrderInterface.cs" />
+    <Compile Include="Types\Interfaces\IProcessor.cs" />
     <Compile Include="Types\Interfaces\IReturnComplexType.cs" />
     <Compile Include="Types\Interfaces\IReturnsIntTask.cs" />
     <Compile Include="Types\Interfaces\IReturnsTask.cs" />
+    <Compile Include="Types\Classes\Listener.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IReturnsType.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IVoidMethodTypeParameter.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\ReturnsTypeofString.cs" />
@@ -142,6 +147,7 @@
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethodUInt8Parameter.cs" />
     <Compile Include="Types\Classes\BaseClass.cs" />
     <Compile Include="Types\Classes\Birke.cs" />
+    <Compile Include="Types\Classes\Processor.cs" />
     <Compile Include="Types\Structs\FieldObjectStruct.cs" />
     <Compile Include="Types\Structs\FieldStruct.cs" />
     <Compile Include="CodeGeneration\Remoting\ProxyCreatorTest.cs" />

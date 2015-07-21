@@ -10,9 +10,7 @@ namespace SharpRemote
 	/// and the other side (caller/callee depending on whether its a parameter or a return value) will obtain a proxy (either newly
 	/// created or re-used if one already exists) to the value.
 	/// </summary>
-	[AttributeUsage(AttributeTargets.Parameter |
-		AttributeTargets.ReturnValue |
-		AttributeTargets.Interface)]
+	[AttributeUsage(AttributeTargets.Interface)]
 	public class ByReferenceAttribute
 		: Attribute
 	{

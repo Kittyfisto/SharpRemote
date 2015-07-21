@@ -93,8 +93,9 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					        interfaceName.Should().Be("SharpRemote.Test.Types.Interfaces.IByReferenceParemeterMethodInterface");
 					        methodName.Should().Be("AddListener");
 					        stream.Should().NotBeNull();
-					        stream.Length.Should().Be(8);
+					        stream.Length.Should().Be(136);
 					        var reader = new BinaryReader(stream);
+					        reader.ReadString().Should().Be(listener.Object.GetType().AssemblyQualifiedName);
 					        reader.ReadUInt64().Should().Be(12345678912345678912);
 
 					        addListenerCalled = true;
@@ -488,6 +489,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		{
 			var proxy = TestGenerate<IByReferenceReturnMethodInterface>();
 
+			IVoidMethodStringParameter listener = new VoidMethodStringParameter();
+
 			const ulong id = 42;
 			bool addListenerCalled = false;
 			_channel.Setup(
@@ -502,6 +505,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 					        var output = new MemoryStream();
 					        var writer = new BinaryWriter(output);
+							writer.Write(listener.GetType().AssemblyQualifiedName);
 					        writer.Write(id);
 					        writer.Flush();
 					        output.Position = 0;
@@ -509,7 +513,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					        return output;
 				        });
 
-			IVoidMethodStringParameter listener = new Mock<IVoidMethodStringParameter>().Object;
 			_endPoint.Setup(x => x.GetExistingOrCreateNewProxy<IVoidMethodStringParameter>(It.Is((ulong y) => y == id)))
 			         .Returns(listener);
 

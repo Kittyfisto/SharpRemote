@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using NUnit.Framework;
+using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
@@ -46,6 +47,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		{
 			TestFailRegister<StaticDataMemberFieldStruct>(
 				"The field 'SharpRemote.Test.Types.Structs.StaticDataMemberFieldStruct.Value' is marked with the [DataMember] attribute but is static - this is not supported");
+		}
+
+		[Test]
+		[Description("Verifies that an class may not be both marked with the [ByReference] and [DataContract] attribute")]
+		public void TestInterfaceWithDataContractAndByReference()
+		{
+			TestFailRegister<ByReferenceAndDataContract>(
+				"The type 'SharpRemote.Test.Types.Classes.ByReferenceAndDataContract' is marked with the [DataContract] as well as [ByReference] attribute, but these are mutually exclusive");
 		}
 	}
 }

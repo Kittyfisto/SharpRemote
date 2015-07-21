@@ -11,6 +11,7 @@ using SharpRemote.Extensions;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types;
+using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Exceptions;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
@@ -447,6 +448,55 @@ namespace SharpRemote.Test.Remoting
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
+		}
+
+		[Test]
+		[Description("Verifies that a method accepting a by reference parameter can be called and that the appropriate proxies & servants are created")]
+		public void TestAddByReference1()
+		{
+			const ulong servantId = 21;
+			var processor = new Processor();
+			processor.Listeners.Should().BeEmpty();
+
+			_server.CreateServant(servantId, (IProcessor)processor);
+			var proxy = _client.CreateProxy<IProcessor>(servantId);
+
+			var listener1 = new Listener();
+			proxy.AddListener(listener1);
+			var listenerServant = _client.Servants.First(x => x.InterfaceType == typeof (IListener));
+			var listenerProxy = _server.Proxies.First(x => x.InterfaceType == typeof (IListener));
+			listenerServant.ObjectId.Should().Be(listenerProxy.ObjectId, "Because both proxy and servant must have been created for that specific listener instance because of the remote method call");
+
+
+			processor.Listeners.Count.Should().Be(1, "Because AddListener() should have added a listener to the processor");
+			processor.Listeners[0].Should()
+			                      .NotBe(listener1, "Because not the real listener has been added, but a proxy representing it");
+			processor.Listeners[0].Should()
+								  .BeSameAs(listenerProxy, "Because not the real listener has been added, but a proxy representing it");
+
+
+			proxy.Report("Foobar");
+			listener1.Messages.Should().Equal(new[] {"Foobar"}, "Because Processor.Report() method should have invoked the Report() method on the proxy which in turn would've called the real listener implementation");
+		}
+
+		[Test]
+		[Description("Verifies that successive calls with a [ByReference] parameter are marshalled using the same proxy instance on the invoked end, mimicking these calls in a non-RPC scenario")]
+		public void TestAddByReference2()
+		{
+			const ulong servantId = 22;
+			var processor = new Processor();
+			processor.Listeners.Should().BeEmpty();
+
+			_server.CreateServant(servantId, (IProcessor)processor);
+			var proxy = _client.CreateProxy<IProcessor>(servantId);
+
+			var listener = new Listener();
+			proxy.AddListener(listener);
+			proxy.AddListener(listener);
+
+			processor.Listeners.Count.Should().Be(2);
+			processor.Listeners[0].Should().BeSameAs(processor.Listeners[1], "Because we passed the same [ByReference] object to AddListener and thus the same proxy object should've been given to IProcessor.AddListener()");
+			processor.Listeners[0].Should().NotBeSameAs(listener, "Because a proxy must have been added, not the real listener");
 		}
 	}
 }

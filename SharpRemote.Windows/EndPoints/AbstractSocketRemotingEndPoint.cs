@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -55,8 +56,11 @@ namespace SharpRemote
 
 		#region Proxies / Servants
 
-		private readonly Dictionary<ulong, IProxy> _proxies;
-		private readonly Dictionary<ulong, IServant> _servants;
+		private readonly Dictionary<ulong, IProxy> _proxiesById;
+		private readonly Dictionary<ulong, IServant> _servantsById;
+		private readonly Dictionary<object, IServant> _servantsBySubject;
+		private ulong _nextImplicitServantId = ulong.MaxValue / 2;
+		private ulong _nextImplicitProxyId = ulong.MaxValue/2;
 
 		#endregion
 
@@ -141,8 +145,10 @@ namespace SharpRemote
 			_name = name ?? "<Unnamed>";
 			_syncRoot = new object();
 
-			_servants = new Dictionary<ulong, IServant>();
-			_proxies = new Dictionary<ulong, IProxy>();
+			_servantsById = new Dictionary<ulong, IServant>();
+			_servantsBySubject = new Dictionary<object, IServant>();
+
+			_proxiesById = new Dictionary<ulong, IProxy>();
 
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
@@ -501,18 +507,48 @@ namespace SharpRemote
 
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
-			lock (_proxies)
+			lock (_proxiesById)
 			{
 				var proxy = _proxyCreator.CreateProxy<T>(objectId);
-				_proxies.Add(objectId, (IProxy)proxy);
+				_proxiesById.Add(objectId, (IProxy)proxy);
 				return proxy;
+			}
+		}
+
+		/// <summary>
+		/// Returns all the proxies of this endpoint.
+		/// Used for testing.
+		/// </summary>
+		internal IEnumerable<IProxy> Proxies
+		{
+			get
+			{
+				lock (_proxiesById)
+				{
+					return _proxiesById.Values.ToList();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Returns all the servnats of this endpoint.
+		/// Used for testing.
+		/// </summary>
+		internal IEnumerable<IServant> Servants
+		{
+			get
+			{
+				lock (_servantsById)
+				{
+					return _servantsById.Values.ToList();
+				}
 			}
 		}
 
 		public T GetProxy<T>(ulong objectId) where T : class
 		{
 			IProxy proxy;
-			if (!_proxies.TryGetValue(objectId, out proxy))
+			if (!_proxiesById.TryGetValue(objectId, out proxy))
 				throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
 
 			if (!(proxy is T))
@@ -527,21 +563,42 @@ namespace SharpRemote
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
 			IServant servant = _servantCreator.CreateServant(objectId, subject);
-			lock (_servants)
+			lock (_servantsById)
 			{
-				_servants.Add(objectId, servant);
+				_servantsById.Add(objectId, servant);
+				_servantsBySubject.Add(subject, servant);
 			}
 			return servant;
 		}
 
 		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
 		{
-			throw new NotImplementedException();
+			lock (_proxiesById)
+			{
+				IProxy proxy;
+				if (!_proxiesById.TryGetValue(objectId, out proxy))
+				{
+					var nextId = _nextImplicitProxyId++;
+					return CreateProxy<T>(nextId);
+				}
+
+				return (T) proxy;
+			}
 		}
 
 		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
 		{
-			throw new NotImplementedException();
+			lock (_servantsById)
+			{
+				IServant servant;
+				if (!_servantsBySubject.TryGetValue(subject, out servant))
+				{
+					var nextId = _nextImplicitServantId++;
+					servant = CreateServant(nextId, subject);
+				}
+
+				return servant;
+			}
 		}
 
 		private bool HandleMessage(long rpcId, MessageType type, BinaryReader reader, out EndPointDisconnectReason? reason)
@@ -643,9 +700,9 @@ namespace SharpRemote
 			string methodName = reader.ReadString();
 
 			IServant servant;
-			lock (_servants)
+			lock (_servantsById)
 			{
-				_servants.TryGetValue(servantId, out servant);
+				_servantsById.TryGetValue(servantId, out servant);
 			}
 
 			if (servant != null)
@@ -655,9 +712,9 @@ namespace SharpRemote
 			else
 			{
 				IProxy proxy;
-				lock (_proxies)
+				lock (_proxiesById)
 				{
-					_proxies.TryGetValue(servantId, out proxy);
+					_proxiesById.TryGetValue(servantId, out proxy);
 				}
 
 				if (proxy != null)
@@ -666,7 +723,7 @@ namespace SharpRemote
 				}
 				else
 				{
-					throw new NotImplementedException();
+					throw new NoSuchServantException(servantId);
 				}
 			}
 		}

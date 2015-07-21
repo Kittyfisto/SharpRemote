@@ -1,6 +1,4 @@
-﻿using SharpRemote;
-
-namespace SampleLibrary.NativeResource
+﻿namespace SampleLibrary.NativeResource
 {
 	public interface IUsesNativeResource
 	{
@@ -22,12 +20,12 @@ namespace SampleLibrary.NativeResource
 		/// marshalls all calls to the other side.
 		/// </remarks>
 		/// <param name="listener"></param>
-		void AddListener([ByReference] IErrorListener listener);
+		void AddListener(IErrorListener listener);
 
 		/// <summary>
 		/// Removes the given listener from this object or does nothing if it hasn't been registered.
 		/// </summary>
 		/// <param name="listener"></param>
-		void RemoveListener([ByReference] IErrorListener listener);
+		void RemoveListener(IErrorListener listener);
 	}
 }

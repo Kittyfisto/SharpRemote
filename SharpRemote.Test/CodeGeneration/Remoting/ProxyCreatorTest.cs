@@ -133,7 +133,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						interfaceName.Should().Be("SharpRemote.Test.Types.Interfaces.IVoidMethodObjectParameter");
 						methodName.Should().Be("AddListener");
 						stream.Should().NotBeNull();
-						stream.Length.Should().Be(155);
 						var reader = new BinaryReader(stream);
 						reader.ReadString()
 						      .Should()

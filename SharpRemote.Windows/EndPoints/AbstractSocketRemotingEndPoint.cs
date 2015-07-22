@@ -430,7 +430,7 @@ namespace SharpRemote
 						}
 					}
 
-					Log.InfoFormat("Disconnecting socket '{0}' from {1}", _name, InternalRemoteEndPoint);
+					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
 
 					InterruptOngoingCalls();
 
@@ -562,6 +562,15 @@ namespace SharpRemote
 
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
+			if (Log.IsInfoEnabled)
+			{
+				Log.InfoFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
+								subject.GetType().FullName,
+				                typeof (T).FullName,
+				                objectId
+					);
+			}
+
 			IServant servant = _servantCreator.CreateServant(objectId, subject);
 			lock (_servantsById)
 			{

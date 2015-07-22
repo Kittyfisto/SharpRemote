@@ -83,6 +83,31 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[NUnit.Framework.Description("Verifies that multiple silos can be started concurrently")]
+		public void TestStart4()
+		{
+			const int taskCount = 16;
+			var tasks = new Task[taskCount];
+			for (int i = 0; i < taskCount; ++i)
+			{
+				tasks[i] = new Task(() =>
+					{
+						using (var silo = new OutOfProcessSilo())
+						{
+							silo.IsProcessRunning.Should().BeFalse();
+							silo.Start();
+							silo.IsProcessRunning.Should().BeTrue();
+
+							var proxy = silo.CreateGrain<IGetStringProperty>(typeof(GetStringPropertyImplementation));
+							proxy.Value.Should().Be("Foobar");
+						}
+					});
+				tasks[i].Start();
+			}
+			Task.WaitAll(tasks);
+		}
+
+		[Test]
 		[LocalTest("Time critical tests dont run on the C/I server")]
 		[NUnit.Framework.Description("Verifies that latency measurements are performed and that they are sound")]
 		public void TestRoundtripTime()
@@ -155,7 +180,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		public void TestDispose()
+		public void TestDispose1()
 		{
 			OutOfProcessSilo silo;
 			using (silo = new OutOfProcessSilo())
@@ -166,6 +191,31 @@ namespace SharpRemote.Test.Hosting
 
 			silo.IsDisposed.Should().BeTrue();
 			silo.IsProcessRunning.Should().BeFalse();
+		}
+
+		[Test]
+		[Repeat(5)]
+		[NUnit.Framework.Description("Verifies that the failure event is NEVER raised once a silo has been disposed of")]
+		public void TestDispose2()
+		{
+			bool faultDetected = false;
+			var heartbeatSettings = new HeartbeatSettings
+				{
+					Interval = TimeSpan.FromMilliseconds(10)
+				};
+			using (var silo = new OutOfProcessSilo(heartbeatSettings: heartbeatSettings))
+			{
+				silo.OnFaultDetected += reason =>
+					{
+						faultDetected = true;
+					};
+				silo.Start();
+				faultDetected.Should().BeFalse("Because the host process shouldn't fault now");
+			}
+
+			Thread.Sleep(100);
+
+			faultDetected.Should().BeFalse("Because even though the process is no longer running, the silo shouldn't have reported a fault because it's been properly disposed of");
 		}
 
 		[Test]

@@ -253,12 +253,19 @@ namespace SharpRemote
 				DateTime started = DateTime.Now;
 				var task = new Task(() =>
 					{
+						Log.DebugFormat("Task to connect to '{0}' started", endPoint);
+
 						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+						Log.DebugFormat("Socket to connect to '{0}' created", endPoint);
+
 						socket.Connect(endPoint);
-					});
+
+						Log.DebugFormat("Socket connected to '{0}'", endPoint);
+					}, TaskCreationOptions.LongRunning);
 				task.Start();
 				if (!task.Wait(timeout))
-					throw new NoSuchIPEndPointException(endPoint);
+					throw new NoSuchIPEndPointException(endPoint, timeout);
 
 				TimeSpan remaining = timeout - (DateTime.Now - started);
 				PerformOutgoingHandshake(socket, remaining);
@@ -319,7 +326,15 @@ namespace SharpRemote
 			try
 			{
 				socket = _serverSocket.EndAccept(ar);
+
+				if (Log.IsDebugEnabled)
+				{
+					Log.DebugFormat("Incoming connection from '{0}', starting handshake...",
+					                socket.RemoteEndPoint);
+				}
+
 				PerformIncomingHandshake(socket);
+
 				success = true;
 			}
 			catch (AuthenticationException e)

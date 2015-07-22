@@ -56,6 +56,37 @@ namespace SharpRemote
 		}
 
 		/// <summary>
+		/// Initializes an instance of this exception with the given ipendpoint and inner exception
+		/// that caused this exception.
+		/// </summary>
+		/// <param name="endPoint"></param>
+		/// <param name="timeout">The amount of time that passed until the connection-establishment was dropped</param>
+		/// <param name="innerException"></param>
+		public NoSuchIPEndPointException(IPEndPoint endPoint, TimeSpan timeout, Exception innerException = null)
+			: base(
+			string.Format("Unable to establish a connection with the given endpoint after {0}: {1}",
+			Format(timeout),
+			endPoint),
+			innerException)
+		{
+			EndPoint = endPoint;
+		}
+
+		private static string Format(TimeSpan timeout)
+		{
+			if (timeout >= TimeSpan.FromHours(1))
+				return string.Format("{0} hours", (int)timeout.TotalHours);
+
+			if (timeout >= TimeSpan.FromMinutes(1))
+				return string.Format("{0} minutes", (int)timeout.TotalMinutes);
+
+			if (timeout >= TimeSpan.FromSeconds(1))
+				return string.Format("{0} seconds", (int)timeout.TotalSeconds);
+
+			return string.Format("{0} ms", (int)timeout.TotalMilliseconds);
+		}
+
+		/// <summary>
 		/// Initializes an instance of this exception with the given endpoint name and inner exception
 		/// that caused this exception.
 		/// </summary>

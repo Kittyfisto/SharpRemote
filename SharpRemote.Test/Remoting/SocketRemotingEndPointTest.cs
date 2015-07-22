@@ -172,7 +172,7 @@ namespace SharpRemote.Test.Remoting
 				new Action(
 					() => new Action(() => rep.Connect(new IPEndPoint(IPAddress.Loopback, 50012), timeout))
 						      .ShouldThrow<NoSuchIPEndPointException>()
-						      .WithMessage("Unable to establish a connection with the given endpoint: 127.0.0.1:50012"))
+						      .WithMessage("Unable to establish a connection with the given endpoint after 100 ms: 127.0.0.1:50012"))
 					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
 
 				const string reason = "because no successfull connection could be established";

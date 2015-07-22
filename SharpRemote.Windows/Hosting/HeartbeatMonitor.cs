@@ -144,6 +144,12 @@ namespace SharpRemote.Hosting
 
 		private void ReportFailure()
 		{
+			lock (_syncRoot)
+			{
+				if (_isDisposed)
+					return;
+			}
+
 			_failureDetected = true;
 			var fn = OnFailure;
 			if (fn != null)

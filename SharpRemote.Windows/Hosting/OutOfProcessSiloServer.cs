@@ -41,6 +41,11 @@ namespace SharpRemote.Hosting
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		public OutOfProcessSiloServer(string[] args, ITypeResolver customTypeResolver = null)
 		{
+			Log.InfoFormat("Silo Server starting, args: \"{0}\", {1} custom type resolver",
+				string.Join(" ", args),
+				customTypeResolver != null ? "with" : "without"
+				);
+
 			int pid;
 			if (args.Length >= 1 && int.TryParse(args[0], out pid))
 			{
@@ -147,7 +152,6 @@ namespace SharpRemote.Hosting
 				                                  OnSubjectHostDisposed,
 				                                  _customTypeResolver))
 				{
-
 					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost)host);
 
 					_endPoint.Bind(IPAddress.Loopback);

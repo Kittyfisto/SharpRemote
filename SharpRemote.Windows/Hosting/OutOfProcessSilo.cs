@@ -38,16 +38,20 @@ namespace SharpRemote.Hosting
 		private readonly SocketRemotingEndPoint _endPoint;
 		private readonly ISubjectHost _subjectHost;
 		private readonly ManualResetEvent _waitHandle;
+		private readonly object _syncRoot;
 
 		private Process _process;
 		private HostState _hostState;
 
 		private int? _remotePort;
-		private bool _isDisposed;
 		private bool _hasProcessExited;
 		private bool _hasProcessFailed;
 		private readonly int _parentPid;
 		private readonly ProcessStartInfo _startInfo;
+		private int? _hostProcessId;
+
+		private bool _isDisposed;
+		private bool _isDisposing;
 
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
@@ -149,6 +153,7 @@ namespace SharpRemote.Hosting
 
 			_waitHandle = new ManualResetEvent(false);
 			_hostState = HostState.BootPending;
+			_syncRoot = new object();
 
 			_parentPid = Process.GetCurrentProcess().Id;
 			_startInfo = new ProcessStartInfo(process)
@@ -218,7 +223,9 @@ namespace SharpRemote.Hosting
 			}
 			catch (Exception e)
 			{
-				Log.WarnFormat("Caught unexpected exception after having started the host process: {0}", e);
+				Log.WarnFormat("Caught unexpected exception after having started the host process (PID: {1}): {0}",
+					e,
+					_hostProcessId);
 
 				_process.TryKill();
 				_process.TryDispose();
@@ -248,6 +255,8 @@ namespace SharpRemote.Hosting
 			{
 				if (!_process.Start())
 					throw new SharpRemoteException(string.Format("Failed to start process {0}", _process.StartInfo.FileName));
+
+				_hostProcessId = _process.Id;
 			}
 			catch (Win32Exception e)
 			{
@@ -282,7 +291,16 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		private void HeartbeatMonitorOnOnFailure()
 		{
-			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process");
+			lock (_syncRoot)
+			{
+				// If we're disposing this silo (or have disposed it alrady), then the heartbeat monitor
+				// reported a failure that we caused intentionally (by killing the host process) and thus
+				// this "failure" musn't be reported.
+				if (_isDisposed || _isDisposing)
+					return;
+			}
+
+			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process (PID: {0})", _hostProcessId);
 			HandleFailure(null);
 		}
 
@@ -504,6 +522,11 @@ namespace SharpRemote.Hosting
 
 		public void Dispose()
 		{
+			lock (_syncRoot)
+			{
+				_isDisposing = true;
+			}
+
 			_heartbeatMonitor.TryDispose();
 			_latencyMonitor.TryDispose();
 			_subjectHost.TryDispose();
@@ -512,7 +535,12 @@ namespace SharpRemote.Hosting
 			_process.TryKill();
 			_process.TryDispose();
 			_hasProcessExited = true;
-			_isDisposed = true;
+
+			lock (_syncRoot)
+			{
+				_isDisposed = true;
+				_isDisposing = false;
+			}
 		}
 
 		private void EmitHostOutputWritten(string message)

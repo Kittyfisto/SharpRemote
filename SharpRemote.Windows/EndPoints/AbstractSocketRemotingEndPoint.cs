@@ -562,9 +562,9 @@ namespace SharpRemote
 
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
-			if (Log.IsInfoEnabled)
+			if (Log.IsDebugEnabled)
 			{
-				Log.InfoFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
+				Log.DebugFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
 								subject.GetType().FullName,
 				                typeof (T).FullName,
 				                objectId

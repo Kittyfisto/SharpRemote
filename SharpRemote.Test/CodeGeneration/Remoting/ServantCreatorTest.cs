@@ -90,7 +90,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			var inStream = new MemoryStream();
 			var writer = new BinaryWriter(inStream);
-			writer.Write(typeof(IVoidMethodStringParameter).AssemblyQualifiedName);
+			writer.Write(true);
 			writer.Write(12345678912345678912);
 
 			inStream.Position = 0;

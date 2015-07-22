@@ -265,7 +265,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Description("Verifies that serializing a [ByReference] type queries the endpoint for the servant and serializes the id to the stream")]
+		[Description("Verifies that serializing a [ByReference] type queries the endpoint for the servant and serializes both the interface type and the grain's object-the id to the stream")]
 		public void TestByReferenceSerialize()
 		{
 			_serializer.RegisterType<IByReferenceType>();
@@ -291,7 +291,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				writer.Flush();
 				stream.Position = 0;
 
-				reader.ReadString().Should().Be(typeof(ByReferenceClass).AssemblyQualifiedName);
+				reader.ReadString().Should().Be(typeof(IByReferenceType).AssemblyQualifiedName);
 				reader.ReadInt64().Should().Be(objectId);
 			}
 		}
@@ -315,7 +315,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			using (var writer = new BinaryWriter(stream))
 			using (var reader = new BinaryReader(stream))
 			{
-				writer.Write(typeof(ByReferenceClass).AssemblyQualifiedName);
+				writer.Write(typeof(IByReferenceType).AssemblyQualifiedName);
 				writer.Write(objectId);
 
 				writer.Flush();

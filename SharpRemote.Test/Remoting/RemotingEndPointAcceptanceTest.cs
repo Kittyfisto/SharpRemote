@@ -15,7 +15,9 @@ using SharpRemote.Test.Types;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Exceptions;
 using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
+using SharpRemote.Test.Types.Structs;
 using log4net.Core;
 using Description = NUnit.Framework.DescriptionAttribute;
 
@@ -542,12 +544,42 @@ namespace SharpRemote.Test.Remoting
 			const int numUniqueListeners = numTasks*numListenersPerTask;
 			processor.Listeners.Count.Should().Be(numUniqueListeners * 2, "Because each unique listener instance is added twice");
 		}
+		
+
+		[Test]
+		[Description("Verifies that a [ByReference] field of a struct that's passed as an object is correctly deserialized on the other end")]
+		public void TestAddObjectByReference1()
+		{
+			var reference = new ByReferenceClass(9001);
+			var value = new FieldObjectStruct
+				{
+					Value = reference
+				};
+
+			var subject = new Mock<IVoidMethodObjectParameter>();
+			object actualValue = null;
+			subject.Setup(x => x.AddListener(It.IsAny<object>()))
+			       .Callback((object x) => actualValue = x);
+
+			const ulong servantId = 24;
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IVoidMethodObjectParameter>(servantId);
+
+			proxy.AddListener(value);
+			actualValue.Should().NotBeNull();
+			actualValue.Should().BeOfType<FieldObjectStruct>();
+			(((FieldObjectStruct) actualValue).Value is IByReferenceType).Should().BeTrue();
+			var actualReference = ((FieldObjectStruct) actualValue).Value;
+
+			proxy.AddListener(value);
+			((FieldObjectStruct) actualValue).Value.Should().BeSameAs(actualReference, "Because [ByReference] types should adhere to referential equality after deserialization");
+		}
 
 		[Test]
 		[Description("Verifies that a method returning a [ByReference] type is marshalled correctly")]
-		public void TestReturnByReference()
+		public void TestReturnByReference1()
 		{
-			const ulong servantId = 24;
+			const ulong servantId = 25;
 
 			var subject = new Mock<IReturnsByReferenceType>();
 			var foo = new ByReferenceClass();
@@ -564,10 +596,30 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Description("Verifies that a method returning an object of a [ByReference] type is marshalled correctly")]
+		public void TestReturnByReference2()
+		{
+			const ulong servantId = 26;
+
+			var subject = new Mock<IReturnsObjectMethod>();
+			var foo = new ByReferenceClass();
+			subject.Setup(x => x.GetListener()).Returns(foo);
+
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IReturnsObjectMethod>(servantId);
+
+			var actualFoo1 = proxy.GetListener() as IByReferenceType;
+			actualFoo1.Should().NotBeNull();
+			actualFoo1.Value.Should().Be(foo.Value);
+
+			proxy.GetListener().Should().BeSameAs(actualFoo1, "because [ByReference] types must be marshalled with referential equality in mind - GetFoo() always returns the same instance and thus the proxy should as well");
+		}
+
+		[Test]
 		[Description("Verifies that a method returning a list of objects where some are a [ByReference] types is marshalled correctly")]
 		public void TestReturnListOfByReferences()
 		{
-			const ulong servantId = 25;
+			const ulong servantId = 27;
 
 			var subject = new Mock<IReturnsObjectArray>();
 			var foo1 = new ByReferenceClass(42);

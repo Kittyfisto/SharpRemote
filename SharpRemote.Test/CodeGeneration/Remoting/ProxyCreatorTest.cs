@@ -69,7 +69,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
-		public void TestByReferenceParameter()
+		[Description("Verifies that [ByReference] objects are marshalled by embedding the [ByReference] interface and the grain-object-id into the stream")]
+		public void TestByReferenceParameter1()
 		{
 			_endPoint.Setup(
 				x => x.GetExistingOrCreateNewServant(It.IsAny<IVoidMethodStringParameter>()))
@@ -93,14 +94,56 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					        interfaceName.Should().Be("SharpRemote.Test.Types.Interfaces.IByReferenceParemeterMethodInterface");
 					        methodName.Should().Be("AddListener");
 					        stream.Should().NotBeNull();
-					        stream.Length.Should().Be(136);
+					        stream.Length.Should().Be(9);
 					        var reader = new BinaryReader(stream);
-					        reader.ReadString().Should().Be(listener.Object.GetType().AssemblyQualifiedName);
+					        reader.ReadBoolean().Should().BeTrue("Because a non-null by-reference object has been serialized");
 					        reader.ReadUInt64().Should().Be(12345678912345678912);
 
 					        addListenerCalled = true;
 					        return null;
 				        });
+
+			proxy.AddListener(listener.Object);
+			addListenerCalled.Should().BeTrue();
+		}
+
+		[Test]
+		[Description("Verifies that when a [ByReference] is marshalled, when it's not known at compile time, then its ByReference interface is embedded in the stream")]
+		public void TestByReferenceParameter2()
+		{
+			_endPoint.Setup(
+				x => x.GetExistingOrCreateNewServant(It.IsAny<IVoidMethodStringParameter>()))
+					 .Returns((IVoidMethodStringParameter subject) =>
+					 {
+						 var ret = new Mock<IServant>();
+						 ret.Setup(x => x.ObjectId).Returns(12345678912345678912);
+						 ret.Setup(x => x.Subject).Returns(subject);
+						 return ret.Object;
+					 });
+
+			var proxy = TestGenerate<IVoidMethodObjectParameter>();
+			var listener = new Mock<IVoidMethodStringParameter>();
+
+			bool addListenerCalled = false;
+			_channel.Setup(
+				x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+					.Returns((ulong objectId, string interfaceName, string methodName, Stream stream) =>
+					{
+						objectId.Should().Be(((IProxy)proxy).ObjectId);
+						interfaceName.Should().Be("SharpRemote.Test.Types.Interfaces.IVoidMethodObjectParameter");
+						methodName.Should().Be("AddListener");
+						stream.Should().NotBeNull();
+						stream.Length.Should().Be(155);
+						var reader = new BinaryReader(stream);
+						reader.ReadString()
+						      .Should()
+						      .Be(typeof (IVoidMethodStringParameter).AssemblyQualifiedName,
+						          "Because the object's by reference interface type should be embedded into the stream");
+						reader.ReadUInt64().Should().Be(12345678912345678912);
+
+						addListenerCalled = true;
+						return null;
+					});
 
 			proxy.AddListener(listener.Object);
 			addListenerCalled.Should().BeTrue();
@@ -485,7 +528,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		}
 
 		[Test]
-		public void TestReturnByReference()
+		[Description("Verifies that an object where it's known at compile time that it is a by reference type is marshalled correctly without embedding type information")]
+		public void TestReturnByReference1()
 		{
 			var proxy = TestGenerate<IByReferenceReturnMethodInterface>();
 
@@ -505,7 +549,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 					        var output = new MemoryStream();
 					        var writer = new BinaryWriter(output);
-							writer.Write(listener.GetType().AssemblyQualifiedName);
+							writer.Write(true);
 					        writer.Write(id);
 					        writer.Flush();
 					        output.Position = 0;
@@ -517,6 +561,45 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			         .Returns(listener);
 
 			IVoidMethodStringParameter actualListener = proxy.AddListener();
+			addListenerCalled.Should().BeTrue();
+			actualListener.Should().NotBeNull();
+			actualListener.Should().BeSameAs(listener);
+		}
+
+		[Test]
+		[Description("Verifies that an object where it's known at compile time that it is a by reference type is marshalled correctly without embedding type information")]
+		public void TestReturnByReference2()
+		{
+			var proxy = TestGenerate<IReturnsObjectMethod>();
+
+			IVoidMethodStringParameter listener = new VoidMethodStringParameter();
+
+			const ulong id = 42;
+			bool addListenerCalled = false;
+			_channel.Setup(
+				x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+					.Returns((ulong objectId, string interfaceName, string methodName, Stream stream) =>
+					{
+						objectId.Should().Be(((IProxy)proxy).ObjectId);
+						methodName.Should().Be("GetListener");
+						stream.Should().BeNull();
+
+						addListenerCalled = true;
+
+						var output = new MemoryStream();
+						var writer = new BinaryWriter(output);
+						writer.Write(typeof(IVoidMethodStringParameter).AssemblyQualifiedName);
+						writer.Write(id);
+						writer.Flush();
+						output.Position = 0;
+
+						return output;
+					});
+
+			_endPoint.Setup(x => x.GetExistingOrCreateNewProxy<IVoidMethodStringParameter>(It.Is((ulong y) => y == id)))
+					 .Returns(listener);
+
+			var actualListener = proxy.GetListener() as IVoidMethodStringParameter;
 			addListenerCalled.Should().BeTrue();
 			actualListener.Should().NotBeNull();
 			actualListener.Should().BeSameAs(listener);

@@ -29,10 +29,6 @@ namespace SharpRemote
 		{
 			if (type.GetCustomAttribute<DataContractAttribute>() != null)
 			{
-				if (type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
-					throw new ArgumentException(string.Format("The type '{0}' is marked with the [DataContract] as well as [ByReference] attribute, but these are mutually exclusive",
-						type.FullName));
-
 				// The type should be serialized by value, e.g. we simply serialize all fields and properties
 				// marked with the [DataMember] attribute
 				EmitWriteFields(gen, loadRemotingEndPoint, type);
@@ -65,6 +61,10 @@ namespace SharpRemote
 
 		private static Type FindProxyInterface(Type type)
 		{
+			if (type.GetCustomAttribute<DataContractAttribute>(true) != null)
+				throw new ArgumentException(string.Format("The type '{0}' is marked with the [DataContract] as well as [ByReference] attribute, but these are mutually exclusive",
+					type.FullName));
+
 			Type proxyInterface;
 			var attributed = type.GetInterfaces().Where(x => x.GetCustomAttribute<ByReferenceAttribute>() != null).ToList();
 			if (attributed.Count > 1)

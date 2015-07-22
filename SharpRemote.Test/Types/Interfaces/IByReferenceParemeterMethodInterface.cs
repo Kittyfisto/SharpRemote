@@ -7,9 +7,4 @@ namespace SharpRemote.Test.Types.Interfaces
 		void AddListener(IVoidMethodStringParameter listener);
 		void RemoveListener(IVoidMethodStringParameter listener);
 	}
-
-	public interface IByReferenceReturnMethodInterface
-	{
-		IVoidMethodStringParameter AddListener();
-	}
 }

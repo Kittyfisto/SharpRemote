@@ -196,40 +196,17 @@ namespace SharpRemote.CodeGeneration.Remoting
 					int currentIndex = i + 1;
 
 					Action loadValue = () => gen.Emit(OpCodes.Ldarg, currentIndex);
+					Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, currentIndex);
 
-					// If the parameter is attributed with [ByReference] then we don't want to serialize the object but ensure
-					// that there's a servant for it on this end-point and then only serialize its object id.
-					if (parameter.GetCustomAttribute<ByReferenceAttribute>() != null)
-					{
-						VerifyParameterConstraints(parameter);
-
-						gen.Emit(OpCodes.Ldloc, binaryWriter);
-
-						// _endPoint.GetOrCreateServant(arg[y])
-						MethodInfo getOrCreateServant = Methods.RemotingEndPointGetOrCreateServant.MakeGenericMethod(parameterType);
-						gen.Emit(OpCodes.Ldarg_0);
-						gen.Emit(OpCodes.Ldfld, EndPoint);
-						loadValue();
-						gen.Emit(OpCodes.Callvirt, getOrCreateServant);
-
-						// binaryWriter.Write(servant.ObjectId);
-						gen.Emit(OpCodes.Callvirt, Methods.GrainGetObjectId);
-						gen.Emit(OpCodes.Call, Methods.WriteULong);
-					}
-					else
-					{
-						Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, currentIndex);
-
-						//WriteXXX(_serializer, arg[y], binaryWriter);
-						SerializerCompiler.EmitWriteValue(
-							gen,
-							loadWriter,
-							loadValue,
-							loadValueAddress,
-							loadSerializer,
-							loadRemotingEndPoint,
-							parameterType);
-					}
+					//WriteXXX(_serializer, arg[y], binaryWriter);
+					SerializerCompiler.EmitWriteValue(
+						gen,
+						loadWriter,
+						loadValue,
+						loadValueAddress,
+						loadSerializer,
+						loadRemotingEndPoint,
+						parameterType);
 				}
 
 				// binaryWriter.Flush()

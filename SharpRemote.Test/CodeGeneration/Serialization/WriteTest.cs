@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -60,7 +61,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer.WriteObject(_writer, typeof (int), null);
 			_data.Position = 0;
 
-			_reader.ReadString().Should().Be(typeof (int).GetType().AssemblyQualifiedName);
+			_reader.ReadString().Should().Be(typeof (Type).AssemblyQualifiedName);
 			_reader.ReadString().Should().Be(typeof (int).AssemblyQualifiedName);
 			_data.Position.Should().Be(_data.Length);
 		}

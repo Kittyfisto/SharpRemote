@@ -644,49 +644,58 @@ namespace SharpRemote
 
 		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName, BinaryReader reader)
 		{
-			var taskScheduler = grain.GetTaskScheduler(methodName);
-			var task = new Task(() =>
+			// There's 2 things we can find and report immediately:
+			// 1. an invalid object-id was passed that points to a different interface than the caller expects
+			// 2. no task scheduler could be found for the required method.
+			try
 			{
-				try
+				EnsureTypeSafety(grain.ObjectId, grain.InterfaceType, typeName, methodName);
+				TaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
+
+				// However if those 2 things don't throw, then we dispatch the rest of the method invocation
+				// on the task dispatcher and be done with it here...
+				var task = new Task(() =>
 				{
-					Socket socket = _socket;
-					var response = new MemoryStream();
-					var writer = new BinaryWriter(response, Encoding.UTF8);
 					try
 					{
-						EnsureTypeSafety(grain.ObjectId, grain.InterfaceType, typeName, methodName);
+						Socket socket = _socket;
+						var response = new MemoryStream();
+						var writer = new BinaryWriter(response, Encoding.UTF8);
+						try
+						{
+							WriteResponseHeader(rpcId, writer, MessageType.Return);
+							grain.Invoke(methodName, reader, writer);
+							PatchResponseMessageLength(response, writer);
+						}
+						catch (Exception e)
+						{
+							response.Position = 0;
+							WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+							WriteException(writer, e);
+							PatchResponseMessageLength(response, writer);
+						}
 
-						WriteResponseHeader(rpcId, writer, MessageType.Return);
-						grain.Invoke(methodName, reader, writer);
-						PatchResponseMessageLength(response, writer);
+						var responseLength = (int)response.Length;
+						byte[] data = response.GetBuffer();
+
+						SocketError err;
+						if (!SynchronizedWrite(socket, data, responseLength, out err))
+						{
+							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+							Disconnect();
+						}
 					}
 					catch (Exception e)
 					{
-						response.Position = 0;
-						WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-						WriteException(writer, e);
-						PatchResponseMessageLength(response, writer);
-					}
-
-					var responseLength = (int)response.Length;
-					byte[] data = response.GetBuffer();
-
-					SocketError err;
-					if (!SynchronizedWrite(socket, data, responseLength, out err))
-					{
-						Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
 						Disconnect();
 					}
-				}
-				catch (Exception e)
-				{
-					Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
-					Disconnect();
-				}
-			});
+				});
 
-			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
-			task.ContinueWith(unused =>
+				// Once we've created the task, we remember that there's a method invocation
+				// that's yet to be executed (which tremendously helps debugging problems)
+				var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
+				task.ContinueWith(unused =>
 				{
 					lock (_pendingInvocations)
 					{
@@ -694,12 +703,35 @@ namespace SharpRemote
 					}
 				});
 
-			lock (_pendingInvocations)
-			{
-				_pendingInvocations.Add(methodInvocation);
-			}
+				lock (_pendingInvocations)
+				{
+					_pendingInvocations.Add(methodInvocation);
+				}
 
-			task.Start(taskScheduler);
+				// And then finally start the task to deserialize all method parameters, invoke the mehtod
+				// and then seralize either the return value of the thrown exception...
+				task.Start(taskScheduler);
+			}
+			catch (TypeMismatchException e)
+			{
+				var response = new MemoryStream();
+				var writer = new BinaryWriter(response, Encoding.UTF8);
+				response.Position = 0;
+				WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+				WriteException(writer, e);
+				PatchResponseMessageLength(response, writer);
+
+				var responseLength = (int)response.Length;
+				byte[] data = response.GetBuffer();
+
+				SocketError err;
+				Socket socket = _socket;
+				if (!SynchronizedWrite(socket, data, responseLength, out err))
+				{
+					Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+					Disconnect();
+				}
+			}
 		}
 
 		private void HandleRequest(long rpcId, BinaryReader reader)

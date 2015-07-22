@@ -138,10 +138,26 @@ namespace SharpRemote
 		/// <returns></returns>
 		public MethodInfo GetWriteValueMethodInfo(Type type)
 		{
+			// We can make a certain distinction at compile time that helps to reduce the amount of dynamic lookups:
+			// If a type is sealed (value type or sealed class) then its instance IS EXACTLY the type we know at
+			// compile time and thus we can directly embedd the call to its serialization method.
 			if (type.IsValueType || type.IsSealed)
 			{
 				SerializationMethods methods;
 				RegisterType(type, out methods);
+				return methods.WriteValueMethod;
+			}
+
+			// If we know that the given type is serialized by reference (as opposed to by value) then
+			// it doesn't matter which ACTUAL type we're dealing with because all types implementing
+			// a [ByReference] interface must be serialized by reference, without exception.
+			if (type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
+			{
+				// Serializing by reference when, at compile time, it is known that the object is to
+				// be serialized by reference only requires storing its grain-object-id in the stream.
+				var interfaceType = FindProxyInterface(type);
+				SerializationMethods methods;
+				RegisterType(interfaceType, out methods);
 				return methods.WriteValueMethod;
 			}
 
@@ -158,10 +174,26 @@ namespace SharpRemote
 		/// <returns></returns>
 		public MethodInfo GetReadValueMethodInfo(Type type)
 		{
+			// We can make a certain distinction at compile time that helps to reduce the amount of dynamic lookups:
+			// If a type is sealed (value type or sealed class) then its instance IS EXACTLY the type we know at
+			// compile time and thus we can directly embedd the call to its serialization method.
 			if (type.IsValueType || type.IsSealed)
 			{
 				SerializationMethods methods;
 				RegisterType(type, out methods);
+				return methods.ReadValueMethod;
+			}
+
+			// If we know that the given type is serialized by reference (as opposed to by value) then
+			// it doesn't matter which ACTUAL type we're dealing with because all types implementing
+			// a [ByReference] interface must be serialized by reference, without exception.
+			if (type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
+			{
+				// Serializing by reference when, at compile time, it is known that the object is to
+				// be serialized by reference only requires storing its grain-object-id in the stream.
+				var interfaceType = FindProxyInterface(type);
+				SerializationMethods methods;
+				RegisterType(interfaceType, out methods);
 				return methods.ReadValueMethod;
 			}
 
@@ -199,7 +231,7 @@ namespace SharpRemote
 					                                                                 typeof (IRemotingEndPoint)
 				                                                                 });
 
-			CreateWriteValueWithTypeInformation(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
+			MethodInfo writeObjectMethod = CreateWriteValueWithTypeInformation(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
 			MethodInfo writeValueMethod = CreateWriteValue(typeBuilder, writeValueNotNullMethod, typeInformation.Type);
 			MethodBuilder readValueNotNullMethod = typeBuilder.DefineMethod("ReadValueNotNull",
 			                                                                MethodAttributes.Public | MethodAttributes.Static,
@@ -211,12 +243,14 @@ namespace SharpRemote
 					                                                                typeof (IRemotingEndPoint)
 				                                                                });
 
-			CreateReadObject(typeBuilder, readValueNotNullMethod, typeInformation.Type);
+			MethodInfo readObjectMethod = CreateReadObject(typeBuilder, readValueNotNullMethod, typeInformation.Type);
 			MethodInfo readValueMethod = CreateReadValue(typeBuilder, readValueNotNullMethod, typeInformation.Type);
 
 			var m = new SerializationMethods(
 				writeValueMethod,
-				readValueMethod);
+				writeObjectMethod,
+				readValueMethod,
+				readObjectMethod);
 			_serializationMethods.Add(typeInformation.Type, m);
 
 			try
@@ -372,7 +406,7 @@ namespace SharpRemote
 			return method;
 		}
 
-		private void CreateReadObject(TypeBuilder typeBuilder, MethodBuilder readValueNotNull, Type type)
+		private MethodInfo CreateReadObject(TypeBuilder typeBuilder, MethodBuilder readValueNotNull, Type type)
 		{
 			MethodBuilder method = typeBuilder.DefineMethod("ReadObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                                CallingConventions.Standard, typeof (object), new[]
@@ -397,6 +431,7 @@ namespace SharpRemote
 			}
 
 			gen.Emit(OpCodes.Ret);
+			return method;
 		}
 
 		private void EmitWriteValueNotNullMethod(ILGenerator gen, TypeInformation typeInformation)
@@ -503,7 +538,7 @@ namespace SharpRemote
 			return method;
 		}
 
-		private void CreateWriteValueWithTypeInformation(TypeBuilder typeBuilder, MethodInfo writeValueNotNull, Type type)
+		private MethodInfo CreateWriteValueWithTypeInformation(TypeBuilder typeBuilder, MethodInfo writeValueNotNull, Type type)
 		{
 			MethodBuilder method = typeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                                CallingConventions.Standard, typeof (void), new[]
@@ -533,19 +568,12 @@ namespace SharpRemote
 					gen.Emit(OpCodes.Ldarg_2);
 					gen.Emit(OpCodes.Ldarg_3);
 					gen.Emit(OpCodes.Call, writeValueNotNull);
-				});
+				}, type);
+
+			return method;
 		}
 
-		private void EmitWriteTypeInformation(ILGenerator gen)
-		{
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Callvirt, Methods.ObjectGetType);
-			gen.Emit(OpCodes.Callvirt, TypeSerializer.GetAssemblyQualifiedName);
-			gen.Emit(OpCodes.Call, Methods.WriteString);
-		}
-
-		private void EmitWriteTypeInformationOrNull(ILGenerator gen, Action writeValue)
+		private void EmitWriteTypeInformationOrNull(ILGenerator gen, Action writeValue, Type type)
 		{
 			//gen.EmitWriteLine("writing type info");
 
@@ -569,10 +597,12 @@ namespace SharpRemote
 			Label @end = gen.DefineLabel();
 			gen.Emit(OpCodes.Br, @end);
 
-			// else { writer.WriteString(object.GetType().AssemblyQualifiedName);
+			// else { writer.WriteString(type.AssemblyQualifiedName);
 			gen.MarkLabel(@true);
-			//gen.EmitWriteLine("writer.WriteString(object.GetType().AssemblyQualifiedName)");
-			EmitWriteTypeInformation(gen);
+			//gen.EmitWriteLine("writer.WriteString(type.AssemblyQualifiedName)");
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldstr, type.AssemblyQualifiedName);
+			gen.Emit(OpCodes.Call, Methods.WriteString);
 
 			writeValue();
 
@@ -595,6 +625,11 @@ namespace SharpRemote
 		{
 			if (type.Is(typeof (Type)))
 				return typeof (Type);
+
+			if (type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
+			{
+				return FindProxyInterface(type);
+			}
 
 			return type;
 		}
@@ -636,20 +671,28 @@ namespace SharpRemote
 			///     Writes a value that can be null.
 			/// </summary>
 			public readonly MethodInfo WriteValueMethod;
+
+			public readonly MethodInfo WriteObjectMethod;
 			public readonly MethodInfo ReadValueMethod;
+			public readonly MethodInfo ReadObjectMethod;
 			public Func<BinaryReader, ISerializer, IRemotingEndPoint, object> ReadObjectDelegate;
 			public Action<BinaryWriter, object, ISerializer, IRemotingEndPoint> WriteDelegate;
 
 			public SerializationMethods(
 				MethodInfo writeValueMethod,
-				MethodInfo readValueMethod)
+				MethodInfo writeObjectMethod,
+				MethodInfo readValueMethod,
+				MethodInfo readObjectMethod)
 			{
 				if (writeValueMethod == null) throw new ArgumentNullException("writeValueMethod");
-
+				if (writeObjectMethod == null) throw new ArgumentNullException("writeObjectMethod");
 				if (readValueMethod == null) throw new ArgumentNullException("readValueMethod");
+				if (readObjectMethod == null) throw new ArgumentNullException("readObjectMethod");
 
 				WriteValueMethod = writeValueMethod;
+				WriteObjectMethod = writeObjectMethod;
 				ReadValueMethod = readValueMethod;
+				ReadObjectMethod = readObjectMethod;
 			}
 		}
 	}

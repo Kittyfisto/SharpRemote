@@ -42,17 +42,17 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			}
 		}
 
-		public static object ShouldRoundtrip(this ISerializer serializer, object value)
+		public static object ShouldRoundtrip(this ISerializer serializer, object value, IRemotingEndPoint endPoint = null)
 		{
 			using (var stream = new MemoryStream())
 			{
 				var writer = new BinaryWriter(stream, Encoding.UTF8);
-				serializer.WriteObject(writer, value, null);
+				serializer.WriteObject(writer, value, endPoint);
 				writer.Flush();
 				stream.Position = 0;
 
 				var reader = new BinaryReader(stream, Encoding.UTF8);
-				object actualValue = serializer.ReadObject(reader, null);
+				object actualValue = serializer.ReadObject(reader, endPoint);
 
 				actualValue.Should()
 				           .Be(value, "because serialization should preserve all those members attributing to value equality");

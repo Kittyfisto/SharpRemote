@@ -59,6 +59,7 @@
     <Compile Include="Types\Classes\ByReferenceAndDataContract.cs" />
     <Compile Include="Types\Classes\ByReferenceClass.cs" />
     <Compile Include="Types\Classes\VoidMethodStringParameter.cs" />
+    <Compile Include="Types\Interfaces\IByReferenceReturnMethodInterface.cs" />
     <Compile Include="Types\Interfaces\IByReferenceType.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />
     <Compile Include="Hosting\InProcessRemotingSiloTest.cs" />
@@ -117,7 +118,9 @@
     <Compile Include="Types\Interfaces\IReturnsObjectArray.cs" />
     <Compile Include="Types\Interfaces\IReturnsTask.cs" />
     <Compile Include="Types\Classes\Listener.cs" />
+    <Compile Include="Types\Interfaces\NativeTypes\IReturnsObjectMethod.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IReturnsType.cs" />
+    <Compile Include="Types\Interfaces\IVoidMethodObjectParameter.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IVoidMethodTypeParameter.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\ReturnsTypeofString.cs" />
     <Compile Include="Types\Interfaces\OrderedInterface.cs" />

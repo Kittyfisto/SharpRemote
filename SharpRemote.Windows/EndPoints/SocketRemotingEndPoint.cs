@@ -6,6 +6,7 @@ using System.Net.PeerToPeer;
 using System.Net.Sockets;
 using System.Reflection;
 using System.ServiceProcess;
+using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
@@ -28,7 +29,8 @@ namespace SharpRemote
 
 		private IPEndPoint _localEndPoint;
 		private PeerNameRegistration _peerNameRegistration;
-		private Task _readTask;
+		private Thread _readThread;
+		private Thread _writeThread;
 		private IPEndPoint _remoteEndPoint;
 		private Socket _serverSocket;
 
@@ -373,9 +375,16 @@ namespace SharpRemote
 			lock (SyncRoot)
 			{
 				Socket = socket;
-				_remoteEndPoint = (IPEndPoint) socket.RemoteEndPoint;
-				_readTask = new Task(ReadLoop, socket, TaskCreationOptions.LongRunning);
-				_readTask.Start();
+				_remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
+				_cancellationTokenSource = new CancellationTokenSource();
+
+				var args = new ThreadArgs(socket, _cancellationTokenSource.Token);
+
+				_readThread = new Thread(ReadLoop) {Name = string.Format("EndPoint Socket Reading")};
+				_readThread.Start(args);
+
+				_writeThread = new Thread(WriteLoop) {Name = string.Format("EndPoint Socket Writing")};
+				_writeThread.Start(args);
 
 				Log.InfoFormat("{0}: Connected to {1}", Name, _remoteEndPoint);
 			}

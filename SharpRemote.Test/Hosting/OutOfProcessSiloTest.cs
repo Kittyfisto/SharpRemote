@@ -384,7 +384,7 @@ namespace SharpRemote.Test.Hosting
 
 				// Measurement phase
 
-				const int batchSize = 64;
+				const int batchSize = 1000;
 				var tasks = new Task[batchSize];
 
 				watch.Start();

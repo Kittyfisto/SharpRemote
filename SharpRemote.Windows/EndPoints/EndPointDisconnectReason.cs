@@ -18,9 +18,14 @@ namespace SharpRemote
 		RequestedByRemotEndPoint,
 
 		/// <summary>
-		/// The connection was dropped because the read operation on the socket failed.
+		/// The connection was dropped because a read operation on the socket failed.
 		/// </summary>
 		ReadFailure,
+
+		/// <summary>
+		/// The connection was dropped because a write operation on the socket failed.
+		/// </summary>
+		WriteFailure,
 
 		/// <summary>
 		/// The connection was dropped because a response to a non-existant pending RPC was received.

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -66,8 +67,10 @@ namespace SharpRemote
 
 		#region Method Invocation
 
+		private readonly BlockingCollection<KeyValuePair<byte[], int>> _pendingWrites;
 		private readonly Dictionary<long, Action<MessageType, BinaryReader>> _pendingCalls;
 		private readonly HashSet<MethodInvocation> _pendingInvocations;
+		protected CancellationTokenSource _cancellationTokenSource;
 
 		#endregion
 
@@ -137,6 +140,18 @@ namespace SharpRemote
 			}
 		}
 
+		protected sealed class ThreadArgs
+		{
+			public readonly Socket Socket;
+			public readonly CancellationToken Token;
+
+			public ThreadArgs(Socket socket, CancellationToken token)
+			{
+				Socket = socket;
+				Token = token;
+			}
+		}
+
 		protected AbstractSocketRemotingEndPoint(string name,
 		                                         IAuthenticator clientAuthenticator = null,
 		                                         IAuthenticator serverAuthenticator = null,
@@ -158,6 +173,7 @@ namespace SharpRemote
 			_serializer = new Serializer(_module, customTypeResolver);
 			_servantCreator = new ServantCreator(_module, _serializer, this, this);
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
+			_pendingWrites = new BlockingCollection<KeyValuePair<byte[], int>>(1000);
 			_pendingCalls = new Dictionary<long, Action<MessageType, BinaryReader>>();
 			_pendingInvocations = new HashSet<MethodInvocation>();
 
@@ -167,9 +183,55 @@ namespace SharpRemote
 
 		#region Reading from / Writing to socket
 
+		protected void WriteLoop(object sock)
+		{
+			var args = (ThreadArgs) sock;
+			var socket = args.Socket;
+			var token = args.Token;
+
+			EndPointDisconnectReason reason;
+
+			try
+			{
+				while (true)
+				{
+					if (token.IsCancellationRequested)
+					{
+						reason = EndPointDisconnectReason.RequestedByEndPoint;
+						break;
+					}
+
+					var pair = _pendingWrites.Take(token);
+					var message = pair.Key;
+					var messageLength = pair.Value;
+
+					SocketError error;
+					if (!SynchronizedWrite(socket, message, messageLength, out error))
+					{
+						reason = EndPointDisconnectReason.WriteFailure;
+						break;
+					}
+				}
+
+			}
+			catch (OperationCanceledException)
+			{
+				reason = EndPointDisconnectReason.RequestedByEndPoint;
+			}
+			catch (Exception e)
+			{
+				reason = EndPointDisconnectReason.UnhandledException;
+				Log.ErrorFormat("Caught exception while writing/handling messages: {0}", e);
+			}
+
+			Disconnect(reason);
+		}
+
 		protected void ReadLoop(object sock)
 		{
-			var socket = (Socket)sock;
+			var args = (ThreadArgs)sock;
+			var socket = args.Socket;
+
 			EndPointDisconnectReason reason;
 
 			try
@@ -303,6 +365,14 @@ namespace SharpRemote
 
 		#endregion
 
+		#region Timers
+
+		//private readonly Stopwatch _createMessage = new Stopwatch();
+		//private readonly Stopwatch _createEvent = new Stopwatch();
+		//private readonly Stopwatch _writeMessage = new Stopwatch();
+
+		#endregion
+
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
 			Socket socket = _socket;
@@ -311,7 +381,10 @@ namespace SharpRemote
 
 			long rpcId = Interlocked.Increment(ref _nextRpcId);
 			int messageLength;
+
+			//_createMessage.Start();
 			byte[] message = CreateMessage(servantId, interfaceType, methodName, arguments, rpcId, out messageLength);
+			//_createMessage.Stop();
 
 			if (Log.IsDebugEnabled)
 			{
@@ -325,8 +398,11 @@ namespace SharpRemote
 
 			try
 			{
+				//_createEvent.Start();
 				using (var handle = new ManualResetEvent(false))
 				{
+					//_createEvent.Stop();
+
 					BinaryReader response = null;
 					var type = MessageType.Call;
 					lock (_pendingCalls)
@@ -339,12 +415,16 @@ namespace SharpRemote
 						});
 					}
 
+					//_writeMessage.Start();
+					_pendingWrites.Add(new KeyValuePair<byte[], int>(message, messageLength));
+					/*
 					SocketError err;
 					if (!SynchronizedWrite(socket, message, messageLength, out err))
 					{
 						Log.ErrorFormat("Error while sending message: {0}", err);
 						throw new ConnectionLostException();
-					}
+					}*/
+					//_writeMessage.Stop();
 
 					Interlocked.Add(ref _numBytesSent, messageLength);
 					Interlocked.Increment(ref _numCallsInvoked);
@@ -389,8 +469,15 @@ namespace SharpRemote
 		{
 			lock (_syncRoot)
 			{
+				//_pendingWrites.Dispose();
+
 				Disconnect();
 				DisposeAdditional();
+
+				//Console.WriteLine("Create Message: {0:D}ms", _createMessage.ElapsedMilliseconds);
+				//Console.WriteLine("Create Event: {0:D}ms", _createEvent.ElapsedMilliseconds);
+				//Console.WriteLine("Create Write: {0:D}ms", _writeMessage.ElapsedMilliseconds);
+
 				_isDisposed = true;
 			}
 		}
@@ -432,6 +519,7 @@ namespace SharpRemote
 
 					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
 
+					_cancellationTokenSource.Cancel();
 					InterruptOngoingCalls();
 
 					// If we are disconnecting because of a failure, then we don't notify the other end

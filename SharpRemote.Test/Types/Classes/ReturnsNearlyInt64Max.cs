@@ -2,7 +2,7 @@
 
 namespace SharpRemote.Test.Types.Classes
 {
-	internal sealed class ReturnsNearlyInt64Max
+	public sealed class ReturnsNearlyInt64Max
 		: IGetInt64Property
 	{
 		public long Value

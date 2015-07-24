@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -67,9 +66,8 @@ namespace SharpRemote
 
 		#region Method Invocation
 
-		private readonly BlockingCollection<KeyValuePair<byte[], int>> _pendingWrites;
-		private readonly Dictionary<long, Action<MessageType, BinaryReader>> _pendingCalls;
-		private readonly HashSet<MethodInvocation> _pendingInvocations;
+		private readonly PendingMethodsQueue _pendingMethodCalls;
+		private readonly HashSet<MethodInvocation> _pendingMethodInvocations;
 		protected CancellationTokenSource _cancellationTokenSource;
 
 		#endregion
@@ -173,9 +171,8 @@ namespace SharpRemote
 			_serializer = new Serializer(_module, customTypeResolver);
 			_servantCreator = new ServantCreator(_module, _serializer, this, this);
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
-			_pendingWrites = new BlockingCollection<KeyValuePair<byte[], int>>(1000);
-			_pendingCalls = new Dictionary<long, Action<MessageType, BinaryReader>>();
-			_pendingInvocations = new HashSet<MethodInvocation>();
+			_pendingMethodCalls = new PendingMethodsQueue();
+			_pendingMethodInvocations = new HashSet<MethodInvocation>();
 
 			_clientAuthenticator = clientAuthenticator;
 			_serverAuthenticator = serverAuthenticator;
@@ -201,9 +198,14 @@ namespace SharpRemote
 						break;
 					}
 
-					var pair = _pendingWrites.Take(token);
-					var message = pair.Key;
-					var messageLength = pair.Value;
+					int messageLength;
+					var message = _pendingMethodCalls.TakePendingWrite(token, out messageLength);
+
+					if (message == null)
+					{
+						reason = EndPointDisconnectReason.RequestedByEndPoint;
+						break;
+					}
 
 					SocketError error;
 					if (!SynchronizedWrite(socket, message, messageLength, out error))
@@ -368,23 +370,17 @@ namespace SharpRemote
 		#region Timers
 
 		//private readonly Stopwatch _createMessage = new Stopwatch();
-		//private readonly Stopwatch _createEvent = new Stopwatch();
-		//private readonly Stopwatch _writeMessage = new Stopwatch();
 
 		#endregion
 
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
 			Socket socket = _socket;
-			if (socket == null || !socket.Connected)
+			//if (socket == null || !socket.Connected)
+			if (socket == null)
 				throw new NotConnectedException(_name);
 
 			long rpcId = Interlocked.Increment(ref _nextRpcId);
-			int messageLength;
-
-			//_createMessage.Start();
-			byte[] message = CreateMessage(servantId, interfaceType, methodName, arguments, rpcId, out messageLength);
-			//_createMessage.Stop();
 
 			if (Log.IsDebugEnabled)
 			{
@@ -396,63 +392,42 @@ namespace SharpRemote
 								methodName);
 			}
 
+			PendingMethodCall call = null;
 			try
 			{
-				//_createEvent.Start();
-				using (var handle = new ManualResetEvent(false))
+				//_createMessage.Start();
+				call = _pendingMethodCalls.Enqueue(servantId,
+				                                   interfaceType,
+				                                   methodName,
+				                                   arguments,
+												   rpcId);
+				//_createMessage.Stop();
+
+				Interlocked.Add(ref _numBytesSent, call.MessageLength);
+				Interlocked.Increment(ref _numCallsInvoked);
+
+				call.Wait();
+
+				if (call.MessageType == MessageType.Return)
 				{
-					//_createEvent.Stop();
-
-					BinaryReader response = null;
-					var type = MessageType.Call;
-					lock (_pendingCalls)
-					{
-						_pendingCalls.Add(rpcId, (t, r) =>
-						{
-							type = t;
-							response = r;
-							handle.Set();
-						});
-					}
-
-					//_writeMessage.Start();
-					_pendingWrites.Add(new KeyValuePair<byte[], int>(message, messageLength));
-					/*
-					SocketError err;
-					if (!SynchronizedWrite(socket, message, messageLength, out err))
-					{
-						Log.ErrorFormat("Error while sending message: {0}", err);
-						throw new ConnectionLostException();
-					}*/
-					//_writeMessage.Stop();
-
-					Interlocked.Add(ref _numBytesSent, messageLength);
-					Interlocked.Increment(ref _numCallsInvoked);
-
-					if (!handle.WaitOne())
-						throw new NotImplementedException();
-
-					if (type == MessageType.Return)
-					{
-						return (MemoryStream)response.BaseStream;
-					}
-					else if ((type & MessageType.Exception) != 0)
-					{
-						var formatter = new BinaryFormatter();
-						var e = (Exception)formatter.Deserialize(response.BaseStream);
-						throw e;
-					}
-					else
-					{
-						throw new NotImplementedException();
-					}
+					return (MemoryStream)call.Reader.BaseStream;
+				}
+				else if ((call.MessageType & MessageType.Exception) != 0)
+				{
+					var formatter = new BinaryFormatter();
+					var e = (Exception)formatter.Deserialize(call.Reader.BaseStream);
+					throw e;
+				}
+				else
+				{
+					throw new NotImplementedException();
 				}
 			}
 			finally
 			{
-				lock (_pendingCalls)
+				if (call != null)
 				{
-					_pendingCalls.Remove(rpcId);
+					_pendingMethodCalls.Recycle(call);
 				}
 			}
 		}
@@ -475,8 +450,6 @@ namespace SharpRemote
 				DisposeAdditional();
 
 				//Console.WriteLine("Create Message: {0:D}ms", _createMessage.ElapsedMilliseconds);
-				//Console.WriteLine("Create Event: {0:D}ms", _createEvent.ElapsedMilliseconds);
-				//Console.WriteLine("Create Write: {0:D}ms", _writeMessage.ElapsedMilliseconds);
 
 				_isDisposed = true;
 			}
@@ -520,7 +493,7 @@ namespace SharpRemote
 					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
 
 					_cancellationTokenSource.Cancel();
-					InterruptOngoingCalls();
+					_pendingMethodCalls.CancelAllCalls();
 
 					// If we are disconnecting because of a failure, then we don't notify the other end
 					// and drop the connection immediately. Also there's no need to notify the other
@@ -785,15 +758,15 @@ namespace SharpRemote
 				var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
 				task.ContinueWith(unused =>
 				{
-					lock (_pendingInvocations)
+					lock (_pendingMethodInvocations)
 					{
-						_pendingInvocations.Remove(methodInvocation);
+						_pendingMethodInvocations.Remove(methodInvocation);
 					}
 				});
 
-				lock (_pendingInvocations)
+				lock (_pendingMethodInvocations)
 				{
-					_pendingInvocations.Add(methodInvocation);
+					_pendingMethodInvocations.Add(methodInvocation);
 				}
 
 				// And then finally start the task to deserialize all method parameters, invoke the mehtod
@@ -890,56 +863,7 @@ namespace SharpRemote
 		private bool HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
 		{
 			Action<MessageType, BinaryReader> fn;
-			lock (_pendingCalls)
-			{
-				if (!_pendingCalls.TryGetValue(rpcId, out fn))
-					return false;
-			}
-
-			fn(messageType, reader);
-			return true;
-		}
-
-		private static byte[] CreateMessage(ulong servantId, string interfaceType, string methodName, MemoryStream arguments, long rpcId, out int bufferSize)
-		{
-			int argumentSize = arguments != null ? (int)arguments.Length : 0;
-			int maxMessageSize = 1 + 8 + 8 + interfaceType.Length*2 + methodName.Length * 2 + argumentSize;
-			int maxBufferSize = 4 + maxMessageSize;
-			var buffer = new byte[maxBufferSize];
-			using (var stream = new MemoryStream(buffer, 0, buffer.Length, true, true))
-			using (var writer = new BinaryWriter(stream, Encoding.UTF8))
-			{
-				writer.Write(maxMessageSize);
-				writer.Write(rpcId);
-				writer.Write((byte)MessageType.Call);
-				writer.Write(servantId);
-				writer.Write(interfaceType);
-				writer.Write(methodName);
-
-				if (arguments != null)
-				{
-					byte[] data = arguments.GetBuffer();
-					var dataLength = (int)arguments.Length;
-					writer.Write(data, 0, dataLength);
-				}
-
-				writer.Flush();
-
-				bufferSize = (int)stream.Position;
-				int messageSize = bufferSize - 4;
-				if (messageSize < maxMessageSize)
-				{
-					stream.Position = 0;
-					writer.Write(messageSize);
-				}
-				else if (messageSize > maxMessageSize)
-				{
-					throw new NotImplementedException("Buffer size miscalculation");
-				}
-
-				stream.Position = 0;
-			}
-			return buffer;
+			return _pendingMethodCalls.HandleResponse(rpcId, messageType, reader);
 		}
 
 		protected void ReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message)
@@ -1140,43 +1064,6 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="socket"></param>
 		protected abstract void OnHandshakeSucceeded(Socket socket);
-
-		private void InterruptOngoingCalls()
-		{
-			lock (_pendingCalls)
-			{
-				if (_pendingCalls.Count > 0)
-				{
-					byte[] exceptionMessage;
-					int exceptionLength;
-
-					using (var stream = new MemoryStream())
-					using (var writer = new BinaryWriter(stream, Encoding.UTF8))
-					{
-						WriteException(writer, new ConnectionLostException());
-						exceptionMessage = stream.GetBuffer();
-						exceptionLength = (int)stream.Length;
-					}
-
-					foreach (var call in _pendingCalls.Values)
-					{
-						var stream = new MemoryStream(exceptionMessage, 0, exceptionLength);
-						var reader = new BinaryReader(stream, Encoding.UTF8);
-						call(MessageType.Return | MessageType.Exception, reader);
-					}
-					_pendingCalls.Clear();
-				}
-			}
-		}
-
-		[Flags]
-		private enum MessageType : byte
-		{
-			Call = 0x1,
-			Return = 0x2,
-			Exception = 0x4,
-			Goodbye = 0x8
-		}
 
 		public override string ToString()
 		{

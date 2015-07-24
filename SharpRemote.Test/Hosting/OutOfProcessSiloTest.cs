@@ -472,7 +472,7 @@ namespace SharpRemote.Test.Hosting
 			}
 		}
 
-		private string FormatSize(long numBytesSent)
+		public static string FormatSize(long numBytesSent)
 		{
 			const long oneKilobyte = 1024;
 			const long oneMegabyte = 1024*oneKilobyte;

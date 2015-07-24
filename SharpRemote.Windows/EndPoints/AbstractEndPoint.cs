@@ -22,7 +22,7 @@ namespace SharpRemote
 
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
-		protected static void WriteException(BinaryWriter writer, Exception e)
+		internal static void WriteException(BinaryWriter writer, Exception e)
 		{
 			Stream stream = writer.BaseStream;
 			long start = stream.Position;

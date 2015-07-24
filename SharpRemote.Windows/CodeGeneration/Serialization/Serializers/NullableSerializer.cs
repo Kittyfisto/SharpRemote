@@ -57,7 +57,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 						                                  gen.Emit(OpCodes.Stloc, value);
 					                                  }
 
-					                                  gen.Emit(OpCodes.Ldloc, value);
+					                                  gen.Emit(OpCodes.Ldloca, value);
 				                                  },
 			                                  loadSerializer,
 			                                  loadRemotingEndPoint,

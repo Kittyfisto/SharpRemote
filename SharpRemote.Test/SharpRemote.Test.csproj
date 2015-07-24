@@ -58,6 +58,7 @@
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
     <Compile Include="Types\Classes\ByReferenceAndDataContract.cs" />
     <Compile Include="Types\Classes\ByReferenceClass.cs" />
+    <Compile Include="Types\Classes\ClassWithNullableTimeSpan.cs" />
     <Compile Include="Types\Classes\DoesNothing.cs" />
     <Compile Include="Types\Classes\ReturnsTask.cs" />
     <Compile Include="Types\Classes\VoidMethodStringParameter.cs" />

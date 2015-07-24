@@ -325,5 +325,26 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				actualValue.Should().BeSameAs(value);
 			}
 		}
+
+		[Test]
+		public void TestClassWithNullableTimeSpan()
+		{
+			var value = new ClassWithNullableTimeSpan
+				{
+					Value = TimeSpan.FromSeconds(1.5)
+				};
+
+			_serializer.ShouldRoundtrip(value);
+		}
+
+		public static void WriteValueNotNull(BinaryWriter writer, ClassWithNullableTimeSpan obj, ISerializer serializer)
+		{
+			var tmp = obj.Value.HasValue;
+			writer.Write(tmp);
+			if (tmp)
+			{
+				writer.Write(obj.Value.Value.Ticks);
+			}
+		}
 	}
 }

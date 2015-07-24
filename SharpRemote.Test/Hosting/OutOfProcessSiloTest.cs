@@ -320,17 +320,12 @@ namespace SharpRemote.Test.Hosting
 			{
 				silo.Start();
 
-				var grain = silo.CreateGrain<IGetInt64Property, ReturnsNearlyInt64Max>();
-
-				long sum = 0;
+				var grain = silo.CreateGrain<IVoidMethod, DoesNothing>();
 
 				// Optimization phase
 				for (int i = 0; i < 100; ++i)
 				{
-					unchecked
-					{
-						sum += grain.Value;
-					}
+					grain.DoStuff();
 				}
 
 				// Measurement phase
@@ -339,10 +334,7 @@ namespace SharpRemote.Test.Hosting
 				{
 					for (int i = 0; i < 100; ++i)
 					{
-						unchecked
-						{
-							sum += grain.Value;
-						}
+						grain.DoStuff();
 					}
 					num += 100;
 				}
@@ -350,11 +342,11 @@ namespace SharpRemote.Test.Hosting
 
 				var numSeconds = watch.Elapsed.TotalSeconds;
 				var ops = 1.0 * num / numSeconds;
-				Console.WriteLine("Total calls: {0} (sum: {1})", num, sum);
+				Console.WriteLine("Total calls: {0}", num);
 				Console.WriteLine("OP/s: {0:F2}k/s", ops/1000);
 				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long) (silo.NumBytesSent/numSeconds)));
 				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived/numSeconds)));
-				Console.WriteLine("RTT: {0}ms", (int)silo.RoundtripTime.TotalMilliseconds);
+				Console.WriteLine("Latency: {0}ns", (int)silo.RoundtripTime.Ticks * 100);
 			}
 		}
 
@@ -370,7 +362,7 @@ namespace SharpRemote.Test.Hosting
 			{
 				silo.Start();
 
-				var grain = silo.CreateGrain<IReturnsIntTask, ReturnsIntMaxTask>();
+				var grain = silo.CreateGrain<IReturnsTask, ReturnsTask>();
 
 				// Optimization phase
 				const int numOptPasses = 100;
@@ -406,7 +398,7 @@ namespace SharpRemote.Test.Hosting
 				Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
 				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize((long)(silo.NumBytesSent / numSeconds)));
 				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize((long)(silo.NumBytesReceived / numSeconds)));
-				Console.WriteLine("RTT: {0}ms", (int)silo.RoundtripTime.TotalMilliseconds);
+				Console.WriteLine("Latency: {0}ns", (int)silo.RoundtripTime.Ticks * 100);
 			}
 		}
 
@@ -421,13 +413,13 @@ namespace SharpRemote.Test.Hosting
 			{
 				silo.Start();
 
-				var grain = silo.CreateGrain<IGetInt64Property, ReturnsNearlyInt64Max>();
+				var grain = silo.CreateGrain<IVoidMethod, DoesNothing>();
 				// Optimization phase
 				const int numOptPasses = 100;
-				long sum = 0;
+
 				for (int i = 0; i < numOptPasses; ++i)
 				{
-					sum += grain.Value;
+					grain.DoStuff();
 				}
 
 				// Measurement phase
@@ -444,10 +436,7 @@ namespace SharpRemote.Test.Hosting
 							{
 								for (int i = 0; i < batchSize; ++i)
 								{
-									unchecked
-									{
-										sum += grain.Value;
-									}
+									grain.DoStuff();
 								}
 								num += batchSize;
 							}
@@ -468,7 +457,7 @@ namespace SharpRemote.Test.Hosting
 				Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
 				Console.WriteLine("Sent: {0}, {1}/s", FormatSize(silo.NumBytesSent), FormatSize(silo.NumBytesSent / numSeconds));
 				Console.WriteLine("Received: {0}, {1}/s", FormatSize(silo.NumBytesReceived), FormatSize(silo.NumBytesReceived / numSeconds));
-				Console.WriteLine("RTT: {0}ms", (int)silo.RoundtripTime.TotalMilliseconds);
+				Console.WriteLine("Latency: {0}ns", (int)silo.RoundtripTime.Ticks*100);
 			}
 		}
 

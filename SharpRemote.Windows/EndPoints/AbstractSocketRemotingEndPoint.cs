@@ -730,6 +730,16 @@ namespace SharpRemote
 						}
 						catch (Exception e)
 						{
+							if (Log.IsErrorEnabled)
+							{
+								Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
+								                rpcId,
+								                typeName,
+								                methodName,
+								                grain.ObjectId,
+								                e);
+							}
+
 							response.Position = 0;
 							WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
 							WriteException(writer, e);

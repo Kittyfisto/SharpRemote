@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types.Classes;
@@ -12,11 +15,80 @@ namespace ConsoleApplication1
 	{
 		private static void Main(string[] args)
 		{
-			OneClientSync();
+			Simple();
+			//OneClientSync();
 			//ManyClientsAsync();
 
 			Console.WriteLine("Press any key to continue...");
 			Console.ReadKey();
+		}
+
+		private static void Simple()
+		{
+			var time = TimeSpan.FromSeconds(5);
+
+
+
+			const int messageLength = 90;
+			long num = 0;
+
+			var clientTask = new Task(() =>
+				{
+					using (var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+					{
+						client.Connect(new IPEndPoint(IPAddress.Loopback, 9001));
+
+						var stopwatch = new Stopwatch();
+						var buffer = new byte[messageLength];
+						stopwatch.Start();
+						while (stopwatch.Elapsed < time)
+						{
+							client.Send(buffer);
+							client.Receive(buffer);
+							++num;
+						}
+						stopwatch.Stop();
+					}
+				}, TaskCreationOptions.LongRunning);
+
+			var serverTask = new Task(() =>
+			{
+				var server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+				server.Bind(new IPEndPoint(IPAddress.Loopback, 9001));
+				server.Listen(1);
+				var socket = server.Accept();
+
+				var stopwatch = new Stopwatch();
+				var buffer = new byte[messageLength];
+				stopwatch.Start();
+
+				try
+				{
+					while (stopwatch.Elapsed < time)
+					{
+						socket.Receive(buffer);
+						socket.Send(buffer);
+					}
+				}
+				catch (SocketException)
+				{
+					
+				}
+
+				stopwatch.Stop();
+			}, TaskCreationOptions.LongRunning);
+
+			serverTask.Start();
+			clientTask.Start();
+
+			clientTask.Wait();
+			serverTask.Wait();
+
+			var numSeconds = 5;
+			var ops = 1.0 * num / numSeconds;
+			Console.WriteLine("Total calls: {0}", num);
+			Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
+			Console.WriteLine("Latency: {0}ns", time.Ticks * 100 / num);
 		}
 
 		private static void ManyClientsAsync()

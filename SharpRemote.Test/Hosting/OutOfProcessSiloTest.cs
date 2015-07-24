@@ -17,6 +17,7 @@ using log4net.Core;
 namespace SharpRemote.Test.Hosting
 {
 	[TestFixture]
+	[LocalTest("")]
 	public sealed class OutOfProcessSiloTest
 	{
 		[TestFixtureSetUp]

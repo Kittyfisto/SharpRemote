@@ -12,10 +12,20 @@ namespace SharpRemote.Tasks
 	/// <summary>
 	/// Executes all scheduled tasks in a serial manner.
 	/// </summary>
+	/// <remarks>
+	/// Only tasks with the proper access token are executed in a serial manner, all others are executed in parallel.
+	/// </remarks>
 	public sealed class SerialTaskScheduler
 		: TaskScheduler
 		, IDisposable
 	{
+		/// <summary>
+		/// Is used to permit tasks being scheduled with this scheduler.
+		/// Exists because if a task already being scheduled by this scheduler spawns a second task,
+		/// then that will use the CURRENT scheduler for execution which causes a deadlock.
+		/// </summary>
+		internal static readonly object AccessToken;
+
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly Queue<Task> _pendingTasks;
@@ -23,8 +33,12 @@ namespace SharpRemote.Tasks
 		private readonly ManualResetEvent _disposeEvent;
 		private readonly object _syncRoot;
 		private Task _executingTask;
-		private Thread _executingThread;
 		private readonly ConcurrentBag<Exception> _exceptions;
+
+		static SerialTaskScheduler()
+		{
+			AccessToken = new object();
+		}
 
 		public IEnumerable<Exception> Exceptions
 		{
@@ -57,32 +71,24 @@ namespace SharpRemote.Tasks
 
 		private void ExecuteTasks()
 		{
-			try
+			while (true)
 			{
-				_executingThread = Thread.CurrentThread;
-				while (true)
+				Task task = null;
+				try
 				{
-					Task task = null;
-					try
-					{
-						task = DequeueNextTask(TimeSpan.FromSeconds(10));
-						if (task == null)
-							break;
+					task = DequeueNextTask(TimeSpan.FromSeconds(10));
+					if (task == null)
+						break;
 
-						ExecuteTask(task);
-					}
-					catch (Exception e)
-					{
-						if (_exceptions != null)
-							_exceptions.Add(e);
-
-						Log.ErrorFormat("Caught exception while executing task '{0}': {1}", task, e);
-					}
+					ExecuteTask(task);
 				}
-			}
-			finally
-			{
-				_executingThread = null;
+				catch (Exception e)
+				{
+					if (_exceptions != null)
+						_exceptions.Add(e);
+
+					Log.ErrorFormat("Caught exception while executing task '{0}': {1}", task, e);
+				}
 			}
 		}
 
@@ -113,37 +119,45 @@ namespace SharpRemote.Tasks
 
 		protected override void QueueTask(Task task)
 		{
-			lock (_syncRoot)
+			if (task.AsyncState != AccessToken)
 			{
-				if (Log.IsDebugEnabled)
-				{
-					Log.DebugFormat("Queueing task '#{0}'", task.Id);
-				}
-
-				_pendingTasks.Enqueue(task);
-				_pendingTaskCount.Release(1);
-
-				if (_executingTask == null)
+				var t = new Thread(ExecuteNonSerialTask);
+				t.Start(task);
+			}
+			else
+			{
+				lock (_syncRoot)
 				{
 					if (Log.IsDebugEnabled)
 					{
-						Log.Debug("Executing task is not (yet) running - starting it (again)");
+						Log.DebugFormat("Queueing task '#{0}'", task.Id);
 					}
 
-					_executingTask = new Task(ExecuteTasks);
-					_executingTask.Start();
+					_pendingTasks.Enqueue(task);
+					_pendingTaskCount.Release(1);
+
+					if (_executingTask == null)
+					{
+						if (Log.IsDebugEnabled)
+						{
+							Log.Debug("Executing task is not (yet) running - starting it (again)");
+						}
+
+						_executingTask = new Task(ExecuteTasks);
+						_executingTask.Start();
+					}
 				}
 			}
 		}
 
+		private void ExecuteNonSerialTask(object state)
+		{
+			var task = (Task) state;
+			ExecuteTask(task);
+		}
+
 		protected override bool TryExecuteTaskInline(Task task, bool taskWasPreviouslyQueued)
 		{
-			if (Thread.CurrentThread == _executingThread)
-			{
-				ExecuteTask(task);
-				return true;
-			}
-
 			return false;
 		}
 

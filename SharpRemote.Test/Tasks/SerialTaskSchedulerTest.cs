@@ -28,7 +28,7 @@ namespace SharpRemote.Test.Tasks
 			var tasks = new List<Task<int>>(taskCount);
 			for (int i = 0; i < taskCount; ++i)
 			{
-				var task = new Task<int>(() => 42);
+				var task = new Task<int>(unused => 42, SerialTaskScheduler.AccessToken);
 				tasks.Add(task);
 				task.Start(scheduler);
 			}
@@ -42,12 +42,30 @@ namespace SharpRemote.Test.Tasks
 		public void TestScheduleOneTask()
 		{
 			var scheduler = new SerialTaskScheduler(true);
-			var task = new Task<int>(() => 42);
+			var task = new Task<int>(unused => 42, SerialTaskScheduler.AccessToken);
 			task.Start(scheduler);
 			task.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
 			task.Result.Should().Be(42);
 			scheduler.Dispose();
 			scheduler.Exceptions.Should().BeEmpty();
+		}
+
+		[Test]
+		public void TestScheduleRecursiveTask()
+		{
+			using (var scheduler = new SerialTaskScheduler(true))
+			{
+				var task = new Task<int>(unused =>
+				{
+					var task2 = new Task<int>(() => 42);
+					task2.Start();
+					return task2.Result;
+				}, SerialTaskScheduler.AccessToken);
+
+				task.Start(scheduler);
+				task.Wait(TimeSpan.FromSeconds(1)).Should().BeTrue();
+				task.Result.Should().Be(42);
+			}
 		}
 	}
 }

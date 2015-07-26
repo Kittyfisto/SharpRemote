@@ -12,6 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.Exceptions;
+using SharpRemote.Tasks;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -717,7 +718,7 @@ namespace SharpRemote
 
 				// However if those 2 things don't throw, then we dispatch the rest of the method invocation
 				// on the task dispatcher and be done with it here...
-				var task = new Task(() =>
+				var task = new Task((object accessToken) =>
 				{
 					try
 					{
@@ -763,7 +764,7 @@ namespace SharpRemote
 						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
 						Disconnect();
 					}
-				});
+				}, SerialTaskScheduler.AccessToken); //< We need to specify an access token so this task gets scheduled in a serial manner
 
 				// Once we've created the task, we remember that there's a method invocation
 				// that's yet to be executed (which tremendously helps debugging problems)

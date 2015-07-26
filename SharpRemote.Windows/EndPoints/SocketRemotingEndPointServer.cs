@@ -50,6 +50,21 @@ namespace SharpRemote
 		/// <summary>
 		///     Binds this socket
 		/// </summary>
+		/// <param name="ep"></param>
+		public void Bind(IPEndPoint ep)
+		{
+			if (ep == null) throw new ArgumentNullException("ep");
+
+			var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+			socket.Bind(ep);
+			_serverSocket = socket;
+			LocalEndPoint = ep;
+			Listen();
+		}
+
+		/// <summary>
+		///     Binds this socket
+		/// </summary>
 		/// <param name="localAddress"></param>
 		public void Bind(IPAddress localAddress)
 		{
@@ -60,7 +75,11 @@ namespace SharpRemote
 			IPEndPoint ep;
 			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out ep);
 			LocalEndPoint = ep;
+			Listen();
+		}
 
+		private void Listen()
+		{
 			_serverSocket.Listen(1);
 			_serverSocket.BeginAccept(OnIncomingConnection, null);
 			Log.InfoFormat("EndPoint '{0}' listening on {1}", Name, LocalEndPoint);

@@ -282,7 +282,7 @@ namespace SharpRemote.Test.Remoting
 			using (var client = CreateClient("Rep1", authenticator))
 			using (var server = CreateServer("Rep2", authenticator))
 			{
-				server.Bind(IPAddress.Loopback);
+				server.Bind(new IPEndPoint(IPAddress.Loopback, 58752));
 				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
@@ -639,7 +639,7 @@ namespace SharpRemote.Test.Remoting
 				client.CreateServant(1, foo2.Object);
 				var proxy2 = server.CreateProxy<IVoidMethodObjectParameter>(1);
 
-				server.Bind(IPAddress.Loopback);
+				server.Bind(new IPEndPoint(IPAddress.Loopback, 56783));
 				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10));
 
 				const int numListeners = 1000;

@@ -275,6 +275,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[LocalTest("Wont run on the shitty CI server")]
 		[Description("Verifies that Connect() succeeds when client-side authentication is enabled and the challenge is met")]
 		public void TestConnect9()
 		{
@@ -617,6 +618,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[LocalTest("Wont run on the shitty CI server")]
 		[Description("Verifies that creating automatic proxies & servants from both the client & server side don't cause grain-id collisions")]
 		public void TestCreateAutomaticProxyAndServant()
 		{

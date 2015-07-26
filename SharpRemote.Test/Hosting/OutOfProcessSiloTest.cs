@@ -25,7 +25,9 @@ namespace SharpRemote.Test.Hosting
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<OutOfProcessSilo>(Level.Info);
-			TestLogger.SetLevel<SocketRemotingEndPoint>(Level.Info);
+			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);
+			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
+			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
 			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
 		}
 

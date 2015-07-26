@@ -83,7 +83,13 @@
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
     <Compile Include="EndPoints\EndPointDisconnectReason.cs" />
     <Compile Include="EndPoints\MessageType.cs" />
+    <Compile Include="EndPoints\SocketRemotingEndPointClient.cs" />
+    <Compile Include="EndPoints\SocketRemotingEndPointServer.cs" />
+    <Compile Include="EndPointType.cs" />
+    <Compile Include="GrainIdGenerator.cs" />
+    <Compile Include="GrainIdRange.cs" />
     <Compile Include="Hosting\LatencySettings.cs" />
+    <Compile Include="Exceptions\GrainIdRangeExhaustedException.cs" />
     <Compile Include="PendingMethodsQueue.cs" />
     <Compile Include="PendingMethodCall.cs" />
     <Compile Include="RingBuffer.cs" />
@@ -127,7 +133,7 @@
     <Compile Include="TypeInformation.cs" />
     <Compile Include="Extensions\DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />
-    <Compile Include="EndPoints\SocketRemotingEndPoint.cs" />
+    <Compile Include="EndPoints\AbstractIPSocketRemotingEndPoint.cs" />
     <Compile Include="Hosting\InProcessRemotingSilo.cs" />
     <Compile Include="Hosting\InProcessSilo.cs" />
     <Compile Include="Hosting\ISilo.cs" />

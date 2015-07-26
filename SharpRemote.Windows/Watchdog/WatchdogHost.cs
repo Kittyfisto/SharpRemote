@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Net.PeerToPeer;
 
 namespace SharpRemote.Watchdog
 {
@@ -14,14 +13,14 @@ namespace SharpRemote.Watchdog
 		public const string PeerName = "SharpRemote.Watchdog";
 		public const ulong ObjectId = 0;
 
-		private readonly SocketRemotingEndPoint _endPoint;
+		private readonly SocketRemotingEndPointServer _endPoint;
 		private readonly InternalWatchdog _watchdog;
 
 		public WatchdogHost()
 		{
 			_watchdog = new InternalWatchdog();
 
-			_endPoint = new SocketRemotingEndPoint(PeerName);
+			_endPoint = new SocketRemotingEndPointServer(PeerName);
 			_endPoint.CreateServant(ObjectId, (IInternalWatchdog) _watchdog);
 			_endPoint.Bind(IPAddress.Any);
 		}

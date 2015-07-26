@@ -59,8 +59,6 @@ namespace SharpRemote
 		private readonly Dictionary<ulong, IProxy> _proxiesById;
 		private readonly Dictionary<ulong, IServant> _servantsById;
 		private readonly Dictionary<object, IServant> _servantsBySubject;
-		private ulong _nextImplicitServantId = ulong.MaxValue / 2;
-		private ulong _nextImplicitProxyId = ulong.MaxValue/2;
 
 		#endregion
 
@@ -85,6 +83,7 @@ namespace SharpRemote
 		private long _numBytesReceived;
 		private long _numCallsInvoked;
 		private long _numCallsAnswered;
+		private readonly GrainIdGenerator _idGenerator;
 
 		/// <summary>
 		/// The total amount of bytes that have been sent over the underlying socket.
@@ -150,11 +149,15 @@ namespace SharpRemote
 			}
 		}
 
-		protected AbstractSocketRemotingEndPoint(string name,
+		internal AbstractSocketRemotingEndPoint(GrainIdGenerator idGenerator,
+			string name,
 		                                         IAuthenticator clientAuthenticator = null,
 		                                         IAuthenticator serverAuthenticator = null,
 		                                         ITypeResolver customTypeResolver = null)
 		{
+			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
+
+			_idGenerator = idGenerator;
 			_name = name ?? "<Unnamed>";
 			_syncRoot = new object();
 
@@ -648,8 +651,7 @@ namespace SharpRemote
 				IProxy proxy;
 				if (!_proxiesById.TryGetValue(objectId, out proxy))
 				{
-					var nextId = _nextImplicitProxyId++;
-					return CreateProxy<T>(nextId);
+					return CreateProxy<T>(objectId);
 				}
 
 				return (T) proxy;
@@ -663,7 +665,7 @@ namespace SharpRemote
 				IServant servant;
 				if (!_servantsBySubject.TryGetValue(subject, out servant))
 				{
-					var nextId = _nextImplicitServantId++;
+					var nextId = _idGenerator.GetGrainId();
 					servant = CreateServant(nextId, subject);
 				}
 

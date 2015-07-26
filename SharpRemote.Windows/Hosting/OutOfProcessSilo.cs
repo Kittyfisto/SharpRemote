@@ -35,7 +35,7 @@ namespace SharpRemote.Hosting
 
 		private readonly HeartbeatMonitor _heartbeatMonitor;
 		private readonly LatencyMonitor _latencyMonitor;
-		private readonly SocketRemotingEndPoint _endPoint;
+		private readonly SocketRemotingEndPointClient _endPoint;
 		private readonly ISubjectHost _subjectHost;
 		private readonly ManualResetEvent _waitHandle;
 		private readonly object _syncRoot;
@@ -139,7 +139,7 @@ namespace SharpRemote.Hosting
 			if (process == null) throw new ArgumentNullException("process");
 			if (string.IsNullOrWhiteSpace(process)) throw new ArgumentException("process");
 
-			_endPoint = new SocketRemotingEndPoint(customTypeResolver: customTypeResolver);
+			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver);
 			_endPoint.OnFailure += EndPointOnOnFailure;
 
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);

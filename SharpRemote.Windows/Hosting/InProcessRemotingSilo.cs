@@ -12,8 +12,8 @@ namespace SharpRemote.Hosting
 		: ISilo
 	{
 		private readonly ITypeResolver _customTypeResolver;
-		private readonly SocketRemotingEndPoint _localEndPoint;
-		private readonly SocketRemotingEndPoint _remoteEndPoint;
+		private readonly SocketRemotingEndPointClient _client;
+		private readonly SocketRemotingEndPointServer _server;
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
 		private bool _isDisposed;
@@ -38,16 +38,16 @@ namespace SharpRemote.Hosting
 			_customTypeResolver = customTypeResolver;
 			const int subjectHostId = 0;
 
-			_localEndPoint = new SocketRemotingEndPoint();
-			_subjectHostProxy = _localEndPoint.CreateProxy<ISubjectHost>(subjectHostId);
+			_client = new SocketRemotingEndPointClient();
+			_subjectHostProxy = _client.CreateProxy<ISubjectHost>(subjectHostId);
 
-			_remoteEndPoint = new SocketRemotingEndPoint();
+			_server = new SocketRemotingEndPointServer();
 			_registry = new DefaultImplementationRegistry();
-			_subjectHost = new SubjectHost(_remoteEndPoint, subjectHostId + 1, _registry);
-			_remoteEndPoint.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);
-			_remoteEndPoint.Bind(IPAddress.Loopback);
+			_subjectHost = new SubjectHost(_server, subjectHostId + 1, _registry);
+			_server.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);
+			_server.Bind(IPAddress.Loopback);
 
-			_localEndPoint.Connect(_remoteEndPoint.LocalEndPoint, TimeSpan.FromSeconds(5));
+			_client.Connect(_server.LocalEndPoint, TimeSpan.FromSeconds(5));
 		}
 
 		public bool IsDisposed
@@ -75,22 +75,22 @@ namespace SharpRemote.Hosting
 		public TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters) where TInterface : class
 		{
 			var id = _subjectHostProxy.CreateSubject1(implementation, typeof (TInterface));
-			var proxy = _localEndPoint.CreateProxy<TInterface>(id);
+			var proxy = _client.CreateProxy<TInterface>(id);
 			return proxy;
 		}
 
 		public TInterface CreateGrain<TInterface, TImplementation>(params object[] parameters) where TInterface : class where TImplementation : TInterface
 		{
 			var id = _subjectHostProxy.CreateSubject1(typeof(TImplementation), typeof(TInterface));
-			var proxy = _localEndPoint.CreateProxy<TInterface>(id);
+			var proxy = _client.CreateProxy<TInterface>(id);
 			return proxy;
 		}
 
 		public void Dispose()
 		{
 			_subjectHostProxy.TryDispose();
-			_localEndPoint.Dispose();
-			_remoteEndPoint.Dispose();
+			_client.Dispose();
+			_server.Dispose();
 			_isDisposed = true;
 		}
 	}

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Threading;
+using SharpRemote.EndPoints;
 using log4net;
 
 namespace SharpRemote.Hosting
@@ -26,7 +27,7 @@ namespace SharpRemote.Hosting
 		: IRemotingEndPoint
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private readonly SocketRemotingEndPoint _endPoint;
+		private readonly SocketRemotingEndPointServer _endPoint;
 
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
@@ -59,7 +60,7 @@ namespace SharpRemote.Hosting
 			_waitHandle = new ManualResetEvent(false);
 			_customTypeResolver = customTypeResolver;
 
-			_endPoint = new SocketRemotingEndPoint(customTypeResolver: customTypeResolver);
+			_endPoint = new SocketRemotingEndPointServer(customTypeResolver: customTypeResolver);
 
 			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat)new Heartbeat());
 			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency)new Latency());

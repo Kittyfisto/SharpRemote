@@ -29,24 +29,22 @@ namespace SharpRemote.Test.Remoting
 		)]
 	public class RemotingEndPointAcceptanceTest
 	{
-		private SocketRemotingEndPoint _server;
-		private SocketRemotingEndPoint _client;
-
-		protected SocketRemotingEndPoint CreateEndPoint(string name = null)
-		{
-			return new SocketRemotingEndPoint(name);
-		}
+		private SocketRemotingEndPointServer _server;
+		private SocketRemotingEndPointClient _client;
 
 		[TestFixtureSetUp]
 		public void SetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
-			TestLogger.SetLevel<SocketRemotingEndPoint>(Level.Info);
+			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
+			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
+			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
+			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);
 
-			_server = CreateEndPoint("Server");
+			_server = new SocketRemotingEndPointServer("Server");
 			_server.Bind(IPAddress.Loopback);
 
-			_client = CreateEndPoint("Client");
+			_client = new SocketRemotingEndPointClient("Client");
 			_client.Connect(_server.LocalEndPoint, TimeSpan.FromMinutes(1));
 		}
 
@@ -544,6 +542,48 @@ namespace SharpRemote.Test.Remoting
 			const int numUniqueListeners = numTasks*numListenersPerTask;
 			processor.Listeners.Count.Should().Be(numUniqueListeners * 2, "Because each unique listener instance is added twice");
 		}
+
+		[Test]
+		[Description("Verifies that creating proxies & servants for serialized objects is thread safe")]
+		public void TestAddByReference4()
+		{
+			const ulong servantId = 24;
+			var processor = new Processor();
+			processor.Listeners.Should().BeEmpty();
+
+			_server.CreateServant(servantId, (IProcessor)processor);
+			var proxy = _client.CreateProxy<IProcessor>(servantId);
+
+			const int numTasks = 16;
+			const int numListenersPerTask = 100;
+
+			Console.WriteLine("Adding {0} listeners in each of {1} parallel tasks",
+							  numListenersPerTask,
+							  numTasks);
+			var sw = new Stopwatch();
+			sw.Start();
+
+			var listener = new Listener();
+			var tasks = new Task[numTasks];
+			for (int i = 0; i < numTasks; ++i)
+			{
+				tasks[i] = new Task(() =>
+				{
+					for (int x = 0; x < numListenersPerTask; ++x)
+					{
+						proxy.AddListener(listener);
+					}
+				});
+				tasks[i].Start();
+			}
+			Task.WaitAll(tasks);
+
+			sw.Stop();
+			Console.WriteLine("Took {0}ms", sw.ElapsedMilliseconds);
+
+			const int numUniqueListeners = numTasks * numListenersPerTask;
+			processor.Listeners.Count.Should().Be(numUniqueListeners);
+		}
 		
 
 		[Test]
@@ -561,7 +601,7 @@ namespace SharpRemote.Test.Remoting
 			subject.Setup(x => x.AddListener(It.IsAny<object>()))
 			       .Callback((object x) => actualValue = x);
 
-			const ulong servantId = 24;
+			const ulong servantId = 25;
 			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IVoidMethodObjectParameter>(servantId);
 
@@ -579,7 +619,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that a method returning a [ByReference] type is marshalled correctly")]
 		public void TestReturnByReference1()
 		{
-			const ulong servantId = 25;
+			const ulong servantId = 26;
 
 			var subject = new Mock<IReturnsByReferenceType>();
 			var foo = new ByReferenceClass();
@@ -599,7 +639,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that a method returning an object of a [ByReference] type is marshalled correctly")]
 		public void TestReturnByReference2()
 		{
-			const ulong servantId = 26;
+			const ulong servantId = 27;
 
 			var subject = new Mock<IReturnsObjectMethod>();
 			var foo = new ByReferenceClass();
@@ -619,7 +659,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that a method returning a list of objects where some are a [ByReference] types is marshalled correctly")]
 		public void TestReturnListOfByReferences()
 		{
-			const ulong servantId = 27;
+			const ulong servantId = 28;
 
 			var subject = new Mock<IReturnsObjectArray>();
 			var foo1 = new ByReferenceClass(42);

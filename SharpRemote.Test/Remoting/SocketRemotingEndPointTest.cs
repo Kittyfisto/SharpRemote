@@ -133,7 +133,7 @@ namespace SharpRemote.Test.Remoting
 				server.RemoteEndPoint.Should().BeNull();
 
 // ReSharper disable AccessToDisposedClosure
-				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(1)))
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10)))
 // ReSharper restore AccessToDisposedClosure
 					.ShouldNotThrow();
 
@@ -161,7 +161,7 @@ namespace SharpRemote.Test.Remoting
 				server.RemoteEndPoint.Should().BeNull();
 
 				// ReSharper disable AccessToDisposedClosure
-				new Action(() => client.Connect(server.Name, TimeSpan.FromSeconds(1)))
+				new Action(() => client.Connect(server.Name, TimeSpan.FromSeconds(10)))
 					// ReSharper restore AccessToDisposedClosure
 					.ShouldNotThrow();
 
@@ -283,7 +283,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", authenticator))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint)).ShouldNotThrow();
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -299,7 +299,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", actualAuthenticator))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint))
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10)))
 					.ShouldThrow<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -315,7 +315,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", null, authenticator))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint)).ShouldNotThrow();
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -331,7 +331,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", null, wrongAuthenticator))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint))
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10)))
 					.ShouldThrow<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -348,7 +348,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", clientAuthenticator, serverAuthenticator))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint)).ShouldNotThrow();
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -363,7 +363,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", new Test2Authenticator(), serverAuthenticator))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint))
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10)))
 					.ShouldThrow<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -379,7 +379,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", clientAuthenticator, new Test2Authenticator()))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint))
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10)))
 					.ShouldThrow<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -394,7 +394,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer("Rep2", new TestAuthenticator()))
 			{
 				server.Bind(IPAddress.Loopback);
-				new Action(() => client.Connect(server.LocalEndPoint))
+				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10)))
 					.ShouldThrow<AuthenticationRequiredException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -640,7 +640,7 @@ namespace SharpRemote.Test.Remoting
 				var proxy2 = server.CreateProxy<IVoidMethodObjectParameter>(1);
 
 				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint);
+				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10));
 
 				const int numListeners = 1000;
 				var task1 = new Task(() =>

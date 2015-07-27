@@ -675,6 +675,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[LocalTest("I'll switch the CI server really soon...")]
 		[Description("Verifies that a serial RPC that in itself spawns another task doesn't deadlock")]
 		public void TestSerialInvocationWithInnerTask()
 		{

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -235,79 +236,79 @@ namespace SharpRemote.CodeGeneration.Remoting
 
 				var type = (TypeBuilder) method.DeclaringType;
 
-				string name = string.Format("Invoke_{0}", method.Name);
+				string name = string.Format("On_{0}_Finished", method.Name);
 				MethodBuilder invokeMethod = type.DefineMethod(name, MethodAttributes.Private,
 					CallingConventions.Standard,
 					taskReturnType,
-					new[] {typeof (object)}
+					new[] {typeof (Task<MemoryStream>)}
 					);
 
-				// Task.Factory_get()
-				gen.Emit(OpCodes.Call, Methods.TaskGetFactory);
-
-				if (taskReturnType == typeof (void))
-				{
-					// new Action<object>(this, Invoke_XXX)
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldftn, invokeMethod);
-					gen.Emit(OpCodes.Newobj, Methods.ActionIntPtrCtor);
-				}
-				else
-				{
-					// new Func<object, T>(this, Invoke_XXX)
-					Type func = typeof (Func<,>).MakeGenericType(typeof (object), taskReturnType);
-					ConstructorInfo funcCtor = func.GetConstructor(new[] {typeof (object), typeof (IntPtr)});
-					gen.Emit(OpCodes.Ldarg_0);
-					gen.Emit(OpCodes.Ldftn, invokeMethod);
-					gen.Emit(OpCodes.Newobj, funcCtor);
-				}
-
-				gen.Emit(OpCodes.Ldloc, stream);
-
-				if (taskReturnType == typeof (void))
-				{
-					// return TaskFactory.StartNew(Action<object>, object);
-					gen.Emit(OpCodes.Callvirt, Methods.TaskFactoryStartNew);
-					gen.Emit(OpCodes.Ret);
-				}
-				else
-				{
-					// return TaskFactory.StartNew<T>(Func<object, T>, object);
-					MethodInfo startNew = typeof (TaskFactory).GetMethods()
-						.Where(x => x.Name == "StartNew")
-						.Where(x => x.GetParameters().Length == 2 &&
-						            x.GetParameters()[1].ParameterType == typeof (object))
-						.First(x => x.IsGenericMethod)
-						.MakeGenericMethod(taskReturnType);
-
-					gen.Emit(OpCodes.Callvirt, startNew);
-					gen.Emit(OpCodes.Ret);
-				}
-
-				ILGenerator invokeGen = invokeMethod.GetILGenerator();
-				invokeGen.Emit(OpCodes.Ldarg_0);
-				invokeGen.Emit(OpCodes.Ldfld, Channel);
-				invokeGen.Emit(OpCodes.Ldarg_0);
-				invokeGen.Emit(OpCodes.Ldfld, ObjectId);
-				invokeGen.Emit(OpCodes.Ldstr, interfaceType);
-				invokeGen.Emit(OpCodes.Ldstr, remoteMethodName);
-				invokeGen.Emit(OpCodes.Ldarg_1);
-				invokeGen.Emit(OpCodes.Castclass, typeof(MemoryStream));
-
 				// _channel.CallRemoteMethod(_objectId, "IFoo", "get_XXX", stream);
-				invokeGen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteMethod);
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, Channel);
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, ObjectId);
+				gen.Emit(OpCodes.Ldstr, interfaceType);
+				gen.Emit(OpCodes.Ldstr, remoteMethodName);
+				gen.Emit(OpCodes.Ldloc, stream);
+				gen.Emit(OpCodes.Callvirt, Methods.ChannelCallRemoteAsyncMethod);
 
+				// return .ContinueWith(On_XXX_Finished);
 				if (taskReturnType == typeof (void))
 				{
-					invokeGen.Emit(OpCodes.Pop);
+					// new Action(this, &On_XXX_Finished)
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldftn, invokeMethod);
+					gen.Emit(OpCodes.Newobj, Methods.ActionTaskOfMemoryStreamIntPtrCtor);
+
+					gen.Emit(OpCodes.Call, Methods.TaskMemoryStreamContinueWith);
 				}
 				else
 				{
-					LocalBuilder binaryReader = invokeGen.DeclareLocal(typeof (StreamReader));
+					// new Func<TResult>(this, &On_XXX_Finished)
+					gen.Emit(OpCodes.Ldarg_0);
+					gen.Emit(OpCodes.Ldftn, invokeMethod);
+					var funcTaskToResultCtor = typeof (Func<,>).MakeGenericType(typeof (Task<MemoryStream>), taskReturnType)
+					                                           .GetConstructor(new[] {typeof (object), typeof (IntPtr)});
+					Debug.Assert(funcTaskToResultCtor != null);
+					gen.Emit(OpCodes.Newobj, funcTaskToResultCtor);
+
+					var continueWith = typeof (Task<MemoryStream>).GetMethods()
+					                                              .First(x => x.IsGenericMethod && x.Name == "ContinueWith")
+					                                              .MakeGenericMethod(taskReturnType);
+					gen.Emit(OpCodes.Call, continueWith);
+				}
+				gen.Emit(OpCodes.Ret);
+
+				// On_XXX_Finished(Task<MemoryStream> task):
+				ILGenerator invokeGen = invokeMethod.GetILGenerator();
+				var hasResult = invokeGen.DefineLabel();
+
+				// if (task.IsFaulted)
+				invokeGen.Emit(OpCodes.Ldarg_1);
+				invokeGen.Emit(OpCodes.Call, Methods.TaskGetIsFaulted);
+				invokeGen.Emit(OpCodes.Brfalse, hasResult);
+				// {
+				//    throw task.Exception;
+				invokeGen.EmitWriteLine("Faulted");
+				invokeGen.Emit(OpCodes.Ldarg_1);
+				invokeGen.Emit(OpCodes.Call, Methods.TaskGetException);
+				invokeGen.Emit(OpCodes.Throw);
+				// }
+				// else
+				// {
+				//    return ReadValue(task.Result);
+				invokeGen.EmitWriteLine("Didn't fault");
+				invokeGen.MarkLabel(hasResult);
+				if (taskReturnType != typeof(void))
+				{
+					invokeGen.Emit(OpCodes.Ldarg_1);
+					invokeGen.Emit(OpCodes.Call, Methods.TaskMemoryStreamGetResult);
+					LocalBuilder binaryReader = invokeGen.DeclareLocal(typeof(BinaryReader));
 					ReadValueFromStream(method, invokeGen, binaryReader, null, taskReturnType);
 				}
-
 				invokeGen.Emit(OpCodes.Ret);
+				// }
 			}
 			else
 			{

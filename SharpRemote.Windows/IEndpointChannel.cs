@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading.Tasks;
 
 namespace SharpRemote
 {
@@ -11,7 +12,24 @@ namespace SharpRemote
 		/// Forwards a method call to the given servant or proxy.
 		/// </summary>
 		/// <remarks>
-		/// Throws when
+		/// The returned task throws if
+		/// - no servant / proxy with the given id exists
+		/// - the servant / proxy doesn't implement the given interface
+		/// - the method doesn't exist
+		/// - The arguments are malformatted
+		/// </remarks>
+		/// <param name="servantId"></param>
+		/// <param name="interfaceType"></param>
+		/// <param name="methodName"></param>
+		/// <param name="arguments"></param>
+		/// <returns></returns>
+		Task<MemoryStream> CallRemoteMethodAsync(ulong servantId, string interfaceType, string methodName, MemoryStream arguments);
+
+		/// <summary>
+		/// Forwards a method call to the given servant or proxy.
+		/// </summary>
+		/// <remarks>
+		/// Throws if
 		/// - no servant / proxy with the given id exists
 		/// - the servant / proxy doesn't implement the given interface
 		/// - the method doesn't exist

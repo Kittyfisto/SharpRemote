@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace SharpRemote.EndPoints
 {
@@ -8,6 +9,11 @@ namespace SharpRemote.EndPoints
 		  , IRemotingEndPoint
 		  , IEndPointChannel
 	{
+		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
+		{
+			throw new NotImplementedException();
+		}
+
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
 			throw new NotImplementedException();

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
@@ -32,6 +33,11 @@ namespace SharpRemote.EndPoints
 		public void Bind(Guid serviceGuid)
 		{
 			_localEndPoint = new BluetoothEndPoint(new BluetoothAddress(1234), serviceGuid);
+		}
+
+		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
+		{
+			throw new NotImplementedException();
 		}
 
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)

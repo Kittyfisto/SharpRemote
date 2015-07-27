@@ -11,6 +11,7 @@ namespace SharpRemote.CodeGeneration
 	internal static class Methods
 	{
 		public static readonly MethodInfo ChannelCallRemoteMethod;
+		public static readonly MethodInfo ChannelCallRemoteAsyncMethod;
 		public static readonly MethodInfo ReadDouble;
 		public static readonly MethodInfo GrainGetObjectId;
 		public static readonly MethodInfo GrainGetSerializer;
@@ -68,12 +69,17 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo RemotingEndPointGetOrCreateServant;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateProxy;
 		public static readonly MethodInfo TaskGetFactory;
-		public static readonly ConstructorInfo ActionIntPtrCtor;
+		public static readonly ConstructorInfo ActionObjectIntPtrCtor;
+		public static readonly ConstructorInfo ActionTaskOfMemoryStreamIntPtrCtor;
 		public static readonly MethodInfo TaskFactoryStartNew;
 		public static readonly MethodInfo TaskWait;
 		public static readonly MethodInfo TaskGetStatus;
+		public static readonly MethodInfo TaskGetIsFaulted;
+		public static readonly MethodInfo TaskGetException;
 		public static readonly MethodInfo TaskSchedulerGetCurrent;
 		public static readonly MethodInfo TaskSchedulerGetDefault;
+		public static readonly MethodInfo TaskMemoryStreamContinueWith;
+		public static readonly MethodInfo TaskMemoryStreamGetResult;
 		public static readonly MethodInfo StringFormat3Objects;
 		public static readonly MethodInfo TypeGetTypeFromHandle;
 		public static readonly ConstructorInfo SerialTaskSchedulerCtor;
@@ -96,6 +102,7 @@ namespace SharpRemote.CodeGeneration
 
 			ObjectCtor = typeof(object).GetConstructor(new Type[0]);
 			ChannelCallRemoteMethod = typeof(IEndPointChannel).GetMethod("CallRemoteMethod");
+			ChannelCallRemoteAsyncMethod = typeof (IEndPointChannel).GetMethod("CallRemoteMethodAsync");
 
 			ReadBytes = typeof (BinaryReader).GetMethod("ReadBytes");
 			ReadString = typeof(BinaryReader).GetMethod("ReadString");
@@ -155,7 +162,8 @@ namespace SharpRemote.CodeGeneration
 			CreateTypeFromName = typeof(TypeResolver).GetMethod("GetType", new[] { typeof(string) });
 
 			TaskGetFactory = typeof (Task).GetProperty("Factory").GetMethod;
-			ActionIntPtrCtor = typeof (Action<object>).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
+			ActionObjectIntPtrCtor = typeof (Action<object>).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
+			ActionTaskOfMemoryStreamIntPtrCtor = typeof(Action<Task<MemoryStream>>).GetConstructor(new[] { typeof(object), typeof(IntPtr) });
 			TaskFactoryStartNew = typeof (TaskFactory).GetMethod("StartNew", new[]
 				{
 					typeof(Action<object>),
@@ -164,6 +172,14 @@ namespace SharpRemote.CodeGeneration
 
 			TaskWait = typeof (Task).GetMethod("Wait", new Type[0]);
 			TaskGetStatus = typeof (Task).GetProperty("Status").GetMethod;
+			TaskGetIsFaulted = typeof (Task).GetProperty("IsFaulted").GetMethod;
+			TaskGetException = typeof (Task).GetProperty("Exception").GetMethod;
+			TaskMemoryStreamContinueWith = typeof (Task<MemoryStream>).GetMethod("ContinueWith",
+			                                                                     new[]
+				                                                                     {
+					                                                                     typeof (Action<Task<MemoryStream>>)
+				                                                                     });
+			TaskMemoryStreamGetResult = typeof (Task<MemoryStream>).GetProperty("Result").GetMethod;
 
 			TaskSchedulerGetCurrent = typeof (TaskScheduler).GetProperty("Current").GetMethod;
 			TaskSchedulerGetDefault = typeof (TaskScheduler).GetProperty("Default").GetMethod;

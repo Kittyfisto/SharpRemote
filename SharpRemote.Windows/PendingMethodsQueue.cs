@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -79,7 +80,7 @@ namespace SharpRemote
 						exceptionLength = (int)stream.Length;
 					}
 
-					foreach (var call in _pendingCalls.Values)
+					foreach (var call in _pendingCalls.Values.ToList())
 					{
 						var stream = new MemoryStream(exceptionMessage, 0, exceptionLength);
 						var reader = new BinaryReader(stream, Encoding.UTF8);
@@ -104,10 +105,11 @@ namespace SharpRemote
 		}
 
 		public PendingMethodCall Enqueue(ulong servantId,
-		                    string interfaceType,
-		                    string methodName,
-		                    MemoryStream arguments,
-		                    long rpcId)
+		                                 string interfaceType,
+		                                 string methodName,
+		                                 MemoryStream arguments,
+		                                 long rpcId,
+		                                 Action<PendingMethodCall> callback = null)
 		{
 			PendingMethodCall message;
 
@@ -115,11 +117,11 @@ namespace SharpRemote
 			{
 				message = _recycledMessages.Count > 0
 					          ? _recycledMessages.Dequeue()
-							  : new PendingMethodCall();
+					          : new PendingMethodCall();
 				_pendingCalls.Add(rpcId, message);
 			}
 
-			message.Reset(servantId, interfaceType, methodName, arguments, rpcId);
+			message.Reset(servantId, interfaceType, methodName, arguments, rpcId, callback);
 
 			lock (_pendingWrites)
 			{

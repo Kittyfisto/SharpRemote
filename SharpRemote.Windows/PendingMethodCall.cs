@@ -23,6 +23,7 @@ namespace SharpRemote
 		private BinaryReader _reader;
 		private long _rpcId;
 		private int _messageLength;
+		private Action<PendingMethodCall> _callback;
 
 		public long RpcId
 		{
@@ -62,19 +63,22 @@ namespace SharpRemote
 			_messageType = messageType;
 			_reader = reader;
 			_waitHandle.Set();
+			if (_callback != null)
+				_callback(this);
 		}
 
 		public void Reset(ulong servantId,
-			string interfaceType,
-			string methodName,
-			MemoryStream arguments,
-			long rpcId)
+		                  string interfaceType,
+		                  string methodName,
+		                  MemoryStream arguments,
+		                  long rpcId,
+		                  Action<PendingMethodCall> callback)
 		{
 			// The first 4 bytes of the message shall contain its length which we only
 			// know after writing the message, hence we offset the stream by 4 bytes first
 			_message.Position = 4;
 			_writer.Write(rpcId);
-			_writer.Write((byte)MessageType.Call);
+			_writer.Write((byte) MessageType.Call);
 			_writer.Write(servantId);
 			_writer.Write(interfaceType);
 			_writer.Write(methodName);
@@ -82,14 +86,14 @@ namespace SharpRemote
 			if (arguments != null)
 			{
 				byte[] data = arguments.GetBuffer();
-				var dataLength = (int)arguments.Length;
+				var dataLength = (int) arguments.Length;
 				_writer.Write(data, 0, dataLength);
 			}
 
 			_writer.Flush();
 
 			// And then write the payload length into the first 4 bytes
-			_messageLength = (int)_message.Position;
+			_messageLength = (int) _message.Position;
 			int payloadSize = _messageLength - 4;
 			_message.Position = 0;
 			_writer.Write(payloadSize);
@@ -97,6 +101,7 @@ namespace SharpRemote
 			_rpcId = rpcId;
 			_waitHandle.Reset();
 			_messageType = MessageType.None;
+			_callback = callback;
 			_reader = null;
 		}
 

@@ -377,10 +377,68 @@ namespace SharpRemote
 
 		#endregion
 
+		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId, string interfaceType, string methodName,
+		                                                MemoryStream arguments)
+		{
+			Socket socket = _socket;
+			if (socket == null)
+				throw new NotConnectedException(_name);
+
+			long rpcId = Interlocked.Increment(ref _nextRpcId);
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
+								InternalLocalEndPoint,
+								InternalRemoteEndPoint,
+								rpcId,
+								servantId,
+								methodName);
+			}
+
+			var taskSource = new TaskCompletionSource<MemoryStream>();
+			Action<PendingMethodCall> onCallFinished = finishedCall =>
+			{
+				// TODO: We might want execute this portion in yet another task in order to not block the read-thread
+				try
+				{
+					if (finishedCall.MessageType == MessageType.Return)
+					{
+						var stream = (MemoryStream)finishedCall.Reader.BaseStream;
+						taskSource.SetResult(stream);
+					}
+					else if ((finishedCall.MessageType & MessageType.Exception) != 0)
+					{
+						var formatter = new BinaryFormatter();
+						var e = (Exception)formatter.Deserialize(finishedCall.Reader.BaseStream);
+						taskSource.SetException(e);
+					}
+					else
+					{
+						taskSource.SetException(new NotImplementedException());
+					}
+				}
+				finally
+				{
+					_pendingMethodCalls.Recycle(finishedCall);
+				}
+			};
+
+			PendingMethodCall call = _pendingMethodCalls.Enqueue(servantId,
+			                                                     interfaceType,
+			                                                     methodName,
+			                                                     arguments,
+			                                                     rpcId,
+			                                                     onCallFinished);
+			Interlocked.Add(ref _numBytesSent, call.MessageLength);
+			Interlocked.Increment(ref _numCallsInvoked);
+
+			return taskSource.Task;
+		}
+
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
 			Socket socket = _socket;
-			//if (socket == null || !socket.Connected)
 			if (socket == null)
 				throw new NotConnectedException(_name);
 
@@ -399,13 +457,11 @@ namespace SharpRemote
 			PendingMethodCall call = null;
 			try
 			{
-				//_createMessage.Start();
 				call = _pendingMethodCalls.Enqueue(servantId,
 				                                   interfaceType,
 				                                   methodName,
 				                                   arguments,
-												   rpcId);
-				//_createMessage.Stop();
+				                                   rpcId);
 
 				Interlocked.Add(ref _numBytesSent, call.MessageLength);
 				Interlocked.Increment(ref _numCallsInvoked);

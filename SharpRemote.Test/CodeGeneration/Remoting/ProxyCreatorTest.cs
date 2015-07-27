@@ -606,16 +606,21 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			Thread callingThread = Thread.CurrentThread;
 			Thread invokingThread = null;
 			_channel.Setup(
-				x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+				x => x.CallRemoteMethodAsync(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 			        .Returns((ulong objectId, string interfaceName, string methodName, Stream stream) =>
 				        {
-					        invokingThread = Thread.CurrentThread;
-					        var output = new MemoryStream();
-					        var writer = new BinaryWriter(output);
-					        writer.Write(42);
-					        writer.Flush();
-					        output.Position = 0;
-					        return output;
+					        var t = new Task<MemoryStream>(() =>
+						        {
+							        invokingThread = Thread.CurrentThread;
+							        var output = new MemoryStream();
+							        var writer = new BinaryWriter(output);
+							        writer.Write(42);
+							        writer.Flush();
+							        output.Position = 0;
+							        return output;
+						        });
+					        t.Start();
+					        return t;
 				        });
 
 			Task<int> task = proxy.DoStuff();
@@ -636,11 +641,16 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			Thread callingThread = Thread.CurrentThread;
 			Thread invokingThread = null;
 			_channel.Setup(
-				x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+				x => x.CallRemoteMethodAsync(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
 			        .Returns((ulong objectId, string interfaceName, string methodName, Stream stream) =>
 				        {
-					        invokingThread = Thread.CurrentThread;
-					        return null;
+					        var t = new Task<MemoryStream>(() =>
+						        {
+									invokingThread = Thread.CurrentThread;
+							        return null;
+						        });
+							t.Start();
+					        return t;
 				        });
 
 			Task task = proxy.DoStuff();
@@ -651,6 +661,39 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			callingThread.Should()
 			             .NotBe(invokingThread,
 			                    "because a method with a Task x() signature should invoke CallRemoteMethod on another thread");
+		}
+
+		[Test]
+		public void TestTaskThrowException()
+		{
+			var proxy = TestGenerate<IReturnsTask>();
+
+			Thread callingThread = Thread.CurrentThread;
+			Thread invokingThread = null;
+			_channel.Setup(
+				x => x.CallRemoteMethodAsync(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))
+					.Returns((ulong objectId, string interfaceName, string methodName, Stream stream) =>
+					{
+						var t = new Task<MemoryStream>(() =>
+							{
+								invokingThread = Thread.CurrentThread;
+							throw new SystemException("What would you do for a klondyke bar?");
+						});
+						t.Start();
+						return t;
+					});
+
+			Task task = proxy.DoStuff();
+			task.Should().NotBeNull();
+			new Action(task.Wait)
+				.ShouldThrow<SystemException>()
+				.WithMessage("What would you do for a klondyke bar?");
+			task.IsFaulted.Should().BeTrue();
+
+			invokingThread.Should().NotBeNull();
+			callingThread.Should()
+						 .NotBe(invokingThread,
+								"because a method with a Task x() signature should invoke CallRemoteMethod on another thread");
 		}
 
 		[Test]

@@ -62,7 +62,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new OrderedInterface();
 			const int servantId = 18;
-			IServant servant = _server.CreateServant(servantId, (IOrderInterface) subject);
+			_server.CreateServant(servantId, (IOrderInterface) subject);
 			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
 
 			for (int i = 0; i < 1000; ++i)
@@ -83,7 +83,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new OrderedInterface();
 			const int servantId = 19;
-			IServant servant = _server.CreateServant(servantId, (IOrderInterface) subject);
+			_server.CreateServant(servantId, (IOrderInterface) subject);
 			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
 
 			List<int> sequence = Enumerable.Range(0, 1000).ToList();
@@ -122,7 +122,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new OrderedInterface();
 			const int servantId = 20;
-			IServant servant = _server.CreateServant(servantId, (IOrderInterface) subject);
+			_server.CreateServant(servantId, (IOrderInterface) subject);
 			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
 
 			List<int> sequence = Enumerable.Range(0, 1000).ToList();
@@ -178,7 +178,7 @@ namespace SharpRemote.Test.Remoting
 				       });
 
 			const int servantId = 10;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<ISubjectHost>(servantId);
 
 			ulong actualId = proxy.CreateSubject1(typeof (GetStringPropertyImplementation), typeof (IGetStringProperty));
@@ -194,7 +194,7 @@ namespace SharpRemote.Test.Remoting
 			const int servantId = 14;
 			var subject = new Mock<IReturnsTask>();
 			subject.Setup(x => x.DoStuff()).Returns(() => new Task(() => { }));
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsTask>(servantId);
 			new Action(() => proxy.DoStuff().Wait())
 				.ShouldThrow<NotSupportedException>()
@@ -208,7 +208,7 @@ namespace SharpRemote.Test.Remoting
 			const int servantId = 15;
 			var subject = new Mock<IReturnsIntTask>();
 			subject.Setup(x => x.DoStuff()).Returns(() => new Task<int>(() => 42));
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
 			new Action(() => proxy.DoStuff().Wait())
 				.ShouldThrow<NotSupportedException>()
@@ -222,7 +222,7 @@ namespace SharpRemote.Test.Remoting
 			subject.Setup(x => x.Value).Returns(42);
 
 			const int servantId = 1;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			proxy.Value.Should().Be(42);
 		}
@@ -235,7 +235,7 @@ namespace SharpRemote.Test.Remoting
 			subject.Setup(x => x.Value).Returns(() => { throw new ArgumentException("Foobar"); });
 
 			const int servantId = 2;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			new Action(() => { double unused = proxy.Value; })
 				.ShouldThrow<ArgumentException>()
@@ -252,7 +252,7 @@ namespace SharpRemote.Test.Remoting
 			subject.Setup(x => x.Value).Returns(() => { throw new NonSerializableExceptionButDefaultCtor(); });
 
 			const int servantId = 3;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			new Action(() => { double unused = proxy.Value; })
 				.ShouldThrow<UnserializableException>();
@@ -264,7 +264,7 @@ namespace SharpRemote.Test.Remoting
 			const int servantId = 13;
 			var subject = new Mock<IReturnsIntTask>();
 			subject.Setup(x => x.DoStuff()).Returns(() => Task<int>.Factory.StartNew(() => 42));
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
 			int? result = null;
 			Task task = proxy.DoStuff().ContinueWith(unused => { result = unused.Result; });
@@ -278,8 +278,11 @@ namespace SharpRemote.Test.Remoting
 		{
 			const int servantId = 11;
 			var subject = new Mock<IReturnsTask>();
-			subject.Setup(x => x.DoStuff()).Returns(() => Task.Factory.StartNew(() => { throw new Win32Exception(1337); }));
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			subject.Setup(x => x.DoStuff()).Returns(() => Task.Factory.StartNew(() =>
+				{
+					throw new Win32Exception(1337);
+				}));
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsTask>(servantId);
 			Task task = proxy.DoStuff();
 			new Action(task.Wait)
@@ -293,7 +296,7 @@ namespace SharpRemote.Test.Remoting
 			const int servantId = 12;
 			var subject = new Mock<IReturnsIntTask>();
 			subject.Setup(x => x.DoStuff()).Returns(() => Task<int>.Factory.StartNew(() => { throw new Win32Exception(1337); }));
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
 			Task<int> task = proxy.DoStuff();
 			new Action(task.Wait)
@@ -306,7 +309,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IReturnsIntTask>();
 			const int objectId = 16;
-			IServant servant = _server.CreateServant(objectId, subject.Object);
+			_server.CreateServant(objectId, subject.Object);
 			new Action(() => _client.CreateProxy<IReturnsTask>(objectId))
 				.ShouldNotThrow("Because creating proxy & servant of different type is not wrong, until a method is invoked");
 		}
@@ -317,7 +320,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IReturnsIntTask>();
 			const int objectId = 17;
-			IServant servant = _server.CreateServant(objectId, subject.Object);
+			_server.CreateServant(objectId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsTask>(objectId);
 			new Action(() => proxy.DoStuff().Wait())
 				.ShouldThrow<TypeMismatchException>();
@@ -335,7 +338,7 @@ namespace SharpRemote.Test.Remoting
 			       .Returns((double x, double y) => x + y);
 
 			const int servantId = 9;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<ICalculator>(servantId);
 
 			proxy.Add(1, 2).Should().Be(3);
@@ -371,7 +374,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IEventInt32>();
 			const int servantId = 5;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IEventInt32>(servantId);
 
 			int? actualValue = null;
@@ -390,7 +393,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IEventInt32>();
 			const int servantId = 6;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IEventInt32>(servantId);
 
 			int? actualValue1 = null;
@@ -414,7 +417,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IEventInt32>();
 			const int servantId = 7;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IEventInt32>(servantId);
 
 			int? actualValue = null;
@@ -440,7 +443,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			var subject = new Mock<IEventInt32>();
 			const int servantId = 8;
-			IServant servant = _server.CreateServant(servantId, subject.Object);
+			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IEventInt32>(servantId);
 
 			proxy.Foobar += x => { throw new ArgumentOutOfRangeException("value"); };

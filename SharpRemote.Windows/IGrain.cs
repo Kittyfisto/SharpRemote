@@ -2,6 +2,12 @@
 using System.IO;
 using System.Threading.Tasks;
 
+#if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
+using SharpRemote.Tasks;
+#endif
+#endif
+
 namespace SharpRemote
 {
 	/// <summary>
@@ -34,12 +40,16 @@ namespace SharpRemote
 		/// <param name="writer"></param>
 		void Invoke(string eventOrMethodName, BinaryReader reader, BinaryWriter writer);
 
+#if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 		/// <summary>
 		/// Returns the specific task scheduler instance that must be used to schedule an invocation
-		/// of the given method.
+		/// of the given method or null if <see cref="TaskScheduler.Default"/> shall be used.
 		/// </summary>
 		/// <param name="eventOrMethodName"></param>
 		/// <returns></returns>
-		TaskScheduler GetTaskScheduler(string eventOrMethodName);
+		SerialTaskScheduler GetTaskScheduler(string eventOrMethodName);
+#endif
+#endif
 	}
 }

@@ -177,7 +177,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 		{
 			MethodBuilder method = _typeBuilder.DefineMethod("GetTaskScheduler",
 			                                                 MethodAttributes.Public | MethodAttributes.Final | MethodAttributes.Virtual,
-			                                                 typeof (TaskScheduler),
+			                                                 typeof (SerialTaskScheduler),
 			                                                 new[] {typeof (string)});
 
 			ILGenerator gen = method.GetILGenerator();
@@ -221,7 +221,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 				switch (strategy)
 				{
 					case Dispatch.DoNotSerialize:
-						gen.Emit(OpCodes.Call, Methods.TaskSchedulerGetDefault);
+						gen.Emit(OpCodes.Ldnull);
 						break;
 
 					case Dispatch.SerializePerMethod:

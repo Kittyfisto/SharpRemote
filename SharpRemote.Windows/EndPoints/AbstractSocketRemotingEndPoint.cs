@@ -714,57 +714,71 @@ namespace SharpRemote
 			try
 			{
 				EnsureTypeSafety(grain.ObjectId, grain.InterfaceType, typeName, methodName);
-				TaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
+				SerialTaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
 
-				// However if those 2 things don't throw, then we dispatch the rest of the method invocation
-				// on the task dispatcher and be done with it here...
-				var task = new Task((object accessToken) =>
-				{
-					try
+				Action executeMethod = () =>
 					{
-						Socket socket = _socket;
-						var response = new MemoryStream();
-						var writer = new BinaryWriter(response, Encoding.UTF8);
 						try
 						{
-							WriteResponseHeader(rpcId, writer, MessageType.Return);
-							grain.Invoke(methodName, reader, writer);
-							PatchResponseMessageLength(response, writer);
+							Socket socket = _socket;
+							var response = new MemoryStream();
+							var writer = new BinaryWriter(response, Encoding.UTF8);
+							try
+							{
+								WriteResponseHeader(rpcId, writer, MessageType.Return);
+								grain.Invoke(methodName, reader, writer);
+								PatchResponseMessageLength(response, writer);
+							}
+							catch (Exception e)
+							{
+								if (Log.IsErrorEnabled)
+								{
+									Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
+									                rpcId,
+									                typeName,
+									                methodName,
+									                grain.ObjectId,
+									                e);
+								}
+
+								response.Position = 0;
+								WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+								WriteException(writer, e);
+								PatchResponseMessageLength(response, writer);
+							}
+
+							var responseLength = (int) response.Length;
+							byte[] data = response.GetBuffer();
+
+							SocketError err;
+							if (!SynchronizedWrite(socket, data, responseLength, out err))
+							{
+								Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+								Disconnect();
+							}
 						}
 						catch (Exception e)
 						{
-							if (Log.IsErrorEnabled)
-							{
-								Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
-								                rpcId,
-								                typeName,
-								                methodName,
-								                grain.ObjectId,
-								                e);
-							}
-
-							response.Position = 0;
-							WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-							WriteException(writer, e);
-							PatchResponseMessageLength(response, writer);
-						}
-
-						var responseLength = (int)response.Length;
-						byte[] data = response.GetBuffer();
-
-						SocketError err;
-						if (!SynchronizedWrite(socket, data, responseLength, out err))
-						{
-							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+							Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
 							Disconnect();
 						}
-					}
-					catch (Exception e)
-					{
-						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
-						Disconnect();
-					}
-				}, SerialTaskScheduler.AccessToken); //< We need to specify an access token so this task gets scheduled in a serial manner
+					};
+
+				// However if those 2 things don't throw, then we dispatch the rest of the method invocation
+				// on the task dispatcher and be done with it here...
+				Task task;
+				TaskCompletionSource<int> completionSource;
+				if (taskScheduler != null)
+				{
+					//task = taskScheduler.QueueTask(executeMethod);
+					completionSource = new TaskCompletionSource<int>();
+					task = completionSource.Task;
+				}
+				else
+				{
+					completionSource = null;
+					task = new Task(executeMethod);
+				}
 
 				// Once we've created the task, we remember that there's a method invocation
 				// that's yet to be executed (which tremendously helps debugging problems)
@@ -784,7 +798,14 @@ namespace SharpRemote
 
 				// And then finally start the task to deserialize all method parameters, invoke the mehtod
 				// and then seralize either the return value of the thrown exception...
-				task.Start(taskScheduler);
+				if (taskScheduler != null)
+				{
+					taskScheduler.QueueTask(executeMethod, completionSource);
+				}
+				else
+				{
+					task.Start(TaskScheduler.Default);
+				}
 			}
 			catch (TypeMismatchException e)
 			{

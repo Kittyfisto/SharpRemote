@@ -673,5 +673,31 @@ namespace SharpRemote.Test.Remoting
 				intersection.Should().BeEmpty("Because both client & server should've used completely different ids to identify all newly created servants & proxies");
 			}
 		}
+
+		[Test]
+		[Description("Verifies that a serial RPC that in itself spawns another task doesn't deadlock")]
+		public void TestSerialInvocationWithInnerTask()
+		{
+			using (var server = CreateServer())
+			using (var client = CreateClient())
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint);
+
+				var subject = new Mock<IInvokeAttributeMethods>();
+				subject.Setup(x => x.SerializePerObject1()).Callback(() =>
+				{
+					var task = new Task<int>(() => 9001);
+					task.Start();
+					task.Wait();
+				});
+
+				server.CreateServant(0, subject.Object);
+				var proxy = client.CreateProxy<IInvokeAttributeMethods>(0);
+
+				Task.Factory.StartNew(proxy.SerializePerObject1)
+					.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("Because the method should've executed within 5 seconds");
+			}
+		}
 	}
 }

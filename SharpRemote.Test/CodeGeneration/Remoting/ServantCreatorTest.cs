@@ -159,7 +159,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var subject = new Mock<IInvokeAttributeMethods>();
 			IServant servant = TestGenerate(subject.Object);
 			servant.GetTaskScheduler("NoAttribute")
-			       .Should().BeSameAs(TaskScheduler.Default);
+			       .Should().BeNull();
 		}
 
 		[Test]
@@ -170,7 +170,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var subject = new Mock<IInvokeAttributeMethods>();
 			IServant servant = TestGenerate(subject.Object);
 			servant.GetTaskScheduler("DoNotSerialize")
-			       .Should().BeSameAs(TaskScheduler.Default);
+				   .Should().BeNull();
 		}
 
 		[Test]
@@ -183,10 +183,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			IServant servant1 = TestGenerate(subject.Object);
 			IServant servant2 = TestGenerate(subject.Object);
 
-			TaskScheduler scheduler = servant1.GetTaskScheduler("SerializePerType");
+			var scheduler = servant1.GetTaskScheduler("SerializePerType");
 			scheduler.Should().NotBeNull();
-			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
-			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
 			scheduler.Should().BeOfType<SerialTaskScheduler>();
 
 			scheduler.Should().BeSameAs(servant2.GetTaskScheduler("SerializePerType"));
@@ -201,10 +199,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var subject = new Mock<IInvokeAttributeMethods>();
 			IServant servant = TestGenerate(subject.Object);
 
-			TaskScheduler scheduler = servant.GetTaskScheduler("SerializePerObject1");
+			var scheduler = servant.GetTaskScheduler("SerializePerObject1");
 			scheduler.Should().NotBeNull();
-			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
-			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
 			scheduler.Should().BeOfType<SerialTaskScheduler>();
 
 			scheduler.Should().BeSameAs(servant.GetTaskScheduler("SerializePerObject2"));
@@ -220,10 +216,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			IServant servant1 = TestGenerate(subject.Object);
 			IServant servant2 = TestGenerate(subject.Object);
 
-			TaskScheduler scheduler = servant1.GetTaskScheduler("SerializePerMethod1");
+			var scheduler = servant1.GetTaskScheduler("SerializePerMethod1");
 			scheduler.Should().NotBeNull();
-			scheduler.Should().NotBeSameAs(TaskScheduler.Default);
-			scheduler.Should().NotBeSameAs(TaskScheduler.Current);
 			scheduler.Should().BeOfType<SerialTaskScheduler>();
 
 			scheduler.Should()

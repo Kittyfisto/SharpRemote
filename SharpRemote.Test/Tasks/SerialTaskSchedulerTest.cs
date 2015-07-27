@@ -15,7 +15,6 @@ namespace SharpRemote.Test.Tasks
 		public void TestCtor()
 		{
 			var scheduler = new SerialTaskScheduler(true);
-			scheduler.MaximumConcurrencyLevel.Should().Be(1);
 			scheduler.Dispose();
 			scheduler.Exceptions.Should().BeEmpty();
 		}
@@ -28,9 +27,8 @@ namespace SharpRemote.Test.Tasks
 			var tasks = new List<Task<int>>(taskCount);
 			for (int i = 0; i < taskCount; ++i)
 			{
-				var task = new Task<int>(unused => 42, SerialTaskScheduler.AccessToken);
+				var task = scheduler.QueueTask(() => 42);
 				tasks.Add(task);
-				task.Start(scheduler);
 			}
 			Task.WaitAll(tasks.Cast<Task>().ToArray(), TimeSpan.FromSeconds(10))
 			    .Should().BeTrue();
@@ -42,8 +40,8 @@ namespace SharpRemote.Test.Tasks
 		public void TestScheduleOneTask()
 		{
 			var scheduler = new SerialTaskScheduler(true);
-			var task = new Task<int>(unused => 42, SerialTaskScheduler.AccessToken);
-			task.Start(scheduler);
+			var task = scheduler.QueueTask(() => 42);
+
 			task.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
 			task.Result.Should().Be(42);
 			scheduler.Dispose();
@@ -51,20 +49,26 @@ namespace SharpRemote.Test.Tasks
 		}
 
 		[Test]
-		public void TestScheduleRecursiveTask()
+		[Description("Ensures that tasks executed within a task, scheduled by a serial task scheduler, do not high-jack the serial task scheduler for execution, but the default one, even without having been specified")]
+		public void TestSchedulerHighjacking()
 		{
 			using (var scheduler = new SerialTaskScheduler(true))
 			{
-				var task = new Task<int>(unused =>
-				{
-					var task2 = new Task<int>(() => 42);
-					task2.Start();
-					return task2.Result;
-				}, SerialTaskScheduler.AccessToken);
+				TaskScheduler actualInnerScheduler = null;
+				var task = scheduler.QueueTask(() =>
+					{
+						var task2 = new Task<int>(() =>
+							{
+								actualInnerScheduler = TaskScheduler.Current;
+								return 42;
+							});
+						task2.Start();
+						return task2.Result;
+					});
 
-				task.Start(scheduler);
 				task.Wait(TimeSpan.FromSeconds(1)).Should().BeTrue();
 				task.Result.Should().Be(42);
+				actualInnerScheduler.Should().BeSameAs(TaskScheduler.Default);
 			}
 		}
 	}

@@ -524,6 +524,12 @@ namespace SharpRemote.Hosting
 		{
 			lock (_syncRoot)
 			{
+				if (_isDisposed)
+					return;
+
+				if (_isDisposing)
+					return;
+
 				_isDisposing = true;
 			}
 

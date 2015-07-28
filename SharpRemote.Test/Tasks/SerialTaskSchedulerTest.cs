@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
@@ -69,6 +70,26 @@ namespace SharpRemote.Test.Tasks
 				task.Wait(TimeSpan.FromSeconds(1)).Should().BeTrue();
 				task.Result.Should().Be(42);
 				actualInnerScheduler.Should().BeSameAs(TaskScheduler.Default);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that the executing thread is only started once a task has been queued and that it is stopped if no task has been queued for at least the specified amount timr")]
+		public void TestStarStopThread()
+		{
+			var timeout = TimeSpan.FromMilliseconds(100);
+			using (var scheduler = new SerialTaskScheduler(timeout, true))
+			{
+				scheduler.IsExecutingThreadRunning.Should().BeFalse("Because no task has ever been scheduled and thus no additional thread should be waiting for it");
+				scheduler.QueueTask(() => { });
+				scheduler.IsExecutingThreadRunning.Should().BeTrue("Because a task has just been queued");
+
+				Thread.Sleep((int) (timeout.TotalMilliseconds*2));
+				scheduler.IsExecutingThreadRunning.Should()
+				         .BeFalse(
+					         "Because for twice the timeout no additional task has been executed and thus the thread should've been ended");
+
+				scheduler.Exceptions.Should().BeEmpty("Because no exceptions should've been thrown in the process");
 			}
 		}
 	}

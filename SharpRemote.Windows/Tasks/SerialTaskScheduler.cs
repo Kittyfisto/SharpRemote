@@ -29,6 +29,7 @@ namespace SharpRemote.Tasks
 		private readonly SemaphoreSlim _pendingTaskCount;
 		private readonly Queue<IPendingTask> _pendingTasks;
 		private readonly object _syncRoot;
+		private readonly TimeSpan _deactivationThreshold;
 		private Thread _executingThread;
 
 		#region Debugging
@@ -41,6 +42,26 @@ namespace SharpRemote.Tasks
 
 		#endregion
 
+		private SerialTaskScheduler(bool logExceptions)
+		{
+			if (logExceptions)
+				_exceptions = new ConcurrentBag<Exception>();
+
+			_syncRoot = new object();
+			_pendingTasks = new Queue<IPendingTask>();
+			_disposeEvent = new ManualResetEvent(false);
+			_pendingTaskCount = new SemaphoreSlim(0, int.MaxValue);
+		}
+
+		public SerialTaskScheduler(TimeSpan deactivationThreshold, bool logExceptions)
+			: this(logExceptions)
+		{
+			if (deactivationThreshold <= TimeSpan.Zero)
+				throw new ArgumentOutOfRangeException("deactivationThreshold");
+
+			_deactivationThreshold = deactivationThreshold;
+		}
+
 		/// <summary>
 		///     Initializes a new instance of this task scheduler.
 		/// </summary>
@@ -49,10 +70,12 @@ namespace SharpRemote.Tasks
 		/// <param name="logExceptions"></param>
 		/// <param name="typeName"></param>
 		public SerialTaskScheduler(string typeName = null,
-			string methodName = null,
-			long? objectId = null,
+		                           string methodName = null,
+		                           long? objectId = null,
 		                           bool logExceptions = false)
+			: this(logExceptions)
 		{
+			_deactivationThreshold = DeactivationThreshold;
 			_typeName = typeName;
 			_methodName = methodName;
 			_objectId = objectId;
@@ -70,14 +93,6 @@ namespace SharpRemote.Tasks
 						        : string.Format("{0}", _typeName);
 				}
 			}
-
-			if (logExceptions)
-				_exceptions = new ConcurrentBag<Exception>();
-
-			_syncRoot = new object();
-			_pendingTasks = new Queue<IPendingTask>();
-			_disposeEvent = new ManualResetEvent(false);
-			_pendingTaskCount = new SemaphoreSlim(0, int.MaxValue);
 		}
 
 		/// <summary>
@@ -113,7 +128,7 @@ namespace SharpRemote.Tasks
 				IPendingTask task = null;
 				try
 				{
-					task = DequeueNextTask(DeactivationThreshold);
+					task = DequeueNextTask(_deactivationThreshold);
 					if (task == null)
 						break;
 
@@ -140,7 +155,7 @@ namespace SharpRemote.Tasks
 
 			switch (idx)
 			{
-				case -1:
+				case WaitHandle.WaitTimeout:
 					lock (_syncRoot)
 					{
 						Log.DebugFormat("No tasks were scheduled in the last {0}s, shutting thread down...", timeout.TotalSeconds);

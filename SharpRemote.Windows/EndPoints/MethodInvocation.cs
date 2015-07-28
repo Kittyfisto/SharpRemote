@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -9,7 +8,6 @@ namespace SharpRemote
 	///     Represents a currently executing or pending method invocation.
 	/// </summary>
 	internal struct MethodInvocation
-		: IEquatable<MethodInvocation>
 	{
 		/// <summary>
 		/// 
@@ -42,32 +40,6 @@ namespace SharpRemote
 		public override string ToString()
 		{
 			return string.Format("#{0}: {1} ({2})", RpcId, MethodName, Task.Status);
-		}
-
-		public bool Equals(MethodInvocation other)
-		{
-			return RpcId == other.RpcId;
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj)) return false;
-			return obj is MethodInvocation && Equals((MethodInvocation) obj);
-		}
-
-		public override int GetHashCode()
-		{
-			return RpcId.GetHashCode();
-		}
-
-		public static bool operator ==(MethodInvocation left, MethodInvocation right)
-		{
-			return left.Equals(right);
-		}
-
-		public static bool operator !=(MethodInvocation left, MethodInvocation right)
-		{
-			return !left.Equals(right);
 		}
 	}
 }

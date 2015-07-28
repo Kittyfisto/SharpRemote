@@ -115,7 +115,7 @@ namespace SharpRemote
 		#region Method Invocation
 
 		private readonly PendingMethodsQueue _pendingMethodCalls;
-		private readonly HashSet<MethodInvocation> _pendingMethodInvocations;
+		private readonly Dictionary<long, MethodInvocation> _pendingMethodInvocations;
 		protected CancellationTokenSource _cancellationTokenSource;
 
 		#endregion
@@ -146,7 +146,7 @@ namespace SharpRemote
 			_servantCreator = new ServantCreator(_module, _serializer, this, this);
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
 			_pendingMethodCalls = new PendingMethodsQueue();
-			_pendingMethodInvocations = new HashSet<MethodInvocation>();
+			_pendingMethodInvocations = new Dictionary<long, MethodInvocation>();
 
 			_clientAuthenticator = clientAuthenticator;
 			_serverAuthenticator = serverAuthenticator;
@@ -753,7 +753,7 @@ namespace SharpRemote
 			{
 				if (!HandleResponse(rpcId, type, reader))
 				{
-					Log.ErrorFormat("There is no pending RPC of id '{0}' - disconnecting...", rpcId);
+					Log.ErrorFormat("There is no pending RPC #{0}, disconnecting...", rpcId);
 					reason = EndPointDisconnectReason.RpcInvalidResponse;
 					return false;
 				}
@@ -767,7 +767,7 @@ namespace SharpRemote
 			}
 			else
 			{
-				throw new NotImplementedException();
+				throw new SystemException(string.Format("Unexpected message-type: {0}", type));
 			}
 
 			reason = null;
@@ -780,32 +780,7 @@ namespace SharpRemote
 			if (!IsTypeSafe(grain.InterfaceType, typeName))
 			{
 				// If the call violated type-safety then we will immediately "throw" a TypeMismatchException.
-
-				var response = new MemoryStream();
-				var writer = new BinaryWriter(response, Encoding.UTF8);
-				response.Position = 0;
-				WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-
-				var e = new TypeMismatchException(
-					string.Format("There was a type mismatch when invoking method '{0}' on grain #{1}: Expected '{2}' but found '{3}",
-								  methodName,
-								  grain.ObjectId,
-								  typeName,
-								  grain.InterfaceType.FullName));
-
-				WriteException(writer, e);
-				PatchResponseMessageLength(response, writer);
-
-				var responseLength = (int)response.Length;
-				byte[] data = response.GetBuffer();
-
-				SocketError err;
-				Socket socket = _socket;
-				if (!SynchronizedWrite(socket, data, responseLength, out err))
-				{
-					Log.ErrorFormat("Disconnecting socket due to error while writing response!");
-					Disconnect();
-				}
+				HandleTypeMismatch(rpcId, grain, typeName, methodName);
 			}
 			else
 			{
@@ -813,6 +788,11 @@ namespace SharpRemote
 
 				Action executeMethod = () =>
 				{
+					if (Log.IsDebugEnabled)
+					{
+						Log.DebugFormat("Starting RPC #{0}", rpcId);
+					}
+
 					try
 					{
 						Socket socket = _socket;
@@ -829,11 +809,11 @@ namespace SharpRemote
 							if (Log.IsErrorEnabled)
 							{
 								Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
-												rpcId,
-												typeName,
-												methodName,
-												grain.ObjectId,
-												e);
+								                rpcId,
+								                typeName,
+								                methodName,
+								                grain.ObjectId,
+								                e);
 							}
 
 							response.Position = 0;
@@ -842,7 +822,7 @@ namespace SharpRemote
 							PatchResponseMessageLength(response, writer);
 						}
 
-						var responseLength = (int)response.Length;
+						var responseLength = (int) response.Length;
 						byte[] data = response.GetBuffer();
 
 						SocketError err;
@@ -857,6 +837,20 @@ namespace SharpRemote
 						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
 						Disconnect();
 					}
+					finally
+					{
+						if (Log.IsDebugEnabled)
+						{
+							Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
+						}
+
+						// Once we've created the task, we remember that there's a method invocation
+						// that's yet to be executed (which tremendously helps debugging problems)
+						lock (_pendingMethodInvocations)
+						{
+							_pendingMethodInvocations.Remove(rpcId);
+						}
+					}
 				};
 
 				// However if those 2 things don't throw, then we dispatch the rest of the method invocation
@@ -865,7 +859,6 @@ namespace SharpRemote
 				TaskCompletionSource<int> completionSource;
 				if (taskScheduler != null)
 				{
-					//task = taskScheduler.QueueTask(executeMethod);
 					completionSource = new TaskCompletionSource<int>();
 					task = completionSource.Task;
 				}
@@ -875,30 +868,15 @@ namespace SharpRemote
 					task = new Task(executeMethod);
 				}
 
-				// Once we've created the task, we remember that there's a method invocation
-				// that's yet to be executed (which tremendously helps debugging problems)
-				var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
-				task.ContinueWith(unused =>
-				{
-					if (Log.IsDebugEnabled)
-					{
-						Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
-					}
-
-					lock (_pendingMethodInvocations)
-					{
-						_pendingMethodInvocations.Remove(methodInvocation);
-					}
-				});
-
 				if (Log.IsDebugEnabled)
 				{
 					Log.DebugFormat("Queueing RPC #{0}", rpcId);
 				}
 
+				var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
 				lock (_pendingMethodInvocations)
 				{
-					_pendingMethodInvocations.Add(methodInvocation);
+					_pendingMethodInvocations.Add(rpcId, methodInvocation);
 				}
 
 				// And then finally start the task to deserialize all method parameters, invoke the mehtod
@@ -911,6 +889,37 @@ namespace SharpRemote
 				{
 					task.Start(TaskScheduler.Default);
 				}
+			}
+		}
+
+		private void HandleTypeMismatch(long rpcId, IGrain grain, string typeName, string methodName)
+		{
+			var response = new MemoryStream();
+			var writer = new BinaryWriter(response, Encoding.UTF8);
+			response.Position = 0;
+			WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+
+			var e = new TypeMismatchException(
+				string.Format(
+					"There was a type mismatch when invoking RPC #{0} '{1}' on grain #{2}: Expected '{3}' but found '{4}",
+					rpcId,
+					methodName,
+					grain.ObjectId,
+					typeName,
+					grain.InterfaceType.FullName));
+
+			WriteException(writer, e);
+			PatchResponseMessageLength(response, writer);
+
+			var responseLength = (int) response.Length;
+			byte[] data = response.GetBuffer();
+
+			SocketError err;
+			Socket socket = _socket;
+			if (!SynchronizedWrite(socket, data, responseLength, out err))
+			{
+				Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+				Disconnect();
 			}
 		}
 

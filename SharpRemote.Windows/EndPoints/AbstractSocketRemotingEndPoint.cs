@@ -777,61 +777,87 @@ namespace SharpRemote
 		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName,
 		                                      BinaryReader reader)
 		{
-			// There's 2 things we can find and report immediately:
-			// 1. an invalid object-id was passed that points to a different interface than the caller expects
-			// 2. no task scheduler could be found for the required method.
-			try
+			if (!IsTypeSafe(grain.InterfaceType, typeName))
 			{
-				EnsureTypeSafety(grain.ObjectId, grain.InterfaceType, typeName, methodName);
+				// If the call violated type-safety then we will immediately "throw" a TypeMismatchException.
+
+				var response = new MemoryStream();
+				var writer = new BinaryWriter(response, Encoding.UTF8);
+				response.Position = 0;
+				WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+
+				var e = new TypeMismatchException(
+					string.Format("There was a type mismatch when invoking method '{0}' on grain #{1}: Expected '{2}' but found '{3}",
+								  methodName,
+								  grain.ObjectId,
+								  typeName,
+								  grain.InterfaceType.FullName));
+
+				WriteException(writer, e);
+				PatchResponseMessageLength(response, writer);
+
+				var responseLength = (int)response.Length;
+				byte[] data = response.GetBuffer();
+
+				SocketError err;
+				Socket socket = _socket;
+				if (!SynchronizedWrite(socket, data, responseLength, out err))
+				{
+					Log.ErrorFormat("Disconnecting socket due to error while writing response!");
+					Disconnect();
+				}
+			}
+			else
+			{
 				SerialTaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
 
 				Action executeMethod = () =>
+				{
+					try
 					{
+						Socket socket = _socket;
+						var response = new MemoryStream();
+						var writer = new BinaryWriter(response, Encoding.UTF8);
 						try
 						{
-							Socket socket = _socket;
-							var response = new MemoryStream();
-							var writer = new BinaryWriter(response, Encoding.UTF8);
-							try
-							{
-								WriteResponseHeader(rpcId, writer, MessageType.Return);
-								grain.Invoke(methodName, reader, writer);
-								PatchResponseMessageLength(response, writer);
-							}
-							catch (Exception e)
-							{
-								if (Log.IsErrorEnabled)
-								{
-									Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
-									                rpcId,
-									                typeName,
-									                methodName,
-									                grain.ObjectId,
-									                e);
-								}
-
-								response.Position = 0;
-								WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-								WriteException(writer, e);
-								PatchResponseMessageLength(response, writer);
-							}
-
-							var responseLength = (int) response.Length;
-							byte[] data = response.GetBuffer();
-
-							SocketError err;
-							if (!SynchronizedWrite(socket, data, responseLength, out err))
-							{
-								Log.ErrorFormat("Disconnecting socket due to error while writing response!");
-								Disconnect();
-							}
+							WriteResponseHeader(rpcId, writer, MessageType.Return);
+							grain.Invoke(methodName, reader, writer);
+							PatchResponseMessageLength(response, writer);
 						}
 						catch (Exception e)
 						{
-							Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
+							if (Log.IsErrorEnabled)
+							{
+								Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
+												rpcId,
+												typeName,
+												methodName,
+												grain.ObjectId,
+												e);
+							}
+
+							response.Position = 0;
+							WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+							WriteException(writer, e);
+							PatchResponseMessageLength(response, writer);
+						}
+
+						var responseLength = (int)response.Length;
+						byte[] data = response.GetBuffer();
+
+						SocketError err;
+						if (!SynchronizedWrite(socket, data, responseLength, out err))
+						{
+							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
 							Disconnect();
 						}
-					};
+					}
+					catch (Exception e)
+					{
+						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
+						Disconnect();
+					}
+				};
 
 				// However if those 2 things don't throw, then we dispatch the rest of the method invocation
 				// on the task dispatcher and be done with it here...
@@ -853,17 +879,17 @@ namespace SharpRemote
 				// that's yet to be executed (which tremendously helps debugging problems)
 				var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
 				task.ContinueWith(unused =>
+				{
+					if (Log.IsDebugEnabled)
 					{
-						if (Log.IsDebugEnabled)
-						{
-							Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
-						}
+						Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
+					}
 
-						lock (_pendingMethodInvocations)
-						{
-							_pendingMethodInvocations.Remove(methodInvocation);
-						}
-					});
+					lock (_pendingMethodInvocations)
+					{
+						_pendingMethodInvocations.Remove(methodInvocation);
+					}
+				});
 
 				if (Log.IsDebugEnabled)
 				{
@@ -884,26 +910,6 @@ namespace SharpRemote
 				else
 				{
 					task.Start(TaskScheduler.Default);
-				}
-			}
-			catch (TypeMismatchException e)
-			{
-				var response = new MemoryStream();
-				var writer = new BinaryWriter(response, Encoding.UTF8);
-				response.Position = 0;
-				WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-				WriteException(writer, e);
-				PatchResponseMessageLength(response, writer);
-
-				var responseLength = (int) response.Length;
-				byte[] data = response.GetBuffer();
-
-				SocketError err;
-				Socket socket = _socket;
-				if (!SynchronizedWrite(socket, data, responseLength, out err))
-				{
-					Log.ErrorFormat("Disconnecting socket due to error while writing response!");
-					Disconnect();
 				}
 			}
 		}
@@ -943,18 +949,10 @@ namespace SharpRemote
 			}
 		}
 
-		private static void EnsureTypeSafety(ulong objectId, Type getType, string typeName, string methodName)
+		private static bool IsTypeSafe(Type getType, string typeName)
 		{
 			string actualTypeName = getType.FullName;
-			if (actualTypeName != typeName)
-			{
-				throw new TypeMismatchException(
-					string.Format("There was a type mismatch when invoking method '{0}' on grain #{1}: Expected '{2}' but found '{3}",
-					              methodName,
-					              objectId,
-					              typeName,
-					              actualTypeName));
-			}
+			return actualTypeName == typeName;
 		}
 
 		private static void PatchResponseMessageLength(MemoryStream response, BinaryWriter writer)

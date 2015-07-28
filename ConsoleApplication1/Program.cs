@@ -15,9 +15,31 @@ namespace ConsoleApplication1
 	{
 		private static void Main(string[] args)
 		{
-			Simple();
+			//Simple();
 			//OneClientSync();
 			//ManyClientsAsync();
+
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+
+				const int desiredSteps = 1000000;
+
+				var worker1 = silo.CreateGrain<IWorker, Worker>();
+				var listener1 = new DataListener("#1", desiredSteps);
+				worker1.RegisterListener(listener1);
+				worker1.Start();
+
+				var worker2 = silo.CreateGrain<IWorker, Worker>();
+				var listener2 = new DataListener("#2", desiredSteps);
+				worker2.RegisterListener(listener2);
+				worker2.Start();
+
+				while (!listener1.Finished && !listener2.Finished)
+				{
+					Thread.Sleep(1000);
+				}
+			}
 
 			Console.WriteLine("Press any key to continue...");
 			Console.ReadKey();

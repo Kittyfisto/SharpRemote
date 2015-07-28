@@ -16,26 +16,26 @@ using SharpRemote.Tasks;
 using log4net;
 
 // ReSharper disable CheckNamespace
+
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// Base class for any <see cref="IRemotingEndPoint"/> implementation that used an underlying
-	/// <see cref="Socket"/> implementation
+	///     Base class for any <see cref="IRemotingEndPoint" /> implementation that used an underlying
+	///     <see cref="Socket" /> implementation
 	/// </summary>
 	public abstract class AbstractSocketRemotingEndPoint
 		: AbstractEndPoint
-		, IRemotingEndPoint
-		, IEndPointChannel
+		  , IRemotingEndPoint
+		  , IEndPointChannel
 	{
-		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
 		private const string AuthenticationRequiredMessage = "Authentication required";
 		private const string NoAuthenticationRequiredMessage = "No Authentication required";
 		private const string AuthenticationResponseMessage = "Authentication";
 		private const string AuthenticationFailedMessage = "Authentication failed";
 		private const string AuthenticationSucceedMessage = "Authentication succeeded";
 		protected const string HandshakeSucceedMessage = "Handshake succeeded";
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		#region Authentication
 
@@ -53,7 +53,56 @@ namespace SharpRemote
 
 		#endregion
 
+		private readonly string _name;
+
+		private readonly Serializer _serializer;
 		private readonly object _syncRoot;
+		private EndPointDisconnectReason? _disconnectReason;
+		private bool _isDisposed;
+		private long _nextRpcId;
+		private Socket _socket;
+
+		#region Statistics
+
+		private readonly GrainIdGenerator _idGenerator;
+		private long _numBytesReceived;
+		private long _numBytesSent;
+		private long _numCallsAnswered;
+		private long _numCallsInvoked;
+
+		/// <summary>
+		///     The total amount of bytes that have been sent over the underlying socket.
+		/// </summary>
+		public long NumBytesSent
+		{
+			get { return Interlocked.Read(ref _numBytesSent); }
+		}
+
+		/// <summary>
+		///     The total amount of bytes that have been received over the underlying socket.
+		/// </summary>
+		public long NumBytesReceived
+		{
+			get { return Interlocked.Read(ref _numBytesReceived); }
+		}
+
+		/// <summary>
+		///     The total amount of remote procedure calls that have been invoked from this end.
+		/// </summary>
+		public long NumCallsInvoked
+		{
+			get { return Interlocked.Read(ref _numCallsInvoked); }
+		}
+
+		/// <summary>
+		///     The total amount of remote procedure calls that have been invoked from the other end.
+		/// </summary>
+		public long NumCallsAnswered
+		{
+			get { return Interlocked.Read(ref _numCallsAnswered); }
+		}
+
+		#endregion
 
 		#region Proxies / Servants
 
@@ -71,90 +120,11 @@ namespace SharpRemote
 
 		#endregion
 
-		private readonly Serializer _serializer;
-		private bool _isDisposed;
-		private long _nextRpcId;
-		private Socket _socket;
-		private readonly string _name;
-		private EndPointDisconnectReason? _disconnectReason;
-
-		#region Statistics
-
-		private long _numBytesSent;
-		private long _numBytesReceived;
-		private long _numCallsInvoked;
-		private long _numCallsAnswered;
-		private readonly GrainIdGenerator _idGenerator;
-
-		/// <summary>
-		/// The total amount of bytes that have been sent over the underlying socket.
-		/// </summary>
-		public long NumBytesSent
-		{
-			get { return Interlocked.Read(ref _numBytesSent); }
-		}
-
-		/// <summary>
-		/// The total amount of bytes that have been received over the underlying socket.
-		/// </summary>
-		public long NumBytesReceived
-		{
-			get { return Interlocked.Read(ref _numBytesReceived); }
-		}
-
-		/// <summary>
-		/// The total amount of remote procedure calls that have been invoked from this end.
-		/// </summary>
-		public long NumCallsInvoked
-		{
-			get { return Interlocked.Read(ref _numCallsInvoked); }
-		}
-
-		/// <summary>
-		/// The total amount of remote procedure calls that have been invoked from the other end.
-		/// </summary>
-		public long NumCallsAnswered
-		{
-			get { return Interlocked.Read(ref _numCallsAnswered); }
-		}
-
-		#endregion
-
-		protected abstract EndPoint InternalLocalEndPoint { get; }
-		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
-		protected object SyncRoot{get { return _syncRoot; }}
-		protected Socket Socket { get { return _socket; } set { _socket = value; } }
-
-		protected static bool IsFailure(EndPointDisconnectReason reason)
-		{
-			switch (reason)
-			{
-				case EndPointDisconnectReason.RequestedByEndPoint:
-				case EndPointDisconnectReason.RequestedByRemotEndPoint:
-					return false;
-
-				default:
-					return true;
-			}
-		}
-
-		protected sealed class ThreadArgs
-		{
-			public readonly Socket Socket;
-			public readonly CancellationToken Token;
-
-			public ThreadArgs(Socket socket, CancellationToken token)
-			{
-				Socket = socket;
-				Token = token;
-			}
-		}
-
 		internal AbstractSocketRemotingEndPoint(GrainIdGenerator idGenerator,
-			string name,
-		                                         IAuthenticator clientAuthenticator = null,
-		                                         IAuthenticator serverAuthenticator = null,
-		                                         ITypeResolver customTypeResolver = null)
+		                                        string name,
+		                                        IAuthenticator clientAuthenticator = null,
+		                                        IAuthenticator serverAuthenticator = null,
+		                                        ITypeResolver customTypeResolver = null)
 		{
 			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
 
@@ -187,8 +157,8 @@ namespace SharpRemote
 		protected void WriteLoop(object sock)
 		{
 			var args = (ThreadArgs) sock;
-			var socket = args.Socket;
-			var token = args.Token;
+			Socket socket = args.Socket;
+			CancellationToken token = args.Token;
 
 			EndPointDisconnectReason reason;
 
@@ -203,7 +173,7 @@ namespace SharpRemote
 					}
 
 					int messageLength;
-					var message = _pendingMethodCalls.TakePendingWrite(token, out messageLength);
+					byte[] message = _pendingMethodCalls.TakePendingWrite(token, out messageLength);
 
 					if (message == null)
 					{
@@ -218,7 +188,6 @@ namespace SharpRemote
 						break;
 					}
 				}
-
 			}
 			catch (OperationCanceledException)
 			{
@@ -235,8 +204,8 @@ namespace SharpRemote
 
 		protected void ReadLoop(object sock)
 		{
-			var args = (ThreadArgs)sock;
-			var socket = args.Socket;
+			var args = (ThreadArgs) sock;
+			Socket socket = args.Socket;
 
 			EndPointDisconnectReason reason;
 
@@ -265,7 +234,7 @@ namespace SharpRemote
 						var stream = new MemoryStream(buffer, false);
 						var reader = new BinaryReader(stream);
 						long rpcId = reader.ReadInt64();
-						var type = (MessageType)reader.ReadByte();
+						var type = (MessageType) reader.ReadByte();
 
 						Interlocked.Add(ref _numBytesReceived, length + 4);
 
@@ -304,7 +273,7 @@ namespace SharpRemote
 				if (written != length || err != SocketError.Success || !socket.Connected)
 				{
 					Log.ErrorFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
-									data.Length, err, socket.Connected);
+					                data.Length, err, socket.Connected);
 					return false;
 				}
 
@@ -321,7 +290,7 @@ namespace SharpRemote
 				{
 					err = SocketError.NotConnected;
 					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
-									buffer.Length, err, socket.Connected);
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 
@@ -330,16 +299,16 @@ namespace SharpRemote
 				{
 					err = SocketError.TimedOut;
 					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
-									buffer.Length, err, socket.Connected);
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 
-				var t = (int)(remaining.TotalMilliseconds * 1000);
+				var t = (int) (remaining.TotalMilliseconds*1000);
 				if (!socket.Poll(t, SelectMode.SelectRead))
 				{
 					err = SocketError.TimedOut;
 					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
-									buffer.Length, err, socket.Connected);
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 			}
@@ -361,7 +330,7 @@ namespace SharpRemote
 				if (err != SocketError.Success || read == 0 || !socket.Connected)
 				{
 					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read,
-									buffer.Length, err, socket.Connected);
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 			}
@@ -377,7 +346,70 @@ namespace SharpRemote
 
 		#endregion
 
-		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId, string interfaceType, string methodName,
+		protected abstract EndPoint InternalLocalEndPoint { get; }
+		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
+
+		protected object SyncRoot
+		{
+			get { return _syncRoot; }
+		}
+
+		protected Socket Socket
+		{
+			get { return _socket; }
+			set { _socket = value; }
+		}
+
+		/// <summary>
+		///     Tests if this object has been disposed of or not.
+		/// </summary>
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
+		}
+
+		/// <summary>
+		///     Contains the reason why the socket was disconnected, or null if it wasn't disconnected / never established
+		///     a connection.
+		/// </summary>
+		public EndPointDisconnectReason? DisconnectReason
+		{
+			get { return _disconnectReason; }
+		}
+
+		/// <summary>
+		///     Returns all the proxies of this endpoint.
+		///     Used for testing.
+		/// </summary>
+		internal IEnumerable<IProxy> Proxies
+		{
+			get
+			{
+				lock (_proxiesById)
+				{
+					return _proxiesById.Values.ToList();
+				}
+			}
+		}
+
+		/// <summary>
+		///     Returns all the servnats of this endpoint.
+		///     Used for testing.
+		/// </summary>
+		internal IEnumerable<IServant> Servants
+		{
+			get
+			{
+				lock (_servantsById)
+				{
+					return _servantsById.Values.ToList();
+				}
+			}
+		}
+
+		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId,
+		                                                string interfaceType,
+		                                                string methodName,
 		                                                MemoryStream arguments)
 		{
 			Socket socket = _socket;
@@ -389,51 +421,14 @@ namespace SharpRemote
 			if (Log.IsDebugEnabled)
 			{
 				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
-								InternalLocalEndPoint,
-								InternalRemoteEndPoint,
-								rpcId,
-								servantId,
-								methodName);
+				                InternalLocalEndPoint,
+				                InternalRemoteEndPoint,
+				                rpcId,
+				                servantId,
+				                methodName);
 			}
 
-			var taskSource = new TaskCompletionSource<MemoryStream>();
-			Action<PendingMethodCall> onCallFinished = finishedCall =>
-			{
-				// TODO: We might want execute this portion in yet another task in order to not block the read-thread
-				try
-				{
-					if (finishedCall.MessageType == MessageType.Return)
-					{
-						var stream = (MemoryStream)finishedCall.Reader.BaseStream;
-						taskSource.SetResult(stream);
-					}
-					else if ((finishedCall.MessageType & MessageType.Exception) != 0)
-					{
-						var formatter = new BinaryFormatter();
-						var e = (Exception)formatter.Deserialize(finishedCall.Reader.BaseStream);
-						taskSource.SetException(e);
-					}
-					else
-					{
-						taskSource.SetException(new NotImplementedException());
-					}
-				}
-				finally
-				{
-					_pendingMethodCalls.Recycle(finishedCall);
-				}
-			};
-
-			PendingMethodCall call = _pendingMethodCalls.Enqueue(servantId,
-			                                                     interfaceType,
-			                                                     methodName,
-			                                                     arguments,
-			                                                     rpcId,
-			                                                     onCallFinished);
-			Interlocked.Add(ref _numBytesSent, call.MessageLength);
-			Interlocked.Increment(ref _numCallsInvoked);
-
-			return taskSource.Task;
+			return CallRemoteMethodAsync(rpcId, servantId, interfaceType, methodName, arguments);
 		}
 
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
@@ -447,57 +442,14 @@ namespace SharpRemote
 			if (Log.IsDebugEnabled)
 			{
 				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
-								InternalLocalEndPoint,
-								InternalRemoteEndPoint,
-								rpcId,
-								servantId,
-								methodName);
+				                InternalLocalEndPoint,
+				                InternalRemoteEndPoint,
+				                rpcId,
+				                servantId,
+				                methodName);
 			}
 
-			PendingMethodCall call = null;
-			try
-			{
-				call = _pendingMethodCalls.Enqueue(servantId,
-				                                   interfaceType,
-				                                   methodName,
-				                                   arguments,
-				                                   rpcId);
-
-				Interlocked.Add(ref _numBytesSent, call.MessageLength);
-				Interlocked.Increment(ref _numCallsInvoked);
-
-				call.Wait();
-
-				if (call.MessageType == MessageType.Return)
-				{
-					return (MemoryStream)call.Reader.BaseStream;
-				}
-				else if ((call.MessageType & MessageType.Exception) != 0)
-				{
-					var formatter = new BinaryFormatter();
-					var e = (Exception)formatter.Deserialize(call.Reader.BaseStream);
-					throw e;
-				}
-				else
-				{
-					throw new NotImplementedException();
-				}
-			}
-			finally
-			{
-				if (call != null)
-				{
-					_pendingMethodCalls.Recycle(call);
-				}
-			}
-		}
-
-		/// <summary>
-		/// Tests if this object has been disposed of or not.
-		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
+			return CallRemoteMethod(rpcId, servantId, interfaceType, methodName, arguments);
 		}
 
 		public void Dispose()
@@ -515,8 +467,6 @@ namespace SharpRemote
 			}
 		}
 
-		protected abstract void DisposeAdditional();
-
 		public string Name
 		{
 			get { return _name; }
@@ -527,6 +477,187 @@ namespace SharpRemote
 			get { return InternalRemoteEndPoint != null; }
 		}
 
+		public void Disconnect()
+		{
+			Disconnect(EndPointDisconnectReason.RequestedByEndPoint);
+		}
+
+		public T CreateProxy<T>(ulong objectId) where T : class
+		{
+			lock (_proxiesById)
+			{
+				var proxy = _proxyCreator.CreateProxy<T>(objectId);
+				_proxiesById.Add(objectId, (IProxy) proxy);
+				return proxy;
+			}
+		}
+
+		public T GetProxy<T>(ulong objectId) where T : class
+		{
+			IProxy proxy;
+			if (!_proxiesById.TryGetValue(objectId, out proxy))
+				throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
+
+			if (!(proxy is T))
+				throw new ArgumentException(string.Format("The proxy '{0}', {1} is not related to interface: {2}",
+				                                          objectId,
+				                                          proxy.GetType().Name,
+				                                          typeof (T).Name));
+
+			return (T) proxy;
+		}
+
+		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
+		{
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
+				                subject.GetType().FullName,
+				                typeof (T).FullName,
+				                objectId
+					);
+			}
+
+			IServant servant = _servantCreator.CreateServant(objectId, subject);
+			lock (_servantsById)
+			{
+				_servantsById.Add(objectId, servant);
+				_servantsBySubject.Add(subject, servant);
+			}
+			return servant;
+		}
+
+		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
+		{
+			lock (_proxiesById)
+			{
+				IProxy proxy;
+				if (!_proxiesById.TryGetValue(objectId, out proxy))
+				{
+					return CreateProxy<T>(objectId);
+				}
+
+				return (T) proxy;
+			}
+		}
+
+		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
+		{
+			lock (_servantsById)
+			{
+				IServant servant;
+				if (!_servantsBySubject.TryGetValue(subject, out servant))
+				{
+					ulong nextId = _idGenerator.GetGrainId();
+					servant = CreateServant(nextId, subject);
+				}
+
+				return servant;
+			}
+		}
+
+		protected static bool IsFailure(EndPointDisconnectReason reason)
+		{
+			switch (reason)
+			{
+				case EndPointDisconnectReason.RequestedByEndPoint:
+				case EndPointDisconnectReason.RequestedByRemotEndPoint:
+					return false;
+
+				default:
+					return true;
+			}
+		}
+
+		private Task<MemoryStream> CallRemoteMethodAsync(long rpcId,
+		                                                 ulong servantId,
+		                                                 string interfaceType,
+		                                                 string methodName,
+		                                                 MemoryStream arguments)
+		{
+			var taskSource = new TaskCompletionSource<MemoryStream>();
+			Action<PendingMethodCall> onCallFinished = finishedCall =>
+				{
+					// TODO: We might want execute this portion in yet another task in order to not block the read-thread
+					try
+					{
+						if (finishedCall.MessageType == MessageType.Return)
+						{
+							var stream = (MemoryStream) finishedCall.Reader.BaseStream;
+							taskSource.SetResult(stream);
+						}
+						else if ((finishedCall.MessageType & MessageType.Exception) != 0)
+						{
+							var formatter = new BinaryFormatter();
+							var e = (Exception) formatter.Deserialize(finishedCall.Reader.BaseStream);
+							taskSource.SetException(e);
+						}
+						else
+						{
+							taskSource.SetException(new NotImplementedException());
+						}
+					}
+					finally
+					{
+						_pendingMethodCalls.Recycle(finishedCall);
+					}
+				};
+
+			PendingMethodCall call = _pendingMethodCalls.Enqueue(servantId,
+			                                                     interfaceType,
+			                                                     methodName,
+			                                                     arguments,
+			                                                     rpcId,
+			                                                     onCallFinished);
+			Interlocked.Add(ref _numBytesSent, call.MessageLength);
+			Interlocked.Increment(ref _numCallsInvoked);
+
+			return taskSource.Task;
+		}
+
+		private MemoryStream CallRemoteMethod(long rpcId, ulong servantId, string interfaceType, string methodName,
+		                                      MemoryStream arguments)
+		{
+			PendingMethodCall call = null;
+			try
+			{
+				call = _pendingMethodCalls.Enqueue(servantId,
+				                                   interfaceType,
+				                                   methodName,
+				                                   arguments,
+				                                   rpcId);
+
+				Interlocked.Add(ref _numBytesSent, call.MessageLength);
+				Interlocked.Increment(ref _numCallsInvoked);
+
+				call.Wait();
+
+				if (call.MessageType == MessageType.Return)
+				{
+					return (MemoryStream) call.Reader.BaseStream;
+				}
+				else if ((call.MessageType & MessageType.Exception) != 0)
+				{
+					var formatter = new BinaryFormatter();
+					var e = (Exception) formatter.Deserialize(call.Reader.BaseStream);
+					throw e;
+				}
+				else
+				{
+					throw new NotImplementedException();
+				}
+			}
+			finally
+			{
+				if (call != null)
+				{
+					_pendingMethodCalls.Recycle(call);
+				}
+			}
+		}
+
+		protected abstract void DisposeAdditional();
+
 		private void Disconnect(EndPointDisconnectReason reason)
 		{
 			lock (_syncRoot)
@@ -536,7 +667,7 @@ namespace SharpRemote
 					_disconnectReason = reason;
 					if (IsFailure(reason))
 					{
-						var fn = OnFailure;
+						Action<EndPointDisconnectReason> fn = OnFailure;
 						if (fn != null)
 						{
 							try
@@ -577,20 +708,11 @@ namespace SharpRemote
 			}
 		}
 
-		/// <summary>
-		/// Contains the reason why the socket was disconnected, or null if it wasn't disconnected / never established
-		/// a connection.
-		/// </summary>
-		public EndPointDisconnectReason? DisconnectReason
-		{
-			get { return _disconnectReason; }
-		}
-
 		private void SendGoodbye()
 		{
 			try
 			{
-				var rpcId = _nextRpcId++;
+				long rpcId = _nextRpcId++;
 				const int messageSize = 9;
 
 				using (var stream = new MemoryStream())
@@ -598,7 +720,7 @@ namespace SharpRemote
 				{
 					writer.Write(messageSize);
 					writer.Write(rpcId);
-					writer.Write((byte)MessageType.Goodbye);
+					writer.Write((byte) MessageType.Goodbye);
 
 					writer.Flush();
 					stream.Position = 0;
@@ -608,127 +730,17 @@ namespace SharpRemote
 			}
 			catch (SocketException)
 			{
-
 			}
 		}
 
 		/// <summary>
-		/// This event is invoked right before a socket is to be closed due to failure of:
-		/// - the connection between endpoints
-		/// - a failure of the remote process
-		/// - a failure of SharpRemote
-		/// - something else ;)
+		///     This event is invoked right before a socket is to be closed due to failure of:
+		///     - the connection between endpoints
+		///     - a failure of the remote process
+		///     - a failure of SharpRemote
+		///     - something else ;)
 		/// </summary>
 		public event Action<EndPointDisconnectReason> OnFailure;
-
-		public void Disconnect()
-		{
-			Disconnect(EndPointDisconnectReason.RequestedByEndPoint);
-		}
-
-		public T CreateProxy<T>(ulong objectId) where T : class
-		{
-			lock (_proxiesById)
-			{
-				var proxy = _proxyCreator.CreateProxy<T>(objectId);
-				_proxiesById.Add(objectId, (IProxy)proxy);
-				return proxy;
-			}
-		}
-
-		/// <summary>
-		/// Returns all the proxies of this endpoint.
-		/// Used for testing.
-		/// </summary>
-		internal IEnumerable<IProxy> Proxies
-		{
-			get
-			{
-				lock (_proxiesById)
-				{
-					return _proxiesById.Values.ToList();
-				}
-			}
-		}
-
-		/// <summary>
-		/// Returns all the servnats of this endpoint.
-		/// Used for testing.
-		/// </summary>
-		internal IEnumerable<IServant> Servants
-		{
-			get
-			{
-				lock (_servantsById)
-				{
-					return _servantsById.Values.ToList();
-				}
-			}
-		}
-
-		public T GetProxy<T>(ulong objectId) where T : class
-		{
-			IProxy proxy;
-			if (!_proxiesById.TryGetValue(objectId, out proxy))
-				throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
-
-			if (!(proxy is T))
-				throw new ArgumentException(string.Format("The proxy '{0}', {1} is not related to interface: {2}",
-														  objectId,
-														  proxy.GetType().Name,
-														  typeof(T).Name));
-
-			return (T)proxy;
-		}
-
-		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
-		{
-			if (Log.IsDebugEnabled)
-			{
-				Log.DebugFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
-								subject.GetType().FullName,
-				                typeof (T).FullName,
-				                objectId
-					);
-			}
-
-			IServant servant = _servantCreator.CreateServant(objectId, subject);
-			lock (_servantsById)
-			{
-				_servantsById.Add(objectId, servant);
-				_servantsBySubject.Add(subject, servant);
-			}
-			return servant;
-		}
-
-		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
-		{
-			lock (_proxiesById)
-			{
-				IProxy proxy;
-				if (!_proxiesById.TryGetValue(objectId, out proxy))
-				{
-					return CreateProxy<T>(objectId);
-				}
-
-				return (T) proxy;
-			}
-		}
-
-		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
-		{
-			lock (_servantsById)
-			{
-				IServant servant;
-				if (!_servantsBySubject.TryGetValue(subject, out servant))
-				{
-					var nextId = _idGenerator.GetGrainId();
-					servant = CreateServant(nextId, subject);
-				}
-
-				return servant;
-			}
-		}
 
 		private bool HandleMessage(long rpcId, MessageType type, BinaryReader reader, out EndPointDisconnectReason? reason)
 		{
@@ -762,7 +774,8 @@ namespace SharpRemote
 			return true;
 		}
 
-		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName, BinaryReader reader)
+		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName,
+		                                      BinaryReader reader)
 		{
 			// There's 2 things we can find and report immediately:
 			// 1. an invalid object-id was passed that points to a different interface than the caller expects
@@ -840,12 +853,22 @@ namespace SharpRemote
 				// that's yet to be executed (which tremendously helps debugging problems)
 				var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
 				task.ContinueWith(unused =>
-				{
-					lock (_pendingMethodInvocations)
 					{
-						_pendingMethodInvocations.Remove(methodInvocation);
-					}
-				});
+						if (Log.IsDebugEnabled)
+						{
+							Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
+						}
+
+						lock (_pendingMethodInvocations)
+						{
+							_pendingMethodInvocations.Remove(methodInvocation);
+						}
+					});
+
+				if (Log.IsDebugEnabled)
+				{
+					Log.DebugFormat("Queueing RPC #{0}", rpcId);
+				}
 
 				lock (_pendingMethodInvocations)
 				{
@@ -872,7 +895,7 @@ namespace SharpRemote
 				WriteException(writer, e);
 				PatchResponseMessageLength(response, writer);
 
-				var responseLength = (int)response.Length;
+				var responseLength = (int) response.Length;
 				byte[] data = response.GetBuffer();
 
 				SocketError err;
@@ -922,21 +945,21 @@ namespace SharpRemote
 
 		private static void EnsureTypeSafety(ulong objectId, Type getType, string typeName, string methodName)
 		{
-			var actualTypeName = getType.FullName;
+			string actualTypeName = getType.FullName;
 			if (actualTypeName != typeName)
 			{
 				throw new TypeMismatchException(
 					string.Format("There was a type mismatch when invoking method '{0}' on grain #{1}: Expected '{2}' but found '{3}",
-					methodName,
-					objectId,
-					typeName,
-					actualTypeName));
+					              methodName,
+					              objectId,
+					              typeName,
+					              actualTypeName));
 			}
 		}
 
 		private static void PatchResponseMessageLength(MemoryStream response, BinaryWriter writer)
 		{
-			var bufferSize = (int)response.Length;
+			var bufferSize = (int) response.Length;
 			int messageSize = bufferSize - 4;
 			response.Position = 0;
 			writer.Write(messageSize);
@@ -947,7 +970,7 @@ namespace SharpRemote
 			const int responseSizeStub = 0;
 			writer.Write(responseSizeStub);
 			writer.Write(rpcId);
-			writer.Write((byte)type);
+			writer.Write((byte) type);
 		}
 
 		private bool HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
@@ -958,24 +981,29 @@ namespace SharpRemote
 
 		protected void ReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message)
 		{
-			var remoteEndPoint = socket.RemoteEndPoint;
+			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 			var size = new byte[4];
 			SocketError err;
 			if (!SynchronizedRead(socket, size, timeout, out err))
 			{
-				throw new HandshakeException(string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint, timeout.TotalSeconds, err));
+				throw new HandshakeException(
+					string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
+					              timeout.TotalSeconds, err));
 			}
 
 			int length = BitConverter.ToInt32(size, 0);
 			if (length < 0)
 			{
-				throw new HandshakeException(string.Format("The message received from endpoint '{0}' is malformatted", remoteEndPoint));
+				throw new HandshakeException(string.Format("The message received from endpoint '{0}' is malformatted",
+				                                           remoteEndPoint));
 			}
 
 			var buffer = new byte[length];
 			if (!SynchronizedRead(socket, buffer, timeout, out err))
 			{
-				throw new HandshakeException(string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint, timeout.TotalSeconds, err));
+				throw new HandshakeException(
+					string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
+					              timeout.TotalSeconds, err));
 			}
 
 			using (var reader = new BinaryReader(new MemoryStream(buffer)))
@@ -986,10 +1014,10 @@ namespace SharpRemote
 		}
 
 		protected void WriteMessage(Socket socket,
-			string messageType,
-			string message = "")
+		                            string messageType,
+		                            string message = "")
 		{
-			var remoteEndPoint = socket.RemoteEndPoint;
+			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 			using (var stream = new MemoryStream())
 			using (var writer = new BinaryWriter(stream))
 			{
@@ -1004,21 +1032,21 @@ namespace SharpRemote
 				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
 				{
 					throw new HandshakeException(string.Format("Failed to send {0} to endpoint '{1}': {2}",
-						messageType,
-						remoteEndPoint,
-						err));
+					                                           messageType,
+					                                           remoteEndPoint,
+					                                           err));
 				}
 			}
 		}
 
 		/// <summary>
-		/// Performs the authentication between client & server (if necessary) from the server-side.
+		///     Performs the authentication between client & server (if necessary) from the server-side.
 		/// </summary>
 		/// <param name="socket"></param>
 		protected void PerformIncomingHandshake(Socket socket)
 		{
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
-			var timeout = TimeSpan.FromMinutes(1);
+			TimeSpan timeout = TimeSpan.FromMinutes(1);
 			string messageType;
 			string message;
 
@@ -1079,7 +1107,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Performs the authentication between client & server (if necessary) from the client-side.
+		///     Performs the authentication between client & server (if necessary) from the client-side.
 		/// </summary>
 		/// <param name="socket"></param>
 		/// <param name="timeout"></param>
@@ -1109,13 +1137,14 @@ namespace SharpRemote
 			}
 			else if (messageType != NoAuthenticationRequiredMessage)
 			{
-				throw new HandshakeException(string.Format("EndPoint '{0}' sent unknown message '{1}: {2}', expected either {3} or {4}",
-					remoteEndPoint,
-					messageType,
-					message,
-					AuthenticationRequiredMessage,
-					NoAuthenticationRequiredMessage
-					));
+				throw new HandshakeException(
+					string.Format("EndPoint '{0}' sent unknown message '{1}: {2}', expected either {3} or {4}",
+					              remoteEndPoint,
+					              messageType,
+					              message,
+					              AuthenticationRequiredMessage,
+					              NoAuthenticationRequiredMessage
+						));
 			}
 
 			if (_serverAuthenticator != null)
@@ -1150,7 +1179,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Is called when the handshake for the newly incoming message succeeds.
+		///     Is called when the handshake for the newly incoming message succeeds.
 		/// </summary>
 		/// <param name="socket"></param>
 		protected abstract void OnHandshakeSucceeded(Socket socket);
@@ -1158,6 +1187,18 @@ namespace SharpRemote
 		public override string ToString()
 		{
 			return _name;
+		}
+
+		protected sealed class ThreadArgs
+		{
+			public readonly Socket Socket;
+			public readonly CancellationToken Token;
+
+			public ThreadArgs(Socket socket, CancellationToken token)
+			{
+				Socket = socket;
+				Token = token;
+			}
 		}
 	}
 }

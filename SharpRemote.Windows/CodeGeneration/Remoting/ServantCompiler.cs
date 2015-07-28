@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading.Tasks;
 using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration.Remoting

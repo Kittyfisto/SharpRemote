@@ -157,13 +157,18 @@ namespace SharpRemote.CodeGeneration.Remoting
 			gen.MarkLabel(taskStarted);
 		}
 
-		protected void GenerateMethodInvocation(MethodBuilder method, string interfaceType, string remoteMethodName, ParameterInfo[] parameters,
+		protected void GenerateMethodInvocation(MethodBuilder method,
+			string interfaceType,
+			string remoteMethodName,
+			ParameterInfo[] parameters,
 			MethodInfo remoteMethod)
 		{
 			ILGenerator gen = method.GetILGenerator();
 
 			LocalBuilder stream = gen.DeclareLocal(typeof (MemoryStream));
 			LocalBuilder binaryWriter = gen.DeclareLocal(typeof (StreamWriter));
+
+			gen.Emit(OpCodes.Call, Methods.DebuggerNotifyOfCrossThreadDependency);
 
 			if (parameters.Length > 0)
 			{

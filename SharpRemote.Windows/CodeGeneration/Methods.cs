@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -83,6 +84,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo StringFormat3Objects;
 		public static readonly MethodInfo TypeGetTypeFromHandle;
 		public static readonly ConstructorInfo SerialTaskSchedulerCtor;
+		public static readonly MethodInfo DebuggerNotifyOfCrossThreadDependency;
 
 		static Methods()
 		{
@@ -189,6 +191,8 @@ namespace SharpRemote.CodeGeneration
 			TypeGetTypeFromHandle = typeof (Type).GetMethod("GetTypeFromHandle");
 
 			SerialTaskSchedulerCtor = typeof (SerialTaskScheduler).GetConstructor(new[] {typeof (bool)});
+
+			DebuggerNotifyOfCrossThreadDependency = typeof (Debugger).GetMethod("NotifyOfCrossThreadDependency");
 		}
 	}
 }

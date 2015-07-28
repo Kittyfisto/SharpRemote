@@ -294,6 +294,18 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		public void TestGetProperty()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+				var grain = silo.CreateGrain<IGetInt64Property, ReturnsInt64Max>();
+				grain.Value.Should().Be(Int64.MaxValue);
+				grain.Value.Should().Be(Int64.MaxValue);
+			}
+		}
+
+		[Test]
 		[NUnit.Framework.Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
 		public void TestCreate()
 		{

@@ -85,6 +85,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo TypeGetTypeFromHandle;
 		public static readonly ConstructorInfo SerialTaskSchedulerCtor;
 		public static readonly MethodInfo DebuggerNotifyOfCrossThreadDependency;
+		public static readonly ConstructorInfo NullableUInt64Ctor;
 
 		static Methods()
 		{
@@ -190,9 +191,18 @@ namespace SharpRemote.CodeGeneration
 
 			TypeGetTypeFromHandle = typeof (Type).GetMethod("GetTypeFromHandle");
 
-			SerialTaskSchedulerCtor = typeof (SerialTaskScheduler).GetConstructor(new[] {typeof (bool)});
+			SerialTaskSchedulerCtor = typeof (SerialTaskScheduler).GetConstructor(new[]
+				{
+					typeof(string),
+					typeof(string),
+					typeof(long?),
+					typeof (bool)
+				});
 
 			DebuggerNotifyOfCrossThreadDependency = typeof (Debugger).GetMethod("NotifyOfCrossThreadDependency");
+
+			NullableUInt64Ctor = typeof (ulong?).GetConstructors().First();
+			int n = 0;
 		}
 	}
 }

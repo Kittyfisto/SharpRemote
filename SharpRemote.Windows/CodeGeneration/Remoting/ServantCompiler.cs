@@ -367,6 +367,14 @@ namespace SharpRemote.CodeGeneration.Remoting
 				);
 			var builder = _typeBuilder.DefineTypeInitializer();
 			var gen = builder.GetILGenerator();
+			gen.Emit(OpCodes.Ldstr, InterfaceType.FullName);
+			gen.Emit(OpCodes.Ldnull);
+
+			var loc = gen.DeclareLocal(typeof(ulong?));
+			gen.Emit(OpCodes.Ldloca, loc);
+			gen.Emit(OpCodes.Initobj, typeof(ulong?));
+			gen.Emit(OpCodes.Ldloc, loc);
+
 			gen.Emit(OpCodes.Ldc_I4_0);
 			gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
 			gen.Emit(OpCodes.Stsfld, _perTypeScheduler);
@@ -428,6 +436,10 @@ namespace SharpRemote.CodeGeneration.Remoting
 				                                               FieldAttributes.Private | FieldAttributes.InitOnly);
 
 				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldstr, InterfaceType.FullName);
+				gen.Emit(OpCodes.Ldnull);
+				gen.Emit(OpCodes.Ldarg_1);
+				gen.Emit(OpCodes.Newobj, Methods.NullableUInt64Ctor);
 				gen.Emit(OpCodes.Ldc_I4_0);
 				gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
 				gen.Emit(OpCodes.Stfld, _perObjectScheduler);
@@ -444,6 +456,10 @@ namespace SharpRemote.CodeGeneration.Remoting
 					FieldAttributes.Private | FieldAttributes.InitOnly);
 
 				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldstr, InterfaceType.FullName);
+				gen.Emit(OpCodes.Ldstr, method.Name);
+				gen.Emit(OpCodes.Ldarg_1);
+				gen.Emit(OpCodes.Newobj, Methods.NullableUInt64Ctor);
 				gen.Emit(OpCodes.Ldc_I4_0);
 				gen.Emit(OpCodes.Newobj, Methods.SerialTaskSchedulerCtor);
 				gen.Emit(OpCodes.Stfld, scheduler);

@@ -14,7 +14,7 @@ namespace SharpRemote.Test.Tasks
 		[Test]
 		public void TestCtor()
 		{
-			var scheduler = new SerialTaskScheduler(true);
+			var scheduler = new SerialTaskScheduler(logExceptions: true);
 			scheduler.Dispose();
 			scheduler.Exceptions.Should().BeEmpty();
 		}
@@ -22,7 +22,7 @@ namespace SharpRemote.Test.Tasks
 		[Test]
 		public void TestScheduleManyTasks()
 		{
-			var scheduler = new SerialTaskScheduler(true);
+			var scheduler = new SerialTaskScheduler(logExceptions: true);
 			const int taskCount = 1000;
 			var tasks = new List<Task<int>>(taskCount);
 			for (int i = 0; i < taskCount; ++i)
@@ -39,7 +39,7 @@ namespace SharpRemote.Test.Tasks
 		[Test]
 		public void TestScheduleOneTask()
 		{
-			var scheduler = new SerialTaskScheduler(true);
+			var scheduler = new SerialTaskScheduler(logExceptions: true);
 			var task = scheduler.QueueTask(() => 42);
 
 			task.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
@@ -52,7 +52,7 @@ namespace SharpRemote.Test.Tasks
 		[Description("Ensures that tasks executed within a task, scheduled by a serial task scheduler, do not high-jack the serial task scheduler for execution, but the default one, even without having been specified")]
 		public void TestSchedulerHighjacking()
 		{
-			using (var scheduler = new SerialTaskScheduler(true))
+			using (var scheduler = new SerialTaskScheduler(logExceptions: true))
 			{
 				TaskScheduler actualInnerScheduler = null;
 				var task = scheduler.QueueTask(() =>

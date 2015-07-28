@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
@@ -161,6 +162,72 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Description("Verifies that when a serialize by type method is invoked, the calling thread's name is set to the full name of the interface (to allow for better debugging)")]
+		public void TestCallOrder4()
+		{
+			Thread thread = null;
+
+			var subject = new Mock<IOrderInterface>();
+			subject.Setup(x => x.TypeOrdered(It.IsAny<int>()))
+			       .Callback(() =>
+				       {
+					       thread = Thread.CurrentThread;
+				       });
+
+			const int servantId = 21;
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			proxy.TypeOrdered(42);
+			thread.Should().NotBeNull();
+			thread.Name.Should().Be("SharpRemote.Test.Types.Interfaces.IOrderInterface");
+		}
+
+		[Test]
+		[Description("Verifies that when a serialize by object method is invoked, the calling thread's name is set to the full name of the interface plus the grain id (to allow for better debugging)")]
+		public void TestCallOrder5()
+		{
+			Thread thread = null;
+
+			var subject = new Mock<IOrderInterface>();
+			subject.Setup(x => x.InstanceOrdered(It.IsAny<int>()))
+				   .Callback(() =>
+				   {
+					   thread = Thread.CurrentThread;
+				   });
+
+			const int servantId = 22;
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			proxy.InstanceOrdered(42);
+			thread.Should().NotBeNull();
+			thread.Name.Should().Be("SharpRemote.Test.Types.Interfaces.IOrderInterface (#22)");
+		}
+
+		[Test]
+		[Description("Verifies that when a serialize by object method is invoked, the calling thread's name is set to the full name of the interface plus the grain id (to allow for better debugging)")]
+		public void TestCallOrder6()
+		{
+			Thread thread = null;
+
+			var subject = new Mock<IOrderInterface>();
+			subject.Setup(x => x.MethodOrdered(It.IsAny<int>()))
+				   .Callback(() =>
+				   {
+					   thread = Thread.CurrentThread;
+				   });
+
+			const int servantId = 23;
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IOrderInterface>(servantId);
+
+			proxy.MethodOrdered(42);
+			thread.Should().NotBeNull();
+			thread.Name.Should().Be("SharpRemote.Test.Types.Interfaces.IOrderInterface.MethodOrdered() (#23)");
+		}
+
+		[Test]
 		public void TestCreateSubject()
 		{
 			var subject = new Mock<ISubjectHost>();
@@ -188,7 +255,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("")]
+		[Description("")]
 		public void TestGetNonStartedTaskIsNotSupported1()
 		{
 			const int servantId = 14;
@@ -202,7 +269,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("")]
+		[Description("")]
 		public void TestGetNonStartedTaskIsNotSupported2()
 		{
 			const int servantId = 15;
@@ -458,7 +525,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that a method accepting a by reference parameter can be called and that the appropriate proxies & servants are created")]
 		public void TestAddByReference1()
 		{
-			const ulong servantId = 21;
+			const ulong servantId = 30;
 			var processor = new Processor();
 			processor.Listeners.Should().BeEmpty();
 
@@ -487,7 +554,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that successive calls with a [ByReference] parameter are marshalled using the same proxy instance on the invoked end, mimicking these calls in a non-RPC scenario")]
 		public void TestAddByReference2()
 		{
-			const ulong servantId = 22;
+			const ulong servantId = 31;
 			var processor = new Processor();
 			processor.Listeners.Should().BeEmpty();
 
@@ -507,7 +574,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that creating proxies & servants for serialized objects is thread safe")]
 		public void TestAddByReference3()
 		{
-			const ulong servantId = 23;
+			const ulong servantId = 32;
 			var processor = new Processor();
 			processor.Listeners.Should().BeEmpty();
 

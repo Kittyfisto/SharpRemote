@@ -20,21 +20,60 @@ namespace SharpRemote.Tasks
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		/// <summary>
+		///     The amount of time that must pass without having done any work before the thread is shut-down.
+		/// </summary>
+		private static readonly TimeSpan DeactivationThreshold = TimeSpan.FromSeconds(10);
+
 		private readonly ManualResetEvent _disposeEvent;
-		private readonly ConcurrentBag<Exception> _exceptions;
 		private readonly SemaphoreSlim _pendingTaskCount;
 		private readonly Queue<IPendingTask> _pendingTasks;
 		private readonly object _syncRoot;
-		private Task _executingTask;
+		private Thread _executingThread;
+
+		#region Debugging
+
+		private readonly ConcurrentBag<Exception> _exceptions;
+		private readonly string _methodName;
+		private readonly string _name;
+		private readonly long? _objectId;
+		private readonly string _typeName;
+
+		#endregion
 
 		/// <summary>
-		/// Initializes a new instance of this task scheduler.
+		///     Initializes a new instance of this task scheduler.
 		/// </summary>
+		/// <param name="methodName"></param>
+		/// <param name="objectId"></param>
 		/// <param name="logExceptions"></param>
-		public SerialTaskScheduler(bool logExceptions = false)
+		/// <param name="typeName"></param>
+		public SerialTaskScheduler(string typeName = null,
+			string methodName = null,
+			long? objectId = null,
+		                           bool logExceptions = false)
 		{
+			_typeName = typeName;
+			_methodName = methodName;
+			_objectId = objectId;
+
+			if (_typeName != null)
+			{
+				if (_methodName != null)
+				{
+					_name = string.Format("{0}.{1}() (#{2})", _typeName, _methodName, _objectId);
+				}
+				else
+				{
+					_name = _objectId != null
+						        ? string.Format("{0} (#{1})", _typeName, _objectId)
+						        : string.Format("{0}", _typeName);
+				}
+			}
+
 			if (logExceptions)
 				_exceptions = new ConcurrentBag<Exception>();
+
 			_syncRoot = new object();
 			_pendingTasks = new Queue<IPendingTask>();
 			_disposeEvent = new ManualResetEvent(false);
@@ -42,11 +81,11 @@ namespace SharpRemote.Tasks
 		}
 
 		/// <summary>
-		/// The list of all exceptions thrown during task execution.
-		/// Is only captured when logExceptions was set to true upon construction.
+		///     The list of all exceptions thrown during task execution.
+		///     Is only captured when logExceptions was set to true upon construction.
 		/// </summary>
 		/// <remarks>
-		/// Only used for testing.
+		///     Only used for testing.
 		/// </remarks>
 		public IEnumerable<Exception> Exceptions
 		{
@@ -57,9 +96,9 @@ namespace SharpRemote.Tasks
 		///     Tests if the task that executes all pending tasks is currently running or not.
 		///     It will be stopped when no tasks have been queued for a certain time.
 		/// </summary>
-		internal bool IsExecutingTaskRunning
+		internal bool IsExecutingThreadRunning
 		{
-			get { return _executingTask != null; }
+			get { return _executingThread != null; }
 		}
 
 		public void Dispose()
@@ -74,7 +113,7 @@ namespace SharpRemote.Tasks
 				IPendingTask task = null;
 				try
 				{
-					task = DequeueNextTask(TimeSpan.FromSeconds(10));
+					task = DequeueNextTask(DeactivationThreshold);
 					if (task == null)
 						break;
 
@@ -98,20 +137,35 @@ namespace SharpRemote.Tasks
 					_disposeEvent
 				};
 			int idx = WaitHandle.WaitAny(handles, timeout);
-			if (idx != 0)
-			{
-				lock (_syncRoot)
-				{
-					_executingTask = null;
-				}
 
-				return null;
-			}
-
-			lock (_syncRoot)
+			switch (idx)
 			{
-				_pendingTaskCount.Wait();
-				return _pendingTasks.Dequeue();
+				case -1:
+					lock (_syncRoot)
+					{
+						Log.DebugFormat("No tasks were scheduled in the last {0}s, shutting thread down...", timeout.TotalSeconds);
+						_executingThread = null;
+					}
+
+					return null;
+
+				case 0:
+					lock (_syncRoot)
+					{
+						_pendingTaskCount.Wait();
+						return _pendingTasks.Dequeue();
+					}
+
+				case 1:
+					lock (_syncRoot)
+					{
+						Log.DebugFormat("Scheduler was disposed of, shutting thread down...");
+						_executingThread = null;
+					}
+					return null;
+
+				default:
+					throw new NotImplementedException(string.Format("Unexpected index returned from WaitHandle.WaitAny(): {0}", idx));
 			}
 		}
 
@@ -164,15 +218,15 @@ namespace SharpRemote.Tasks
 
 		private void StarTaskIfNecessary()
 		{
-			if (_executingTask == null)
+			if (_executingThread == null)
 			{
 				if (Log.IsDebugEnabled)
 				{
-					Log.Debug("Executing task is not (yet) running - starting it (again)");
+					Log.Debug("Executing thread is not (yet) running - starting it (again)");
 				}
 
-				_executingTask = new Task(ExecuteTasks);
-				_executingTask.Start();
+				_executingThread = new Thread(ExecuteTasks) {Name = _name};
+				_executingThread.Start();
 			}
 		}
 

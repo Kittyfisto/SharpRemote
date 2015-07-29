@@ -52,6 +52,7 @@ namespace SharpRemote.Hosting
 
 		private bool _isDisposed;
 		private bool _isDisposing;
+		private OutOfProcessSiloFaultReason? _reason;
 
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
@@ -160,7 +161,7 @@ namespace SharpRemote.Hosting
 				{
 					Arguments = string.Format("{0}", _parentPid),
 					RedirectStandardOutput = true,
-					UseShellExecute = false,
+					UseShellExecute = false
 				};
 			switch (options)
 			{
@@ -188,7 +189,8 @@ namespace SharpRemote.Hosting
 		{
 			_process = new Process
 			{
-				StartInfo = _startInfo
+				StartInfo = _startInfo,
+				EnableRaisingEvents = true,
 			};
 
 			_process.Exited += ProcessOnExited;
@@ -321,9 +323,9 @@ namespace SharpRemote.Hosting
 						reason = OutOfProcessSiloFaultReason.ConnectionClosed;
 						break;
 
-// ReSharper disable RedundantCaseLabel
+					// ReSharper disable RedundantCaseLabel
 					case EndPointDisconnectReason.UnhandledException:
-// ReSharper restore RedundantCaseLabel
+					// ReSharper restore RedundantCaseLabel
 					default:
 						reason = OutOfProcessSiloFaultReason.UnhandledException;
 						break;
@@ -332,6 +334,22 @@ namespace SharpRemote.Hosting
 			else
 			{
 				reason = OutOfProcessSiloFaultReason.HeartbeatFailure;
+			}
+
+			HandleFailure(reason, dueToEndPoint: true);
+		}
+
+		private void HandleFailure(OutOfProcessSiloFaultReason reason, bool dueToEndPoint)
+		{
+			lock (_syncRoot)
+			{
+				if (_isDisposed || _isDisposing)
+					return;
+
+				if (_reason != null)
+					return;
+
+				_reason = reason;
 			}
 
 			try
@@ -346,14 +364,18 @@ namespace SharpRemote.Hosting
 			}
 
 			// TODO: Think of a better way to handle failures thant to quit ;)
-			_process.TryKill();
+			if (reason != OutOfProcessSiloFaultReason.HostProcessExited)
+			{
+				_process.TryKill();
+			}
+
 			_hasProcessExited = true;
 			_hasProcessFailed = true;
 
 			// We don't want to call disconnect in case this method is executing because 
 			// of an endpoint failure - because we're called from the endpoint's Disconnect method.
 			// Calling disconnect again would overwrite the disconnect reason...
-			if (endPointReason == null)
+			if (!dueToEndPoint)
 			{
 				_endPoint.Disconnect();
 			}
@@ -390,6 +412,17 @@ namespace SharpRemote.Hosting
 		public bool IsDisposed
 		{
 			get { return _isDisposed; }
+		}
+
+		/// <summary>
+		/// The process-id of the host process, or null, if it's not running.
+		/// </summary>
+		public int? HostProcessId
+		{
+			get
+			{
+				return _hostProcessId;
+			}
 		}
 
 		public void RegisterDefaultImplementation<TInterface, TImplementation>()
@@ -584,7 +617,7 @@ namespace SharpRemote.Hosting
 
 		private void ProcessOnExited(object sender, EventArgs args)
 		{
-			_hasProcessExited = true;
+			HandleFailure(OutOfProcessSiloFaultReason.HostProcessExited, false);
 		}
 
 		internal static class Constants

@@ -26,5 +26,10 @@
 		/// The connection between both endpoints was closed intentionally.
 		/// </summary>
 		ConnectionClosed,
+
+		/// <summary>
+		/// The host process has exited.
+		/// </summary>
+		HostProcessExited,
 	}
 }

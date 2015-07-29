@@ -237,11 +237,14 @@ namespace SharpRemote.Test.Hosting
 
 				silo.HasProcessFailed.Should().BeTrue("Because an aborted thread that is currently invoking a remote method call should cause SharpRemote to kill the host process and report failure");
 				silo.IsProcessRunning.Should().BeFalse();
-				reason.Should().Be(OutOfProcessSiloFaultReason.ConnectionFailure);
+
+				(reason == OutOfProcessSiloFaultReason.ConnectionFailure ||
+				 reason == OutOfProcessSiloFaultReason.HostProcessExited).Should().BeTrue();
 			}
 		}
 
 		[Test]
+		[Ignore("This feature isn't implemented yet")]
 		[NUnit.Framework.Description("Verifies that an abortion of the executing thread of a remote method invocation is detected and that it causes a connection loss")]
 		public void TestFailureDetection2()
 		{
@@ -251,13 +254,15 @@ namespace SharpRemote.Test.Hosting
 				silo.OnFaultDetected += x => reason = x;
 				silo.Start();
 
-				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(KillsProcess));
+				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(AbortsThread));
 				new Action(proxy.Do)
 					.ShouldThrow<ConnectionLostException>("Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
 				silo.HasProcessFailed.Should().BeTrue("Because an unexpected exit of the host process counts as a failure");
 				silo.IsProcessRunning.Should().BeFalse();
-				reason.Should().Be(OutOfProcessSiloFaultReason.ConnectionFailure);
+
+				(reason == OutOfProcessSiloFaultReason.ConnectionFailure ||
+				 reason == OutOfProcessSiloFaultReason.HostProcessExited).Should().BeTrue();
 			}
 		}
 
@@ -290,6 +295,56 @@ namespace SharpRemote.Test.Hosting
 				silo.HasProcessFailed.Should().BeTrue("Because the heartbeat mechanism should have detected that the endpoint doesn't respond anymore");
 				silo.IsProcessRunning.Should().BeFalse();
 				reason.Should().Be(OutOfProcessSiloFaultReason.HeartbeatFailure);
+			}
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
+		public void TestFailureDetection4()
+		{
+			var settings = new HeartbeatSettings
+				{
+					ReportSkippedHeartbeatsAsFailureWithDebuggerAttached = true,
+					Interval = TimeSpan.FromMilliseconds(100),
+					SkippedHeartbeatThreshold = 4
+				};
+
+			using (var silo = new OutOfProcessSilo(heartbeatSettings: settings))
+			using (var handle1 = new ManualResetEvent(false))
+			using (var handle2 = new ManualResetEvent(false))
+			{
+				OutOfProcessSiloFaultReason? reason1 = null;
+				OutOfProcessSiloFaultReason? reason2 = null;
+				OutOfProcessSiloFaultHandling? handling = null;
+
+				silo.OnFaultDetected += x =>
+					{
+						reason1 = x;
+
+						handle1.Set();
+					};
+				silo.OnFaultHandled += (x, y) =>
+					{
+						reason2 = x;
+						handling = y;
+
+						handle2.Set();
+					};
+
+				silo.Start();
+				var id = silo.HostProcessId;
+				id.Should().HaveValue();
+
+				var hostProcess = Process.GetProcessById(id.Value);
+				hostProcess.Kill();
+
+				WaitHandle.WaitAll(new[] {handle1, handle2}, TimeSpan.FromSeconds(2))
+				          .Should().BeTrue("Because the failure should've been detected as well as handled");
+
+				(reason1 == OutOfProcessSiloFaultReason.ConnectionFailure ||
+				 reason1 == OutOfProcessSiloFaultReason.HostProcessExited).Should().BeTrue();
+				reason2.Should().Be(reason1);
+				handling.Should().Be(OutOfProcessSiloFaultHandling.Shutdown);
 			}
 		}
 

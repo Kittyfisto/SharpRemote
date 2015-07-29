@@ -244,19 +244,25 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[Ignore("This feature isn't implemented yet")]
 		[NUnit.Framework.Description("Verifies that an abortion of the executing thread of a remote method invocation is detected and that it causes a connection loss")]
 		public void TestFailureDetection2()
 		{
 			using (var silo = new OutOfProcessSilo())
+			using (var handle = new ManualResetEvent(false))
 			{
 				OutOfProcessSiloFaultReason? reason = null;
-				silo.OnFaultDetected += x => reason = x;
+				silo.OnFaultHandled += (a, x) =>
+					{
+						reason = a;
+						handle.Set();
+					};
 				silo.Start();
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(AbortsThread));
 				new Action(proxy.Do)
 					.ShouldThrow<ConnectionLostException>("Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
+
+				handle.WaitOne(TimeSpan.FromSeconds(1)).Should().BeTrue();
 
 				silo.HasProcessFailed.Should().BeTrue("Because an unexpected exit of the host process counts as a failure");
 				silo.IsProcessRunning.Should().BeFalse();

@@ -826,6 +826,7 @@ namespace SharpRemote
 						byte[] data = response.GetBuffer();
 
 						SocketError err;
+						
 						if (!SynchronizedWrite(socket, data, responseLength, out err))
 						{
 							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
@@ -835,7 +836,7 @@ namespace SharpRemote
 					catch (Exception e)
 					{
 						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
-						Disconnect();
+						Disconnect(EndPointDisconnectReason.UnhandledException);
 					}
 					finally
 					{

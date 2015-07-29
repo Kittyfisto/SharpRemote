@@ -355,6 +355,42 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[NUnit.Framework.Description("Verifies that the silo can be disposed of from within the FaultHandled event")]
+		public void TestFailureDetection5()
+		{
+			var settings = new HeartbeatSettings
+			{
+				ReportSkippedHeartbeatsAsFailureWithDebuggerAttached = true,
+				Interval = TimeSpan.FromMilliseconds(100),
+				SkippedHeartbeatThreshold = 4
+			};
+
+			using (var silo = new OutOfProcessSilo(heartbeatSettings: settings))
+			using (var handle = new ManualResetEvent(false))
+			{
+				silo.OnFaultHandled += (x, y) =>
+				{
+					silo.Dispose();
+					handle.Set();
+				};
+
+				silo.Start();
+				var id = silo.HostProcessId;
+				id.Should().HaveValue();
+
+				var hostProcess = Process.GetProcessById(id.Value);
+				hostProcess.Kill();
+
+				handle.WaitOne(TimeSpan.FromSeconds(2))
+						  .Should().BeTrue("Because the failure should've been detected as well as handled");
+
+				silo.IsDisposed.Should().BeTrue();
+				silo.HasProcessFailed.Should().BeTrue();
+				silo.IsProcessRunning.Should().BeFalse();
+			}
+		}
+
+		[Test]
 		public void TestGetProperty()
 		{
 			using (var silo = new OutOfProcessSilo())

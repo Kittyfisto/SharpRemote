@@ -568,7 +568,11 @@ namespace SharpRemote.Hosting
 
 			_heartbeatMonitor.TryDispose();
 			_latencyMonitor.TryDispose();
-			_subjectHost.TryDispose();
+
+			if (!HasProcessFailed)
+			{
+				_subjectHost.TryDispose();
+			}
 
 			_endPoint.TryDispose();
 			_process.TryKill();

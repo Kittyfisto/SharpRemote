@@ -696,7 +696,9 @@ namespace SharpRemote
 
 					try
 					{
-						_socket.Disconnect(false);
+						var socket = _socket;
+						if (socket != null)
+							socket.Disconnect(false);
 					}
 					catch (SocketException)
 					{

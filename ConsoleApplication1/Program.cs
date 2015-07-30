@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -15,63 +17,115 @@ namespace ConsoleApplication1
 	{
 		private static void Main(string[] args)
 		{
-			//Simple();
+			Task.Factory.StartNew(() => { });
+
+			//SimpleSockets();
 			//OneClientSync();
 			//ManyClientsAsync();
-
-			using (var silo = new OutOfProcessSilo())
-			{
-				silo.Start();
-
-				const int desiredSteps = 1000000;
-
-				var worker1 = silo.CreateGrain<IWorker, Worker>();
-				var listener1 = new DataListener("#1", desiredSteps);
-				worker1.RegisterListener(listener1);
-				worker1.Start();
-
-				var worker2 = silo.CreateGrain<IWorker, Worker>();
-				var listener2 = new DataListener("#2", desiredSteps);
-				worker2.RegisterListener(listener2);
-				worker2.Start();
-
-				while (!listener1.Finished && !listener2.Finished)
-				{
-					Thread.Sleep(1000);
-				}
-			}
+			StressTest();
+			//SimplePipes();
 
 			Console.WriteLine("Press any key to continue...");
 			Console.ReadKey();
 		}
 
-		private static void Simple()
+		private static void SimplePipes()
 		{
+			const string pipeName = "Klondyke bar";
+
 			var time = TimeSpan.FromSeconds(5);
-
-
-
 			const int messageLength = 90;
 			long num = 0;
 
 			var clientTask = new Task(() =>
 				{
-					using (var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+					using (var client = new NamedPipeClientStream(pipeName))
 					{
-						client.Connect(new IPEndPoint(IPAddress.Loopback, 9001));
+						client.Connect();
+
+						var reader = new BinaryReader(client);
+						var writer = new BinaryWriter(client);
 
 						var stopwatch = new Stopwatch();
 						var buffer = new byte[messageLength];
 						stopwatch.Start();
 						while (stopwatch.Elapsed < time)
 						{
-							client.Send(buffer);
-							client.Receive(buffer);
+							writer.Write(buffer);
+							reader.Read(buffer, 0, buffer.Length);
+
 							++num;
 						}
 						stopwatch.Stop();
 					}
-				}, TaskCreationOptions.LongRunning);
+				});
+
+			var serverTask = new Task(() =>
+				{
+					using (var server = new NamedPipeServerStream(pipeName,
+						PipeDirection.InOut,
+						1,
+						PipeTransmissionMode.Message,
+						PipeOptions.WriteThrough))
+					{
+						server.WaitForConnection();
+
+						var reader = new BinaryReader(server);
+						var writer = new BinaryWriter(server);
+
+						var buffer = new byte[messageLength];
+						try
+						{
+							while (server.IsConnected)
+							{
+								reader.Read(buffer, 0, buffer.Length);
+								writer.Write(buffer);
+							}
+						}
+						catch (IOException)
+						{
+
+						}
+					}
+				});
+
+			clientTask.Start();
+			serverTask.Start();
+
+			clientTask.Wait();
+			serverTask.Wait();
+
+			var numSeconds = 5;
+			var ops = 1.0 * num / numSeconds;
+			Console.WriteLine("Total calls: {0}", num);
+			Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
+			Console.WriteLine("Latency: {0}ns", time.Ticks * 100 / num);
+		}
+
+		private static void SimpleSockets()
+		{
+			var time = TimeSpan.FromSeconds(5);
+			const int messageLength = 90;
+			long num = 0;
+
+			var clientTask = new Task(() =>
+			{
+				using (var client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+				{
+					client.Connect(new IPEndPoint(IPAddress.Loopback, 9001));
+
+					var stopwatch = new Stopwatch();
+					var buffer = new byte[messageLength];
+					stopwatch.Start();
+					while (stopwatch.Elapsed < time)
+					{
+						client.Send(buffer);
+						client.Receive(buffer);
+						++num;
+					}
+					stopwatch.Stop();
+				}
+			}, TaskCreationOptions.LongRunning);
 
 			var serverTask = new Task(() =>
 			{
@@ -94,7 +148,7 @@ namespace ConsoleApplication1
 				}
 				catch (SocketException)
 				{
-					
+
 				}
 
 				stopwatch.Stop();
@@ -111,6 +165,58 @@ namespace ConsoleApplication1
 			Console.WriteLine("Total calls: {0}", num);
 			Console.WriteLine("OP/s: {0:F2}k/s", ops / 1000);
 			Console.WriteLine("Latency: {0}ns", time.Ticks * 100 / num);
+		}
+
+		private static void StressTest()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+
+				const int desiredSteps = 1000000000;
+				var numCorruptions = 0;
+
+				var worker = silo.CreateGrain<IWorker, Worker>();
+				var rng = new Random();
+				var data = new byte[8];
+
+				try
+				{
+					for (long i = 0; i < desiredSteps; ++i)
+					{
+						rng.NextBytes(data);
+						var nextValue = BitConverter.ToInt64(data, 0);
+						var actualValue = worker.Work(nextValue);
+						if (actualValue != (~nextValue))
+						{
+							++numCorruptions;
+						}
+
+						if (i % 10000 == 0)
+						{
+							Console.WriteLine("{0}k calls", i / 1000);
+						}
+					}
+
+					if (numCorruptions == 0)
+					{
+						Console.WriteLine("Test passed!");
+					}
+					else
+					{
+						Console.WriteLine("Test failed, {0} corruptions", numCorruptions);
+					}
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine("Test failed: {0}", e);
+				}
+
+				Console.WriteLine("{0:F2} m calls", desiredSteps/1000000.0);
+				Console.WriteLine("{0:F2} Gb sent", 1.0*silo.NumBytesSent/1024/1024/1024);
+				Console.WriteLine("{0:F2} Gb received", 1.0*silo.NumBytesReceived / 1024/1024/1024);
+				Console.WriteLine("{0:F1} s in GC", silo.GarbageCollectionTime.TotalSeconds);
+			}
 		}
 
 		private static void ManyClientsAsync()

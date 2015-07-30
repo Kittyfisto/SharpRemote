@@ -700,5 +700,69 @@ namespace SharpRemote.Test.Remoting
 					.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("Because the method should've executed within 5 seconds");
 			}
 		}
+
+		[Test]
+		[LocalTest("Timing critical tests won't run on the C/I server")]
+		[Description("Verifies that once a proxy-object is cleaned up by the garbage collector, it is automatically removed from the list of proxies")]
+		public void TestGarbageCollection1()
+		{
+			using (var server = CreateServer())
+			{
+				//
+				// Let's create a proxy and then verify that the proxy's alive for as long as it's referenced
+				new Action(() =>
+				{
+					var proxy = server.CreateProxy<IGetFloatProperty>(42);
+					server.Proxies.Contains((IProxy)proxy)
+						  .Should()
+						  .BeTrue("Because the proxy hasn't gone out of scope and thus will never be collected");
+					server.NumProxiesCollected.Should().Be(0);
+				})();
+
+				GC.Collect(2, GCCollectionMode.Forced);
+				GC.WaitForPendingFinalizers();
+
+				// EndPoint's GC collects every 100 ms, thus waiting an additional 201ms
+				// should have the internal GC collect at least once
+				Thread.Sleep(201);
+
+				// After having forced a collection, the proxy is reclaimed by the GC and thus
+				// the list of proxie's should be empty.
+				server.Proxies.Should().BeEmpty();
+				server.NumProxiesCollected.Should().Be(1);
+				server.GarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
+			}
+		}
+
+		[Test]
+		[LocalTest("Timing critical tests won't run on the C/I server")]
+		public void TestGarbageCollection2()
+		{
+			using (var server = CreateServer())
+			{
+				//
+				// Let's create a proxy and then verify that the proxy's alive for as long as it's referenced
+				new Action(() =>
+				{
+					var proxy = server.CreateProxy<IGetFloatProperty>(42);
+					server.Proxies.Contains((IProxy)proxy)
+						  .Should()
+						  .BeTrue("Because the proxy hasn't gone out of scope and thus will never be collected");
+					server.NumProxiesCollected.Should().Be(0);
+				})();
+
+				GC.Collect(2, GCCollectionMode.Forced);
+				GC.WaitForPendingFinalizers();
+
+				// EndPoint's GC collects every 100 ms, thus we'll wait a little bit longer than that
+				Thread.Sleep(201);
+
+				// After having forced a collection, the proxy is reclaimed by the GC and thus
+				// the list of proxie's should be empty.
+				server.Proxies.Should().BeEmpty();
+				server.NumProxiesCollected.Should().Be(1);
+				server.GarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
+			}
+		}
 	}
 }

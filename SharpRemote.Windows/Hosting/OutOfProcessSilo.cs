@@ -425,6 +425,14 @@ namespace SharpRemote.Hosting
 			}
 		}
 
+		/// <summary>
+		/// The total amount of time this endpoint spent collecting garbage.
+		/// </summary>
+		public TimeSpan GarbageCollectionTime
+		{
+			get { return _endPoint.GarbageCollectionTime; }
+		}
+
 		public void RegisterDefaultImplementation<TInterface, TImplementation>()
 			where TImplementation : TInterface
 			where TInterface : class

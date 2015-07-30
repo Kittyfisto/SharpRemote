@@ -2,8 +2,6 @@
 {
 	public interface IWorker
 	{
-		void RegisterListener(IDataListener listener);
-		void Start();
-		void Stop();
+		long Work(long value);
 	}
 }

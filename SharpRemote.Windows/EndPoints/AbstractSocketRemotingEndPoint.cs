@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -106,7 +107,7 @@ namespace SharpRemote
 
 		#region Proxies / Servants
 
-		private readonly Dictionary<ulong, IProxy> _proxiesById;
+		private readonly Dictionary<ulong, WeakReference<IProxy>> _proxiesById;
 		private readonly Dictionary<ulong, IServant> _servantsById;
 		private readonly Dictionary<object, IServant> _servantsBySubject;
 
@@ -119,6 +120,31 @@ namespace SharpRemote
 		protected CancellationTokenSource _cancellationTokenSource;
 
 		#endregion
+
+		#region Garbage Collection
+
+		private long _numProxiesCollected;
+		private readonly Stopwatch _garbageCollectionTime;
+		private readonly Timer _garbageCollectionTimer;
+
+		#endregion
+
+		/// <summary>
+		/// The total number of <see cref="IProxy"/>s that have been removed from this endpoint because
+		/// they're no longer used.
+		/// </summary>
+		public long NumProxiesCollected
+		{
+			get { return _numProxiesCollected; }
+		}
+
+		/// <summary>
+		/// The total amount of time this endpoint spent collecting garbage.
+		/// </summary>
+		public TimeSpan GarbageCollectionTime
+		{
+			get { return _garbageCollectionTime.Elapsed; }
+		}
 
 		internal AbstractSocketRemotingEndPoint(GrainIdGenerator idGenerator,
 		                                        string name,
@@ -135,7 +161,7 @@ namespace SharpRemote
 			_servantsById = new Dictionary<ulong, IServant>();
 			_servantsBySubject = new Dictionary<object, IServant>();
 
-			_proxiesById = new Dictionary<ulong, IProxy>();
+			_proxiesById = new Dictionary<ulong, WeakReference<IProxy>>();
 
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
@@ -150,6 +176,9 @@ namespace SharpRemote
 
 			_clientAuthenticator = clientAuthenticator;
 			_serverAuthenticator = serverAuthenticator;
+
+			_garbageCollectionTime = new Stopwatch();
+			_garbageCollectionTimer = new Timer(CollectGarbage, null, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
 		}
 
 		#region Reading from / Writing to socket
@@ -377,6 +406,58 @@ namespace SharpRemote
 			get { return _disconnectReason; }
 		}
 
+		private void CollectGarbage(object unused)
+		{
+			_garbageCollectionTime.Start();
+
+			RemoveUnusedServants();
+
+			List<IProxy> alive;
+			RemoveUnusedProxies(out alive);
+
+			_garbageCollectionTime.Stop();
+		}
+
+		private void RemoveUnusedServants()
+		{
+			
+		}
+
+		private void RemoveUnusedProxies(out List<IProxy> aliveProxies)
+		{
+			lock (_proxiesById)
+			{
+				List<ulong> toRemove = null;
+				aliveProxies = new List<IProxy>();
+
+				foreach (var pair in _proxiesById)
+				{
+					IProxy proxy;
+					if (pair.Value.TryGetTarget(out proxy))
+					{
+						aliveProxies.Add(proxy);
+					}
+					else
+					{
+						if (toRemove == null)
+							toRemove = new List<ulong>();
+
+						toRemove.Add(pair.Key);
+					}
+				}
+
+				if (toRemove != null)
+				{
+					_numProxiesCollected += toRemove.Count;
+
+					foreach (var key in toRemove)
+					{
+						_proxiesById.Remove(key);
+					}
+				}
+			}
+		}
+
 		/// <summary>
 		///     Returns all the proxies of this endpoint.
 		///     Used for testing.
@@ -387,7 +468,18 @@ namespace SharpRemote
 			{
 				lock (_proxiesById)
 				{
-					return _proxiesById.Values.ToList();
+					var aliveProxies = new List<IProxy>();
+
+					foreach (var pair in _proxiesById)
+					{
+						IProxy proxy;
+						if (pair.Value.TryGetTarget(out proxy))
+						{
+							aliveProxies.Add(proxy);
+						}
+					}
+
+					return aliveProxies;
 				}
 			}
 		}
@@ -460,6 +552,7 @@ namespace SharpRemote
 
 				Disconnect();
 				DisposeAdditional();
+				_garbageCollectionTimer.Dispose();
 
 				//Console.WriteLine("Create Message: {0:D}ms", _createMessage.ElapsedMilliseconds);
 
@@ -487,7 +580,8 @@ namespace SharpRemote
 			lock (_proxiesById)
 			{
 				var proxy = _proxyCreator.CreateProxy<T>(objectId);
-				_proxiesById.Add(objectId, (IProxy) proxy);
+				var grain = new WeakReference<IProxy>((IProxy) proxy);
+				_proxiesById.Add(objectId, grain);
 				return proxy;
 			}
 		}
@@ -495,8 +589,12 @@ namespace SharpRemote
 		public T GetProxy<T>(ulong objectId) where T : class
 		{
 			IProxy proxy;
-			if (!_proxiesById.TryGetValue(objectId, out proxy))
-				throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
+			lock (_proxiesById)
+			{
+				WeakReference<IProxy> grain;
+				if (!_proxiesById.TryGetValue(objectId, out grain) || !grain.TryGetTarget(out proxy))
+					throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
+			}
 
 			if (!(proxy is T))
 				throw new ArgumentException(string.Format("The proxy '{0}', {1} is not related to interface: {2}",
@@ -532,7 +630,8 @@ namespace SharpRemote
 			lock (_proxiesById)
 			{
 				IProxy proxy;
-				if (!_proxiesById.TryGetValue(objectId, out proxy))
+				WeakReference<IProxy> grain;
+				if (!_proxiesById.TryGetValue(objectId, out grain) || !grain.TryGetTarget(out proxy))
 				{
 					return CreateProxy<T>(objectId);
 				}
@@ -947,7 +1046,15 @@ namespace SharpRemote
 				IProxy proxy;
 				lock (_proxiesById)
 				{
-					_proxiesById.TryGetValue(servantId, out proxy);
+					WeakReference<IProxy> grain;
+					if (_proxiesById.TryGetValue(servantId, out grain))
+					{
+						grain.TryGetTarget(out proxy);
+					}
+					else
+					{
+						proxy = null;
+					}
 				}
 
 				if (proxy != null)

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
@@ -22,11 +24,57 @@ namespace ConsoleApplication1
 			//SimpleSockets();
 			//OneClientSync();
 			//ManyClientsAsync();
-			StressTest();
+			//StressTest();
 			//SimplePipes();
+			GetTypePerformance();
 
 			Console.WriteLine("Press any key to continue...");
 			Console.ReadKey();
+		}
+
+		private static void GetTypePerformance()
+		{
+			const int num = 100000;
+			var name = typeof (Program).AssemblyQualifiedName;
+
+			var sw1 = new Stopwatch();
+			sw1.Start();
+			for (int i = 0; i < num; ++i)
+			{
+				Type.GetType(name);
+			}
+			sw1.Stop();
+
+			var values = new Dictionary<string,Type>();
+
+			var sw2 = new Stopwatch();
+			sw2.Start();
+			for (int i = 0; i < num; ++i)
+			{
+				lock (values)
+				{
+					Type type;
+					if (!values.TryGetValue(name, out type))
+					{
+						type = Type.GetType(name);
+						values.Add(name, type);
+					}
+				}
+			}
+			sw2.Stop();
+
+			var values2 = new ConcurrentDictionary<string, Type>();
+			var sw3 = new Stopwatch();
+			sw3.Start();
+			for (int i = 0; i < num; ++i)
+			{
+				values2.GetOrAdd(name, Type.GetType);
+			}
+			sw3.Stop();
+
+			Console.WriteLine("Type.GetType(string): {0}μs/type", 1.0 * sw1.Elapsed.Ticks*10 / num);
+			Console.WriteLine("Dictionary.TryGetValue: {0}μs/type", 1.0 * sw2.Elapsed.Ticks * 10 / num);
+			Console.WriteLine("ConcurrentyDictionary.GetOrAdd: {0}μs/type", 1.0 * sw3.Elapsed.Ticks * 10 / num);
 		}
 
 		private static void SimplePipes()

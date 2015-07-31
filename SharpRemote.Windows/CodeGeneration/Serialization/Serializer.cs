@@ -634,16 +634,39 @@ namespace SharpRemote
 			return type;
 		}
 
-		private void RegisterType(Type type, out SerializationMethods serializationMethods)
+		internal void RegisterType<T>(out SerializationMethods serializationMethods)
 		{
-			type = PatchType(type);
+			RegisterType(typeof (T), out serializationMethods);
+		}
 
+		internal void RegisterType(Type type, out SerializationMethods serializationMethods)
+		{
 			lock (_serializationMethods)
 			{
+				// Usually we already have generated the methods necessary to serialize / deserialize
+				// and thus we can simply retrieve them from the dictionary
 				if (!_serializationMethods.TryGetValue(type, out serializationMethods))
 				{
-					var typeInfo = new TypeInformation(type);
-					serializationMethods = CreateSerializationMethods(typeInfo);
+					// If that's not the case, then we'll have to generate them.
+					// However we need to pay special attention to certain types, for example ByReference
+					// types where the serialization method is IDENTICAL for each implementation.
+					//
+					// Usually we would call PatchType() everytime, however this method is very time-expensive
+					// and therefore we will register both the type as well as the patched type, which
+					// causes subsequent calls to RegisterType to no longer invoke PatchType.
+					//
+					// In essence PatchType is only ever invoked ONCE per type instead of for every call to RegisterType.
+					var patchedType = PatchType(type);
+					if (!_serializationMethods.TryGetValue(patchedType, out serializationMethods))
+					{
+						var typeInfo = new TypeInformation(patchedType);
+						serializationMethods = CreateSerializationMethods(typeInfo);
+
+						if (type != patchedType)
+						{
+							_serializationMethods.Add(type, serializationMethods);
+						}
+					}
 				}
 			}
 		}
@@ -665,7 +688,7 @@ namespace SharpRemote
 			}
 		}
 
-		private sealed class SerializationMethods
+		internal sealed class SerializationMethods
 		{
 			/// <summary>
 			///     Writes a value that can be null.

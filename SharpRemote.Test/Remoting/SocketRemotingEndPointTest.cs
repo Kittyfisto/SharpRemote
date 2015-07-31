@@ -764,5 +764,31 @@ namespace SharpRemote.Test.Remoting
 				server.GarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
 			}
 		}
+
+		[Test]
+		[Repeat(10)]
+		[LocalTest("Timing critical tests won't run on the C/I server")]
+		[Description("Verifies that retrieving a proxy that no longer exists, but hasn't been garbage collected by the remoting endpoint, can be re-created")]
+		public void TestGarbageCollection3()
+		{
+			using (var server = new SocketRemotingEndPointServer())
+			{
+				new Action(() =>
+				{
+					var proxy = server.CreateProxy<IGetFloatProperty>(42);
+					server.Proxies.Contains((IProxy)proxy)
+						  .Should()
+						  .BeTrue("Because the proxy hasn't gone out of scope and thus will never be collected");
+				})();
+
+				GC.Collect(2, GCCollectionMode.Forced);
+
+				// After having forced a collection, the proxy is reclaimed by the GC and thus
+				// the list of proxie's should be empty.
+				server.Proxies.Should().BeEmpty();
+				var actualProxy = server.GetExistingOrCreateNewProxy<IGetFloatProperty>(42);
+				actualProxy.Should().NotBeNull();
+			}
+		}
 	}
 }

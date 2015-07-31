@@ -631,9 +631,23 @@ namespace SharpRemote
 			{
 				IProxy proxy;
 				WeakReference<IProxy> grain;
-				if (!_proxiesById.TryGetValue(objectId, out grain) || !grain.TryGetTarget(out proxy))
+				if (!_proxiesById.TryGetValue(objectId, out grain))
 				{
-					return CreateProxy<T>(objectId);
+					// If the proxy doesn't exist, then we can simply create a new one...
+					var value = _proxyCreator.CreateProxy<T>(objectId);
+					grain = new WeakReference<IProxy>((IProxy)value);
+					_proxiesById.Add(objectId, grain);
+					return value;
+				}
+				if (!grain.TryGetTarget(out proxy))
+				{
+					// It's possible that the proxy did exist at one point, then was collected by the GC, but
+					// our internal GC didn't have the time to remove that proxy from the dictionary yet, which
+					// means that we have to *replace* the existing weak-reference with a new, living one
+					var value = _proxyCreator.CreateProxy<T>(objectId);
+					grain = new WeakReference<IProxy>(proxy);
+					_proxiesById[objectId] = grain;
+					return value;
 				}
 
 				return (T) proxy;

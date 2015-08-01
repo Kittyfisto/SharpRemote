@@ -86,6 +86,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo SerialTaskSchedulerCtor;
 		public static readonly MethodInfo DebuggerNotifyOfCrossThreadDependency;
 		public static readonly ConstructorInfo NullableUInt64Ctor;
+		public static readonly ConstructorInfo NoSuchServantExceptionCtor;
 
 		static Methods()
 		{
@@ -202,7 +203,8 @@ namespace SharpRemote.CodeGeneration
 			DebuggerNotifyOfCrossThreadDependency = typeof (Debugger).GetMethod("NotifyOfCrossThreadDependency");
 
 			NullableUInt64Ctor = typeof (ulong?).GetConstructors().First();
-			int n = 0;
+
+			NoSuchServantExceptionCtor = typeof (NoSuchServantException).GetConstructor(new[] {typeof (ulong)});
 		}
 	}
 }

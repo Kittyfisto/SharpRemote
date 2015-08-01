@@ -153,9 +153,9 @@ namespace SharpRemote
 
 						_freeList = i;
 						++_freeCount;
+						++_version;
 
-						// We don't want to increase the version because this change should not be visible
-						// to the user.
+						i = previousBucket;
 					}
 				}
 
@@ -323,7 +323,7 @@ namespace SharpRemote
 
 							if (returnCollectedValues)
 							{
-								if (collectedValues != null)
+								if (collectedValues == null)
 									collectedValues = new List<TValue>();
 
 								collectedValues.Add(_entries[i].Value);

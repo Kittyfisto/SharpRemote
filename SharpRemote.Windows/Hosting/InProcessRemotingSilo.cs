@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using SharpRemote.CodeGeneration;
 using SharpRemote.Extensions;
@@ -37,6 +38,7 @@ namespace SharpRemote.Hosting
 		{
 			_customTypeResolver = customTypeResolver;
 			const int subjectHostId = 0;
+
 
 			_client = new SocketRemotingEndPointClient();
 			_subjectHostProxy = _client.CreateProxy<ISubjectHost>(subjectHostId);

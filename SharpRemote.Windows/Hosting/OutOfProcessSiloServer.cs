@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using System.Threading;
-using SharpRemote.EndPoints;
 using log4net;
 
 namespace SharpRemote.Hosting
@@ -34,6 +33,8 @@ namespace SharpRemote.Hosting
 		private readonly ManualResetEvent _waitHandle;
 		private readonly ITypeResolver _customTypeResolver;
 		private readonly DefaultImplementationRegistry _registry;
+		private readonly Heartbeat _heartbeatSubject;
+		private readonly Latency _latencySubject;
 
 		/// <summary>
 		///     Initializes a new silo server.
@@ -62,8 +63,11 @@ namespace SharpRemote.Hosting
 
 			_endPoint = new SocketRemotingEndPointServer(customTypeResolver: customTypeResolver);
 
-			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat)new Heartbeat());
-			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency)new Latency());
+			_heartbeatSubject = new Heartbeat();
+			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat)_heartbeatSubject);
+
+			_latencySubject = new Latency();
+			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency)_latencySubject);
 		}
 
 		/// <summary>

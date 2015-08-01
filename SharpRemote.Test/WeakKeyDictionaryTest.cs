@@ -206,7 +206,7 @@ namespace SharpRemote.Test
 			dictionary.Add(key4, 4);
 			dictionary.Count.Should().Be(3);
 			dictionary.Capacity.Should().Be(3);
-			dictionary.Version.Should().Be(4);
+			dictionary.Version.Should().Be(5);
 
 			EnsureIntegrity(dictionary);
 		}
@@ -235,6 +235,53 @@ namespace SharpRemote.Test
 				dictionary.ContainsKey(key).Should().BeTrue();
 				dictionary[key].Should().Be(i);
 			}
+		}
+
+		[Test]
+		[Description("Verifies that adding an already added item throws")]
+		public void TestAdd8()
+		{
+			var dictionary = new WeakKeyDictionary<object, int>();
+			var key1 = new Key(1, 42);
+			WeakReference<Key> weakKey2 = null;
+			var key3 = new Key(3, 42);
+
+			new Action(() =>
+			{
+				var key2 = new Key(2, 42);
+				weakKey2 = new WeakReference<Key>(key2);
+				dictionary.Add(key1, 1);
+				dictionary.Add(key2, 2);
+				dictionary.Add(key3, 3);
+			})();
+
+			dictionary.Count.Should().Be(3);
+			dictionary._freeCount.Should().Be(0);
+
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+
+			// This is a special case that tests that iterating over an entry within a bucket
+			// that has been collected by the GC works as expected: There has been a bug that caused
+			// the iteration within the bucket to completely stop.
+
+			var key4 = new Key(1, 42);
+			new Action(() => dictionary.Add(key4, 4))
+				.ShouldThrow<ArgumentException>()
+				.WithMessage("An item with the same key has already been added.");
+
+			dictionary.Count.Should().Be(2);
+			dictionary._freeCount.Should().Be(1);
+		}
+
+		[Test]
+		[Description("Verifies that adding a null key is not allowed")]
+		public void TestAdd9()
+		{
+			var dictionary = new WeakKeyDictionary<object, string>();
+			new Action(() => dictionary.Add(null, "foo"))
+				.ShouldThrow<ArgumentNullException>()
+				.WithMessage("Value cannot be null.\r\nParameter name: key");
 		}
 
 		[Test]

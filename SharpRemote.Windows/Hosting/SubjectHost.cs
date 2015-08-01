@@ -14,7 +14,8 @@ namespace SharpRemote.Hosting
 	{
 		private readonly ITypeResolver _customTypeResolver;
 		private readonly IRemotingEndPoint _endpoint;
-		private readonly Dictionary<ulong, IServant> _subjects;
+		private readonly Dictionary<ulong, object> _subjects;
+		private readonly Dictionary<ulong, IServant> _servants;
 		private readonly object _syncRoot;
 		private readonly DefaultImplementationRegistry _registry;
 		private readonly Action _onDisposed;
@@ -45,7 +46,8 @@ namespace SharpRemote.Hosting
 			_nextServantId = firstServantId;
 			_onDisposed = onDisposed;
 			_syncRoot = new object();
-			_subjects = new Dictionary<ulong, IServant>();
+			_servants = new Dictionary<ulong, IServant>();
+			_subjects = new Dictionary<ulong, object>();
 		}
 
 		public ulong CreateSubject3(Type interfaceType)
@@ -66,9 +68,10 @@ namespace SharpRemote.Hosting
 			lock (_syncRoot)
 			{
 				var servantId = _nextServantId++;
+				_subjects.Add(servantId, subject);
 				var method = typeof(IRemotingEndPoint).GetMethod("CreateServant").MakeGenericMethod(interfaceType);
 				var servant = (IServant)method.Invoke(_endpoint, new[] { servantId, subject });
-				_subjects.Add(servantId, servant);
+				_servants.Add(servantId, servant);
 
 				return servantId;
 			}
@@ -87,14 +90,16 @@ namespace SharpRemote.Hosting
 				if (_isDisposed)
 					return;
 
+				_subjects.Clear();
+
 				// TODO: Remove / dispose all subjects...
-				foreach (var subject in _subjects.Values)
+				foreach (var subject in _servants.Values)
 				{
 					var disp = subject.Subject as IDisposable;
 					if (disp != null)
 						disp.TryDispose();
 				}
-				_subjects.Clear();
+				_servants.Clear();
 
 				if (_onDisposed != null)
 					_onDisposed();

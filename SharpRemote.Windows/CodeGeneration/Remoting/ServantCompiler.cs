@@ -17,6 +17,8 @@ namespace SharpRemote.CodeGeneration.Remoting
 		private readonly ModuleBuilder _module;
 		private readonly FieldBuilder _subject;
 		private readonly TypeBuilder _typeBuilder;
+		private readonly Type _subjectType;
+		private readonly MethodInfo _subjectTryGetTarget;
 		private FieldBuilder _perTypeScheduler;
 		private FieldBuilder _perObjectScheduler;
 
@@ -38,7 +40,10 @@ namespace SharpRemote.CodeGeneration.Remoting
 
 			_eventInvocationMethods = new List<KeyValuePair<EventInfo, MethodInfo>>();
 
-			_subject = _typeBuilder.DefineField("_subject", interfaceType, FieldAttributes.Private | FieldAttributes.InitOnly);
+			_subjectType = typeof(WeakReference<>).MakeGenericType(interfaceType);
+			_subjectTryGetTarget = _subjectType.GetMethod("TryGetTarget");
+
+			_subject = _typeBuilder.DefineField("_subject", _subjectType, FieldAttributes.Private | FieldAttributes.InitOnly);
 			ObjectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
 			EndPoint = _typeBuilder.DefineField("_endPoint", typeof (IRemotingEndPoint),
 			                                    FieldAttributes.Private | FieldAttributes.InitOnly);
@@ -165,8 +170,14 @@ namespace SharpRemote.CodeGeneration.Remoting
 			                                                 null);
 
 			ILGenerator gen = method.GetILGenerator();
+
+			var ret = gen.DeclareLocal(InterfaceType);
+
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
+			gen.Emit(OpCodes.Ldloca, ret);
+			gen.Emit(OpCodes.Call, _subjectTryGetTarget);
+			gen.Emit(OpCodes.Ldloc, ret);
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, Methods.ServantGetSubject);
@@ -339,9 +350,24 @@ namespace SharpRemote.CodeGeneration.Remoting
 				                                                 });
 
 			ILGenerator gen = method.GetILGenerator();
+			var callMethod = gen.DefineLabel();
+			var subject = gen.DeclareLocal(InterfaceType);
 
+			// if (!_subject.TryGetValue(out subject))
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
+			gen.Emit(OpCodes.Ldloca, subject);
+			gen.Emit(OpCodes.Call, _subjectTryGetTarget);
+			gen.Emit(OpCodes.Brtrue, callMethod);
+			// throw new NoSuchServantException(_objectId);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, ObjectId);
+			gen.Emit(OpCodes.Newobj, Methods.NoSuchServantExceptionCtor);
+			gen.Emit(OpCodes.Throw);
+
+			gen.MarkLabel(callMethod);
+
+			gen.Emit(OpCodes.Ldloc, subject);
 			ExtractArgumentsAndCallMethod(gen,
 			                              originalMethod,
 			                              () => gen.Emit(OpCodes.Ldarg_1),
@@ -413,8 +439,11 @@ namespace SharpRemote.CodeGeneration.Remoting
 			gen.Emit(OpCodes.Ldarg, 4);
 			gen.Emit(OpCodes.Stfld, Serializer);
 
+			// _subject = new WeakReference{T}(arg5)
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg, 5);
+			var ctor = _subjectType.GetConstructor(new[] {InterfaceType});
+			gen.Emit(OpCodes.Newobj, ctor);
 			gen.Emit(OpCodes.Stfld, _subject);
 
 			foreach (var pair in _eventInvocationMethods)
@@ -479,8 +508,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 					string.Format("Could not find a suitable constructor for delegate '{0}' with an (object, IntPtr) signature",
 					              delegateType));
 
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _subject);
+			gen.Emit(OpCodes.Ldarg, 5);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldftn, onEventMethod);
 			gen.Emit(OpCodes.Newobj, ctor);

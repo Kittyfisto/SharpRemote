@@ -671,6 +671,8 @@ namespace SharpRemote.Test.Remoting
 				foo2Listeners.Count.Should().Be(numListeners);
 				var intersection = (foo1Listeners.Intersect(foo2Listeners)).ToList();
 				intersection.Should().BeEmpty("Because both client & server should've used completely different ids to identify all newly created servants & proxies");
+
+				Console.WriteLine("{0}, {1}", foo1.Object, foo2.Object);
 			}
 		}
 

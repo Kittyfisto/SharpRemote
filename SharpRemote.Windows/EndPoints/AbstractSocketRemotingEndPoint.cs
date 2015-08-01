@@ -419,11 +419,19 @@ namespace SharpRemote
 		private void CollectGarbage(object unused)
 		{
 			_garbageCollectionTime.Start();
-
-			RemoveUnusedServants();
-			RemoveUnusedProxies();
-
-			_garbageCollectionTime.Stop();
+			try
+			{
+				RemoveUnusedServants();
+				RemoveUnusedProxies();
+			}
+			catch (Exception e)
+			{
+				Log.ErrorFormat("Caught exception during garbage collection: {0}", e);
+			}
+			finally
+			{
+				_garbageCollectionTime.Stop();
+			}
 		}
 
 		private void RemoveUnusedServants()
@@ -568,9 +576,14 @@ namespace SharpRemote
 				Disconnect();
 				DisposeAdditional();
 				_garbageCollectionTimer.Dispose();
-				_servantsBySubject.Dispose();
 
-				//Console.WriteLine("Create Message: {0:D}ms", _createMessage.ElapsedMilliseconds);
+				// Another thread could still be accessing this dictionary.
+				// Therefore we need to guard this one against concurrent access...
+				lock (_servantsById)
+				{
+					_servantsBySubject.Dispose();
+					_servantsById.Clear();
+				}
 
 				_isDisposed = true;
 			}

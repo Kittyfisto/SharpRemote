@@ -9,6 +9,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.Exceptions;
+using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
@@ -599,7 +600,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Description("Verifies that disposing the endpoint actually closes the listening socket")]
-		public void TestDispose()
+		public void TestDispose1()
 		{
 			IPEndPoint endpoint;
 			using (var ep = CreateServer("Foo"))

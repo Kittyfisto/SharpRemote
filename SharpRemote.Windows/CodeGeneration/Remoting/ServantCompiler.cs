@@ -177,6 +177,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 			gen.Emit(OpCodes.Ldfld, _subject);
 			gen.Emit(OpCodes.Ldloca, ret);
 			gen.Emit(OpCodes.Call, _subjectTryGetTarget);
+			gen.Emit(OpCodes.Pop);
 			gen.Emit(OpCodes.Ldloc, ret);
 			gen.Emit(OpCodes.Ret);
 

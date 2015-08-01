@@ -109,7 +109,7 @@ namespace SharpRemote
 
 		private readonly Dictionary<ulong, WeakReference<IProxy>> _proxiesById;
 		private readonly Dictionary<ulong, IServant> _servantsById;
-		private readonly Dictionary<object, IServant> _servantsBySubject;
+		private readonly WeakKeyDictionary<object, IServant> _servantsBySubject;
 
 		#endregion
 
@@ -124,6 +124,7 @@ namespace SharpRemote
 		#region Garbage Collection
 
 		private long _numProxiesCollected;
+		private long _numServantsCollected;
 		private readonly Stopwatch _garbageCollectionTime;
 		private readonly Timer _garbageCollectionTimer;
 
@@ -136,6 +137,15 @@ namespace SharpRemote
 		public long NumProxiesCollected
 		{
 			get { return _numProxiesCollected; }
+		}
+
+		/// <summary>
+		/// The total number of <see cref="IServant"/>s that have been removed from this endpoint because
+		/// their subjects have been collected by the GC.
+		/// </summary>
+		public long NumServantsCollected
+		{
+			get { return _numServantsCollected; }
 		}
 
 		/// <summary>
@@ -159,7 +169,7 @@ namespace SharpRemote
 			_syncRoot = new object();
 
 			_servantsById = new Dictionary<ulong, IServant>();
-			_servantsBySubject = new Dictionary<object, IServant>();
+			_servantsBySubject = new WeakKeyDictionary<object, IServant>();
 
 			_proxiesById = new Dictionary<ulong, WeakReference<IProxy>>();
 
@@ -411,33 +421,38 @@ namespace SharpRemote
 			_garbageCollectionTime.Start();
 
 			RemoveUnusedServants();
-
-			List<IProxy> alive;
-			RemoveUnusedProxies(out alive);
+			RemoveUnusedProxies();
 
 			_garbageCollectionTime.Stop();
 		}
 
 		private void RemoveUnusedServants()
 		{
-			
+			lock (_servantsById)
+			{
+				var collectedServants = _servantsBySubject.Collect(true);
+				if (collectedServants != null)
+				{
+					foreach (var servant in collectedServants)
+					{
+						_servantsById.Remove(servant.ObjectId);
+					}
+
+					_numServantsCollected += collectedServants.Count;
+				}
+			}
 		}
 
-		private void RemoveUnusedProxies(out List<IProxy> aliveProxies)
+		private void RemoveUnusedProxies()
 		{
 			lock (_proxiesById)
 			{
 				List<ulong> toRemove = null;
-				aliveProxies = new List<IProxy>();
 
 				foreach (var pair in _proxiesById)
 				{
 					IProxy proxy;
-					if (pair.Value.TryGetTarget(out proxy))
-					{
-						aliveProxies.Add(proxy);
-					}
-					else
+					if (!pair.Value.TryGetTarget(out proxy))
 					{
 						if (toRemove == null)
 							toRemove = new List<ulong>();

@@ -26,7 +26,7 @@ namespace ConsoleApplication1
 			//ManyClientsAsync();
 			//StressTest();
 			//SimplePipes();
-			GetTypePerformance();
+			//GetTypePerformance();
 
 			Console.WriteLine("Press any key to continue...");
 			Console.ReadKey();

@@ -88,6 +88,7 @@
     <Compile Include="EndPointType.cs" />
     <Compile Include="GrainIdGenerator.cs" />
     <Compile Include="GrainIdRange.cs" />
+    <Compile Include="HashHelpers.cs" />
     <Compile Include="Hosting\LatencySettings.cs" />
     <Compile Include="Exceptions\GrainIdRangeExhaustedException.cs" />
     <Compile Include="PendingMethodsQueue.cs" />
@@ -165,6 +166,7 @@
     <Compile Include="Watchdog\InternalWatchdog.cs" />
     <Compile Include="Watchdog\Watchdog.cs" />
     <Compile Include="Watchdog\WatchdogHost.cs" />
+    <Compile Include="WeakKeyDictionary.cs" />
     <Compile Include="Win32Error.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Runtime.InteropServices;
 
 namespace SharpRemote
 {
@@ -10,16 +11,17 @@ namespace SharpRemote
 	/// will automatically be removed (No longer visible)
 	/// </summary>
 	public sealed class WeakKeyDictionary<TKey, TValue>
+		: IDisposable
 		where TKey : class
 	{
 		private const int HashCodeMask = 0x7FFFFFFF;
 
 		internal struct Entry
 		{
-			public int HashCode;             // Lower 31 bits of hash code, -1 if unused
-			public int Next;                 // Index of next entry, -1 if last
-			public WeakReference<TKey> Key;  // Key of entry
-			public TValue Value;             // Value of entry
+			public int HashCode;  // Lower 31 bits of hash code, -1 if unused
+			public int Next;      // Index of next entry, -1 if last
+			public GCHandle Key;  // Key of entry
+			public TValue Value;  // Value of entry
 		}
 
 // ReSharper disable InconsistentNaming
@@ -30,6 +32,7 @@ namespace SharpRemote
 		internal int _freeCount;
 		internal int _version;
 		internal int _count;
+		private bool _disposed;
 // ReSharper restore InconsistentNaming
 
 		public int Count
@@ -47,6 +50,11 @@ namespace SharpRemote
 			_comparer = EqualityComparer<TKey>.Default;
 
 			Initialize(0);
+		}
+
+		~WeakKeyDictionary()
+		{
+			Clear();
 		}
 
 		private void Initialize(int capacity)
@@ -78,6 +86,19 @@ namespace SharpRemote
 			return FindEntry(key) >= 0;
 		}
 
+		private static bool TryGetTarget(GCHandle handle, out TKey target)
+		{
+			if (handle.IsAllocated)
+			{
+				var key = handle.Target;
+				target = key as TKey;
+				return target != null;
+			}
+
+			target = null;
+			return false;
+		}
+
 		/// <summary>
 		/// Finds the first occurence of the given key and returns its index, or -1 if it doesn't exist.
 		/// </summary>
@@ -97,7 +118,7 @@ namespace SharpRemote
 				{
 					TKey actualKey;
 					if (_entries[i].HashCode == hashCode &&
-						_entries[i].Key.TryGetTarget(out actualKey) &&
+						TryGetTarget(_entries[i].Key, out actualKey) &&
 						_comparer.Equals(actualKey, key))
 						return i;
 				}
@@ -118,7 +139,7 @@ namespace SharpRemote
 			for (int i = _buckets[targetBucket]; i >= 0; i = _entries[i].Next)
 			{
 				TKey storedKey;
-				if (_entries[i].Key.TryGetTarget(out storedKey))
+				if (TryGetTarget(_entries[i].Key, out storedKey))
 				{
 					if (_entries[i].HashCode == hashCode)
 					{
@@ -147,7 +168,7 @@ namespace SharpRemote
 						// Now that this bucket has been removed from the list we can
 						// insert it into the front of the free list.
 						_entries[i].Next = _freeList;
-						_entries[i].Key = null;
+						Free(ref _entries[i].Key);
 						_entries[i].Value = default(TValue);
 						_entries[i].HashCode = -1;
 
@@ -182,7 +203,7 @@ namespace SharpRemote
 
 			_entries[index].HashCode = hashCode;
 			_entries[index].Next = _buckets[targetBucket];
-			_entries[index].Key = new WeakReference<TKey>(key);
+			_entries[index].Key = GCHandle.Alloc(key, GCHandleType.Weak);
 			_entries[index].Value = value;
 			_buckets[targetBucket] = index;
 			_version++;
@@ -263,7 +284,7 @@ namespace SharpRemote
 					if (_entries[i].HashCode == hashCode)
 					{
 						TKey actualKey;
-						if (_entries[i].Key.TryGetTarget(out actualKey))
+						if (TryGetTarget(_entries[i].Key, out actualKey))
 						{
 							if (_comparer.Equals(actualKey, key))
 							{
@@ -277,7 +298,7 @@ namespace SharpRemote
 								}
 								_entries[i].HashCode = -1;
 								_entries[i].Next = _freeList;
-								_entries[i].Key = null;
+								Free(ref _entries[i].Key);
 								_entries[i].Value = default(TValue);
 								_freeList = i;
 								_freeCount++;
@@ -289,6 +310,12 @@ namespace SharpRemote
 				}
 			}
 			return false;
+		}
+
+		private static void Free(ref GCHandle key)
+		{
+			if (key.IsAllocated)
+				key.Free();
 		}
 
 		public List<TValue> Collect(bool returnCollectedValues = false)
@@ -303,7 +330,7 @@ namespace SharpRemote
 					for (int i = _buckets[bucketIndex]; i != -1;)
 					{
 						TKey unused;
-						if (_entries[i].Key != null && !_entries[i].Key.TryGetTarget(out unused))
+						if (!TryGetTarget(_entries[i].Key, out unused))
 						{
 							int nextEntry;
 							if (i == _buckets[bucketIndex])
@@ -332,7 +359,7 @@ namespace SharpRemote
 							// This entry can be reclaimed because it's key is no longer alive
 							_entries[i].HashCode = -1;
 							_entries[i].Next = _freeList;
-							_entries[i].Key = null;
+							Free(ref _entries[i].Key);
 							_entries[i].Value = default(TValue);
 							_freeList = i;
 							_freeCount++;
@@ -350,6 +377,29 @@ namespace SharpRemote
 			}
 
 			return collectedValues;
+		}
+
+		public void Clear()
+		{
+			for (int bucketIndex = 0; bucketIndex < _buckets.Length; ++bucketIndex)
+			{
+				for (int i = _buckets[bucketIndex]; i != -1; i = _entries[i].Next)
+				{
+					Free(ref _entries[i].Key);
+				}
+			}
+			Initialize(0);
+		}
+
+		public void Dispose()
+		{
+			if (!_disposed)
+			{
+				Clear();
+
+				GC.SuppressFinalize(this);
+				_disposed = true;
+			}
 		}
 	}
 }

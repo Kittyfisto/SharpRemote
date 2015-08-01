@@ -29,7 +29,7 @@ namespace SharpRemote.Test
 
 					WeakKeyDictionary<TKey, TValue>.Entry entry = dictionary._entries[idx];
 					entry.HashCode.Should().Be(-1);
-					entry.Key.Should().BeNull();
+					entry.Key.IsAllocated.Should().BeFalse();
 					entry.Value.Should().Be(default(TValue));
 
 					idx = entry.Next;
@@ -60,7 +60,7 @@ namespace SharpRemote.Test
 
 					WeakKeyDictionary<TKey, TValue>.Entry root = dictionary._entries[idx];
 					root.HashCode.Should().NotBe(-1);
-					root.Key.Should().NotBeNull();
+					root.Key.IsAllocated.Should().BeTrue();
 
 					for (int i = root.Next; i != -1; i = dictionary._entries[i].Next)
 					{
@@ -71,7 +71,7 @@ namespace SharpRemote.Test
 
 						WeakKeyDictionary<TKey, TValue>.Entry entry = dictionary._entries[i];
 						entry.HashCode.Should().NotBe(-1);
-						root.Key.Should().NotBeNull();
+						entry.Key.IsAllocated.Should().BeTrue();
 					}
 				}
 				else

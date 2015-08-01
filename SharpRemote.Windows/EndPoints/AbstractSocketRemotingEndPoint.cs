@@ -568,6 +568,7 @@ namespace SharpRemote
 				Disconnect();
 				DisposeAdditional();
 				_garbageCollectionTimer.Dispose();
+				_servantsBySubject.Dispose();
 
 				//Console.WriteLine("Create Message: {0:D}ms", _createMessage.ElapsedMilliseconds);
 

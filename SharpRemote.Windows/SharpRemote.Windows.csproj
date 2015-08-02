@@ -86,11 +86,14 @@
     <Compile Include="EndPoints\SocketRemotingEndPointClient.cs" />
     <Compile Include="EndPoints\SocketRemotingEndPointServer.cs" />
     <Compile Include="EndPointType.cs" />
+    <Compile Include="Extensions\AssemblyExtensions.cs" />
     <Compile Include="GrainIdGenerator.cs" />
     <Compile Include="GrainIdRange.cs" />
     <Compile Include="HashHelpers.cs" />
     <Compile Include="Hosting\LatencySettings.cs" />
     <Compile Include="Exceptions\GrainIdRangeExhaustedException.cs" />
+    <Compile Include="Hosting\OutOfProcess\OutOfProcessSiloServer.cs" />
+    <Compile Include="Hosting\PostMortemSettings.cs" />
     <Compile Include="PendingMethodsQueue.cs" />
     <Compile Include="PendingMethodCall.cs" />
     <Compile Include="RingBuffer.cs" />
@@ -100,8 +103,8 @@
     <Compile Include="HeartbeatSettings.cs" />
     <Compile Include="Hosting\ILatency.cs" />
     <Compile Include="Hosting\LatencyMonitor.cs" />
-    <Compile Include="Hosting\OutOfProcessSiloFaultReason.cs" />
-    <Compile Include="Hosting\OutOfProcessSiloFaultHandling.cs" />
+    <Compile Include="Hosting\SiloFaultReason.cs" />
+    <Compile Include="Hosting\SiloFaultHandling.cs" />
     <Compile Include="IHeartbeat.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />
@@ -119,7 +122,6 @@
     <Compile Include="Exceptions\UnserializableException.cs" />
     <Compile Include="Hosting\HostState.cs" />
     <Compile Include="Hosting\ProcessOptions.cs" />
-    <Compile Include="Hosting\OutOfProcessSiloServer.cs" />
     <Compile Include="IAuthenticator.cs" />
     <Compile Include="IGrain.cs" />
     <Compile Include="Attributes\InvokeAttribute.cs" />
@@ -135,12 +137,12 @@
     <Compile Include="Extensions\DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />
     <Compile Include="EndPoints\AbstractIPSocketRemotingEndPoint.cs" />
-    <Compile Include="Hosting\InProcessRemotingSilo.cs" />
-    <Compile Include="Hosting\InProcessSilo.cs" />
+    <Compile Include="Hosting\InProcess\InProcessRemotingSilo.cs" />
+    <Compile Include="Hosting\InProcess\InProcessSilo.cs" />
     <Compile Include="Hosting\ISilo.cs" />
     <Compile Include="Hosting\ISubjectHost.cs" />
     <Compile Include="Extensions\ProcessExtensions.cs" />
-    <Compile Include="Hosting\OutOfProcessSilo.cs" />
+    <Compile Include="Hosting\OutOfProcess\OutOfProcessSilo.cs" />
     <Compile Include="Hosting\SubjectHost.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializer.cs" />
@@ -167,6 +169,7 @@
     <Compile Include="Watchdog\Watchdog.cs" />
     <Compile Include="Watchdog\WatchdogHost.cs" />
     <Compile Include="WeakKeyDictionary.cs" />
+    <Compile Include="NativeMethods.cs" />
     <Compile Include="Win32Error.cs" />
   </ItemGroup>
   <ItemGroup>

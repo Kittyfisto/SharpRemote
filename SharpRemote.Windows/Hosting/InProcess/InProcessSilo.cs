@@ -1,7 +1,9 @@
 ﻿using System;
 using SharpRemote.CodeGeneration;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote.Hosting
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	///     Hosts all objects in the calling process without any remoting overhead.

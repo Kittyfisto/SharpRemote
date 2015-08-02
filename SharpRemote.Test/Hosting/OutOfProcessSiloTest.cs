@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -13,6 +14,7 @@ using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using log4net.Core;
+using Description = NUnit.Framework.DescriptionAttribute;
 
 namespace SharpRemote.Test.Hosting
 {
@@ -32,7 +34,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that starting the default host process succeeds")]
+		[Description("Verifies that starting the default host process succeeds")]
 		public void TestStart1()
 		{
 			using (var silo = new OutOfProcessSilo())
@@ -46,7 +48,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that starting a non-existant executable throws")]
+		[Description("Verifies that starting a non-existant executable throws")]
 		public void TestStart2()
 		{
 			using (var silo = new OutOfProcessSilo("Doesntexist.exe"))
@@ -66,7 +68,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that starting a non executable throws")]
+		[Description("Verifies that starting a non executable throws")]
 		public void TestStart3()
 		{
 			using (var silo = new OutOfProcessSilo("SharpRemote.dll"))
@@ -86,7 +88,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that multiple silos can be started concurrently")]
+		[Description("Verifies that multiple silos can be started concurrently")]
 		public void TestStart4()
 		{
 			const int taskCount = 16;
@@ -112,7 +114,7 @@ namespace SharpRemote.Test.Hosting
 
 		[Test]
 		[LocalTest("Time critical tests dont run on the C/I server")]
-		[NUnit.Framework.Description("Verifies that latency measurements are performed and that they are sound")]
+		[Description("Verifies that latency measurements are performed and that they are sound")]
 		public void TestRoundtripTime()
 		{
 			var settings = new LatencySettings
@@ -159,7 +161,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that specifying a null executable name is not allowed")]
+		[Description("Verifies that specifying a null executable name is not allowed")]
 		public void TestCtor2()
 		{
 			new Action(() => new OutOfProcessSilo(null))
@@ -167,7 +169,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that specifying an empty executable name is not allowed")]
+		[Description("Verifies that specifying an empty executable name is not allowed")]
 		public void TestCtor3()
 		{
 			new Action(() => new OutOfProcessSilo(""))
@@ -175,7 +177,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that specifying a whitespace executable name is not allowed")]
+		[Description("Verifies that specifying a whitespace executable name is not allowed")]
 		public void TestCtor4()
 		{
 			new Action(() => new OutOfProcessSilo("	"))
@@ -198,7 +200,7 @@ namespace SharpRemote.Test.Hosting
 
 		[Test]
 		[Repeat(5)]
-		[NUnit.Framework.Description("Verifies that the failure event is NEVER raised once a silo has been disposed of")]
+		[Description("Verifies that the failure event is NEVER raised once a silo has been disposed of")]
 		public void TestDispose2()
 		{
 			bool faultDetected = false;
@@ -222,12 +224,12 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that a crash of the host process is detected when it happens while a method call")]
+		[Description("Verifies that a crash of the host process is detected when it happens while a method call")]
 		public void TestFailureDetection1()
 		{
 			using (var silo = new OutOfProcessSilo())
 			{
-				OutOfProcessSiloFaultReason? reason = null;
+				SiloFaultReason? reason = null;
 				silo.OnFaultDetected += x => reason = x;
 				silo.Start();
 
@@ -238,43 +240,39 @@ namespace SharpRemote.Test.Hosting
 				silo.HasProcessFailed.Should().BeTrue("Because an aborted thread that is currently invoking a remote method call should cause SharpRemote to kill the host process and report failure");
 				silo.IsProcessRunning.Should().BeFalse();
 
-				(reason == OutOfProcessSiloFaultReason.ConnectionFailure ||
-				 reason == OutOfProcessSiloFaultReason.HostProcessExited).Should().BeTrue();
+				(reason == SiloFaultReason.ConnectionFailure ||
+				 reason == SiloFaultReason.HostProcessExited).Should().BeTrue();
 			}
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that an abortion of the executing thread of a remote method invocation is detected and that it causes a connection loss")]
+		[Description("Verifies that an abortion of the executing thread of a remote method invocation is detected and that it causes a connection loss")]
 		public void TestFailureDetection2()
 		{
 			using (var silo = new OutOfProcessSilo())
-			using (var handle = new ManualResetEvent(false))
 			{
-				OutOfProcessSiloFaultReason? reason = null;
-				silo.OnFaultHandled += (a, x) =>
-					{
-						reason = a;
-						handle.Set();
-					};
+				SiloFaultReason? reason = null;
+				SiloFaultHandling? handling = null;
+
+				silo.OnFaultHandled += (a, x) => { reason = a; handling = x; };
 				silo.Start();
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(AbortsThread));
 				new Action(proxy.Do)
 					.ShouldThrow<ConnectionLostException>("Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
-				handle.WaitOne(TimeSpan.FromSeconds(1)).Should().BeTrue();
-
 				silo.HasProcessFailed.Should().BeTrue("Because an unexpected exit of the host process counts as a failure");
 				silo.IsProcessRunning.Should().BeFalse();
 
-				(reason == OutOfProcessSiloFaultReason.ConnectionFailure ||
-				 reason == OutOfProcessSiloFaultReason.HostProcessExited).Should().BeTrue();
+				(reason == SiloFaultReason.ConnectionFailure ||
+				 reason == SiloFaultReason.HostProcessExited).Should().BeTrue();
+				handling.Should().Be(SiloFaultHandling.Shutdown);
 			}
 		}
 
 		[Test]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
-		[NUnit.Framework.Description("Verifies that a complete deadlock of the important remoting threads is detected")]
+		[Description("Verifies that a complete deadlock of the important remoting threads is detected")]
 		public void TestFailureDetection3()
 		{
 			var settings = new HeartbeatSettings
@@ -285,8 +283,12 @@ namespace SharpRemote.Test.Hosting
 				};
 			using (var silo = new OutOfProcessSilo(heartbeatSettings: settings))
 			{
-				OutOfProcessSiloFaultReason? reason = null;
-				silo.OnFaultDetected += x => reason = x;
+				SiloFaultReason? reason1 = null;
+				SiloFaultReason? reason2 = null;
+				SiloFaultHandling? handling = null;
+				silo.OnFaultDetected += x => reason1 = x;
+				silo.OnFaultHandled += (x, y) => { reason2 = x; handling = y; };
+
 				silo.Start();
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(DeadlocksProcess));
@@ -300,13 +302,77 @@ namespace SharpRemote.Test.Hosting
 
 				silo.HasProcessFailed.Should().BeTrue("Because the heartbeat mechanism should have detected that the endpoint doesn't respond anymore");
 				silo.IsProcessRunning.Should().BeFalse();
-				reason.Should().Be(OutOfProcessSiloFaultReason.HeartbeatFailure);
+				reason1.Should().Be(SiloFaultReason.HeartbeatFailure);
+				reason2.Should().Be(reason1);
+				handling.Should().Be(SiloFaultHandling.Shutdown);
 			}
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
+		[Description("Verifies that the death of the host process is detected when its caused by an access violation")]
 		public void TestFailureDetection4()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				SiloFaultReason? reason1 = null;
+				SiloFaultReason? reason2 = null;
+				SiloFaultHandling? handling = null;
+
+				silo.OnFaultDetected += x => reason1 = x;
+				silo.OnFaultHandled += (x, y) => { reason2 = x; handling = y; };
+
+				silo.Start();
+				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
+
+				new Action(() => { proxy.Do(); }).ShouldThrow<ConnectionLostException>();
+
+				handling.Should().Be(SiloFaultHandling.Shutdown);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that unhandled exceptions cause a mini-dump to be created")]
+		public void TestFailureDetection5()
+		{
+			var settings = new PostMortemSettings
+			{
+				CollectMinidumps = true,
+				SupressStoppedWorkingWindow = true,
+				NumMinidumpsRetained = 1,
+				MinidumpFolder = Path.Combine(Path.GetTempPath(), "SharpRemote", "dumps"),
+				MinidumpName = "Host"
+			};
+
+			if (Directory.Exists(settings.MinidumpFolder))
+			{
+				Directory.Delete(settings.MinidumpFolder, true);
+			}
+
+			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+			{
+				silo.Start();
+				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
+
+				var beforeFailure = DateTime.Now;
+				new Action(() => { proxy.Do(); }).ShouldThrow<ConnectionLostException>();
+				var afterFailure = DateTime.Now;
+
+				// Not only should a failure have been detected, but a dump should've been created and stored
+				// on disk..
+
+				var files = Directory.EnumerateFiles(settings.MinidumpFolder).ToList();
+				files.Count.Should().Be(1, "Because exactly one minidump should've been created");
+
+				var file = new FileInfo(files[0]);
+				file.Name.Should().EndWith(".dmp");
+				file.LastWriteTime.Should().BeOnOrAfter(beforeFailure);
+				file.LastWriteTime.Should().BeOnOrBefore(afterFailure);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
+		public void TestFailureDetection6()
 		{
 			var settings = new HeartbeatSettings
 				{
@@ -319,9 +385,9 @@ namespace SharpRemote.Test.Hosting
 			using (var handle1 = new ManualResetEvent(false))
 			using (var handle2 = new ManualResetEvent(false))
 			{
-				OutOfProcessSiloFaultReason? reason1 = null;
-				OutOfProcessSiloFaultReason? reason2 = null;
-				OutOfProcessSiloFaultHandling? handling = null;
+				SiloFaultReason? reason1 = null;
+				SiloFaultReason? reason2 = null;
+				SiloFaultHandling? handling = null;
 
 				silo.OnFaultDetected += x =>
 					{
@@ -347,16 +413,16 @@ namespace SharpRemote.Test.Hosting
 				WaitHandle.WaitAll(new[] {handle1, handle2}, TimeSpan.FromSeconds(2))
 				          .Should().BeTrue("Because the failure should've been detected as well as handled");
 
-				(reason1 == OutOfProcessSiloFaultReason.ConnectionFailure ||
-				 reason1 == OutOfProcessSiloFaultReason.HostProcessExited).Should().BeTrue();
+				(reason1 == SiloFaultReason.ConnectionFailure ||
+				 reason1 == SiloFaultReason.HostProcessExited).Should().BeTrue();
 				reason2.Should().Be(reason1);
-				handling.Should().Be(OutOfProcessSiloFaultHandling.Shutdown);
+				handling.Should().Be(SiloFaultHandling.Shutdown);
 			}
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that the silo can be disposed of from within the FaultHandled event")]
-		public void TestFailureDetection5()
+		[Description("Verifies that the silo can be disposed of from within the FaultHandled event")]
+		public void TestFailureDetection7()
 		{
 			var settings = new HeartbeatSettings
 			{
@@ -403,7 +469,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[NUnit.Framework.Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
+		[Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
 		public void TestCreate()
 		{
 			var customTypeResolver = new CustomTypeResolver1();

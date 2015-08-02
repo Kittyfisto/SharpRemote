@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using SharpRemote.CodeGeneration;
 using SharpRemote.Extensions;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote.Hosting
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// Silo implementation not meant for production code as it uses the entire remoting chain without an actual need for it.

@@ -4,7 +4,6 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
-using SharpRemote.EndPoints;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -13,7 +12,7 @@ namespace SharpRemote
 {
 	/// <summary>
 	///     <see cref="IRemotingEndPoint" /> implementation that establishes a TCP socket with another
-	///     endPoint. A listening socket is opened (and bound to an address) with <see cref="SocketRemotingEndPointServer.Bind" /> while
+	///     endPoint. A listening socket is opened (and bound to an address) with <see cref="SocketRemotingEndPointServer.Bind(IPAddress)" /> while
 	///     a connectiong to such a socket is established with <see cref="SocketRemotingEndPointClient.Connect(IPEndPoint)" /> or
 	///     <see cref="SocketRemotingEndPointClient.Connect(string)" />.
 	/// </summary>
@@ -22,18 +21,16 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly GrainIdGenerator _idGenerator;
-
 		private Thread _readThread;
 		private Thread _writeThread;
 		private IPEndPoint _remoteEndPoint;
 		private IPEndPoint _localEndPoint;
 
 		internal AbstractIPSocketRemotingEndPoint(EndPointType type,
-			string name = null,
-		                                       IAuthenticator clientAuthenticator = null,
-		                                       IAuthenticator serverAuthenticator = null,
-		                                       ITypeResolver customTypeResolver = null)
+		                                          string name = null,
+		                                          IAuthenticator clientAuthenticator = null,
+		                                          IAuthenticator serverAuthenticator = null,
+		                                          ITypeResolver customTypeResolver = null)
 			: base(new GrainIdGenerator(type),
 					name,
 			       clientAuthenticator,
@@ -58,7 +55,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		///     IPAddress+Port pair of this endPoint in case <see cref="SocketRemotingEndPointServer.Bind" /> 
+		///     IPAddress+Port pair of this endPoint in case <see cref="SocketRemotingEndPointServer.Bind(IPAddress)" /> 
 		/// or 
 		/// has been called.
 		///     Otherwise null.
@@ -76,7 +73,7 @@ namespace SharpRemote
 
 		/// <summary>
 		///     Whether or not the P2P name publishing service is available on this machine or not.
-		///     Is required to <see cref="SocketRemotingEndPointServer.Bind" /> a socket to a particular name (as well as a particular port)
+		///     Is required to <see cref="SocketRemotingEndPointServer.Bind(IPAddress)" /> a socket to a particular name (as well as a particular port)
 		///     and to <see cref="SocketRemotingEndPointClient.Connect(string)" /> to that socket.
 		/// </summary>
 		public static bool IsP2PAvailable

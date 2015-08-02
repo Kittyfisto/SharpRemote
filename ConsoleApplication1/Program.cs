@@ -17,9 +17,23 @@ namespace ConsoleApplication1
 {
 	internal class Program
 	{
-		private static void Main(string[] args)
+		private static unsafe void Main(string[] args)
 		{
-			Task.Factory.StartNew(() => { });
+			const string path = @"E:\Code\SharpRemote\bin\Debug\win\x86";
+			SharpRemote.NativeMethods.SetDllDirectory(path);
+
+			SharpRemote.NativeMethods.Init(
+				10,
+				@"C:\Users\Simon\AppData\Local\Temp\SharpRemote\Dumps\",
+				"ConsoleTest"
+				);
+			SharpRemote.NativeMethods.InstallPostmortemDebugger();
+
+			var b = new byte[10];
+			fixed (byte* ptr = b)
+			{
+				ptr[21312412312] = 12;
+			}
 
 			//SimpleSockets();
 			//OneClientSync();

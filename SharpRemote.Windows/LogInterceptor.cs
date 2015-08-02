@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// <summary>
 	/// Log4net appender that delegates all log events to a user specified action.
 	/// </summary>
-	public sealed class LogInterceptor
+	internal sealed class LogInterceptor
 		: AppenderSkeleton
 		  , IDisposable
 	{

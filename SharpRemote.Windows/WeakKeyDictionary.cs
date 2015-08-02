@@ -10,7 +10,7 @@ namespace SharpRemote
 	/// keys are stored in a <see cref="WeakReference"/> and thus entries in this dictionary
 	/// will automatically be removed (No longer visible)
 	/// </summary>
-	public sealed class WeakKeyDictionary<TKey, TValue>
+	internal sealed class WeakKeyDictionary<TKey, TValue>
 		: IDisposable
 		where TKey : class
 	{

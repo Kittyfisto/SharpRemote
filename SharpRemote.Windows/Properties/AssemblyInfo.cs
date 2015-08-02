@@ -37,3 +37,5 @@ using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("SharpRemote.Host")]
 [assembly: InternalsVisibleTo("SharpRemote.Test")]
+[assembly: InternalsVisibleTo("SampleBrowser")]
+[assembly: InternalsVisibleTo("ConsoleApplication1")]

@@ -1,9 +1,11 @@
-﻿namespace SharpRemote.Hosting
+﻿// ReSharper disable CheckNamespace
+namespace SharpRemote.Hosting
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// Describes the various states of how (and if) a fault has been resolved.
 	/// </summary>
-	public enum OutOfProcessSiloFaultHandling
+	public enum SiloFaultHandling
 	{
 		/// <summary>
 		/// The problem has been resolved but failed calls on remote objects may or may not have been

@@ -5,12 +5,15 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using log4net;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote.Hosting
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	///     <see cref="ISilo"/> implementation that allows client code to host objects in another
@@ -35,6 +38,7 @@ namespace SharpRemote.Hosting
 
 		private readonly HeartbeatMonitor _heartbeatMonitor;
 		private readonly LatencyMonitor _latencyMonitor;
+		private readonly PostMortemSettings _postMortemSettings;
 		private readonly SocketRemotingEndPointClient _endPoint;
 		private readonly ISubjectHost _subjectHost;
 		private readonly ManualResetEvent _waitHandle;
@@ -52,7 +56,7 @@ namespace SharpRemote.Hosting
 
 		private bool _isDisposed;
 		private bool _isDisposing;
-		private OutOfProcessSiloFaultReason? _reason;
+		private SiloFaultReason? _reason;
 
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
@@ -63,13 +67,13 @@ namespace SharpRemote.Hosting
 		/// Is invoked when a fault in the remote process has been detected and is invoked prior to handling
 		/// this failure.
 		/// </summary>
-		public event Action<OutOfProcessSiloFaultReason> OnFaultDetected;
+		public event Action<SiloFaultReason> OnFaultDetected;
 
 		/// <summary>
 		/// Is invoked when a fault in the remote process has been detected an handled.
 		/// The parameters contain both the original reason and how its been handled.
 		/// </summary>
-		public event Action<OutOfProcessSiloFaultReason, OutOfProcessSiloFaultHandling> OnFaultHandled;
+		public event Action<SiloFaultReason, SiloFaultHandling> OnFaultHandled;
 
 		/// <summary>
 		/// Whether or not the process has failed.
@@ -127,6 +131,7 @@ namespace SharpRemote.Hosting
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
+		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -134,11 +139,14 @@ namespace SharpRemote.Hosting
 			ProcessOptions options = ProcessOptions.HideConsole,
 			ITypeResolver customTypeResolver = null,
 			HeartbeatSettings heartbeatSettings = null,
-			LatencySettings latencySettings = null
+			LatencySettings latencySettings = null,
+			PostMortemSettings postMortemSettings = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
 			if (string.IsNullOrWhiteSpace(process)) throw new ArgumentException("process");
+			if (postMortemSettings != null && !postMortemSettings.IsValid)
+				throw new ArgumentException("postMortemSettings");
 
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver);
 			_endPoint.OnFailure += EndPointOnOnFailure;
@@ -152,6 +160,14 @@ namespace SharpRemote.Hosting
 			var latency = _endPoint.CreateProxy<ILatency>(Constants.LatencyProbeId);
 			_latencyMonitor = new LatencyMonitor(latency, latencySettings ?? new LatencySettings());
 
+			if (postMortemSettings != null)
+			{
+				_postMortemSettings = postMortemSettings.Clone();
+				_postMortemSettings.MinidumpFolder = _postMortemSettings.MinidumpFolder.Replace('/', '\\');
+				if (!_postMortemSettings.MinidumpFolder.EndsWith("\\"))
+					_postMortemSettings.MinidumpFolder += '\\';
+			}
+
 			_waitHandle = new ManualResetEvent(false);
 			_hostState = HostState.BootPending;
 			_syncRoot = new object();
@@ -159,7 +175,7 @@ namespace SharpRemote.Hosting
 			_parentPid = Process.GetCurrentProcess().Id;
 			_startInfo = new ProcessStartInfo(process)
 				{
-					Arguments = string.Format("{0}", _parentPid),
+					Arguments = FormatArguments(_parentPid, _postMortemSettings),
 					RedirectStandardOutput = true,
 					UseShellExecute = false
 				};
@@ -176,6 +192,27 @@ namespace SharpRemote.Hosting
 
 			
 			_hasProcessExited = true;
+		}
+
+		[Pure]
+		private static string FormatArguments(int parentPid, PostMortemSettings postMortemSettings)
+		{
+			var builder = new StringBuilder();
+			builder.Append(parentPid);
+			if (postMortemSettings != null)
+			{
+				builder.Append(" ");
+				builder.Append(postMortemSettings.CollectMinidumps);
+				builder.Append(" ");
+				builder.Append(postMortemSettings.SupressStoppedWorkingWindow);
+				builder.Append(" ");
+				builder.Append(postMortemSettings.NumMinidumpsRetained);
+				builder.Append(" ");
+				builder.Append(postMortemSettings.MinidumpFolder);
+				builder.Append(" ");
+				builder.Append(postMortemSettings.MinidumpName);
+			}
+			return builder.ToString();
 		}
 
 		/// <summary>
@@ -308,38 +345,38 @@ namespace SharpRemote.Hosting
 
 		private void HandleFailure(EndPointDisconnectReason? endPointReason)
 		{
-			OutOfProcessSiloFaultReason reason;
+			SiloFaultReason reason;
 			if (endPointReason != null)
 			{
 				switch (endPointReason.Value)
 				{
 					case EndPointDisconnectReason.ReadFailure:
 					case EndPointDisconnectReason.RpcInvalidResponse:
-						reason = OutOfProcessSiloFaultReason.ConnectionFailure;
+						reason = SiloFaultReason.ConnectionFailure;
 						break;
 
 					case EndPointDisconnectReason.RequestedByEndPoint:
 					case EndPointDisconnectReason.RequestedByRemotEndPoint:
-						reason = OutOfProcessSiloFaultReason.ConnectionClosed;
+						reason = SiloFaultReason.ConnectionClosed;
 						break;
 
 					// ReSharper disable RedundantCaseLabel
 					case EndPointDisconnectReason.UnhandledException:
 					// ReSharper restore RedundantCaseLabel
 					default:
-						reason = OutOfProcessSiloFaultReason.UnhandledException;
+						reason = SiloFaultReason.UnhandledException;
 						break;
 				}
 			}
 			else
 			{
-				reason = OutOfProcessSiloFaultReason.HeartbeatFailure;
+				reason = SiloFaultReason.HeartbeatFailure;
 			}
 
 			HandleFailure(reason, dueToEndPoint: true);
 		}
 
-		private void HandleFailure(OutOfProcessSiloFaultReason reason, bool dueToEndPoint)
+		private void HandleFailure(SiloFaultReason reason, bool dueToEndPoint)
 		{
 			lock (_syncRoot)
 			{
@@ -364,7 +401,7 @@ namespace SharpRemote.Hosting
 			}
 
 			// TODO: Think of a better way to handle failures thant to quit ;)
-			if (reason != OutOfProcessSiloFaultReason.HostProcessExited)
+			if (reason != SiloFaultReason.HostProcessExited)
 			{
 				_process.TryKill();
 			}
@@ -384,7 +421,7 @@ namespace SharpRemote.Hosting
 			{
 				var fn = OnFaultHandled;
 				if (fn != null)
-					fn(reason, OutOfProcessSiloFaultHandling.Shutdown);
+					fn(reason, SiloFaultHandling.Shutdown);
 			}
 			catch (Exception e)
 			{
@@ -629,7 +666,7 @@ namespace SharpRemote.Hosting
 
 		private void ProcessOnExited(object sender, EventArgs args)
 		{
-			HandleFailure(OutOfProcessSiloFaultReason.HostProcessExited, false);
+			HandleFailure(SiloFaultReason.HostProcessExited, false);
 		}
 
 		internal static class Constants

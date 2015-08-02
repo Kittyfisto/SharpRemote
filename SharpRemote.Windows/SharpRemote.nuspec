@@ -22,5 +22,9 @@
     <file src="..\bin\Release\Win\SharpRemote.pdb" target="lib\net45\" />
     <file src="..\bin\Release\Win\SharpRemote.Host.exe" target="lib\net45\" />
     <file src="..\bin\Release\Win\SharpRemote.Host.pdb" target="lib\net45\" />
+    <file src="..\bin\Release\Win\x86\SharpRemote.PostmortemDebugger.dll" target="content\x86\" />
+	<file src="..\bin\Release\Win\x86\SharpRemote.PostmortemDebugger.pdb" target="content\x86\" />
+    <file src="..\bin\Release\Win\x64\SharpRemote.PostmortemDebugger.dll" target="content\x64\" />
+	<file src="..\bin\Release\Win\x64\SharpRemote.PostmortemDebugger.pdb" target="content\x64\" />
   </files>
 </package>

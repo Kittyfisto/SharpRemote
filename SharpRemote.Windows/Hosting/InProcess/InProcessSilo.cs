@@ -36,6 +36,27 @@ namespace SharpRemote.Hosting
 			_registry.RegisterDefaultImplementation(typeof(TImplementation), typeof(TInterface));
 		}
 
+		/// <summary>
+		/// Registers the default implementation for the given interface <paramref name="implementationTypeName"/>
+		/// so that <see cref="CreateGrain{TInterface}(object[])"/> can be used.
+		/// </summary>
+		/// <typeparam name="TInterface"></typeparam>
+		public void RegisterDefaultImplementation<TInterface>(string implementationTypeName)
+			where TInterface : class
+		{
+			Type implementationType;
+			if (_customTypeResolver != null)
+			{
+				implementationType = _customTypeResolver.GetType(implementationTypeName);
+			}
+			else
+			{
+				implementationType = TypeResolver.GetType(implementationTypeName);
+			}
+
+			_registry.RegisterDefaultImplementation(implementationType, typeof(TInterface));
+		}
+
 		public TInterface CreateGrain<TInterface>(params object[] parameters) where TInterface : class
 		{
 			var type = _registry.GetImplementation(typeof (TInterface));

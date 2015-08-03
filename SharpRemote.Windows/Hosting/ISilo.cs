@@ -20,7 +20,8 @@ namespace SharpRemote.Hosting
 		bool IsDisposed { get; }
 
 		/// <summary>
-		/// Registers the default
+		/// Registers the default implementation for the given interface <typeparamref name="TInterface"/>
+		/// so that <see cref="CreateGrain{TInterface}(object[])"/> can be used.
 		/// </summary>
 		/// <typeparam name="TInterface"></typeparam>
 		/// <typeparam name="TImplementation"></typeparam>

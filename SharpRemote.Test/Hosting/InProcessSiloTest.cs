@@ -22,5 +22,33 @@ namespace SharpRemote.Test.Hosting
 				customTypeResolver.GetTypeCalled.Should().Be(1, "because the silo should've used the custom type resolver we've specified in the ctor");
 			}
 		}
+
+		[Test]
+		[Description("Verifies that RegisterDefaultImplementation can retrieve the proper type from its assembly qualified name")]
+		public void TestRegisterDefaultImplementation1()
+		{
+			using (var silo = new InProcessSilo())
+			{
+				silo.RegisterDefaultImplementation<IVoidMethodNoParameters>(typeof(AbortsThread).AssemblyQualifiedName);
+				var grain = silo.CreateGrain<IVoidMethodNoParameters>();
+				grain.Should().BeOfType<AbortsThread>();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that RegisterDefaultImplementation uses the custom type resolver we've specified in the ctor")]
+		public void TestRegisterDefaultImplementation2()
+		{
+			var customTypeResolver = new CustomTypeResolver1();
+			using (var silo = new InProcessSilo(customTypeResolver))
+			{
+				customTypeResolver.GetTypeCalled.Should().Be(0);
+				silo.RegisterDefaultImplementation<IVoidMethodNoParameters>(typeof(AbortsThread).AssemblyQualifiedName);
+				customTypeResolver.GetTypeCalled.Should().Be(1, "because the silo should've used the custom type resolver we've specified in the ctor");
+
+				var grain = silo.CreateGrain<IVoidMethodNoParameters>();
+				grain.Should().BeOfType<AbortsThread>();
+			}
+		}
 	}
 }

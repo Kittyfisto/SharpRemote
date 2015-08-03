@@ -8,20 +8,9 @@
 #include "targetver.h"
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+// Windows Header Files:
+#include <windows.h>
 
 
 
 // TODO: reference additional headers your program requires here
-#include <windows.h>
-#include <stdlib.h>
-#include <string.h>
-#include <tchar.h>
-#include <DbgHelp.h>
-#include <winnt.h>
-#include <windef.h>
-#include <Shlwapi.h>
-#include <assert.h>
-
-#include <string>
-#include <sstream>
-#include <cstdlib>

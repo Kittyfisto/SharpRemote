@@ -313,19 +313,23 @@ namespace SharpRemote.Test.Hosting
 		public void TestFailureDetection4()
 		{
 			using (var silo = new OutOfProcessSilo())
+			using (var handle = new ManualResetEvent(false))
 			{
 				SiloFaultReason? reason1 = null;
 				SiloFaultReason? reason2 = null;
 				SiloFaultHandling? handling = null;
 
 				silo.OnFaultDetected += x => reason1 = x;
-				silo.OnFaultHandled += (x, y) => { reason2 = x; handling = y; };
+				silo.OnFaultHandled += (x, y) => { reason2 = x; handling = y;
+					                                 handle.Set();
+				};
 
 				silo.Start();
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
 
-				new Action(() => { proxy.Do(); }).ShouldThrow<ConnectionLostException>();
+				new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
 
+				handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
 				handling.Should().Be(SiloFaultHandling.Shutdown);
 			}
 		}

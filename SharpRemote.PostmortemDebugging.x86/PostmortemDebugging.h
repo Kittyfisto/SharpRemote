@@ -23,14 +23,16 @@ extern "C" {
 		);
 
 	/**
-	 * Installs the postmortemdebugger in the calling process which creates a minidump when an unhandled
-	 * exception occurs.
+	 * Installs the postmortemdebugger in the calling process which creates a minidump on failure.
+	 *
+	 * @param handleUnhandledExceptions   Whether or not unhandled win32 exceptions (access violations) are intercepted
+	 * @param handleCrtAsserts            Whether or not CRT asserts are intercepted
 	 *
 	 * @returns TRUE when the installation succeeds, FALSE otherwise. Use GetLastError to determine why
 	 *
 	 * ERROR_ACCESS_DENIED: You forgot to call Init() or it returned FALSE
 	 */
-	__declspec( dllexport ) BOOL InstallPostmortemDebugger();
+	__declspec( dllexport ) BOOL InstallPostmortemDebugger(BOOL handleUnhandledExceptions, BOOL handleCrtAsserts);
 
 	/**
 	 * Creates a minidump for the given process.

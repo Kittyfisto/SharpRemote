@@ -81,6 +81,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\Hook.h" />
     <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\PostmortemDebugging.h" />
     <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\stdafx.h" />
     <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\targetver.h" />

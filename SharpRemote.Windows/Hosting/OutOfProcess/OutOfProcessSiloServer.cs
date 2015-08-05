@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
@@ -134,14 +133,16 @@ namespace SharpRemote.Hosting
 						Log.ErrorFormat("Unable to initialize the post-mortem debugger: {0}",
 						                err);
 					}
-					else if (!NativeMethods.InstallPostmortemDebugger())
+					else if (!NativeMethods.InstallPostmortemDebugger(true,
+																	_postMortemSettings.SuppresCrtAssertWindow))
 					{
 						var err = Marshal.GetLastWin32Error();
 						Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
 										err);
 					}
 
-					Log.InfoFormat("Installed post-mortem debugger; mini dumps will automatically be saved to: {0}",
+					Log.InfoFormat("Installed post-mortem debugger; up to {0} mini dumps will automatically be saved to: {1}",
+					               _postMortemSettings.NumMinidumpsRetained,
 					               _postMortemSettings.MinidumpFolder
 						);
 				}

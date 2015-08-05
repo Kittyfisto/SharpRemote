@@ -16,12 +16,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <tchar.h>
-#include <DbgHelp.h>
 #include <winnt.h>
 #include <windef.h>
+
+#include <DbgHelp.h>
 #include <Shlwapi.h>
 #include <assert.h>
+#include <crtdbg.h>
 
 #include <string>
+#include <vector>
 #include <sstream>
 #include <cstdlib>

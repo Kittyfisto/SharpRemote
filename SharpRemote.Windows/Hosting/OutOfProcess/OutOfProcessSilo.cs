@@ -163,9 +163,12 @@ namespace SharpRemote.Hosting
 			if (postMortemSettings != null)
 			{
 				_postMortemSettings = postMortemSettings.Clone();
-				_postMortemSettings.MinidumpFolder = _postMortemSettings.MinidumpFolder.Replace('/', '\\');
-				if (!_postMortemSettings.MinidumpFolder.EndsWith("\\"))
-					_postMortemSettings.MinidumpFolder += '\\';
+				if (_postMortemSettings.MinidumpFolder != null)
+				{
+					_postMortemSettings.MinidumpFolder = _postMortemSettings.MinidumpFolder.Replace('/', '\\');
+					if (!_postMortemSettings.MinidumpFolder.EndsWith("\\"))
+						_postMortemSettings.MinidumpFolder += '\\';
+				}
 			}
 
 			_waitHandle = new ManualResetEvent(false);

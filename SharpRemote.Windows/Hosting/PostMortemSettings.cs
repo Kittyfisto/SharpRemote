@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace SharpRemote.Hosting
 {
@@ -8,7 +7,6 @@ namespace SharpRemote.Hosting
 	/// Can be used to configure how the post mortem debugger of a silo works,
 	/// where dumps are stored, how many, etc..
 	/// </summary>
-	[DataContract]
 	public sealed class PostMortemSettings
 	{
 		/// <summary>
@@ -17,18 +15,32 @@ namespace SharpRemote.Hosting
 		/// <remarks>
 		/// Is set to false by default.
 		/// </remarks>
-		[DataMember(Order = 1)]
 		public bool CollectMinidumps;
 
 		/// <summary>
 		/// Whether or not the "XYZ has stopped working" window that is created by windows
-		/// when an application experiences an unhandled exception / access violation.
+		/// when an application experiences an unhandled exception / access violation is suppressed.
+		/// When suppressed the window will not be shown to the user and the process will terminate immediately.
 		/// </summary>
+		/// <remarks>
+		/// When <see cref="CollectMinidumps"/> is set to true then a minidump is collected before termination.
+		/// </remarks>
 		/// <remarks>
 		/// Is set to false by default.
 		/// </remarks>
-		[DataMember(Order = 2)]
 		public bool SupressStoppedWorkingWindow;
+
+		/// <summary>
+		/// Whether or not CRT assertion failed window is suppressed.
+		/// When suppressed the window will not be shown to the user and the process will terminate immediately.
+		/// </summary>
+		/// <remarks>
+		/// When <see cref="CollectMinidumps"/> is set to true then a minidump is collected before termination.
+		/// </remarks>
+		/// <remarks>
+		/// Is set to false by default.
+		/// </remarks>
+		public bool SuppresCrtAssertWindow;
 
 		/// <summary>
 		/// The maximum amount of minidumps that shall be retained.
@@ -37,7 +49,6 @@ namespace SharpRemote.Hosting
 		/// <remarks>
 		/// Must be 1 or greater.
 		/// </remarks>
-		[DataMember(Order = 3)]
 		public int NumMinidumpsRetained;
 
 		/// <summary>
@@ -47,7 +58,6 @@ namespace SharpRemote.Hosting
 		/// <remarks>
 		/// Must be set if <see cref="CollectMinidumps"/> is set to true.
 		/// </remarks>
-		[DataMember(Order = 4)]
 		public string MinidumpFolder;
 
 		/// <summary>
@@ -58,7 +68,6 @@ namespace SharpRemote.Hosting
 		/// <remarks>
 		/// Must be set if <see cref="CollectMinidumps"/> is set to true.
 		/// </remarks>
-		[DataMember(Order = 5)]
 		public string MinidumpName;
 
 		/// <summary>
@@ -102,7 +111,7 @@ namespace SharpRemote.Hosting
 
 		public override string ToString()
 		{
-			return string.Format("CollectMinidumps: {0}, SupressStoppedWorkingWindow: {1}, NumMinidumpsRetained: {2}, MinidumpFolder: {3}, MinidumpName: {4}", CollectMinidumps, SupressStoppedWorkingWindow, NumMinidumpsRetained, MinidumpFolder, MinidumpName);
+			return string.Format("SupressStoppedWorkingWindow: {0}, CollectMinidumps: {1}, NumMinidumpsRetained: {2}, SuppresCrtAssertWindow: {3}, MinidumpFolder: {4}, MinidumpName: {5}", SupressStoppedWorkingWindow, CollectMinidumps, NumMinidumpsRetained, SuppresCrtAssertWindow, MinidumpFolder, MinidumpName);
 		}
 
 		/// <summary>
@@ -117,7 +126,8 @@ namespace SharpRemote.Hosting
 					MinidumpName = MinidumpName,
 					MinidumpFolder = MinidumpFolder,
 					NumMinidumpsRetained = NumMinidumpsRetained,
-					SupressStoppedWorkingWindow = SupressStoppedWorkingWindow
+					SupressStoppedWorkingWindow = SupressStoppedWorkingWindow,
+					SuppresCrtAssertWindow = SuppresCrtAssertWindow
 				};
 		}
 	}

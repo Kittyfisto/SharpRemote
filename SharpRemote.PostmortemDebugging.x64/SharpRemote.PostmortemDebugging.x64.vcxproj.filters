@@ -20,6 +20,9 @@
     <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\Hook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\SharpRemote.PostmortemDebugging.x86\PostmortemDebugging.cpp">

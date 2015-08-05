@@ -375,8 +375,48 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
+		[Ignore("Not finished yet")]
+		[Description("Verifies that an assertion triggered by the host process is intercepted and results in a termination of the process")]
 		public void TestFailureDetection6()
+		{
+			var settings = new PostMortemSettings
+			{
+				SupressStoppedWorkingWindow = true,
+				SuppresCrtAssertWindow = true,
+			};
+
+			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+			using (var handle = new ManualResetEvent(false))
+			{
+				SiloFaultReason? reason1 = null;
+				SiloFaultReason? reason2 = null;
+				SiloFaultHandling? handling = null;
+
+				silo.OnFaultDetected += x => reason1 = x;
+				silo.OnFaultHandled += (x, y) =>
+				{
+					reason2 = x; handling = y;
+					handle.Set();
+				};
+
+				silo.Start();
+				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAssert>();
+
+				var task =Task.Factory.StartNew(() =>
+					{
+						new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
+					});
+				//task.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+				task.Wait();
+
+				handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
+				handling.Should().Be(SiloFaultHandling.Shutdown);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
+		public void TestFailureDetection8()
 		{
 			var settings = new HeartbeatSettings
 				{
@@ -426,7 +466,7 @@ namespace SharpRemote.Test.Hosting
 
 		[Test]
 		[Description("Verifies that the silo can be disposed of from within the FaultHandled event")]
-		public void TestFailureDetection7()
+		public void TestFailureDetection9()
 		{
 			var settings = new HeartbeatSettings
 			{

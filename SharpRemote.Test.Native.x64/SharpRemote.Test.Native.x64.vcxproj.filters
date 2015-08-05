@@ -35,5 +35,8 @@
     <ClInclude Include="..\SharpRemote.Test.Native.x86\targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\SharpRemote.Test.Native.x86\SharpRemote.Test.Native.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

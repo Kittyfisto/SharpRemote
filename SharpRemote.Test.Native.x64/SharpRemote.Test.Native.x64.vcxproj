@@ -91,6 +91,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\SharpRemote.Test.Native.x86\SharpRemote.Test.Native.h" />
     <ClInclude Include="..\SharpRemote.Test.Native.x86\stdafx.h" />
     <ClInclude Include="..\SharpRemote.Test.Native.x86\targetver.h" />
   </ItemGroup>

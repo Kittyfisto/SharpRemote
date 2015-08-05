@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -23,20 +22,25 @@ namespace SharpRemote
 
 		private const string PostmortdemDebuggerDll = "SharpRemote.PostmortemDebugger.dll";
 		private static readonly object SyncRoot = new object();
-		private static IntPtr Library;
+		private static IntPtr _library;
 
 		/// <summary>
 		/// Loads the native post-mortdem debugger DLL, adjusting the search paths, if necessary...
 		/// </summary>
 		public static bool LoadPostmortemDebugger()
 		{
+			return LoadLibrary(ref _library, PostmortdemDebuggerDll);
+		}
+
+		internal static bool LoadLibrary(ref IntPtr library, string libraryPath)
+		{
 			lock (SyncRoot)
 			{
-				if (Library != IntPtr.Zero)
+				if (library != IntPtr.Zero)
 					return true;
 
-				Library = LoadLibrary(PostmortdemDebuggerDll);
-				if (Library == IntPtr.Zero)
+				library = LoadLibrary(libraryPath);
+				if (library == IntPtr.Zero)
 				{
 					var directory = Assembly.GetExecutingAssembly().GetDirectory();
 					if (directory != null)
@@ -48,8 +52,8 @@ namespace SharpRemote
 							);
 						Environment.SetEnvironmentVariable("PATH", path);
 
-						Library = LoadLibrary(PostmortdemDebuggerDll);
-						return Library != IntPtr.Zero;
+						library = LoadLibrary(libraryPath);
+						return library != IntPtr.Zero;
 					}
 
 					return false;
@@ -77,7 +81,8 @@ namespace SharpRemote
 
 		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		public static extern bool InstallPostmortemDebugger();
+		public static extern bool InstallPostmortemDebugger(bool interceptUnhandledExceptions,
+		                                                    bool handleCrtAsserts);
 
 		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.Bool)]

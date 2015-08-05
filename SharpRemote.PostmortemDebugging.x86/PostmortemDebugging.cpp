@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "PostmortemDebugging.h"
+#include "Hook.h"
 
 typedef BOOL (__stdcall *PDUMPFN)(
 	HANDLE hProcess,
@@ -361,7 +362,12 @@ BOOL Init(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* du
 	return TRUE;
 }
 
-BOOL InstallPostmortemDebugger()
+void __cdecl YourReportHook( const wchar_t* message, const wchar_t* file, unsigned lineNumber )
+{
+	int n = 0;
+}
+
+BOOL InstallPostmortemDebugger(BOOL handleUnhandledExceptions, BOOL handleCrtAsserts)
 {
 	if (_postMortemDebuggingInstalled == false)
 	{
@@ -369,7 +375,14 @@ BOOL InstallPostmortemDebugger()
 		return FALSE;
 	}
 
-	SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+	if (handleUnhandledExceptions == TRUE)
+	{
+		SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+	}
+	if (handleCrtAsserts == TRUE)
+	{
+		InterceptCrtAssert(&YourReportHook);
+	}
 	return TRUE;
 }
 

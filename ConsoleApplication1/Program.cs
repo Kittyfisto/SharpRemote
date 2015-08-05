@@ -27,13 +27,16 @@ namespace ConsoleApplication1
 				@"C:\Users\Simon\AppData\Local\Temp\SharpRemote\Dumps\",
 				"ConsoleTest"
 				);
-			SharpRemote.NativeMethods.InstallPostmortemDebugger();
+			SharpRemote.NativeMethods.InstallPostmortemDebugger(true, true);
 
-			var b = new byte[10];
+			var test = new CausesAssert();
+			test.Do();
+
+			/*var b = new byte[10];
 			fixed (byte* ptr = b)
 			{
 				ptr[21312412312] = 12;
-			}
+			}*/
 
 			//SimpleSockets();
 			//OneClientSync();

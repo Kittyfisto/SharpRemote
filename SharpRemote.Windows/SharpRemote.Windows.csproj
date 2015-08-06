@@ -17,20 +17,20 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\bin\Debug\win\</OutputPath>
+    <OutputPath>..\bin\win\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\bin\Debug\win\SharpRemote.XML</DocumentationFile>
+    <DocumentationFile>..\bin\win\SharpRemote.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\bin\Release\win\</OutputPath>
+    <OutputPath>..\bin\win\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DocumentationFile>..\bin\Release\win\SharpRemote.XML</DocumentationFile>
+    <DocumentationFile>..\bin\\win\SharpRemote.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="InTheHand.Net.Personal, Version=3.5.605.0, Culture=neutral, PublicKeyToken=ea38caa273134499, processorArchitecture=MSIL">
@@ -90,6 +90,7 @@
     <Compile Include="GrainIdGenerator.cs" />
     <Compile Include="GrainIdRange.cs" />
     <Compile Include="HashHelpers.cs" />
+    <Compile Include="Hosting\CRuntimeVersions.cs" />
     <Compile Include="Hosting\LatencySettings.cs" />
     <Compile Include="Exceptions\GrainIdRangeExhaustedException.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSiloServer.cs" />

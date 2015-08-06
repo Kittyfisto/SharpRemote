@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PostmortemDebugging.h"
 #include "Hook.h"
+#include "Convert.h"
 
 typedef BOOL (__stdcall *PDUMPFN)(
 	HANDLE hProcess,
@@ -23,15 +24,6 @@ std::wstring _minidumpFileName;
 std::wstring _minidumpPattern;
 std::wstring _tmpPath;
 std::wstring _oldestFileFullName;
-
-std::string convert(const std::wstring& that)
-{
-	std::string ret;
-	ret.resize(that.length()+1);
-	std::size_t unused;
-	wcstombs_s(&unused, &ret[0], ret.length(), that.c_str(), that.length());
-	return ret;
-}
 
 BOOL CheckDumpNameConstraints(const wchar_t* dumpName)
 {
@@ -302,7 +294,12 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers)
 		_dumpName.c_str());
 }
 
-LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *exceptionPointers)
+void failfast()
+{
+	abort();
+}
+
+LONG WINAPI OnUnhandledException(struct _EXCEPTION_POINTERS *exceptionPointers)
 {
 #ifdef _DEBUG
 	printf("Caught unhandled exception\r\n");
@@ -311,6 +308,26 @@ LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS *exceptionPoin
 	CreateMiniDump(exceptionPointers);
 
 	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+void __cdecl OnCrtAssert( const wchar_t* message, const wchar_t* file, unsigned lineNumber )
+{
+#ifdef _DEBUG
+	printf("Caught assert\r\n");
+#endif
+
+	CreateMiniDump(NULL);
+	failfast();
+}
+
+void __cdecl OnCrtPurecall()
+{
+#ifdef _DEBUG
+	printf("Caught pure virtual function call\r\n");
+#endif
+
+	CreateMiniDump(NULL);
+	failfast();
 }
 
 #ifdef __cplusplus
@@ -362,12 +379,11 @@ BOOL Init(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* du
 	return TRUE;
 }
 
-void __cdecl YourReportHook( const wchar_t* message, const wchar_t* file, unsigned lineNumber )
-{
-	int n = 0;
-}
-
-BOOL InstallPostmortemDebugger(BOOL handleUnhandledExceptions, BOOL handleCrtAsserts)
+BOOL InstallPostmortemDebugger(BOOL suppressErrorWindows,
+							   BOOL handleUnhandledExceptions,
+							   BOOL handleCrtAsserts,
+							   BOOL handleCrtPurecalls,
+							   CRuntimeVersions crtVersions)
 {
 	if (_postMortemDebuggingInstalled == false)
 	{
@@ -375,13 +391,24 @@ BOOL InstallPostmortemDebugger(BOOL handleUnhandledExceptions, BOOL handleCrtAss
 		return FALSE;
 	}
 
+	if (suppressErrorWindows == TRUE)
+	{
+		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
+		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
+
+		SuppressCrtAborts(crtVersions);
+	}
 	if (handleUnhandledExceptions == TRUE)
 	{
-		SetUnhandledExceptionFilter(MyUnhandledExceptionFilter);
+		SetUnhandledExceptionFilter(OnUnhandledException);
 	}
 	if (handleCrtAsserts == TRUE)
 	{
-		InterceptCrtAssert(&YourReportHook);
+		InterceptCrtAssert(&OnCrtAssert, crtVersions);
+	}
+	if (handleCrtPurecalls == TRUE)
+	{
+		InterceptCrtPurecalls(&OnCrtPurecall, crtVersions);
 	}
 	return TRUE;
 }

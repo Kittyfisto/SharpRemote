@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\bin\Debug\win\</OutputPath>
+    <OutputPath>..\bin\win\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -65,6 +65,7 @@
     <Compile Include="Types\Classes\ByReferenceAndDataContract.cs" />
     <Compile Include="Types\Classes\ByReferenceClass.cs" />
     <Compile Include="Types\Classes\CausesAccessViolation.cs" />
+    <Compile Include="Types\Classes\CausesPurecall.cs" />
     <Compile Include="Types\Classes\ClassWithNullableTimeSpan.cs" />
     <Compile Include="Types\Classes\CausesAssert.cs" />
     <Compile Include="Types\Classes\DoesNothing.cs" />

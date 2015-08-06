@@ -18,13 +18,17 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="..\bin\Release\Win\SharpRemote.XML" target="lib\net45\" />
-    <file src="..\bin\Release\Win\SharpRemote.pdb" target="lib\net45\" />
-    <file src="..\bin\Release\Win\SharpRemote.Host.exe" target="lib\net45\" />
-    <file src="..\bin\Release\Win\SharpRemote.Host.pdb" target="lib\net45\" />
-    <file src="..\bin\Release\Win\x86\SharpRemote.PostmortemDebugger.dll" target="content\x86\" />
-	<file src="..\bin\Release\Win\x86\SharpRemote.PostmortemDebugger.pdb" target="content\x86\" />
-    <file src="..\bin\Release\Win\x64\SharpRemote.PostmortemDebugger.dll" target="content\x64\" />
-	<file src="..\bin\Release\Win\x64\SharpRemote.PostmortemDebugger.pdb" target="content\x64\" />
+    <file src="..\bin\Win\SharpRemote.XML" target="lib\net45\" />
+    <file src="..\bin\Win\SharpRemote.pdb" target="lib\net45\" />
+    <file src="..\bin\Win\SharpRemote.Host.exe" target="lib\net45\" />
+    <file src="..\bin\Win\SharpRemote.Host.pdb" target="lib\net45\" />
+    <file src="..\bin\Win\x86\SharpRemote.PostmortemDebugger.dll" target="content\x86\" />
+	<file src="..\bin\Win\x86\SharpRemote.PostmortemDebugger.pdb" target="content\x86\" />
+    <file src="..\bin\Win\x86D\SharpRemote.PostmortemDebugger.dll" target="content\x86D\" />
+	<file src="..\bin\Win\x86D\SharpRemote.PostmortemDebugger.pdb" target="content\x86D\" />
+    <file src="..\bin\Win\x64\SharpRemote.PostmortemDebugger.dll" target="content\x64\" />
+	<file src="..\bin\Win\x64\SharpRemote.PostmortemDebugger.pdb" target="content\x64\" />
+    <file src="..\bin\Win\x64D\SharpRemote.PostmortemDebugger.dll" target="content\x64D\" />
+	<file src="..\bin\Win\x64D\SharpRemote.PostmortemDebugger.pdb" target="content\x64D\" />
   </files>
 </package>

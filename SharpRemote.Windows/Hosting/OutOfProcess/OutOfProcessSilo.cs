@@ -207,7 +207,7 @@ namespace SharpRemote.Hosting
 				builder.Append(" ");
 				builder.Append(postMortemSettings.CollectMinidumps);
 				builder.Append(" ");
-				builder.Append(postMortemSettings.SupressStoppedWorkingWindow);
+				builder.Append(postMortemSettings.SuppressErrorWindows);
 				builder.Append(" ");
 				builder.Append(postMortemSettings.NumMinidumpsRetained);
 				builder.Append(" ");

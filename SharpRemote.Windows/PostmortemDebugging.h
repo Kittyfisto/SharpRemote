@@ -1,5 +1,10 @@
 #pragma once
 
+#include "CRuntimeVersions.h"
+
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,14 +30,23 @@ extern "C" {
 	/**
 	 * Installs the postmortemdebugger in the calling process which creates a minidump on failure.
 	 *
+	 * @param suppressErrorWindows        Whether or not "this application has stopped working" and similar windows should be suppressed
 	 * @param handleUnhandledExceptions   Whether or not unhandled win32 exceptions (access violations) are intercepted
 	 * @param handleCrtAsserts            Whether or not CRT asserts are intercepted
+	 * @param handleCrtPurecalls          Whether or not CRT pure virtual function calls are intercepted
+	 * @param cRuntimeVersions            The list of CRT versions that should be targeted, if any
 	 *
 	 * @returns TRUE when the installation succeeds, FALSE otherwise. Use GetLastError to determine why
 	 *
 	 * ERROR_ACCESS_DENIED: You forgot to call Init() or it returned FALSE
 	 */
-	__declspec( dllexport ) BOOL InstallPostmortemDebugger(BOOL handleUnhandledExceptions, BOOL handleCrtAsserts);
+	__declspec( dllexport ) BOOL InstallPostmortemDebugger(
+		BOOL suppressErrorWindows,
+		BOOL handleUnhandledExceptions,
+		BOOL handleCrtAsserts,
+		BOOL handleCrtPurecalls,
+		CRuntimeVersions cRuntimeVersions
+		);
 
 	/**
 	 * Creates a minidump for the given process.

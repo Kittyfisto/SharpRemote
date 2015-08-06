@@ -11,24 +11,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\PostmortemDebugging.h">
+    <ClInclude Include="CRuntimeVersions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\stdafx.h">
+    <ClInclude Include="Hook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\targetver.h">
+    <ClInclude Include="PostmortemDebugging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\SharpRemote.PostmortemDebugging.x86\Hook.h">
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Convert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\SharpRemote.PostmortemDebugging.x86\PostmortemDebugging.cpp">
+    <ClCompile Include="PostmortemDebugging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\SharpRemote.PostmortemDebugging.x86\stdafx.cpp">
+    <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

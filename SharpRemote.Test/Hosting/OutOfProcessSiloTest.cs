@@ -341,7 +341,7 @@ namespace SharpRemote.Test.Hosting
 			var settings = new PostMortemSettings
 			{
 				CollectMinidumps = true,
-				SupressStoppedWorkingWindow = true,
+				SuppressErrorWindows = true,
 				NumMinidumpsRetained = 1,
 				MinidumpFolder = Path.Combine(Path.GetTempPath(), "SharpRemote", "dumps"),
 				MinidumpName = "Host"
@@ -381,8 +381,8 @@ namespace SharpRemote.Test.Hosting
 		{
 			var settings = new PostMortemSettings
 			{
-				SupressStoppedWorkingWindow = true,
-				SuppresCrtAssertWindow = true,
+				SuppressErrorWindows = true,
+				HandleCrtAsserts = true,
 			};
 
 			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))

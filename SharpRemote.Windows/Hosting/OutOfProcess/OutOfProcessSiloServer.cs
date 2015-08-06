@@ -7,6 +7,7 @@ using System.Threading;
 using log4net;
 
 // ReSharper disable CheckNamespace
+
 namespace SharpRemote.Hosting
 // ReSharper restore CheckNamespace
 {
@@ -16,39 +17,44 @@ namespace SharpRemote.Hosting
 	/// <example>
 	///     public static void main(string[] arguments)
 	///     {
-	///         // Put any additional/required initialization here.
-	///         using (var silo = new OutOfProcessSiloServer(arguments))
-	///         {
-	///             // This is the place to register any additional interfaces with this silo
-	///             // silo.CreateServant(id, (IMyCustomInterface)new MyCustomImplementation());
-	///             silo.Run();
-	///         }
+	///     // Put any additional/required initialization here.
+	///     using (var silo = new OutOfProcessSiloServer(arguments))
+	///     {
+	///     // This is the place to register any additional interfaces with this silo
+	///     // silo.CreateServant(id, (IMyCustomInterface)new MyCustomImplementation());
+	///     silo.Run();
+	///     }
 	///     }
 	/// </example>
 	public sealed class OutOfProcessSiloServer
 		: IRemotingEndPoint
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly ITypeResolver _customTypeResolver;
 		private readonly SocketRemotingEndPointServer _endPoint;
+		private readonly Heartbeat _heartbeatSubject;
+		private readonly Latency _latencySubject;
 
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
-		private readonly ManualResetEvent _waitHandle;
-		private readonly ITypeResolver _customTypeResolver;
 		private readonly PostMortemSettings _postMortemSettings;
 		private readonly DefaultImplementationRegistry _registry;
-		private readonly Heartbeat _heartbeatSubject;
-		private readonly Latency _latencySubject;
+		private readonly ManualResetEvent _waitHandle;
 
 		/// <summary>
 		///     Initializes a new silo server.
 		/// </summary>
 		/// <param name="args">The command line arguments given to the Main() method</param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
-		/// <param name="postMortemSettings">Settings to control how and if minidumps are collected - when set to null, default values are used (<see cref="PostMortemSettings"/>)</param>
+		/// <param name="postMortemSettings">
+		///     Settings to control how and if minidumps are collected - when set to null, default values are used (
+		///     <see
+		///         cref="PostMortemSettings" />
+		///     )
+		/// </param>
 		public OutOfProcessSiloServer(string[] args,
-			ITypeResolver customTypeResolver = null,
-			PostMortemSettings postMortemSettings = null)
+		                              ITypeResolver customTypeResolver = null,
+		                              PostMortemSettings postMortemSettings = null)
 		{
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 			{
@@ -56,8 +62,8 @@ namespace SharpRemote.Hosting
 			}
 
 			Log.InfoFormat("Silo Server starting, args: \"{0}\", {1} custom type resolver",
-				string.Join(" ", args),
-				customTypeResolver != null ? "with" : "without"
+			               string.Join(" ", args),
+			               customTypeResolver != null ? "with" : "without"
 				);
 
 			int pid;
@@ -84,7 +90,7 @@ namespace SharpRemote.Hosting
 				{
 					var settings = new PostMortemSettings();
 					bool.TryParse(args[1], out settings.CollectMinidumps);
-					bool.TryParse(args[2], out settings.SupressStoppedWorkingWindow);
+					bool.TryParse(args[2], out settings.SuppressErrorWindows);
 					int.TryParse(args[3], out settings.NumMinidumpsRetained);
 					settings.MinidumpFolder = args[4];
 					settings.MinidumpName = args[5];
@@ -109,36 +115,31 @@ namespace SharpRemote.Hosting
 			{
 				Log.DebugFormat("Using post-mortem debugger: {0}", _postMortemSettings);
 
-				if (_postMortemSettings.SupressStoppedWorkingWindow)
-				{
-					Log.InfoFormat("Suppressing 'the application stopped working' windows...");
-					// See http://stackoverflow.com/questions/14451755/disable-application-has-stopped-working-window
-					NativeMethods.SetErrorMode(NativeMethods.ErrorModes.SEM_NOGPFAULTERRORBOX |
-										  NativeMethods.ErrorModes.SEM_NOOPENFILEERRORBOX);
-				}
-
 				if (_postMortemSettings.CollectMinidumps)
 				{
 					if (!NativeMethods.LoadPostmortemDebugger())
 					{
-						var err = Marshal.GetLastWin32Error();
+						int err = Marshal.GetLastWin32Error();
 						Log.ErrorFormat("Unable to load the post-mortem debugger dll: {0}",
-										err);
-					}
-					if (!NativeMethods.Init(_postMortemSettings.NumMinidumpsRetained,
-					                                     _postMortemSettings.MinidumpFolder,
-					                                     _postMortemSettings.MinidumpName))
-					{
-						var err = Marshal.GetLastWin32Error();
-						Log.ErrorFormat("Unable to initialize the post-mortem debugger: {0}",
 						                err);
 					}
-					else if (!NativeMethods.InstallPostmortemDebugger(true,
-																	_postMortemSettings.SuppresCrtAssertWindow))
+					if (!NativeMethods.Init(_postMortemSettings.NumMinidumpsRetained,
+											_postMortemSettings.MinidumpFolder,
+											_postMortemSettings.MinidumpName))
 					{
-						var err = Marshal.GetLastWin32Error();
-						Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
+						int err = Marshal.GetLastWin32Error();
+						Log.ErrorFormat("Unable to initialize the post-mortem debugger: {0}",
 										err);
+					}
+					else if (!NativeMethods.InstallPostmortemDebugger(true,
+					                                                  _postMortemSettings.SuppressErrorWindows,
+					                                                  _postMortemSettings.HandleCrtAsserts,
+					                                                  _postMortemSettings.HandleCrtPureVirtualFunctionCalls,
+					                                                  _postMortemSettings.RuntimeVersions))
+					{
+						int err = Marshal.GetLastWin32Error();
+						Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
+						                err);
 					}
 
 					Log.InfoFormat("Installed post-mortem debugger; up to {0} mini dumps will automatically be saved to: {1}",
@@ -151,10 +152,10 @@ namespace SharpRemote.Hosting
 			_endPoint = new SocketRemotingEndPointServer(customTypeResolver: customTypeResolver);
 
 			_heartbeatSubject = new Heartbeat();
-			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat)_heartbeatSubject);
+			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat) _heartbeatSubject);
 
 			_latencySubject = new Latency();
-			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency)_latencySubject);
+			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency) _latencySubject);
 		}
 
 		/// <summary>
@@ -186,19 +187,6 @@ namespace SharpRemote.Hosting
 			_endPoint.Disconnect();
 		}
 
-		/// <summary>
-		/// Registers a default implementation for the given interface so that
-		/// <see cref="ISilo.CreateGrain{T}(object[])"/> can be used to create grains.
-		/// </summary>
-		/// <typeparam name="TInterface"></typeparam>
-		/// <typeparam name="TImplementation"></typeparam>
-		public void RegisterDefaultImplementation<TInterface, TImplementation>()
-			where TImplementation: TInterface
-			where TInterface : class
-		{
-			_registry.RegisterDefaultImplementation(typeof(TImplementation), typeof(TInterface));
-		}
-
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
 			return _endPoint.CreateProxy<T>(objectId);
@@ -225,6 +213,19 @@ namespace SharpRemote.Hosting
 		}
 
 		/// <summary>
+		///     Registers a default implementation for the given interface so that
+		///     <see cref="ISilo.CreateGrain{T}(object[])" /> can be used to create grains.
+		/// </summary>
+		/// <typeparam name="TInterface"></typeparam>
+		/// <typeparam name="TImplementation"></typeparam>
+		public void RegisterDefaultImplementation<TInterface, TImplementation>()
+			where TImplementation : TInterface
+			where TInterface : class
+		{
+			_registry.RegisterDefaultImplementation(typeof (TImplementation), typeof (TInterface));
+		}
+
+		/// <summary>
 		///     Runs the server and blocks until a shutdown command is received because the
 		///     <see cref="OutOfProcessSilo" /> is being disposed of or because the parent process
 		///     quits unexpectedly.
@@ -240,11 +241,11 @@ namespace SharpRemote.Hosting
 				using (_endPoint)
 				using (var host = new SubjectHost(_endPoint,
 				                                  firstServantId,
-												  _registry,
+				                                  _registry,
 				                                  OnSubjectHostDisposed,
 				                                  _customTypeResolver))
 				{
-					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost)host);
+					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost) host);
 
 					_endPoint.Bind(IPAddress.Loopback);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);

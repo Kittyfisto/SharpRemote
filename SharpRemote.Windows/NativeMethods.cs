@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using SharpRemote.Extensions;
+using SharpRemote.Hosting;
 
 namespace SharpRemote
 {
@@ -25,7 +26,7 @@ namespace SharpRemote
 		private static IntPtr _library;
 
 		/// <summary>
-		/// Loads the native post-mortdem debugger DLL, adjusting the search paths, if necessary...
+		///     Loads the native post-mortdem debugger DLL, adjusting the search paths, if necessary...
 		/// </summary>
 		public static bool LoadPostmortemDebugger()
 		{
@@ -42,10 +43,10 @@ namespace SharpRemote
 				library = LoadLibrary(libraryPath);
 				if (library == IntPtr.Zero)
 				{
-					var directory = Assembly.GetExecutingAssembly().GetDirectory();
+					string directory = Assembly.GetExecutingAssembly().GetDirectory();
 					if (directory != null)
 					{
-						var path = Environment.GetEnvironmentVariable("PATH");
+						string path = Environment.GetEnvironmentVariable("PATH");
 						path = string.Format("{0};{1}",
 						                     Path.Combine(directory, Environment.Is64BitProcess ? "x64" : "x86"),
 						                     path
@@ -64,14 +65,16 @@ namespace SharpRemote
 		}
 
 		[DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
-		static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)]string lpFileName);
+		private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
 
-		[DllImport("kernel32.dll")]
-		public static extern ErrorModes SetErrorMode(ErrorModes uMode);
+		[DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool SetDllDirectory(string pathName);
 
 		#region Postmortem debugging
 
-		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CharSet = CharSet.Unicode,
+			CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool Init(
 			int numRetainedMinidumps,
@@ -81,10 +84,14 @@ namespace SharpRemote
 
 		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		public static extern bool InstallPostmortemDebugger(bool interceptUnhandledExceptions,
-		                                                    bool handleCrtAsserts);
+		public static extern bool InstallPostmortemDebugger(bool suppressErrorWindows,
+		                                                    bool interceptUnhandledExceptions,
+		                                                    bool handleCrtAsserts,
+		                                                    bool handleCrtPurecalls,
+		                                                    CRuntimeVersions crtVersions);
 
-		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
+		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CharSet = CharSet.Unicode,
+			CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool CreateMiniDump(
 			int processId,
@@ -92,9 +99,5 @@ namespace SharpRemote
 			);
 
 		#endregion
-
-		[DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-		[return: MarshalAs(UnmanagedType.Bool)]
-		public static extern bool SetDllDirectory(string pathName);
 	}
 }

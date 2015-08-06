@@ -4,74 +4,101 @@ using System.Linq;
 namespace SharpRemote.Hosting
 {
 	/// <summary>
-	/// Can be used to configure how the post mortem debugger of a silo works,
-	/// where dumps are stored, how many, etc..
+	///     Can be used to configure how the post mortem debugger of a silo works,
+	///     where dumps are stored, how many, etc..
 	/// </summary>
 	public sealed class PostMortemSettings
 	{
 		/// <summary>
-		/// Whether or not minidumps shall be collected
+		///     Whether or not minidumps shall be collected
 		/// </summary>
 		/// <remarks>
-		/// Is set to false by default.
+		///     Is set to false by default.
 		/// </remarks>
 		public bool CollectMinidumps;
 
 		/// <summary>
-		/// Whether or not the "XYZ has stopped working" window that is created by windows
-		/// when an application experiences an unhandled exception / access violation is suppressed.
-		/// When suppressed the window will not be shown to the user and the process will terminate immediately.
+		///     Whether or not (otherwise unhandled) access violations are handled.
 		/// </summary>
 		/// <remarks>
-		/// When <see cref="CollectMinidumps"/> is set to true then a minidump is collected before termination.
+		///     When <see cref="CollectMinidumps" /> is set to true then a minidump is collected before termination.
 		/// </remarks>
 		/// <remarks>
-		/// Is set to false by default.
+		///     Is set to false by default.
 		/// </remarks>
-		public bool SupressStoppedWorkingWindow;
+		public bool HandleAccessViolations;
 
 		/// <summary>
-		/// Whether or not CRT assertion failed window is suppressed.
-		/// When suppressed the window will not be shown to the user and the process will terminate immediately.
+		///     Whether or not the CRT assertions are handled.
 		/// </summary>
 		/// <remarks>
-		/// When <see cref="CollectMinidumps"/> is set to true then a minidump is collected before termination.
+		///     When <see cref="CollectMinidumps" /> is set to true then a minidump is collected before termination.
 		/// </remarks>
 		/// <remarks>
-		/// Is set to false by default.
+		///     Is set to false by default.
 		/// </remarks>
-		public bool SuppresCrtAssertWindow;
+		public bool HandleCrtAsserts;
 
 		/// <summary>
-		/// The maximum amount of minidumps that shall be retained.
-		/// Once more are created, the oldest ones are removed.
+		///     Whether or not the CRT pure virtual function calls are handled.
 		/// </summary>
 		/// <remarks>
-		/// Must be 1 or greater.
+		///     When <see cref="CollectMinidumps" /> is set to true then a minidump is collected before termination.
 		/// </remarks>
-		public int NumMinidumpsRetained;
+		/// <remarks>
+		///     Is set to false by default.
+		/// </remarks>
+		public bool HandleCrtPureVirtualFunctionCalls;
 
 		/// <summary>
-		/// The folder where minidumps are to be stored.
-		/// This application must have permission to write files to that location.
+		///     The folder where minidumps are to be stored.
+		///     This application must have permission to write files to that location.
 		/// </summary>
 		/// <remarks>
-		/// Must be set if <see cref="CollectMinidumps"/> is set to true.
+		///     Must be set if <see cref="CollectMinidumps" /> is set to true.
 		/// </remarks>
 		public string MinidumpFolder;
 
 		/// <summary>
-		/// The name of the minidumps.
-		/// A minidump is stored as "{MinidumpFolder}{MinidumpName}{current_datetime}.dmp" and
-		/// thus the name should be descriptive enough to figure out the application it belongs to.
+		///     The name of the minidumps.
+		///     A minidump is stored as "{MinidumpFolder}{MinidumpName}{current_datetime}.dmp" and
+		///     thus the name should be descriptive enough to figure out the application it belongs to.
 		/// </summary>
 		/// <remarks>
-		/// Must be set if <see cref="CollectMinidumps"/> is set to true.
+		///     Must be set if <see cref="CollectMinidumps" /> is set to true.
 		/// </remarks>
 		public string MinidumpName;
 
 		/// <summary>
-		/// Tests if the values set are valid.
+		///     The maximum amount of minidumps that shall be retained.
+		///     Once more are created, the oldest ones are removed.
+		/// </summary>
+		/// <remarks>
+		///     Must be 1 or greater.
+		/// </remarks>
+		public int NumMinidumpsRetained;
+
+		/// <summary>
+		///     Which (if any) CRT versions should be intercepted for assert, abort, pure virtual function calls, etc..
+		/// </summary>
+		public CRuntimeVersions RuntimeVersions;
+
+		/// <summary>
+		///     Whether or not the:
+		///     - "XYZ has stopped working"
+		///     - "Assertion failure"
+		///     and several other error windows are shown to the user.
+		/// </summary>
+		/// <remarks>
+		///     When <see cref="CollectMinidumps" /> is set to true then a minidump is collected before termination.
+		/// </remarks>
+		/// <remarks>
+		///     Is set to false by default.
+		/// </remarks>
+		public bool SuppressErrorWindows;
+
+		/// <summary>
+		///     Tests if the values set are valid.
 		/// </summary>
 		public bool IsValid
 		{
@@ -111,11 +138,15 @@ namespace SharpRemote.Hosting
 
 		public override string ToString()
 		{
-			return string.Format("SupressStoppedWorkingWindow: {0}, CollectMinidumps: {1}, NumMinidumpsRetained: {2}, SuppresCrtAssertWindow: {3}, MinidumpFolder: {4}, MinidumpName: {5}", SupressStoppedWorkingWindow, CollectMinidumps, NumMinidumpsRetained, SuppresCrtAssertWindow, MinidumpFolder, MinidumpName);
+			return
+				string.Format(
+					"CollectMinidumps: {0}, HandleAccessViolations: {1}, HandleCrtAsserts: {2}, HandleCrtPureVirtualFunctionCalls: {3}, MinidumpFolder: {4}, MinidumpName: {5}, NumMinidumpsRetained: {6}, RuntimeVersions: {7}, SuppressErrorWindows: {8}",
+					CollectMinidumps, HandleAccessViolations, HandleCrtAsserts, HandleCrtPureVirtualFunctionCalls, MinidumpFolder,
+					MinidumpName, NumMinidumpsRetained, RuntimeVersions, SuppressErrorWindows);
 		}
 
 		/// <summary>
-		/// Creates a clone of this object.
+		///     Creates a clone of this object.
 		/// </summary>
 		/// <returns></returns>
 		public PostMortemSettings Clone()
@@ -126,8 +157,11 @@ namespace SharpRemote.Hosting
 					MinidumpName = MinidumpName,
 					MinidumpFolder = MinidumpFolder,
 					NumMinidumpsRetained = NumMinidumpsRetained,
-					SupressStoppedWorkingWindow = SupressStoppedWorkingWindow,
-					SuppresCrtAssertWindow = SuppresCrtAssertWindow
+					SuppressErrorWindows = SuppressErrorWindows,
+					HandleCrtAsserts = HandleCrtAsserts,
+					HandleAccessViolations = HandleAccessViolations,
+					HandleCrtPureVirtualFunctionCalls = HandleCrtPureVirtualFunctionCalls,
+					RuntimeVersions = RuntimeVersions,
 				};
 		}
 	}

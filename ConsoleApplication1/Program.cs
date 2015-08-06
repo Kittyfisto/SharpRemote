@@ -19,7 +19,13 @@ namespace ConsoleApplication1
 	{
 		private static unsafe void Main(string[] args)
 		{
-			const string path = @"E:\Code\SharpRemote\bin\Debug\win\x86";
+#if DEBUG
+			var version = CRuntimeVersions._110 | CRuntimeVersions.Debug;
+			const string path = @"E:\Code\SharpRemote\bin\win\x86D";
+#else
+			var version = CRuntimeVersions._110 | CRuntimeVersions.Release;
+			const string path = @"E:\Code\SharpRemote\bin\win\x86";
+#endif
 			SharpRemote.NativeMethods.SetDllDirectory(path);
 
 			SharpRemote.NativeMethods.Init(
@@ -27,16 +33,23 @@ namespace ConsoleApplication1
 				@"C:\Users\Simon\AppData\Local\Temp\SharpRemote\Dumps\",
 				"ConsoleTest"
 				);
-			SharpRemote.NativeMethods.InstallPostmortemDebugger(true, true);
 
-			var test = new CausesAssert();
+			SharpRemote.NativeMethods.InstallPostmortemDebugger(true,
+			                                                    true,
+			                                                    true,
+			                                                    true,
+			                                                    version);
+
+			//var test = new CausesAssert();
+			//test.Do();
+			var test = new CausesPurecall();
 			test.Do();
 
-			/*var b = new byte[10];
+			var b = new byte[10];
 			fixed (byte* ptr = b)
 			{
 				ptr[21312412312] = 12;
-			}*/
+			}
 
 			//SimpleSockets();
 			//OneClientSync();

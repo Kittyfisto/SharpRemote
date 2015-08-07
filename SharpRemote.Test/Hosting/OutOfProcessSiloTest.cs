@@ -252,9 +252,9 @@ namespace SharpRemote.Test.Hosting
 			using (var silo = new OutOfProcessSilo())
 			{
 				SiloFaultReason? reason = null;
-				SiloFaultHandling? handling = null;
+				SiloFaultResolution? resolution = null;
 
-				silo.OnFaultHandled += (a, x) => { reason = a; handling = x; };
+				silo.OnFaultHandled += (a, x) => { reason = a; resolution = x; };
 				silo.Start();
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof(AbortsThread));
@@ -266,7 +266,7 @@ namespace SharpRemote.Test.Hosting
 
 				(reason == SiloFaultReason.ConnectionFailure ||
 				 reason == SiloFaultReason.HostProcessExited).Should().BeTrue();
-				handling.Should().Be(SiloFaultHandling.Shutdown);
+				resolution.Should().Be(SiloFaultResolution.Shutdown);
 			}
 		}
 
@@ -285,9 +285,9 @@ namespace SharpRemote.Test.Hosting
 			{
 				SiloFaultReason? reason1 = null;
 				SiloFaultReason? reason2 = null;
-				SiloFaultHandling? handling = null;
+				SiloFaultResolution? resolution = null;
 				silo.OnFaultDetected += x => reason1 = x;
-				silo.OnFaultHandled += (x, y) => { reason2 = x; handling = y; };
+				silo.OnFaultHandled += (x, y) => { reason2 = x; resolution = y; };
 
 				silo.Start();
 
@@ -304,7 +304,7 @@ namespace SharpRemote.Test.Hosting
 				silo.IsProcessRunning.Should().BeFalse();
 				reason1.Should().Be(SiloFaultReason.HeartbeatFailure);
 				reason2.Should().Be(reason1);
-				handling.Should().Be(SiloFaultHandling.Shutdown);
+				resolution.Should().Be(SiloFaultResolution.Shutdown);
 			}
 		}
 
@@ -317,10 +317,10 @@ namespace SharpRemote.Test.Hosting
 			{
 				SiloFaultReason? reason1 = null;
 				SiloFaultReason? reason2 = null;
-				SiloFaultHandling? handling = null;
+				SiloFaultResolution? resolution = null;
 
 				silo.OnFaultDetected += x => reason1 = x;
-				silo.OnFaultHandled += (x, y) => { reason2 = x; handling = y;
+				silo.OnFaultHandled += (x, y) => { reason2 = x; resolution = y;
 					                                 handle.Set();
 				};
 
@@ -330,7 +330,7 @@ namespace SharpRemote.Test.Hosting
 				new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
 
 				handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
-				handling.Should().Be(SiloFaultHandling.Shutdown);
+				resolution.Should().Be(SiloFaultResolution.Shutdown);
 			}
 		}
 
@@ -390,12 +390,12 @@ namespace SharpRemote.Test.Hosting
 			{
 				SiloFaultReason? reason1 = null;
 				SiloFaultReason? reason2 = null;
-				SiloFaultHandling? handling = null;
+				SiloFaultResolution? resolution = null;
 
 				silo.OnFaultDetected += x => reason1 = x;
 				silo.OnFaultHandled += (x, y) =>
 				{
-					reason2 = x; handling = y;
+					reason2 = x; resolution = y;
 					handle.Set();
 				};
 
@@ -410,7 +410,7 @@ namespace SharpRemote.Test.Hosting
 				task.Wait();
 
 				handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
-				handling.Should().Be(SiloFaultHandling.Shutdown);
+				resolution.Should().Be(SiloFaultResolution.Shutdown);
 			}
 		}
 
@@ -431,7 +431,7 @@ namespace SharpRemote.Test.Hosting
 			{
 				SiloFaultReason? reason1 = null;
 				SiloFaultReason? reason2 = null;
-				SiloFaultHandling? handling = null;
+				SiloFaultResolution? resolution = null;
 
 				silo.OnFaultDetected += x =>
 					{
@@ -442,7 +442,7 @@ namespace SharpRemote.Test.Hosting
 				silo.OnFaultHandled += (x, y) =>
 					{
 						reason2 = x;
-						handling = y;
+						resolution = y;
 
 						handle2.Set();
 					};
@@ -460,7 +460,7 @@ namespace SharpRemote.Test.Hosting
 				(reason1 == SiloFaultReason.ConnectionFailure ||
 				 reason1 == SiloFaultReason.HostProcessExited).Should().BeTrue();
 				reason2.Should().Be(reason1);
-				handling.Should().Be(SiloFaultHandling.Shutdown);
+				resolution.Should().Be(SiloFaultResolution.Shutdown);
 			}
 		}
 

@@ -1,12 +1,9 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using log4net;
@@ -34,25 +31,13 @@ namespace SharpRemote.Hosting
 		: ISilo
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private const string SharpRemoteHost = "SharpRemote.Host.exe";
 
+		private readonly ProcessWatchdog _process;
 		private readonly HeartbeatMonitor _heartbeatMonitor;
 		private readonly LatencyMonitor _latencyMonitor;
-		private readonly PostMortemSettings _postMortemSettings;
 		private readonly SocketRemotingEndPointClient _endPoint;
 		private readonly ISubjectHost _subjectHost;
-		private readonly ManualResetEvent _waitHandle;
 		private readonly object _syncRoot;
-
-		private Process _process;
-		private HostState _hostState;
-
-		private int? _remotePort;
-		private bool _hasProcessExited;
-		private bool _hasProcessFailed;
-		private readonly int _parentPid;
-		private readonly ProcessStartInfo _startInfo;
-		private int? _hostProcessId;
 
 		private bool _isDisposed;
 		private bool _isDisposing;
@@ -61,7 +46,7 @@ namespace SharpRemote.Hosting
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
 		/// </summary>
-		public event Action<string> HostOutputWritten;
+		public event Action<string> OnHostOutputWritten;
 
 		/// <summary>
 		/// Is invoked when a fault in the remote process has been detected and is invoked prior to handling
@@ -73,7 +58,7 @@ namespace SharpRemote.Hosting
 		/// Is invoked when a fault in the remote process has been detected an handled.
 		/// The parameters contain both the original reason and how its been handled.
 		/// </summary>
-		public event Action<SiloFaultReason, SiloFaultHandling> OnFaultHandled;
+		public event Action<SiloFaultReason, SiloFaultResolution> OnFaultHandled;
 
 		/// <summary>
 		/// Whether or not the process has failed.
@@ -83,7 +68,7 @@ namespace SharpRemote.Hosting
 		/// </remarks>
 		public bool HasProcessFailed
 		{
-			get { return _hasProcessFailed; }
+			get { return _process.HasProcessFailed; }
 		}
 
 		#region Statistics
@@ -135,7 +120,7 @@ namespace SharpRemote.Hosting
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
-			string process = SharpRemoteHost,
+			string process = ProcessWatchdog.SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
 			ITypeResolver customTypeResolver = null,
 			HeartbeatSettings heartbeatSettings = null,
@@ -160,62 +145,16 @@ namespace SharpRemote.Hosting
 			var latency = _endPoint.CreateProxy<ILatency>(Constants.LatencyProbeId);
 			_latencyMonitor = new LatencyMonitor(latency, latencySettings ?? new LatencySettings());
 
-			if (postMortemSettings != null)
-			{
-				_postMortemSettings = postMortemSettings.Clone();
-				if (_postMortemSettings.MinidumpFolder != null)
-				{
-					_postMortemSettings.MinidumpFolder = _postMortemSettings.MinidumpFolder.Replace('/', '\\');
-					if (!_postMortemSettings.MinidumpFolder.EndsWith("\\"))
-						_postMortemSettings.MinidumpFolder += '\\';
-				}
-			}
-
-			_waitHandle = new ManualResetEvent(false);
-			_hostState = HostState.BootPending;
 			_syncRoot = new object();
 
-			_parentPid = Process.GetCurrentProcess().Id;
-			_startInfo = new ProcessStartInfo(process)
-				{
-					Arguments = FormatArguments(_parentPid, _postMortemSettings),
-					RedirectStandardOutput = true,
-					UseShellExecute = false
-				};
-			switch (options)
-			{
-				case ProcessOptions.HideConsole:
-					_startInfo.CreateNoWindow = true;
-					break;
+			_process = new ProcessWatchdog(
+				process,
+				options,
+				postMortemSettings
+				);
 
-				case ProcessOptions.ShowConsole:
-					_startInfo.CreateNoWindow = false;
-					break;
-			}
-
-			
-			_hasProcessExited = true;
-		}
-
-		[Pure]
-		private static string FormatArguments(int parentPid, PostMortemSettings postMortemSettings)
-		{
-			var builder = new StringBuilder();
-			builder.Append(parentPid);
-			if (postMortemSettings != null)
-			{
-				builder.Append(" ");
-				builder.Append(postMortemSettings.CollectMinidumps);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.SuppressErrorWindows);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.NumMinidumpsRetained);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.MinidumpFolder);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.MinidumpName);
-			}
-			return builder.ToString();
+			_process.OnFaultDetected += ProcessOnOnFaultDetected;
+			_process.OnHostOutputWritten += EmitHostOutputWritten;
 		}
 
 		/// <summary>
@@ -227,36 +166,10 @@ namespace SharpRemote.Hosting
 		/// <exception cref="SharpRemoteException"></exception>
 		public void Start()
 		{
-			_process = new Process
-			{
-				StartInfo = _startInfo,
-				EnableRaisingEvents = true,
-			};
-
-			_process.Exited += ProcessOnExited;
-			_process.OutputDataReceived += ProcessOnOutputDataReceived;
-
-			Log.DebugFormat("Starting host '{0}' for parent process (PID: {1})",
-							  _startInfo.FileName,
-							  _parentPid);
-
-			StartHostProcess();
+			_process.Start();
 			try
 			{
-				_hasProcessExited = false;
-
-				_process.BeginOutputReadLine();
-
-				if (!_waitHandle.WaitOne(Constants.ProcessReadyTimeout))
-					throw new HandshakeException(string.Format("Process {0} failed to communicate used port number in time ({1}s)",
-															   _process.StartInfo.FileName,
-															   Constants.ProcessReadyTimeout.TotalSeconds));
-
-				int? port = _remotePort;
-				if (port == null)
-					throw new HandshakeException(string.Format("Process {0} sent the ready signal, but failed to communicate the used port number",
-															   _process.StartInfo.FileName));
-
+				var port = _process.RemotePort;
 				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
 
 				// After a successful connection, we can enable the heartbeat monitor so we're notified of failures
@@ -267,19 +180,14 @@ namespace SharpRemote.Hosting
 			{
 				Log.WarnFormat("Caught unexpected exception after having started the host process (PID: {1}): {0}",
 					e,
-					_hostProcessId);
+					_process.HostedProcessId);
 
 				_process.TryKill();
-				_process.TryDispose();
-				_process = null;
 
 				throw;
 			}
 
-			Log.InfoFormat("Host '{0}' (PID: {1}) successfully started and connection to {2} established",
-							  _process.StartInfo.FileName,
-							  _process.Id,
-							  _endPoint.RemoteEndPoint);
+			Log.InfoFormat("Connection to {0} established", _endPoint.RemoteEndPoint);
 		}
 
 		/// <summary>
@@ -289,31 +197,6 @@ namespace SharpRemote.Hosting
 		public TimeSpan RoundtripTime
 		{
 			get { return _latencyMonitor.RoundTripTime; }
-		}
-
-		private void StartHostProcess()
-		{
-			try
-			{
-				if (!_process.Start())
-					throw new SharpRemoteException(string.Format("Failed to start process {0}", _process.StartInfo.FileName));
-
-				_hostProcessId = _process.Id;
-			}
-			catch (Win32Exception e)
-			{
-				switch ((Win32Error) e.NativeErrorCode)
-				{
-					case Win32Error.ERROR_FILE_NOT_FOUND:
-
-						Log.ErrorFormat("Unable to start host process '{0}' because the file cannot be found", _startInfo.FileName);
-
-						throw new FileNotFoundException(e.Message, e);
-
-					default:
-						throw;
-				}
-			}
 		}
 
 		/// <summary>
@@ -342,8 +225,23 @@ namespace SharpRemote.Hosting
 					return;
 			}
 
-			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process (PID: {0})", _hostProcessId);
+			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process (PID: {0})", _process.HostedProcessId);
 			HandleFailure(null);
+		}
+
+		private void ProcessOnOnFaultDetected(ProcessFaultReason processFaultReason)
+		{
+			switch (processFaultReason)
+			{
+				case ProcessFaultReason.HostProcessExited:
+					HandleFailure(SiloFaultReason.HostProcessExited, false);
+					break;
+
+				default:
+				case ProcessFaultReason.UnhandledException:
+					HandleFailure(SiloFaultReason.UnhandledException, false);
+					break;
+			}
 		}
 
 		private void HandleFailure(EndPointDisconnectReason? endPointReason)
@@ -409,9 +307,6 @@ namespace SharpRemote.Hosting
 				_process.TryKill();
 			}
 
-			_hasProcessExited = true;
-			_hasProcessFailed = true;
-
 			// We don't want to call disconnect in case this method is executing because 
 			// of an endpoint failure - because we're called from the endpoint's Disconnect method.
 			// Calling disconnect again would overwrite the disconnect reason...
@@ -424,7 +319,7 @@ namespace SharpRemote.Hosting
 			{
 				var fn = OnFaultHandled;
 				if (fn != null)
-					fn(reason, SiloFaultHandling.Shutdown);
+					fn(reason, SiloFaultResolution.Shutdown);
 			}
 			catch (Exception e)
 			{
@@ -437,7 +332,7 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		public HostState HostState
 		{
-			get { return _hostState; }
+			get { return _process.HostedProcessState; }
 		}
 
 		/// <summary>
@@ -446,7 +341,7 @@ namespace SharpRemote.Hosting
 		[Pure]
 		public bool IsProcessRunning
 		{
-			get { return !_hasProcessExited; }
+			get { return _process.IsProcessRunning; }
 		}
 
 		public bool IsDisposed
@@ -461,7 +356,7 @@ namespace SharpRemote.Hosting
 		{
 			get
 			{
-				return _hostProcessId;
+				return _process.HostedProcessId;
 			}
 		}
 
@@ -625,7 +520,6 @@ namespace SharpRemote.Hosting
 			_endPoint.TryDispose();
 			_process.TryKill();
 			_process.TryDispose();
-			_hasProcessExited = true;
 
 			lock (_syncRoot)
 			{
@@ -636,40 +530,8 @@ namespace SharpRemote.Hosting
 
 		private void EmitHostOutputWritten(string message)
 		{
-			Action<string> handler = HostOutputWritten;
+			Action<string> handler = OnHostOutputWritten;
 			if (handler != null) handler(message);
-		}
-
-		private void ProcessOnOutputDataReceived(object sender, DataReceivedEventArgs args)
-		{
-			string message = args.Data;
-			EmitHostOutputWritten(message);
-			switch (message)
-			{
-				case Constants.BootingMessage:
-					_hostState = HostState.Booting;
-					break;
-
-				case Constants.ReadyMessage:
-					_hostState = HostState.Ready;
-					_waitHandle.Set();
-					break;
-
-				case Constants.ShutdownMessage:
-					_hostState = HostState.None;
-					break;
-
-				default:
-					int port;
-					if (int.TryParse(message, out port))
-						_remotePort = port;
-					break;
-			}
-		}
-
-		private void ProcessOnExited(object sender, EventArgs args)
-		{
-			HandleFailure(SiloFaultReason.HostProcessExited, false);
 		}
 
 		internal static class Constants
@@ -689,16 +551,6 @@ namespace SharpRemote.Hosting
 			/// 
 			/// </summary>
 			public const ulong LatencyProbeId = ulong.MaxValue - 2;
-
-			public const string BootingMessage = "booting";
-			public const string ReadyMessage = "ready";
-			public const string ShutdownMessage = "goodbye";
-
-			/// <summary>
-			///     The maximum amount of time the host process has to send the "ready" message before it is assumed
-			///     to be dead / crashed / broken.
-			/// </summary>
-			public static readonly TimeSpan ProcessReadyTimeout = TimeSpan.FromSeconds(10);
 
 			/// <summary>
 			/// </summary>

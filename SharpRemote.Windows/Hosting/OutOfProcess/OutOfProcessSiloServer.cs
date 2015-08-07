@@ -232,7 +232,7 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		public void Run()
 		{
-			Console.WriteLine(OutOfProcessSilo.Constants.BootingMessage);
+			Console.WriteLine(ProcessWatchdog.Constants.BootingMessage);
 
 			const ulong firstServantId = 0;
 
@@ -249,10 +249,10 @@ namespace SharpRemote.Hosting
 
 					_endPoint.Bind(IPAddress.Loopback);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);
-					Console.WriteLine(OutOfProcessSilo.Constants.ReadyMessage);
+					Console.WriteLine(ProcessWatchdog.Constants.ReadyMessage);
 
 					_waitHandle.WaitOne();
-					Console.WriteLine(OutOfProcessSilo.Constants.ShutdownMessage);
+					Console.WriteLine(ProcessWatchdog.Constants.ShutdownMessage);
 				}
 			}
 			catch (Exception e)

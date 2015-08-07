@@ -35,7 +35,7 @@ namespace SampleBrowser.Scenarios.Host
 			using (var appender = new LogInterceptor(Log))
 			using (var silo = new OutOfProcessSilo())
 			{
-				silo.HostOutputWritten += LogHost;
+				silo.OnHostOutputWritten += LogHost;
 				silo.Start();
 				var instance = silo.CreateGrain<ISample>(typeof (Sample));
 				Log(string.Format("Have you been called yet? - {0}", instance.HaveYouBeenCalledYet()));

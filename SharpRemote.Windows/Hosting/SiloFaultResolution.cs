@@ -5,7 +5,7 @@ namespace SharpRemote.Hosting
 	/// <summary>
 	/// Describes the various states of how (and if) a fault has been resolved.
 	/// </summary>
-	public enum SiloFaultHandling
+	public enum SiloFaultResolution
 	{
 		/// <summary>
 		/// The problem has been resolved but failed calls on remote objects may or may not have been

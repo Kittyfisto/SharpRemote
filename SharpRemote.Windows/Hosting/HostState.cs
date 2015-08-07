@@ -11,5 +11,6 @@
 		Booting,
 		Ready,
 		ShuttingDown,
+		Dead,
 	}
 }

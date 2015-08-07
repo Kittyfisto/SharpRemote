@@ -95,6 +95,8 @@
     <Compile Include="Exceptions\GrainIdRangeExhaustedException.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSiloServer.cs" />
     <Compile Include="Hosting\PostMortemSettings.cs" />
+    <Compile Include="Hosting\ProcessFaultReason.cs" />
+    <Compile Include="Hosting\ProcessWatchdog.cs" />
     <Compile Include="PendingMethodsQueue.cs" />
     <Compile Include="PendingMethodCall.cs" />
     <Compile Include="RingBuffer.cs" />
@@ -105,7 +107,7 @@
     <Compile Include="Hosting\ILatency.cs" />
     <Compile Include="Hosting\LatencyMonitor.cs" />
     <Compile Include="Hosting\SiloFaultReason.cs" />
-    <Compile Include="Hosting\SiloFaultHandling.cs" />
+    <Compile Include="Hosting\SiloFaultResolution.cs" />
     <Compile Include="IHeartbeat.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />

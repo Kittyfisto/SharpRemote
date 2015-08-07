@@ -20,15 +20,14 @@ using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using SharpRemote.Test.Types.Structs;
 using log4net.Core;
-using Description = NUnit.Framework.DescriptionAttribute;
 
-namespace SharpRemote.Test.Remoting
+namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 {
 	[TestFixture]
-	[Description(
+	[NUnit.Framework.Description(
 		"Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour"
 		)]
-	public class RemotingEndPointAcceptanceTest
+	public class AcceptanceTest
 	{
 		private SocketRemotingEndPointServer _server;
 		private SocketRemotingEndPointClient _client;
@@ -57,7 +56,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that synchronous methods are executed in the order they are issued in - by issuing them from one thread")]
 		public void TestCallOrder1()
 		{
@@ -78,7 +77,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that synchronous methods are executed in the order they are issued in - by issuing them from two threads")]
 		public void TestCallOrder2()
 		{
@@ -117,7 +116,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that invocations on a SerializePerType method are serialized, even when the calls happen in parallel")]
 		public void TestCallOrder3()
 		{
@@ -162,7 +161,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that when a serialize by type method is invoked, the calling thread's name is set to the full name of the interface (to allow for better debugging)")]
+		[NUnit.Framework.Description("Verifies that when a serialize by type method is invoked, the calling thread's name is set to the full name of the interface (to allow for better debugging)")]
 		public void TestCallOrder4()
 		{
 			Thread thread = null;
@@ -184,7 +183,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that when a serialize by object method is invoked, the calling thread's name is set to the full name of the interface plus the grain id (to allow for better debugging)")]
+		[NUnit.Framework.Description("Verifies that when a serialize by object method is invoked, the calling thread's name is set to the full name of the interface plus the grain id (to allow for better debugging)")]
 		public void TestCallOrder5()
 		{
 			Thread thread = null;
@@ -206,7 +205,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that when a serialize by object method is invoked, the calling thread's name is set to the full name of the interface plus the grain id (to allow for better debugging)")]
+		[NUnit.Framework.Description("Verifies that when a serialize by object method is invoked, the calling thread's name is set to the full name of the interface plus the grain id (to allow for better debugging)")]
 		public void TestCallOrder6()
 		{
 			Thread thread = null;
@@ -255,7 +254,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("")]
+		[NUnit.Framework.Description("")]
 		public void TestGetNonStartedTaskIsNotSupported1()
 		{
 			const int servantId = 14;
@@ -269,7 +268,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("")]
+		[NUnit.Framework.Description("")]
 		public void TestGetNonStartedTaskIsNotSupported2()
 		{
 			const int servantId = 15;
@@ -295,7 +294,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that an eception can be marshalled")]
+		[NUnit.Framework.Description("Verifies that an eception can be marshalled")]
 		public void TestGetPropertyThrowException1()
 		{
 			var subject = new Mock<IGetDoubleProperty>();
@@ -310,7 +309,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that if an exception could not be serialized, but can be re-constructed due to a default ctor, then it is thrown again"
 			)]
 		public void TestGetPropertyThrowNonSerializableException()
@@ -340,7 +339,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that the exception thrown by a task is correctly marshalled")]
+		[NUnit.Framework.Description("Verifies that the exception thrown by a task is correctly marshalled")]
 		public void TestGetTaskThrowException1()
 		{
 			const int servantId = 11;
@@ -357,7 +356,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that the exception thrown by a task is correctly marshalled")]
+		[NUnit.Framework.Description("Verifies that the exception thrown by a task is correctly marshalled")]
 		public void TestGetTaskThrowException2()
 		{
 			const int servantId = 12;
@@ -371,7 +370,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that creating a proxy with the wrong type doesn't throw")]
+		[NUnit.Framework.Description("Verifies that creating a proxy with the wrong type doesn't throw")]
 		public void TestInterfaceTypeMismatch1()
 		{
 			var subject = new Mock<IReturnsIntTask>();
@@ -382,7 +381,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that invoking a method on a proxy/servant type mismatch throws")]
+		[NUnit.Framework.Description("Verifies that invoking a method on a proxy/servant type mismatch throws")]
 		public void TestInterfaceTypeMismatch2()
 		{
 			var subject = new Mock<IReturnsIntTask>();
@@ -394,7 +393,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that an interface which itself implements another interface works")]
+		[NUnit.Framework.Description("Verifies that an interface which itself implements another interface works")]
 		public void TestMultipleInterfaces()
 		{
 			var subject = new Mock<ICalculator>();
@@ -416,7 +415,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that raising an event on the subject to which no-one is connected via the proxy doesn't do anything - besides not failing"
 			)]
 		public void TestRaiseEmptyEvent()
@@ -434,7 +433,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that raising an event on the subject successfully serialized the parameter's value and forwards it to the proxy"
 			)]
 		public void TestRaiseEvent1()
@@ -455,7 +454,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that delegates are invoked in the exact order that they are registered in")]
+		[NUnit.Framework.Description("Verifies that delegates are invoked in the exact order that they are registered in")]
 		public void TestRaiseEvent2()
 		{
 			var subject = new Mock<IEventInt32>();
@@ -479,7 +478,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that a delegate is no longer invoked once it's removed from the event")]
+		[NUnit.Framework.Description("Verifies that a delegate is no longer invoked once it's removed from the event")]
 		public void TestRaiseEvent3()
 		{
 			var subject = new Mock<IEventInt32>();
@@ -504,7 +503,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
+		[NUnit.Framework.Description(
 			"Verifies that an exception is successfully marshalled when thrown by the delegate attached to the proxie's event")]
 		public void TestRaiseEventThrowException1()
 		{
@@ -522,7 +521,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that a method accepting a by reference parameter can be called and that the appropriate proxies & servants are created")]
+		[NUnit.Framework.Description("Verifies that a method accepting a by reference parameter can be called and that the appropriate proxies & servants are created")]
 		public void TestAddByReference1()
 		{
 			const ulong servantId = 30;
@@ -551,7 +550,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that successive calls with a [ByReference] parameter are marshalled using the same proxy instance on the invoked end, mimicking these calls in a non-RPC scenario")]
+		[NUnit.Framework.Description("Verifies that successive calls with a [ByReference] parameter are marshalled using the same proxy instance on the invoked end, mimicking these calls in a non-RPC scenario")]
 		public void TestAddByReference2()
 		{
 			const ulong servantId = 31;
@@ -571,7 +570,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that creating proxies & servants for serialized objects is thread safe")]
+		[NUnit.Framework.Description("Verifies that creating proxies & servants for serialized objects is thread safe")]
 		public void TestAddByReference3()
 		{
 			const ulong servantId = 32;
@@ -614,7 +613,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that creating proxies & servants for serialized objects is thread safe")]
+		[NUnit.Framework.Description("Verifies that creating proxies & servants for serialized objects is thread safe")]
 		public void TestAddByReference4()
 		{
 			const ulong servantId = 24;
@@ -657,7 +656,7 @@ namespace SharpRemote.Test.Remoting
 		
 
 		[Test]
-		[Description("Verifies that a [ByReference] field of a struct that's passed as an object is correctly deserialized on the other end")]
+		[NUnit.Framework.Description("Verifies that a [ByReference] field of a struct that's passed as an object is correctly deserialized on the other end")]
 		public void TestAddObjectByReference1()
 		{
 			var reference = new ByReferenceClass(9001);
@@ -686,7 +685,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that a method returning a [ByReference] type is marshalled correctly")]
+		[NUnit.Framework.Description("Verifies that a method returning a [ByReference] type is marshalled correctly")]
 		public void TestReturnByReference1()
 		{
 			const ulong servantId = 26;
@@ -706,7 +705,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that a method returning an object of a [ByReference] type is marshalled correctly")]
+		[NUnit.Framework.Description("Verifies that a method returning an object of a [ByReference] type is marshalled correctly")]
 		public void TestReturnByReference2()
 		{
 			const ulong servantId = 27;
@@ -726,7 +725,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description("Verifies that a method returning a list of objects where some are a [ByReference] types is marshalled correctly")]
+		[NUnit.Framework.Description("Verifies that a method returning a list of objects where some are a [ByReference] types is marshalled correctly")]
 		public void TestReturnListOfByReferences()
 		{
 			const ulong servantId = 28;

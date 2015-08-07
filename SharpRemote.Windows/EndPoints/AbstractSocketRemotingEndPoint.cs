@@ -1135,35 +1135,41 @@ namespace SharpRemote
 
 		private bool HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
 		{
-			Action<MessageType, BinaryReader> fn;
 			return _pendingMethodCalls.HandleResponse(rpcId, messageType, reader);
 		}
 
-		protected void ReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message)
+		private bool TryReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message, out string error)
 		{
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 			var size = new byte[4];
 			SocketError err;
 			if (!SynchronizedRead(socket, size, timeout, out err))
 			{
-				throw new HandshakeException(
-					string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
-					              timeout.TotalSeconds, err));
+				messageType = null;
+				message = null;
+				error = string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
+				                      timeout.TotalSeconds, err);
+				return false;
 			}
 
 			int length = BitConverter.ToInt32(size, 0);
 			if (length < 0)
 			{
-				throw new HandshakeException(string.Format("The message received from endpoint '{0}' is malformatted",
-				                                           remoteEndPoint));
+				messageType = null;
+				message = null;
+				error = string.Format("The message received from endpoint '{0}' is malformatted",
+				                      remoteEndPoint);
+				return false;
 			}
 
 			var buffer = new byte[length];
 			if (!SynchronizedRead(socket, buffer, timeout, out err))
 			{
-				throw new HandshakeException(
-					string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
-					              timeout.TotalSeconds, err));
+				messageType = null;
+				message = null;
+				error = string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
+				                      timeout.TotalSeconds, err);
+				return false;
 			}
 
 			using (var reader = new BinaryReader(new MemoryStream(buffer)))
@@ -1171,11 +1177,35 @@ namespace SharpRemote
 				messageType = reader.ReadString();
 				message = reader.ReadString();
 			}
+
+			error = null;
+			return true;
+		}
+
+		protected void ReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message)
+		{
+			string error;
+			if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+			{
+				throw new HandshakeException(error);
+			}
 		}
 
 		protected void WriteMessage(Socket socket,
 		                            string messageType,
 		                            string message = "")
+		{
+			string error;
+			if (!TryWriteMessage(socket, messageType, message, out error))
+			{
+				throw new HandshakeException(error);
+			}
+		}
+
+		private bool TryWriteMessage(Socket socket,
+		                            string messageType,
+		                            string message,
+			out string error)
 		{
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 			using (var stream = new MemoryStream())
@@ -1191,12 +1221,16 @@ namespace SharpRemote
 				SocketError err;
 				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
 				{
-					throw new HandshakeException(string.Format("Failed to send {0} to endpoint '{1}': {2}",
-					                                           messageType,
-					                                           remoteEndPoint,
-					                                           err));
+					error = string.Format("Failed to send {0} to endpoint '{1}': {2}",
+					                      messageType,
+					                      remoteEndPoint,
+					                      err);
+					return false;
 				}
 			}
+
+			error = null;
+			return true;
 		}
 
 		/// <summary>
@@ -1273,38 +1307,113 @@ namespace SharpRemote
 		/// <param name="timeout"></param>
 		protected void PerformOutgoingHandshake(Socket socket, TimeSpan timeout)
 		{
+			ErrorType errorType;
+			string error;
+			if (!TryPerformOutgoingHandshake(socket, timeout, out errorType, out error))
+			{
+				switch (errorType)
+				{
+					case ErrorType.Handshake:
+						throw new HandshakeException(error);
+
+					case ErrorType.AuthenticationRequired:
+						throw new AuthenticationRequiredException(error);
+
+					default:
+						throw new AuthenticationException(error);
+				}
+			}
+		}
+
+		/// <summary>
+		///     Performs the authentication between client & server (if necessary) from the client-side.
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="timeout"></param>
+		protected bool TryPerformOutgoingHandshake(Socket socket, TimeSpan timeout)
+		{
+			ErrorType errorType;
+			string error;
+			return TryPerformOutgoingHandshake(socket, timeout, out errorType, out error);
+		}
+
+		enum ErrorType
+		{
+			None,
+
+			Handshake,
+			Authentication,
+			AuthenticationRequired,
+		}
+
+		/// <summary>
+		///     Performs the authentication between client & server (if necessary) from the client-side.
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="timeout"></param>
+		/// <param name="errorType"></param>
+		/// <param name="error"></param>
+		private bool TryPerformOutgoingHandshake(Socket socket,
+			TimeSpan timeout,
+			out ErrorType errorType,
+			out string error)
+		{
 			string messageType;
 			string message;
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 
-			ReadMessage(socket, timeout, out messageType, out message);
+			if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+			{
+				errorType =  ErrorType.Handshake;
+				return false;
+			}
+
 			if (messageType == AuthenticationRequiredMessage)
 			{
 				if (_clientAuthenticator == null)
-					throw new AuthenticationRequiredException(string.Format("Endpoint '{0}' requires authentication", remoteEndPoint));
+				{
+					errorType = ErrorType.AuthenticationRequired;
+					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
+					return false;
+				}
 
 				string challenge = message;
 				// Upon establishing a connection, we try to authenticate the ourselves
 				// against the server by answering his response.
 				string response = _clientAuthenticator.CreateResponse(challenge);
-				WriteMessage(socket, AuthenticationResponseMessage, response);
+				if (!TryWriteMessage(socket, AuthenticationResponseMessage, response, out error))
+				{
+					errorType = ErrorType.Handshake;
+					return false;
+				}
 
 				// If we failed the authentication, a proper server will tell us so we can
 				// forward this information to the caller.
-				ReadMessage(socket, timeout, out messageType, out message);
+				if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+				{
+					errorType = ErrorType.Handshake;
+					return false;
+				}
+
 				if (messageType != AuthenticationSucceedMessage)
-					throw new AuthenticationException(string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint));
+				{
+					errorType = ErrorType.Authentication;
+					error = string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint);
+					return false;
+				}
 			}
 			else if (messageType != NoAuthenticationRequiredMessage)
 			{
-				throw new HandshakeException(
+				errorType = ErrorType.Handshake;
+				error =
 					string.Format("EndPoint '{0}' sent unknown message '{1}: {2}', expected either {3} or {4}",
 					              remoteEndPoint,
 					              messageType,
 					              message,
 					              AuthenticationRequiredMessage,
 					              NoAuthenticationRequiredMessage
-						));
+						);
+				return false;
 			}
 
 			if (_serverAuthenticator != null)
@@ -1312,18 +1421,35 @@ namespace SharpRemote
 				// After we've authenticated ourselves, it's time for the server to authenticate himself.
 				// Let's send the challenge
 				string challenge = _serverAuthenticator.CreateChallenge();
-				WriteMessage(socket, AuthenticationRequiredMessage, challenge);
-				ReadMessage(socket, timeout, out messageType, out message);
+				if (!TryWriteMessage(socket, AuthenticationRequiredMessage, challenge, out error))
+				{
+					errorType = ErrorType.Handshake;
+					return false;
+				}
+
+				if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+				{
+					errorType = ErrorType.Handshake;
+					return false;
+				}
+
 				if (!_serverAuthenticator.Authenticate(challenge, message))
 				{
 					// Should the server fail to authenticate himself, then we tell him that end then abort
 					// the connection...
 					WriteMessage(socket, AuthenticationResponseMessage, AuthenticationFailedMessage);
-					throw new AuthenticationException(string.Format("Endpoint '{0}' failed the authentication challenge",
-					                                                remoteEndPoint));
+					errorType = ErrorType.Authentication;
+					error = string.Format("Endpoint '{0}' failed the authentication challenge",
+					                      remoteEndPoint);
+					return false;
 				}
 
-				WriteMessage(socket, AuthenticationSucceedMessage);
+				if (!TryWriteMessage(socket, AuthenticationSucceedMessage, "", out error))
+				{
+					errorType = ErrorType.Handshake;
+					return false;
+				}
+
 				Log.InfoFormat("Endpoint '{0}' successfully authenticated", remoteEndPoint);
 			}
 			else
@@ -1331,11 +1457,24 @@ namespace SharpRemote
 				WriteMessage(socket, NoAuthenticationRequiredMessage);
 			}
 
-			ReadMessage(socket, timeout, out messageType, out message);
+			if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+			{
+				errorType = ErrorType.Handshake;
+				return false;
+			}
+
 			if (messageType != HandshakeSucceedMessage)
-				throw new HandshakeException(string.Format("Endpoint '{0}' failed to finished the handshake", remoteEndPoint));
+			{
+				errorType = ErrorType.Handshake;
+				error = string.Format("Endpoint '{0}' failed to finished the handshake", remoteEndPoint);
+				return false;
+			}
 
 			OnHandshakeSucceeded(socket);
+
+			errorType = ErrorType.Handshake;
+			error = null;
+			return true;
 		}
 
 		/// <summary>

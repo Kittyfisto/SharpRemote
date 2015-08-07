@@ -46,6 +46,149 @@ namespace SharpRemote
 		}
 
 		/// <summary>
+		///     Tries to connect to another endPoint with the given name.
+		/// </summary>
+		/// <param name="endPointName"></param>
+		/// <returns>True when a connection could be established, false otherwise</returns>
+		public bool TryConnect(string endPointName)
+		{
+			return TryConnect(endPointName, TimeSpan.FromSeconds(1));
+		}
+
+		/// <summary>
+		///     Tries to connects to another endPoint with the given name.
+		/// </summary>
+		/// <param name="endPointName"></param>
+		/// <param name="timeout"></param>
+		/// <returns>True when the connection succeeded, false otherwise</returns>
+		public bool TryConnect(string endPointName, TimeSpan timeout)
+		{
+			if (endPointName == null) throw new ArgumentNullException("endPointName");
+
+			var resolver = new PeerNameResolver();
+			PeerNameRecordCollection results = resolver.Resolve(new PeerName(endPointName, PeerNameType.Unsecured));
+
+			if (results.Count == 0)
+			{
+				Log.ErrorFormat("Unable to find peer named '{0}'", endPointName);
+				return false;
+			}
+
+			PeerNameRecord peer = results[0];
+			IPEndPointCollection endPoints = peer.EndPointCollection;
+
+			foreach (IPEndPoint ep in endPoints)
+			{
+				if (TryConnect(ep, timeout))
+					return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		///     Tries to connects to another endPoint with the given name.
+		/// </summary>
+		/// <param name="endPoint"></param>
+		/// <returns>True when the connection succeeded, false otherwise</returns>
+		public bool TryConnect(IPEndPoint endPoint)
+		{
+			return TryConnect(endPoint, TimeSpan.FromSeconds(1));
+		}
+
+		/// <summary>
+		///     Tries to connect this endPoint to the given one.
+		/// </summary>
+		/// <param name="endPoint"></param>
+		/// <param name="timeout">The amount of time this method should block and await a successful connection from the remote end-point</param>
+		/// <exception cref="ArgumentNullException">
+		///     When <paramref name="endPoint" /> is null
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		///     When <paramref name="timeout" /> is equal or less than <see cref="TimeSpan.Zero" />
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		///     When this endPoint is already connected to another endPoint.
+		/// </exception>
+		public bool TryConnect(IPEndPoint endPoint, TimeSpan timeout)
+		{
+			if (endPoint == null) throw new ArgumentNullException("endPoint");
+			if (Equals(endPoint, LocalEndPoint))
+				throw new ArgumentException("An endPoint cannot be connected to itself", "endPoint");
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+			if (IsConnected)
+				throw new InvalidOperationException(
+					"This endPoint is already connected to another endPoint and cannot establish any more connections");
+
+			Log.DebugFormat("Trying to connect to '{0}', timeout: {1}ms", endPoint, timeout.TotalMilliseconds);
+
+			bool success = false;
+			Socket socket = null;
+			try
+			{
+				DateTime started = DateTime.Now;
+				var task = new Task(() =>
+				{
+					Log.DebugFormat("Task to connect to '{0}' started", endPoint);
+
+					socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+					Log.DebugFormat("Socket to connect to '{0}' created", endPoint);
+
+					socket.Connect(endPoint);
+
+					Log.DebugFormat("Socket connected to '{0}'", endPoint);
+				}, TaskCreationOptions.LongRunning);
+				task.Start();
+				if (!task.Wait(timeout))
+				{
+					return false;
+				}
+
+				TimeSpan remaining = timeout - (DateTime.Now - started);
+				if (!TryPerformOutgoingHandshake(socket, remaining))
+				{
+					return false;
+				}
+
+				RemoteEndPoint = endPoint;
+				LocalEndPoint = (IPEndPoint)socket.LocalEndPoint;
+
+				success = true;
+				return true;
+			}
+			catch (AggregateException e)
+			{
+				ReadOnlyCollection<Exception> inner = e.InnerExceptions;
+				if (inner.Count != 1)
+					throw;
+
+				Exception ex = inner[0];
+				if (!(ex is SocketException))
+					throw;
+
+				return false;
+			}
+			catch (SocketException e)
+			{
+				return false;
+			}
+			finally
+			{
+				if (!success)
+				{
+					if (socket != null)
+					{
+						socket.Close();
+						socket.Dispose();
+					}
+
+					RemoteEndPoint = null;
+				}
+			}
+		}
+
+		/// <summary>
 		///     Connects to another endPoint with the given name.
 		/// </summary>
 		/// <param name="endPointName"></param>

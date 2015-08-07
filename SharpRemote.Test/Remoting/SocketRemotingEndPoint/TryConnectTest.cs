@@ -119,8 +119,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		public void TestConnect8()
 		{
 			using (var rep = CreateClient())
+			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
 			{
-				var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
 				socket.Listen(1);
 				socket.BeginAccept(ar => socket.EndAccept(ar), null);

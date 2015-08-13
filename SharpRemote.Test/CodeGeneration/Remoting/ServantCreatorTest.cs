@@ -11,6 +11,7 @@ using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.Hosting;
 using SharpRemote.Tasks;
 using SharpRemote.Test.Hosting;
+using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;

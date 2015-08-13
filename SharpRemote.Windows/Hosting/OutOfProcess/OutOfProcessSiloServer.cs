@@ -61,7 +61,8 @@ namespace SharpRemote.Hosting
 				throw new ArgumentException("postMortemSettings");
 			}
 
-			Log.InfoFormat("Silo Server starting, args: \"{0}\", {1} custom type resolver",
+			Log.InfoFormat("Silo Server starting, args ({0}): \"{1}\", {2} custom type resolver",
+			               args.Length,
 			               string.Join(" ", args),
 			               customTypeResolver != null ? "with" : "without"
 				);
@@ -80,7 +81,7 @@ namespace SharpRemote.Hosting
 				Log.DebugFormat("Args.Length: {0}", args.Length);
 			}
 
-			if (args.Length >= 6)
+			if (args.Length >= 10)
 			{
 				if (postMortemSettings != null)
 				{
@@ -91,9 +92,15 @@ namespace SharpRemote.Hosting
 					var settings = new PostMortemSettings();
 					bool.TryParse(args[1], out settings.CollectMinidumps);
 					bool.TryParse(args[2], out settings.SuppressErrorWindows);
-					int.TryParse(args[3], out settings.NumMinidumpsRetained);
-					settings.MinidumpFolder = args[4];
-					settings.MinidumpName = args[5];
+					bool.TryParse(args[3], out settings.HandleAccessViolations);
+					bool.TryParse(args[4], out settings.HandleCrtAsserts);
+					bool.TryParse(args[5], out settings.HandleCrtPureVirtualFunctionCalls);
+					int tmp;
+					int.TryParse(args[6], out tmp);
+					settings.RuntimeVersions = (CRuntimeVersions) tmp;
+					int.TryParse(args[7], out settings.NumMinidumpsRetained);
+					settings.MinidumpFolder = args[8];
+					settings.MinidumpName = args[9];
 
 					if (!settings.IsValid)
 					{
@@ -113,39 +120,44 @@ namespace SharpRemote.Hosting
 			_postMortemSettings = postMortemSettings;
 			if (_postMortemSettings != null)
 			{
-				Log.DebugFormat("Using post-mortem debugger: {0}", _postMortemSettings);
+				Log.InfoFormat("Using post-mortem debugger: {0}", _postMortemSettings);
+
+				if (!NativeMethods.LoadPostmortemDebugger())
+				{
+					int err = Marshal.GetLastWin32Error();
+					Log.ErrorFormat("Unable to load the post-mortem debugger dll: {0}",
+									err);
+				}
 
 				if (_postMortemSettings.CollectMinidumps)
 				{
-					if (!NativeMethods.LoadPostmortemDebugger())
-					{
-						int err = Marshal.GetLastWin32Error();
-						Log.ErrorFormat("Unable to load the post-mortem debugger dll: {0}",
-						                err);
-					}
-					if (!NativeMethods.Init(_postMortemSettings.NumMinidumpsRetained,
-											_postMortemSettings.MinidumpFolder,
-											_postMortemSettings.MinidumpName))
+					
+					if (!NativeMethods.InitDumpCollection(_postMortemSettings.NumMinidumpsRetained,
+					                        _postMortemSettings.MinidumpFolder,
+					                        _postMortemSettings.MinidumpName))
 					{
 						int err = Marshal.GetLastWin32Error();
 						Log.ErrorFormat("Unable to initialize the post-mortem debugger: {0}",
-										err);
-					}
-					else if (!NativeMethods.InstallPostmortemDebugger(true,
-					                                                  _postMortemSettings.SuppressErrorWindows,
-					                                                  _postMortemSettings.HandleCrtAsserts,
-					                                                  _postMortemSettings.HandleCrtPureVirtualFunctionCalls,
-					                                                  _postMortemSettings.RuntimeVersions))
-					{
-						int err = Marshal.GetLastWin32Error();
-						Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
 						                err);
 					}
+					else
+					{
+						Log.InfoFormat("Installed post-mortem debugger; up to {0} mini dumps will automatically be saved to: {1}",
+									   _postMortemSettings.NumMinidumpsRetained,
+									   _postMortemSettings.MinidumpFolder
+							);
+					}
+				}
 
-					Log.InfoFormat("Installed post-mortem debugger; up to {0} mini dumps will automatically be saved to: {1}",
-					               _postMortemSettings.NumMinidumpsRetained,
-					               _postMortemSettings.MinidumpFolder
-						);
+				if (!NativeMethods.InstallPostmortemDebugger(_postMortemSettings.HandleAccessViolations,
+				                                             _postMortemSettings.SuppressErrorWindows,
+				                                             _postMortemSettings.HandleCrtAsserts,
+				                                             _postMortemSettings.HandleCrtPureVirtualFunctionCalls,
+				                                             _postMortemSettings.RuntimeVersions))
+				{
+					int err = Marshal.GetLastWin32Error();
+					Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
+					                err);
 				}
 			}
 
@@ -156,6 +168,15 @@ namespace SharpRemote.Hosting
 
 			_latencySubject = new Latency();
 			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency) _latencySubject);
+		}
+
+		/// <summary>
+		/// The settings that were used to configure this server's behaviour in case of unexpected
+		/// (mostly native) faults.
+		/// </summary>
+		public PostMortemSettings PostMortemSettings
+		{
+			get { return _postMortemSettings; }
 		}
 
 		/// <summary>

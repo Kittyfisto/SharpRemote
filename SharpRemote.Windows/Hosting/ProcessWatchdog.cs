@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -159,25 +160,21 @@ namespace SharpRemote.Hosting
 						   _process.Id);
 		}
 
+		/// <summary>
+		/// Tries to kill the hosted process.
+		/// </summary>
 		public void TryKill()
 		{
-			try
+			var id = _hostedProcessId;
+			if (id != null)
 			{
-				var process = _process;
-				if (process != null && !process.HasExited)
-				{
-					_hostedProcessState = HostState.Dead;
-					_hasProcessFailed = true;
-					_hasProcessExited = true;
+				_hostedProcessState = HostState.Dead;
+				_hasProcessFailed = true;
+				_hasProcessExited = true;
 
-					process.Kill();
-				}
-				_process = null;
+				ProcessExtensions.TryKill(id.Value);
 			}
-			catch (Win32Exception)
-			{}
-			catch (InvalidOperationException)
-			{}
+			_process = null;
 		}
 
 		public void Dispose()
@@ -235,6 +232,9 @@ namespace SharpRemote.Hosting
 			get { return _hasProcessFailed; }
 		}
 
+		/// <summary>
+		/// Whether or not this watchdog has been disposed of.
+		/// </summary>
 		public bool IsDisposed
 		{
 			get { return _isDisposed; }
@@ -260,7 +260,7 @@ namespace SharpRemote.Hosting
 		public event Action<ProcessFaultReason> OnFaultDetected;
 
 		[Pure]
-		private static string FormatArguments(int parentPid, PostMortemSettings postMortemSettings)
+		internal static string FormatArguments(int parentPid, PostMortemSettings postMortemSettings)
 		{
 			var builder = new StringBuilder();
 			builder.Append(parentPid);
@@ -271,11 +271,19 @@ namespace SharpRemote.Hosting
 				builder.Append(" ");
 				builder.Append(postMortemSettings.SuppressErrorWindows);
 				builder.Append(" ");
+				builder.Append(postMortemSettings.HandleAccessViolations);
+				builder.Append(" ");
+				builder.Append(postMortemSettings.HandleCrtAsserts);
+				builder.Append(" ");
+				builder.Append(postMortemSettings.HandleCrtPureVirtualFunctionCalls);
+				builder.Append(" ");
+				builder.Append(((int) postMortemSettings.RuntimeVersions).ToString(CultureInfo.InvariantCulture));
+				builder.Append(" ");
 				builder.Append(postMortemSettings.NumMinidumpsRetained);
 				builder.Append(" ");
-				builder.Append(postMortemSettings.MinidumpFolder);
+				builder.Append(postMortemSettings.MinidumpFolder ?? Path.GetTempPath());
 				builder.Append(" ");
-				builder.Append(postMortemSettings.MinidumpName);
+				builder.Append(postMortemSettings.MinidumpName ?? "<Unused>");
 			}
 			return builder.ToString();
 		}

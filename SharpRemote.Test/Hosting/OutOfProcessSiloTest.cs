@@ -342,6 +342,7 @@ namespace SharpRemote.Test.Hosting
 			{
 				CollectMinidumps = true,
 				SuppressErrorWindows = true,
+				HandleAccessViolations = true,
 				NumMinidumpsRetained = 1,
 				MinidumpFolder = Path.Combine(Path.GetTempPath(), "SharpRemote", "dumps"),
 				MinidumpName = "Host"
@@ -358,7 +359,7 @@ namespace SharpRemote.Test.Hosting
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
 
 				var beforeFailure = DateTime.Now;
-				new Action(() => { proxy.Do(); }).ShouldThrow<ConnectionLostException>();
+				new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
 				var afterFailure = DateTime.Now;
 
 				// Not only should a failure have been detected, but a dump should've been created and stored
@@ -375,15 +376,19 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[Ignore("Not finished yet")]
 		[Description("Verifies that an assertion triggered by the host process is intercepted and results in a termination of the process")]
 		public void TestFailureDetection6()
 		{
 			var settings = new PostMortemSettings
-			{
-				SuppressErrorWindows = true,
-				HandleCrtAsserts = true,
-			};
+				{
+					SuppressErrorWindows = true,
+					HandleCrtAsserts = true,
+#if DEBUG
+					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Debug
+#else
+					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Release
+#endif
+				};
 
 			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
 			using (var handle = new ManualResetEvent(false))
@@ -406,6 +411,109 @@ namespace SharpRemote.Test.Hosting
 					{
 						new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
 					});
+				task.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+
+				handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
+				resolution.Should().Be(SiloFaultResolution.Shutdown);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that an assertion triggered by the host process is intercepted and results in a termination of the process")]
+		public void TestFailureDetection7()
+		{
+			var settings = new PostMortemSettings
+			{
+				CollectMinidumps = true,
+				SuppressErrorWindows = true,
+				HandleCrtAsserts = true,
+#if DEBUG
+				RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Debug,
+#else
+					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Release,
+#endif
+				NumMinidumpsRetained = 1,
+				MinidumpFolder = Path.Combine(Path.GetTempPath(), "SharpRemote", "dumps"),
+				MinidumpName = "Host"
+			};
+
+			if (Directory.Exists(settings.MinidumpFolder))
+			{
+				Directory.Delete(settings.MinidumpFolder, true);
+			}
+
+			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+			using (var handle = new ManualResetEvent(false))
+			{
+				SiloFaultReason? reason1 = null;
+				SiloFaultReason? reason2 = null;
+				SiloFaultResolution? resolution = null;
+
+				silo.OnFaultDetected += x => reason1 = x;
+				silo.OnFaultHandled += (x, y) =>
+				{
+					reason2 = x; resolution = y;
+					handle.Set();
+				};
+
+				silo.Start();
+				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAssert>();
+
+				var beforeFailure = DateTime.Now;
+				new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
+				var afterFailure = DateTime.Now;
+
+
+				// Not only should a failure have been detected, but a dump should've been created and stored
+				// on disk..
+
+				var files = Directory.EnumerateFiles(settings.MinidumpFolder).ToList();
+				files.Count.Should().Be(1, "Because exactly one minidump should've been created");
+
+				var file = new FileInfo(files[0]);
+				file.Name.Should().EndWith(".dmp");
+				file.LastWriteTime.Should().BeOnOrAfter(beforeFailure);
+				file.LastWriteTime.Should().BeOnOrBefore(afterFailure);
+			}
+		}
+
+		[Test]
+		[Ignore("This shit doesn't work in release mode for some fucking reason")]
+		[Description("Verifies that a pure virtual function triggered by the host process is intercepted and results in a termination of the process")]
+		public void TestFailureDetection8()
+		{
+			var settings = new PostMortemSettings
+				{
+					SuppressErrorWindows = true,
+					HandleCrtPureVirtualFunctionCalls = true,
+#if DEBUG
+					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Debug,
+#else
+					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Release,
+#endif
+				};
+
+			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+			using (var handle = new ManualResetEvent(false))
+			{
+				SiloFaultReason? reason1 = null;
+				SiloFaultReason? reason2 = null;
+				SiloFaultResolution? resolution = null;
+
+				silo.OnFaultDetected += x => reason1 = x;
+				silo.OnFaultHandled += (x, y) =>
+				{
+					reason2 = x; resolution = y;
+					handle.Set();
+				};
+
+				silo.Start();
+				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesPureVirtualFunctionCall>();
+
+				var task = Task.Factory.StartNew(() =>
+				{
+					new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
+				});
 				//task.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
 				task.Wait();
 
@@ -415,8 +523,68 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[Ignore("This shit doesn't work in release mode for some fucking reason")]
+		[Description("Verifies that a pure virtual function call triggered by the host process is intercepted and results in a termination of the process")]
+		public void TestFailureDetection9()
+		{
+			var settings = new PostMortemSettings
+			{
+				CollectMinidumps = true,
+				SuppressErrorWindows = true,
+				HandleCrtPureVirtualFunctionCalls = true,
+#if DEBUG
+				RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Debug,
+#else
+					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Release,
+#endif
+				NumMinidumpsRetained = 1,
+				MinidumpFolder = Path.Combine(Path.GetTempPath(), "SharpRemote", "dumps"),
+				MinidumpName = "Host"
+			};
+
+			if (Directory.Exists(settings.MinidumpFolder))
+			{
+				Directory.Delete(settings.MinidumpFolder, true);
+			}
+
+			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+			using (var handle = new ManualResetEvent(false))
+			{
+				SiloFaultReason? reason1 = null;
+				SiloFaultReason? reason2 = null;
+				SiloFaultResolution? resolution = null;
+
+				silo.OnFaultDetected += x => reason1 = x;
+				silo.OnFaultHandled += (x, y) =>
+				{
+					reason2 = x; resolution = y;
+					handle.Set();
+				};
+
+				silo.Start();
+				var proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesPureVirtualFunctionCall>();
+
+				var beforeFailure = DateTime.Now;
+				new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
+				var afterFailure = DateTime.Now;
+
+
+				// Not only should a failure have been detected, but a dump should've been created and stored
+				// on disk..
+
+				var files = Directory.EnumerateFiles(settings.MinidumpFolder).ToList();
+				files.Count.Should().Be(1, "Because exactly one minidump should've been created");
+
+				var file = new FileInfo(files[0]);
+				file.Name.Should().EndWith(".dmp");
+				file.LastWriteTime.Should().BeOnOrAfter(beforeFailure);
+				file.LastWriteTime.Should().BeOnOrBefore(afterFailure);
+			}
+		}
+
+		[Test]
 		[Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
-		public void TestFailureDetection8()
+		public void TestFailureDetection10()
 		{
 			var settings = new HeartbeatSettings
 				{
@@ -466,7 +634,7 @@ namespace SharpRemote.Test.Hosting
 
 		[Test]
 		[Description("Verifies that the silo can be disposed of from within the FaultHandled event")]
-		public void TestFailureDetection9()
+		public void TestFailureDetection11()
 		{
 			var settings = new HeartbeatSettings
 			{

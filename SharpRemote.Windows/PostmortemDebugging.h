@@ -21,7 +21,7 @@ extern "C" {
 	 *
 	 * ERROR_ACCESS_DENIED: You called Init() twice when the first call already succeeded
 	 */
-	__declspec ( dllexport ) BOOL Init(
+	__declspec ( dllexport ) BOOL InitDumpCollection(
 		int numRetainedMinidumps,
 		const wchar_t* dumpFolder,
 		const wchar_t* dumpName

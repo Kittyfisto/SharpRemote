@@ -91,7 +91,7 @@ namespace SharpRemote
 		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CharSet = CharSet.Unicode,
 			CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		public static extern bool Init(
+		public static extern bool InitDumpCollection(
 			int numRetainedMinidumps,
 			string dumpFolder,
 			string dumpName

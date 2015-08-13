@@ -13,7 +13,7 @@ typedef BOOL (__stdcall *PDUMPFN)(
 	PMINIDUMP_CALLBACK_INFORMATION CallbackParam
 );
 
-bool _postMortemDebuggingInstalled = false;
+bool _collectDumps = false;
 int _numRetainedMinidumps = 0;
 
 std::wstring _dateTimeBuffer;
@@ -334,9 +334,9 @@ void __cdecl OnCrtPurecall()
 extern "C" {
 #endif
 
-BOOL Init(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* dumpName)
+BOOL InitDumpCollection(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* dumpName)
 {
-	if (_postMortemDebuggingInstalled)
+	if (_collectDumps)
 	{
 		SetLastError(ERROR_ACCESS_DENIED);
 		return FALSE;
@@ -375,7 +375,7 @@ BOOL Init(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* du
 
 	OutputDebugStringW(L"Post-Mortem debugger installed\r\n");
 
-	_postMortemDebuggingInstalled = true;
+	_collectDumps = true;
 	return TRUE;
 }
 
@@ -385,12 +385,6 @@ BOOL InstallPostmortemDebugger(BOOL suppressErrorWindows,
 							   BOOL handleCrtPurecalls,
 							   CRuntimeVersions crtVersions)
 {
-	if (_postMortemDebuggingInstalled == false)
-	{
-		SetLastError(ERROR_ACCESS_DENIED);
-		return FALSE;
-	}
-
 	if (suppressErrorWindows == TRUE)
 	{
 		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
@@ -418,7 +412,7 @@ BOOL CreateMiniDump(
 		const wchar_t* dumpName
 		)
 {
-	if (_postMortemDebuggingInstalled == false)
+	if (_collectDumps == false)
 	{
 		SetLastError(ERROR_ACCESS_DENIED);
 		return FALSE;

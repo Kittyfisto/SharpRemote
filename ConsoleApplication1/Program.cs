@@ -28,7 +28,7 @@ namespace ConsoleApplication1
 #endif
 			SharpRemote.NativeMethods.SetDllDirectory(path);
 
-			SharpRemote.NativeMethods.Init(
+			SharpRemote.NativeMethods.InitDumpCollection(
 				10,
 				@"C:\Users\Simon\AppData\Local\Temp\SharpRemote\Dumps\",
 				"ConsoleTest"

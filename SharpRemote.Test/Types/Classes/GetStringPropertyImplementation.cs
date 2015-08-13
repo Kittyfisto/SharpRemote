@@ -1,6 +1,6 @@
 ﻿using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
-namespace SharpRemote.Test.Hosting
+namespace SharpRemote.Test.Types.Classes
 {
 	public sealed class GetStringPropertyImplementation
 		: IGetStringProperty

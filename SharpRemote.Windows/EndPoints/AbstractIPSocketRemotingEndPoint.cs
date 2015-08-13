@@ -102,10 +102,18 @@ namespace SharpRemote
 
 				var args = new ThreadArgs(socket, _cancellationTokenSource.Token);
 
-				_readThread = new Thread(ReadLoop) { Name = string.Format("EndPoint Socket Reading") };
+				_readThread = new Thread(ReadLoop)
+					{
+						Name = string.Format("EndPoint '{0}' Socket Reading", Name),
+						IsBackground = true,
+					};
 				_readThread.Start(args);
 
-				_writeThread = new Thread(WriteLoop) { Name = string.Format("EndPoint Socket Writing") };
+				_writeThread = new Thread(WriteLoop)
+					{
+						Name = string.Format("EndPoint '{0}' Socket Writing", Name),
+						IsBackground = true,
+					};
 				_writeThread.Start(args);
 
 				Log.InfoFormat("{0}: Connected to {1}", Name, _remoteEndPoint);

@@ -99,6 +99,7 @@
     <Compile Include="Hosting\ProcessWatchdog.cs" />
     <Compile Include="PendingMethodsQueue.cs" />
     <Compile Include="PendingMethodCall.cs" />
+    <Compile Include="ProcessAccessFlags.cs" />
     <Compile Include="RingBuffer.cs" />
     <Compile Include="Hosting\DefaultImplementationRegistry.cs" />
     <Compile Include="Hosting\HeartbeatMonitor.cs" />

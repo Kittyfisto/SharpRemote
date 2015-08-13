@@ -71,6 +71,21 @@ namespace SharpRemote
 		[return: MarshalAs(UnmanagedType.Bool)]
 		public static extern bool SetDllDirectory(string pathName);
 
+		[DllImport("kernel32.dll", SetLastError = true)]
+		public static extern IntPtr OpenProcess(
+			 ProcessAccessFlags processAccess,
+			 bool bInheritHandle,
+			 int processId
+		);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		public static extern bool CloseHandle(IntPtr hObject);
+
 		#region Postmortem debugging
 
 		[DllImport(PostmortdemDebuggerDll, SetLastError = true, CharSet = CharSet.Unicode,

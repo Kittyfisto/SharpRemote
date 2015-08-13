@@ -331,7 +331,7 @@ namespace SharpRemote.Hosting
 			}
 			catch (Win32Exception e)
 			{
-				switch ((Win32Error) e.NativeErrorCode)
+				switch (e.NativeErrorCode)
 				{
 					case Win32Error.ERROR_FILE_NOT_FOUND:
 

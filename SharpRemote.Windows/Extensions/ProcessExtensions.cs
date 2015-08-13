@@ -1,27 +1,40 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace SharpRemote.Extensions
 {
 	internal static class ProcessExtensions
 	{
-		public static void TryKill(this Process that)
+		/// <summary>
+		/// Tries to kill the given process.
+		/// </summary>
+		/// <param name="that"></param>
+		/// <returns>True when the given process has been killed or doesn't live anymore, false otherwise</returns>
+		public static bool TryKill(this Process that)
 		{
+			IntPtr handle = IntPtr.Zero;
 			try
 			{
-				if (that != null && !that.HasExited)
+				handle = NativeMethods.OpenProcess(ProcessAccessFlags.Terminate, false,
+				                                   that.Id);
+				if (handle == IntPtr.Zero)
 				{
-					that.Kill();
+					var err = Marshal.GetLastWin32Error();
+					return false;
 				}
+
+				if (!NativeMethods.TerminateProcess(handle, 0))
+				{
+					var err = Marshal.GetLastWin32Error();
+					return false;
+				}
+
+				return true;
 			}
-			catch (Win32Exception)
+			finally
 			{
-				
-			}
-			catch (InvalidOperationException)
-			{
-				
+				NativeMethods.CloseHandle(handle);
 			}
 		}
 	}

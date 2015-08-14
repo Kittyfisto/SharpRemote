@@ -97,6 +97,10 @@
     <Compile Include="Hosting\PostMortemSettings.cs" />
     <Compile Include="Hosting\ProcessFaultReason.cs" />
     <Compile Include="Hosting\ProcessWatchdog.cs" />
+    <Compile Include="Broadcasting\Message.cs" />
+    <Compile Include="Broadcasting\P2P.cs" />
+    <Compile Include="Broadcasting\RegisteredService.cs" />
+    <Compile Include="Broadcasting\Service.cs" />
     <Compile Include="PendingMethodsQueue.cs" />
     <Compile Include="PendingMethodCall.cs" />
     <Compile Include="ProcessAccessFlags.cs" />

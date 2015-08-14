@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Net;
-using System.Net.PeerToPeer;
 using System.Net.Sockets;
 using System.Reflection;
+using SharpRemote.Broadcasting;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using log4net;
@@ -19,18 +19,13 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private PeerNameRegistration _peerNameRegistration;
+		private RegisteredService _peerNameRegistration;
 		private Socket _serverSocket;
 
 		/// <summary>
 		///     Creates a new socket end point that (optionally) is bound to the given
-		///     P2P name, if PNRP is available, otherwise the name is only used for debugging.
+		///     P2P name, otherwise the name is only used for debugging.
 		/// </summary>
-		/// <remarks>
-		///     Currently, no exception is thrown when the required P2P service "PNRPsvc" is
-		///     not installed or not running. Check the <see cref="AbstractIPSocketRemotingEndPoint.IsP2PAvailable" /> flag to
-		///     find out if it is.
-		/// </remarks>
 		/// <param name="name">The name of this socket, used to publish it via PNRP as well as to refer to this endpoint in diagnostic output</param>
 		/// <param name="clientAuthenticator">The authenticator, if any, to authenticate a client against a server (both need to use the same authenticator)</param>
 		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>
@@ -84,16 +79,10 @@ namespace SharpRemote
 			_serverSocket.BeginAccept(OnIncomingConnection, null);
 			Log.InfoFormat("EndPoint '{0}' listening on {1}", Name, LocalEndPoint);
 
-			if (Name != null && IsP2PAvailable)
+			if (Name != null)
 			{
-				var peerName = new PeerName(Name, PeerNameType.Unsecured);
-				_peerNameRegistration = new PeerNameRegistration
-					{
-						PeerName = peerName,
-						Port = LocalEndPoint.Port,
-					};
-				_peerNameRegistration.Start();
-				Log.InfoFormat("Endpoint '{0}@{1}' published to local cloud via PNRP", Name, LocalEndPoint);
+				_peerNameRegistration = P2P.RegisterService(Name, LocalEndPoint);
+				Log.InfoFormat("Endpoint '{0}@{1}' published to local cloud", Name, LocalEndPoint);
 			}
 		}
 

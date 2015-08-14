@@ -5,6 +5,7 @@ using System.Net.PeerToPeer;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading.Tasks;
+using SharpRemote.Broadcasting;
 using SharpRemote.Exceptions;
 using log4net;
 
@@ -217,8 +218,7 @@ namespace SharpRemote
 		{
 			if (endPointName == null) throw new ArgumentNullException("endPointName");
 
-			var resolver = new PeerNameResolver();
-			PeerNameRecordCollection results = resolver.Resolve(new PeerName(endPointName, PeerNameType.Unsecured));
+			var results = P2P.FindServices(endPointName);
 
 			if (results.Count == 0)
 			{
@@ -226,20 +226,8 @@ namespace SharpRemote
 				throw new NoSuchIPEndPointException(endPointName);
 			}
 
-			PeerNameRecord peer = results[0];
-			IPEndPointCollection endPoints = peer.EndPointCollection;
-
-			foreach (IPEndPoint ep in endPoints)
-			{
-				try
-				{
-					Connect(ep, timeout);
-					break;
-				}
-				catch (NoSuchIPEndPointException) //< Let's try the next...
-				{
-				}
-			}
+			var peer = results[0];
+			Connect(peer.EndPoint, timeout);
 		}
 
 		/// <summary>

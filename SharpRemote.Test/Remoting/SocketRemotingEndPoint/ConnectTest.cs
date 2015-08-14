@@ -39,7 +39,6 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[Ignore("TODO: Find out why this test wont work - it should :P")]
 		[Description("Verifies that Connect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect2()
 		{

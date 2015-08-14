@@ -128,7 +128,6 @@ namespace SharpRemote.Hosting
 			try
 			{
 				_hasProcessExited = false;
-
 				_process.BeginOutputReadLine();
 
 				if (!_waitHandle.WaitOne(Constants.ProcessReadyTimeout))

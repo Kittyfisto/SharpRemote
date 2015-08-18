@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Exceptions;
@@ -307,6 +310,31 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					.ShouldThrow<HandshakeException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that when Connect throws before the timeout is reached, the exception is handled gracefully (and not thrown on the finalizer thread)")]
+		public void TestConnect18()
+		{
+			using (var client = CreateClient("Rep1"))
+			{
+				var exceptions = new List<Exception>();
+				TaskScheduler.UnobservedTaskException += (sender, args) =>
+					{
+						exceptions.Add(args.Exception);
+						args.SetObserved();
+					};
+
+				new Action(() => client.Connect(new IPEndPoint(IPAddress.Loopback, 1234), TimeSpan.FromMilliseconds(1)))
+					.ShouldThrow<NoSuchIPEndPointException>();
+
+				Thread.Sleep(2000);
+
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+
+				exceptions.Should().BeEmpty();
 			}
 		}
 	}

@@ -293,21 +293,39 @@ namespace SharpRemote
 			try
 			{
 				DateTime started = DateTime.Now;
-				var task = new Task(() =>
+				var task = new Task<Exception>(() =>
 					{
-						Log.DebugFormat("Task to connect to '{0}' started", endPoint);
+						try
+						{
+							Log.DebugFormat("Task to connect to '{0}' started", endPoint);
 
-						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+							socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-						Log.DebugFormat("Socket to connect to '{0}' created", endPoint);
+							Log.DebugFormat("Socket to connect to '{0}' created", endPoint);
 
-						socket.Connect(endPoint);
+							socket.Connect(endPoint);
 
-						Log.DebugFormat("Socket connected to '{0}'", endPoint);
+							Log.DebugFormat("Socket connected to '{0}'", endPoint);
+
+							return null;
+						}
+						catch (SocketException e)
+						{
+							return e;
+						}
+						catch (Exception e)
+						{
+							Log.WarnFormat("Caught unexpected exception while trying to connect to socket: {0}", e);
+							return e;
+						}
 					}, TaskCreationOptions.LongRunning);
 				task.Start();
 				if (!task.Wait(timeout))
 					throw new NoSuchIPEndPointException(endPoint, timeout);
+
+				var ex = task.Result;
+				if (ex != null)
+					throw new NoSuchIPEndPointException(endPoint, ex);
 
 				TimeSpan remaining = timeout - (DateTime.Now - started);
 				PerformOutgoingHandshake(socket, remaining);
@@ -315,22 +333,6 @@ namespace SharpRemote
 				LocalEndPoint = (IPEndPoint) socket.LocalEndPoint;
 
 				success = true;
-			}
-			catch (AggregateException e)
-			{
-				ReadOnlyCollection<Exception> inner = e.InnerExceptions;
-				if (inner.Count != 1)
-					throw;
-
-				Exception ex = inner[0];
-				if (!(ex is SocketException))
-					throw;
-
-				throw new NoSuchIPEndPointException(endPoint, e);
-			}
-			catch (SocketException e)
-			{
-				throw new NoSuchIPEndPointException(endPoint, e);
 			}
 			finally
 			{

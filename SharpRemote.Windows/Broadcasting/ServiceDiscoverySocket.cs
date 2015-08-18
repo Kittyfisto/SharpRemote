@@ -26,11 +26,13 @@ namespace SharpRemote.Broadcasting
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly Socket _socket;
+		private readonly IPAddress _localAddress;
 		private bool _isDisposed;
 
 		public ServiceDiscoverySocket(NetworkInterface iface, IPAddress address, INetworkServiceRegisty services)
 		{
 			_services = services;
+			_localAddress = address;
 			_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
 				{
 					MulticastLoopback = true,
@@ -166,7 +168,14 @@ namespace SharpRemote.Broadcasting
 
 				foreach (var service in services)
 				{
-					byte[] buffer = Message.CreateResponse(service.Name, service.EndPoint);
+					var endPoint = service.EndPoint;
+					if (Equals(endPoint.Address, IPAddress.Any) ||
+					    Equals(endPoint.Address, IPAddress.IPv6Any))
+					{
+						endPoint = new IPEndPoint(_localAddress, endPoint.Port);
+					}
+
+					byte[] buffer = Message.CreateResponse(service.Name, endPoint);
 					_socket.SendTo(buffer, MulticastEndPoint);
 				}
 			}

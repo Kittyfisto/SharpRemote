@@ -107,21 +107,6 @@ namespace SharpRemote.Broadcasting
 						return false;
 					}
 
-					// It's possible the sender publishes his service on more than one interface, in which case
-					// IPAddress.Any is passed - we have to patch the response with the address of the endpoint that
-					// sent us this response...
-					var remoteIPEndPoint = remoteEndPoint as IPEndPoint;
-					if (Equals(endPoint.Address, IPAddress.Any) || Equals(endPoint.Address, IPAddress.IPv6Any))
-					{
-						if (remoteIPEndPoint != null)
-						{
-							endPoint = new IPEndPoint(
-								remoteIPEndPoint.Address,
-								endPoint.Port
-								);
-						}
-					}
-
 					return true;
 				}
 

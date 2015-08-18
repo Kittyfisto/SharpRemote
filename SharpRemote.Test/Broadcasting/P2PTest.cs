@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Broadcasting;
@@ -61,7 +63,7 @@ namespace SharpRemote.Test.Broadcasting
 		{
 			const string name = "Foobar";
 			var ep1 = new IPEndPoint(IPAddress.Parse("123.241.108.21"), 12345);
-			var ep2 = new IPEndPoint(IPAddress.Any, 1243);
+			var ep2 = new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1243);
 
 			using (P2P.RegisterService(name, ep1))
 			{
@@ -86,6 +88,27 @@ namespace SharpRemote.Test.Broadcasting
 						{
 							new Service(name, ep1),
 						});
+			}
+		}
+
+		[Test]
+		[Description("Verifies that services which are bound to any address are responded with all explicit addresses of the particular machine")]
+		public void TestFindServices4()
+		{
+			const string name = "Foobar";
+			var ep = new IPEndPoint(IPAddress.Any, 12345);
+
+			using (P2P.RegisterService(name, ep))
+			{
+				var services = P2P.FindServices(name);
+				services.Should().NotBeNull();
+
+				var iPv4Interfaces = NetworkInterface.GetAllNetworkInterfaces()
+				                                     .Where(x => x.OperationalStatus == OperationalStatus.Up)
+				                                     .SelectMany(x => x.GetIPProperties().UnicastAddresses)
+				                                     .Where(x => x.Address.AddressFamily == AddressFamily.InterNetwork)
+				                                     .ToList();
+				services.Count.Should().Be(iPv4Interfaces.Count);
 			}
 		}
 	}

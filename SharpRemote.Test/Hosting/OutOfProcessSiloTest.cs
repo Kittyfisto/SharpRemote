@@ -185,6 +185,24 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[Description("Verifies that the serializer specified in the ctor is actually used - instead of a new one")]
+		public void TestCtor5()
+		{
+			var serializer = new Serializer();
+			serializer.IsTypeRegistered<Tree>().Should().BeFalse();
+
+			using (var silo = new OutOfProcessSilo(serializer: serializer))
+			{
+				silo.Start();
+				var grain = silo.CreateGrain<IReturnsObjectMethod, ReturnsTree>();
+				var tree = grain.GetListener();
+				tree.Should().NotBeNull();
+				tree.Should().BeOfType<Tree>();
+				serializer.IsTypeRegistered<Tree>().Should().BeTrue("Because the serializer specified in the ctor should've been used to deserialize the value returned by the grain; in turn registering it with said serializer");
+			}
+		}
+
+		[Test]
 		public void TestDispose1()
 		{
 			OutOfProcessSilo silo;

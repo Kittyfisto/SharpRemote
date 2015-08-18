@@ -72,6 +72,14 @@ namespace SharpRemote
 		}
 
 		/// <summary>
+		/// The module where all newly created types reside in.
+		/// </summary>
+		public ModuleBuilder Module
+		{
+			get { return _module; }
+		}
+
+		/// <summary>
 		/// Creates a new serializer that dynamically compiles serialization methods to a new DynamicAssembly.
 		/// </summary>
 		public Serializer(ITypeResolver typeResolver = null)

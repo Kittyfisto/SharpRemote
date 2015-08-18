@@ -114,6 +114,7 @@ namespace SharpRemote.Hosting
 		/// <param name="process"></param>
 		/// <param name="options"></param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
+		/// <param name="serializer">The serializer used to serialize and deserialize values - if none is specifed then a new one is created</param>
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
@@ -123,6 +124,7 @@ namespace SharpRemote.Hosting
 			string process = ProcessWatchdog.SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
 			ITypeResolver customTypeResolver = null,
+			Serializer serializer = null,
 			HeartbeatSettings heartbeatSettings = null,
 			LatencySettings latencySettings = null,
 			PostMortemSettings postMortemSettings = null
@@ -133,7 +135,8 @@ namespace SharpRemote.Hosting
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 				throw new ArgumentException("postMortemSettings");
 
-			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver);
+			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
+			                                             serializer: serializer);
 			_endPoint.OnFailure += EndPointOnOnFailure;
 
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);

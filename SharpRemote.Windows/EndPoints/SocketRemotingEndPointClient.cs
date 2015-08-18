@@ -34,16 +34,19 @@ namespace SharpRemote
 		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// /// <param name="networkServiceDiscoverer">The discoverer used to find services by name within the local network</param>
+		/// <param name="serializer">The serializer used serialize and deserialize values - if none is specified a new one is created</param>
 		public SocketRemotingEndPointClient(string name = null,
 		                              IAuthenticator clientAuthenticator = null,
-		                              IAuthenticator serverAuthenticator = null,
-		                              ITypeResolver customTypeResolver = null,
-			NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		                                    IAuthenticator serverAuthenticator = null,
+		                                    ITypeResolver customTypeResolver = null,
+		                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
+		                                    Serializer serializer = null)
 			: base(EndPointType.Client,
-			name,
-			clientAuthenticator,
-			serverAuthenticator,
-			customTypeResolver)
+			       name,
+			       clientAuthenticator,
+			       serverAuthenticator,
+			       customTypeResolver,
+			       serializer)
 		{
 			_networkServiceDiscoverer = networkServiceDiscoverer;
 		}

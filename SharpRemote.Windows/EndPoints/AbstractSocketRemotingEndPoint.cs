@@ -117,7 +117,7 @@ namespace SharpRemote
 
 		private readonly PendingMethodsQueue _pendingMethodCalls;
 		private readonly Dictionary<long, MethodInvocation> _pendingMethodInvocations;
-		protected CancellationTokenSource _cancellationTokenSource;
+		protected CancellationTokenSource CancellationTokenSource;
 
 		#endregion
 
@@ -160,7 +160,8 @@ namespace SharpRemote
 		                                        string name,
 		                                        IAuthenticator clientAuthenticator = null,
 		                                        IAuthenticator serverAuthenticator = null,
-		                                        ITypeResolver customTypeResolver = null)
+		                                        ITypeResolver customTypeResolver = null,
+		                                        Serializer serializer = null)
 		{
 			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
 
@@ -173,12 +174,21 @@ namespace SharpRemote
 
 			_proxiesById = new Dictionary<ulong, WeakReference<IProxy>>();
 
-			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-			string moduleName = assemblyName.Name + ".dll";
-			_module = _assembly.DefineDynamicModule(moduleName);
+			if (serializer == null)
+			{
+				var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
+				_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+				string moduleName = assemblyName.Name + ".dll";
+				_module = _assembly.DefineDynamicModule(moduleName);
 
-			_serializer = new Serializer(_module, customTypeResolver);
+				_serializer = new Serializer(_module, customTypeResolver);
+			}
+			else
+			{
+				_module = serializer.Module;
+				_serializer = serializer;
+			}
+
 			_servantCreator = new ServantCreator(_module, _serializer, this, this);
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
 			_pendingMethodCalls = new PendingMethodsQueue();
@@ -825,7 +835,7 @@ namespace SharpRemote
 
 					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
 
-					_cancellationTokenSource.Cancel();
+					CancellationTokenSource.Cancel();
 					_pendingMethodCalls.CancelAllCalls();
 
 					// If we are disconnecting because of a failure, then we don't notify the other end

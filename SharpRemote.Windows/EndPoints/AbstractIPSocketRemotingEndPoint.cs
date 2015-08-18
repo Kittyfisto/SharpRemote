@@ -30,12 +30,14 @@ namespace SharpRemote
 		                                          string name = null,
 		                                          IAuthenticator clientAuthenticator = null,
 		                                          IAuthenticator serverAuthenticator = null,
-		                                          ITypeResolver customTypeResolver = null)
+		                                          ITypeResolver customTypeResolver = null,
+		                                          Serializer serializer = null)
 			: base(new GrainIdGenerator(type),
-					name,
+			       name,
 			       clientAuthenticator,
 			       serverAuthenticator,
-			       customTypeResolver)
+			       customTypeResolver,
+			       serializer)
 		{}
 
 		/// <summary>
@@ -98,9 +100,9 @@ namespace SharpRemote
 			{
 				Socket = socket;
 				_remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
-				_cancellationTokenSource = new CancellationTokenSource();
+				CancellationTokenSource = new CancellationTokenSource();
 
-				var args = new ThreadArgs(socket, _cancellationTokenSource.Token);
+				var args = new ThreadArgs(socket, CancellationTokenSource.Token);
 
 				_readThread = new Thread(ReadLoop)
 					{

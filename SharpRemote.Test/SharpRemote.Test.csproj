@@ -79,6 +79,7 @@
     <Compile Include="Types\Classes\CausesAssert.cs" />
     <Compile Include="Types\Classes\DoesNothing.cs" />
     <Compile Include="Types\Classes\ReturnsTask.cs" />
+    <Compile Include="Types\Classes\ReturnsTree.cs" />
     <Compile Include="Types\Classes\VoidMethodStringParameter.cs" />
     <Compile Include="Types\Interfaces\IByReferenceReturnMethodInterface.cs" />
     <Compile Include="Types\Interfaces\IByReferenceType.cs" />

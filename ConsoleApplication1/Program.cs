@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using SharpRemote.Broadcasting;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types.Classes;
@@ -19,6 +20,16 @@ namespace ConsoleApplication1
 	{
 		private static unsafe void Main(string[] args)
 		{
+			var s = P2P.RegisterService("Foo", new IPEndPoint(IPAddress.Any, 54321));
+
+			while (Console.ReadLine() != "exit")
+			{
+				
+			}
+
+
+
+
 #if DEBUG
 			var version = CRuntimeVersions._110 | CRuntimeVersions.Debug;
 			const string path = @"E:\Code\SharpRemote\bin\win\x86D";

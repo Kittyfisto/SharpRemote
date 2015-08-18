@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using FluentAssertions;
 using NUnit.Framework;
@@ -70,11 +71,13 @@ namespace SharpRemote.Test.Broadcasting
 				{
 					services = P2P.FindServices(name);
 					services.Should().NotBeNull();
-					services.Should().BeEquivalentTo(new[]
-						{
-							new Service(name, ep1),
-							new Service(name, ep2)
-						});
+					services.Count.Should().Be(2);
+					services.Should().Contain(new Service(name, ep1));
+
+					var service = services.First(x => !Equals(x.EndPoint, ep1));
+					service.EndPoint.Should().NotBeNull();
+					service.EndPoint.Address.Should().NotBe(IPAddress.Any, "Because a specific address should be given in the response");
+					service.Name.Should().Be(name);
 				}
 
 				services = P2P.FindServices(name);

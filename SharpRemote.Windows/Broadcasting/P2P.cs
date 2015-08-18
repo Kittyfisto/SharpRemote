@@ -50,7 +50,6 @@ namespace SharpRemote.Broadcasting
 			                              SocketOptionName.AddMembership,
 			                              new MulticastOption(MulticastAddress));
 
-
 			BeginReceive();
 
 			Services = new List<RegisteredService>();
@@ -63,7 +62,11 @@ namespace SharpRemote.Broadcasting
 			lock (ReceiveSocket)
 			{
 				var buffer = new byte[MaxLength];
-				ReceiveSocket.BeginReceive(buffer, 0, buffer.Length, SocketFlags.None, OnReceived, buffer);
+				EndPoint endPoint = new IPEndPoint(IPAddress.Any, Port);
+				ReceiveSocket.BeginReceiveFrom(buffer, 0, buffer.Length,
+				                               SocketFlags.None,
+				                               ref endPoint,
+				                               OnReceived, buffer);
 			}
 		}
 
@@ -71,23 +74,23 @@ namespace SharpRemote.Broadcasting
 		{
 			try
 			{
+				EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, Port);
 				int length;
 				var buffer = (byte[]) ar.AsyncState;
 				lock (ReceiveSocket)
 				{
-					SocketError error;
-					length = ReceiveSocket.EndReceive(ar, out error);
+					length = ReceiveSocket.EndReceiveFrom(ar, ref remoteEndPoint);
 				}
 
 				string token;
 				string name;
 				IPEndPoint endPoint;
-				if (Message.TryRead(buffer, out token, out name, out endPoint))
+				if (Message.TryRead(buffer, remoteEndPoint, out token, out name, out endPoint))
 				{
 					switch (token)
 					{
 						case Message.P2PQueryToken:
-							SendResponse(name);
+							SendResponse(name, remoteEndPoint);
 							break;
 
 						case Message.P2PResponseToken:
@@ -101,9 +104,14 @@ namespace SharpRemote.Broadcasting
 				{
 					if (Log.IsDebugEnabled)
 					{
-						Log.DebugFormat("Received invalid response ({0} bytes), ignoring it", length);
+						Log.DebugFormat("Received invalid response ({0} bytes) from '{1}', ignoring it",
+						                length,
+						                remoteEndPoint);
 					}
 				}
+			}
+			catch (SocketException)
+			{
 			}
 			catch (Exception e)
 			{
@@ -115,8 +123,15 @@ namespace SharpRemote.Broadcasting
 			}
 		}
 
-		private static void SendResponse(string name)
+		private static void SendResponse(string name, EndPoint remoteEndPoint)
 		{
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Received query (name: {0}) from '{1}', answering...",
+				                name,
+				                remoteEndPoint);
+			}
+
 			var services = new List<RegisteredService>();
 			lock (Services)
 			{
@@ -210,6 +225,14 @@ namespace SharpRemote.Broadcasting
 					acceptingResponses = false;
 					OnResponse -= onResponse;
 				}
+			}
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Received '{0}' response(s): {1}",
+					ret.Count,
+					string.Join(", ", ret)
+					);
 			}
 
 			return ret.ToList();

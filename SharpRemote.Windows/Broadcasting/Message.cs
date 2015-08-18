@@ -71,7 +71,7 @@ namespace SharpRemote.Broadcasting
 			return true;
 		}
 
-		public static bool TryRead(byte[] message, out string token, out string name, out IPEndPoint endPoint)
+		public static bool TryRead(byte[] message, EndPoint remoteEndPoint, out string token, out string name, out IPEndPoint endPoint)
 		{
 			using (var md5 = MD5.Create())
 			using (var stream = new MemoryStream(message))
@@ -105,6 +105,21 @@ namespace SharpRemote.Broadcasting
 						name = null;
 						endPoint = null;
 						return false;
+					}
+
+					// It's possible the sender publishes his service on more than one interface, in which case
+					// IPAddress.Any is passed - we have to patch the response with the address of the endpoint that
+					// sent us this response...
+					var remoteIPEndPoint = remoteEndPoint as IPEndPoint;
+					if (Equals(endPoint.Address, IPAddress.Any) || Equals(endPoint.Address, IPAddress.IPv6Any))
+					{
+						if (remoteIPEndPoint != null)
+						{
+							endPoint = new IPEndPoint(
+								remoteIPEndPoint.Address,
+								endPoint.Port
+								);
+						}
 					}
 
 					return true;

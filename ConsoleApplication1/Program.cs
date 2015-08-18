@@ -13,6 +13,7 @@ using SharpRemote.Hosting;
 using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
+using log4net.Config;
 
 namespace ConsoleApplication1
 {
@@ -20,15 +21,18 @@ namespace ConsoleApplication1
 	{
 		private static unsafe void Main(string[] args)
 		{
-			var s = P2P.RegisterService("Foo", new IPEndPoint(IPAddress.Any, 54321));
+			XmlConfigurator.Configure(new FileInfo("ConsoleApplication1.exe.config"));
 
-			while (Console.ReadLine() != "exit")
+			//var s = P2P.RegisterService("Foo", new IPEndPoint(IPAddress.Any, 54321));
+
+			while (true)
 			{
-				
+				var services = P2P.FindServices("Foo");
+				Console.WriteLine("Found {0} service(s): {1}",
+				                  services.Count,
+				                  string.Join(", ", services));
+				Thread.Sleep(1000);
 			}
-
-
-
 
 #if DEBUG
 			var version = CRuntimeVersions._110 | CRuntimeVersions.Debug;

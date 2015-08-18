@@ -50,6 +50,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
+    <Compile Include="Broadcasting\AnyServiceDiscoverySocket.cs" />
+    <Compile Include="Broadcasting\INetworkServiceRegisty.cs" />
+    <Compile Include="Broadcasting\IServiceDiscoverySocket.cs" />
+    <Compile Include="Broadcasting\ServiceDiscoverySocket.cs" />
+    <Compile Include="Broadcasting\ServiceRegistry.cs" />
     <Compile Include="CodeGeneration\Remoting\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeSerializer.cs" />

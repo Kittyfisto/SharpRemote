@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using log4net;
@@ -10,60 +9,172 @@ using log4net;
 namespace SharpRemote.Broadcasting
 {
 	/// <summary>
-	/// 
 	/// </summary>
 	internal static class P2P
 	{
-		private const ushort Port = 4567;
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		private const int MaxQueries = 10;
+		private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(1);
+
+		private static readonly ServiceRegistry Services;
+		private static readonly AnyServiceDiscoverySocket Socket;
+
+		static P2P()
+		{
+			Services = new ServiceRegistry();
+			Socket = new AnyServiceDiscoverySocket(Services);
+		}
+
+		public static RegisteredService RegisterService(string name, IPEndPoint ep)
+		{
+			return Services.RegisterService(name, ep);
+		}
+
+		public static List<Service> FindAllServices(TimeSpan timeout)
+		{
+			return FindServices(null, timeout);
+		}
+
+		public static List<Service> FindAllServices()
+		{
+			return FindServices(null);
+		}
+
+		public static List<Service> FindServices(string name)
+		{
+			return FindServices(name, DefaultTimeout);
+		}
+
+		public static List<Service> FindServices(string name, TimeSpan timeout)
+		{
+			var ret = new HashSet<Service>();
+			bool acceptingResponses = false;
+
+			Action<Service> onResponse = service =>
+			{
+				lock (ret)
+				{
+					if (acceptingResponses)
+						ret.Add(service);
+				}
+			};
+
+			try
+			{
+				acceptingResponses = true;
+				Socket.OnResponseReceived += onResponse;
+
+				TimeSpan sleepTime = TimeSpan.FromSeconds(timeout.TotalSeconds / MaxQueries);
+				for (int i = 0; i < MaxQueries; ++i)
+				{
+					lock (Socket)
+					{
+						Socket.Query(name);
+					}
+
+					Thread.Sleep(sleepTime);
+				}
+			}
+			finally
+			{
+				lock (ret)
+				{
+					acceptingResponses = false;
+					Socket.OnResponseReceived -= onResponse;
+				}
+			}
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Received '{0}' response(s): {1}",
+					ret.Count,
+					string.Join(", ", ret)
+					);
+			}
+
+			return ret.ToList();
+		}
+
+		/*
+		private const ushort Port = 65335;
 		private const int MaxQueries = 10;
 		private const int MaxLength = 508;
-		private const string NoName = "";
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(1);
 		private static readonly IPAddress MulticastAddress = IPAddress.Parse("239.255.255.255");
+		private static readonly IPEndPoint MulticastEndPoint = new IPEndPoint(MulticastAddress, Port);
 
-		private static readonly Socket SendSocket;
-		private static readonly Socket ReceiveSocket;
+		private static readonly List<Socket> Sockets;
 		private static readonly List<RegisteredService> Services;
 
 		static P2P()
 		{
-			SendSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
+			Sockets = new List<Socket>();
+			var ifaces = NetworkInterface.GetAllNetworkInterfaces();
+			foreach (var iface in ifaces)
+			{
+				var props = iface.GetIPProperties();
+				foreach (var addr in props.UnicastAddresses)
 				{
-					DontFragment = true,
-					MulticastLoopback = true,
-				};
-			SendSocket.SetSocketOption(SocketOptionLevel.IP,
-			                           SocketOptionName.AddMembership,
-			                           new MulticastOption(MulticastAddress));
-			SendSocket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
-			SendSocket.Connect(new IPEndPoint(MulticastAddress, Port));
-
-			ReceiveSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
-				{
-					MulticastLoopback = true,
-				};
-			ReceiveSocket.SetSocketOption(SocketOptionLevel.Socket,
-			                              SocketOptionName.ReuseAddress, true);
-			ReceiveSocket.Bind(new IPEndPoint(IPAddress.Any, Port));
-			ReceiveSocket.SetSocketOption(SocketOptionLevel.IP,
-			                              SocketOptionName.AddMembership,
-			                              new MulticastOption(MulticastAddress));
+					var address = addr.Address;
+					if (address.AddressFamily == AddressFamily.InterNetwork)
+					{
+						var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
+						{
+							MulticastLoopback = true,
+						};
+						socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
+						socket.SetSocketOption(SocketOptionLevel.Socket,
+													  SocketOptionName.ReuseAddress, true);
+						socket.Bind(new IPEndPoint(address, Port));
+						JoinMulticastGroup(socket, iface, address);
+						Sockets.Add(socket);
+					}
+				}
+			}
 
 			BeginReceive();
 
 			Services = new List<RegisteredService>();
 		}
 
+		private static void JoinMulticastGroup(Socket socket, NetworkInterface iface, IPAddress address)
+		{
+			if (address.AddressFamily == AddressFamily.InterNetwork)
+			{
+				try
+				{
+					socket.SetSocketOption(SocketOptionLevel.IP,
+												  SocketOptionName.AddMembership,
+												  new MulticastOption(MulticastAddress,
+																	  address));
+
+					Log.DebugFormat("Joined multicast group {0} for {1}@{2}",
+					                MulticastAddress,
+					                address,
+					                iface.Name);
+				}
+				catch (SocketException e)
+				{
+					Log.DebugFormat("Unable to join multicast group {0} for {1}@{2}: {3}",
+					                MulticastAddress,
+					                address,
+					                iface.Name,
+					                e);
+				}
+			}
+		}
+
 		private static event Action<Service> OnResponse;
 
 		private static void BeginReceive()
 		{
-			lock (ReceiveSocket)
+			lock (Socket)
 			{
 				var buffer = new byte[MaxLength];
 				EndPoint endPoint = new IPEndPoint(IPAddress.Any, Port);
-				ReceiveSocket.BeginReceiveFrom(buffer, 0, buffer.Length,
+				Socket.BeginReceiveFrom(buffer, 0, buffer.Length,
 				                               SocketFlags.None,
 				                               ref endPoint,
 				                               OnReceived, buffer);
@@ -77,9 +188,9 @@ namespace SharpRemote.Broadcasting
 				EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, Port);
 				int length;
 				var buffer = (byte[]) ar.AsyncState;
-				lock (ReceiveSocket)
+				lock (Socket)
 				{
-					length = ReceiveSocket.EndReceiveFrom(ar, ref remoteEndPoint);
+					length = Socket.EndReceiveFrom(ar, ref remoteEndPoint);
 				}
 
 				string token;
@@ -110,8 +221,9 @@ namespace SharpRemote.Broadcasting
 					}
 				}
 			}
-			catch (SocketException)
+			catch (SocketException e)
 			{
+				Log.ErrorFormat("Caught socket error: {0}", e);
 			}
 			catch (Exception e)
 			{
@@ -138,12 +250,12 @@ namespace SharpRemote.Broadcasting
 				services.AddRange(Services.Where(service => name == NoName || service.Name == name));
 			}
 
-			lock (SendSocket)
+			lock (Socket)
 			{
 				foreach (var service in services)
 				{
 					byte[] buffer = Message.CreateResponse(service.Name, service.EndPoint);
-					SendSocket.Send(buffer);
+					Socket.SendTo(buffer, MulticastEndPoint);
 				}
 			}
 		}
@@ -210,9 +322,9 @@ namespace SharpRemote.Broadcasting
 				TimeSpan sleepTime = TimeSpan.FromSeconds(timeout.TotalSeconds/MaxQueries);
 				for (int i = 0; i < MaxQueries; ++i)
 				{
-					lock (SendSocket)
+					lock (Socket)
 					{
-						SendSocket.Send(query);
+						Socket.SendTo(query, MulticastEndPoint);
 					}
 
 					Thread.Sleep(sleepTime);
@@ -237,5 +349,6 @@ namespace SharpRemote.Broadcasting
 
 			return ret.ToList();
 		}
+		 */
 	}
 }

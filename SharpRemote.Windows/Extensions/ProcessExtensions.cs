@@ -41,6 +41,9 @@ namespace SharpRemote.Extensions
 		/// <returns>True when the given process has been killed or doesn't live anymore, false otherwise</returns>
 		public static bool TryKill(this Process that)
 		{
+			if (that == null)
+				return true;
+
 			return TryKill(that.Id);
 		}
 	}

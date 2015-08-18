@@ -224,6 +224,14 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		public void TestDispose3()
+		{
+			var silo = new OutOfProcessSilo();
+			new Action(silo.Dispose)
+				.ShouldNotThrow();
+		}
+
+		[Test]
 		[Description("Verifies that a crash of the host process is detected when it happens while a method call")]
 		public void TestFailureDetection1()
 		{

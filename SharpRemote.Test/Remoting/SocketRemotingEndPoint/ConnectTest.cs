@@ -69,6 +69,31 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[Description("Verifies that TryConnect() can establish a connection with an endpoint by specifying its name")]
+		public void TestConnect23()
+		{
+			using (var client = CreateClient("Rep1"))
+			using (var server = CreateServer("Rep2"))
+			{
+				server.Bind(IPAddress.Loopback);
+
+				client.IsConnected.Should().BeFalse();
+				client.RemoteEndPoint.Should().BeNull();
+
+				server.IsConnected.Should().BeFalse();
+				server.RemoteEndPoint.Should().BeNull();
+
+				client.TryConnect(server.Name, TimeSpan.FromSeconds(10))
+				      .Should().BeTrue();
+
+				client.IsConnected.Should().BeTrue();
+				client.RemoteEndPoint.Should().Be(server.LocalEndPoint);
+
+				server.IsConnected.Should().BeTrue();
+			}
+		}
+
+		[Test]
 		[Description(
 			"Verifies that Connect() cannot establish a connection with a non-existant endpoint and returns in the specified timeout"
 			)]

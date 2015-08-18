@@ -847,8 +847,9 @@ namespace SharpRemote
 					}
 
 					_socket = null;
-					InternalRemoteEndPoint = null;
 				}
+
+				InternalRemoteEndPoint = null;
 			}
 		}
 

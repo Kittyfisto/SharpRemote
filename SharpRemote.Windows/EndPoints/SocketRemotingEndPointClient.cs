@@ -66,8 +66,7 @@ namespace SharpRemote
 		{
 			if (endPointName == null) throw new ArgumentNullException("endPointName");
 
-			var resolver = new PeerNameResolver();
-			PeerNameRecordCollection results = resolver.Resolve(new PeerName(endPointName, PeerNameType.Unsecured));
+			var results = P2P.FindServices(endPointName);
 
 			if (results.Count == 0)
 			{
@@ -75,16 +74,8 @@ namespace SharpRemote
 				return false;
 			}
 
-			PeerNameRecord peer = results[0];
-			IPEndPointCollection endPoints = peer.EndPointCollection;
-
-			foreach (IPEndPoint ep in endPoints)
-			{
-				if (TryConnect(ep, timeout))
-					return true;
-			}
-
-			return false;
+			var peer = results[0];
+			return TryConnect(peer.EndPoint, timeout);
 		}
 
 		/// <summary>
@@ -128,20 +119,39 @@ namespace SharpRemote
 			try
 			{
 				DateTime started = DateTime.Now;
-				var task = new Task(() =>
+				var task = new Task<Exception>(() =>
 				{
-					Log.DebugFormat("Task to connect to '{0}' started", endPoint);
+					try
+					{
+						Log.DebugFormat("Task to connect to '{0}' started", endPoint);
 
-					socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-					Log.DebugFormat("Socket to connect to '{0}' created", endPoint);
+						Log.DebugFormat("Socket to connect to '{0}' created", endPoint);
 
-					socket.Connect(endPoint);
+						socket.Connect(endPoint);
 
-					Log.DebugFormat("Socket connected to '{0}'", endPoint);
+						Log.DebugFormat("Socket connected to '{0}'", endPoint);
+
+						return null;
+					}
+					catch (SocketException e)
+					{
+						return e;
+					}
+					catch (Exception e)
+					{
+						Log.WarnFormat("Caught unexpected exception while trying to connect to socket: {0}", e);
+						return e;
+					}
 				}, TaskCreationOptions.LongRunning);
 				task.Start();
 				if (!task.Wait(timeout))
+				{
+					return false;
+				}
+
+				if (task.Result != null)
 				{
 					return false;
 				}
@@ -157,22 +167,6 @@ namespace SharpRemote
 
 				success = true;
 				return true;
-			}
-			catch (AggregateException e)
-			{
-				ReadOnlyCollection<Exception> inner = e.InnerExceptions;
-				if (inner.Count != 1)
-					throw;
-
-				Exception ex = inner[0];
-				if (!(ex is SocketException))
-					throw;
-
-				return false;
-			}
-			catch (SocketException e)
-			{
-				return false;
 			}
 			finally
 			{
@@ -308,8 +302,7 @@ namespace SharpRemote
 							Log.DebugFormat("Socket connected to '{0}'", endPoint);
 
 							return null;
-						}
-						catch (SocketException e)
+						}catch (SocketException e)
 						{
 							return e;
 						}

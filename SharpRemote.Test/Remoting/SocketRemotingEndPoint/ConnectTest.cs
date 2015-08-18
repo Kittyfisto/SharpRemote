@@ -337,5 +337,102 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				exceptions.Should().BeEmpty();
 			}
 		}
+
+		[Test]
+		[Description("Verifies that when TryConnect fails before the timeout is reached, the exception is handled gracefully (and not thrown on the finalizer thread)")]
+		public void TestConnect19()
+		{
+			using (var client = CreateClient("Rep1"))
+			{
+				var exceptions = new List<Exception>();
+				TaskScheduler.UnobservedTaskException += (sender, args) =>
+				{
+					exceptions.Add(args.Exception);
+					args.SetObserved();
+				};
+
+				client.TryConnect(new IPEndPoint(IPAddress.Loopback, 1234), TimeSpan.FromMilliseconds(1)).Should().BeFalse();
+
+				Thread.Sleep(2000);
+
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+
+				exceptions.Should().BeEmpty();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
+		public void TestConnect20()
+		{
+			using (var client1 = CreateClient())
+			using (var client2 = CreateClient())
+			using (var server = CreateServer())
+			{
+				server.Bind(IPAddress.Loopback);
+				client1.Connect(server.LocalEndPoint);
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
+
+				new Action(() => client2.Connect(server.LocalEndPoint))
+					.ShouldThrow<SharpRemoteException>();
+				client2.IsConnected.Should().BeFalse();
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
+			}
+		}
+
+		[Test]
+		[Repeat(10)]
+		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
+		public void TestConnect21()
+		{
+			using (var client1 = CreateClient())
+			using (var client2 = CreateClient())
+			using (var server = CreateServer())
+			{
+				server.Bind(IPAddress.Loopback);
+				client1.Connect(server.LocalEndPoint);
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
+
+				client2.TryConnect(server.LocalEndPoint).Should().BeFalse();
+				client2.IsConnected.Should().BeFalse();
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
+			}
+		}
+
+		[Test]
+		[Ignore("Doesn't work yet")]
+		[Description("Verifies that when one client ends a connection, another one can establish one to that server again")]
+		public void TestConnect22()
+		{
+			using (var client1 = CreateClient())
+			using (var client2 = CreateClient())
+			using (var server = CreateServer())
+			{
+				server.Bind(IPAddress.Loopback);
+				client1.Connect(server.LocalEndPoint);
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
+
+				server.Disconnect();
+
+				server.IsConnected.Should().BeFalse();
+				server.RemoteEndPoint.Should().BeNull();
+
+				client2.Connect(server.LocalEndPoint);
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client2.LocalEndPoint);
+			}
+		}
 	}
 }

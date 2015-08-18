@@ -21,6 +21,7 @@ namespace SharpRemote
 
 		private RegisteredService _peerNameRegistration;
 		private Socket _serverSocket;
+		private bool _isConnecting;
 
 		/// <summary>
 		///     Creates a new socket end point that (optionally) is bound to the given
@@ -109,15 +110,31 @@ namespace SharpRemote
 			{
 				socket = _serverSocket.EndAccept(ar);
 
-				if (Log.IsDebugEnabled)
+				bool isAlreadyConnected;
+				lock (SyncRoot)
 				{
-					Log.DebugFormat("Incoming connection from '{0}', starting handshake...",
-					                socket.RemoteEndPoint);
+					isAlreadyConnected = InternalRemoteEndPoint != null ||
+					                     _isConnecting;
+					_isConnecting = true;
 				}
 
-				PerformIncomingHandshake(socket);
+				if (isAlreadyConnected)
+				{
+					Log.InfoFormat("Blocking incoming connection from '{0}', we're already connected to another endpoint",
+					               socket.RemoteEndPoint);
+				}
+				else
+				{
+					if (Log.IsDebugEnabled)
+					{
+						Log.DebugFormat("Incoming connection from '{0}', starting handshake...",
+										socket.RemoteEndPoint);
+					}
 
-				success = true;
+					PerformIncomingHandshake(socket);
+
+					success = true;
+				}
 			}
 			catch (AuthenticationException e)
 			{
@@ -133,15 +150,19 @@ namespace SharpRemote
 			}
 			finally
 			{
-				if (!success && socket != null)
+				if (!success)
 				{
-					socket.Shutdown(SocketShutdown.Both);
-					socket.Disconnect(false);
-					socket.Dispose();
+					if (socket != null)
+					{
+						socket.Shutdown(SocketShutdown.Both);
+						socket.Disconnect(false);
+						socket.Dispose();
+					}
 				}
 
 				lock (SyncRoot)
 				{
+					_isConnecting = false;
 					if (!IsDisposed)
 					{
 						_serverSocket.BeginAccept(OnIncomingConnection, null);

@@ -516,6 +516,38 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
+		[Description("Verifies that after Collect() has correctly reclaimed 2 of the four keys, those keys can be added again")]
+		public void TestCollect8()
+		{
+			var dictionary = new WeakKeyDictionary<object, int>();
+			var key1 = new Key(1, 9001);
+			var key4 = new Key(4, 9001);
+			new Action(() =>
+			{
+				dictionary.Add(key1, 1);
+				dictionary.Add(new Key(2, 9001), 2);
+				dictionary.Add(new Key(3, 9001), 3);
+				dictionary.Add(key4, 4);
+			})();
+
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+
+			dictionary.Collect();
+			dictionary.Count.Should().Be(2);
+
+			var key2 = new Key(2, 9001);
+			var key3 = new Key(3, 9001);
+			dictionary.Add(key2, 2);
+			dictionary.Add(key3, 3);
+			dictionary.Count.Should().Be(4);
+			dictionary[key2].Should().Be(2);
+			dictionary[key3].Should().Be(3);
+
+			EnsureIntegrity(dictionary);
+		}
+
+		[Test]
 		public void TestCtor()
 		{
 			var dictionary = new WeakKeyDictionary<string, int>();

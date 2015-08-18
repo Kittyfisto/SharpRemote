@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using NUnit.Framework;
+using SharpRemote.ServiceDiscovery;
 using log4net.Core;
 
 namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
@@ -18,14 +19,21 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		protected SocketRemotingEndPointClient CreateClient(string name = null, IAuthenticator clientAuthenticator = null,
-															IAuthenticator serverAuthenticator = null)
+		                                                    IAuthenticator serverAuthenticator = null,
+		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator);
+			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
+			                                        networkServiceDiscoverer);
 		}
 
-		protected SocketRemotingEndPointServer CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null)
+		protected SocketRemotingEndPointServer CreateServer(string name = null, IAuthenticator clientAuthenticator = null,
+		                                                    IAuthenticator serverAuthenticator = null,
+		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointServer(name, clientAuthenticator, serverAuthenticator);
+			return new SocketRemotingEndPointServer(name,
+			                                        clientAuthenticator,
+			                                        serverAuthenticator, null,
+			                                        networkServiceDiscoverer);
 		}
 
 		protected static bool WaitFor(Func<bool> fn, TimeSpan timeout)
@@ -44,6 +52,5 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 			return false;
 		}
-
 	}
 }

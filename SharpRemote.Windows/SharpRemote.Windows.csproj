@@ -50,11 +50,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
-    <Compile Include="Broadcasting\AnyServiceDiscoverySocket.cs" />
-    <Compile Include="Broadcasting\INetworkServiceRegisty.cs" />
-    <Compile Include="Broadcasting\IServiceDiscoverySocket.cs" />
-    <Compile Include="Broadcasting\ServiceDiscoverySocket.cs" />
-    <Compile Include="Broadcasting\ServiceRegistry.cs" />
+    <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
+    <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />
+    <Compile Include="ServiceDiscovery\INetworkServiceRegisty.cs" />
+    <Compile Include="ServiceDiscovery\IServiceDiscoverySocket.cs" />
+    <Compile Include="ServiceDiscovery\NetworkServiceDiscoverer.cs" />
+    <Compile Include="ServiceDiscovery\ServiceDiscoverySocket.cs" />
+    <Compile Include="ServiceDiscovery\ServiceRegistry.cs" />
     <Compile Include="CodeGeneration\Remoting\Compiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeSerializer.cs" />
@@ -102,10 +104,9 @@
     <Compile Include="Hosting\PostMortemSettings.cs" />
     <Compile Include="Hosting\ProcessFaultReason.cs" />
     <Compile Include="Hosting\ProcessWatchdog.cs" />
-    <Compile Include="Broadcasting\Message.cs" />
-    <Compile Include="Broadcasting\P2P.cs" />
-    <Compile Include="Broadcasting\RegisteredService.cs" />
-    <Compile Include="Broadcasting\Service.cs" />
+    <Compile Include="ServiceDiscovery\Message.cs" />
+    <Compile Include="ServiceDiscovery\RegisteredService.cs" />
+    <Compile Include="ServiceDiscovery\Service.cs" />
     <Compile Include="PendingMethodsQueue.cs" />
     <Compile Include="PendingMethodCall.cs" />
     <Compile Include="ProcessAccessFlags.cs" />

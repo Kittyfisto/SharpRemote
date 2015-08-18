@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Exceptions;
+using SharpRemote.ServiceDiscovery;
 
 namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 {
@@ -45,8 +46,9 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		[Description("Verifies that Connect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect2()
 		{
-			using (var client = CreateClient("Rep1"))
-			using (var server = CreateServer("Rep2"))
+			using (var discoverer = new NetworkServiceDiscoverer())
+			using (var client = CreateClient("Rep1", networkServiceDiscoverer: discoverer))
+			using (var server = CreateServer("Rep2", networkServiceDiscoverer: discoverer))
 			{
 				server.Bind(IPAddress.Loopback);
 
@@ -72,8 +74,9 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		[Description("Verifies that TryConnect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect23()
 		{
-			using (var client = CreateClient("Rep1"))
-			using (var server = CreateServer("Rep2"))
+			using (var discoverer = new NetworkServiceDiscoverer())
+			using (var client = CreateClient("Rep1", networkServiceDiscoverer: discoverer))
+			using (var server = CreateServer("Rep2", networkServiceDiscoverer: discoverer))
 			{
 				server.Bind(IPAddress.Loopback);
 

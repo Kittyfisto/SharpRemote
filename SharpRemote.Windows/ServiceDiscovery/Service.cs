@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Net;
 
-namespace SharpRemote.Broadcasting
+namespace SharpRemote.ServiceDiscovery
 {
-	internal struct Service : IEquatable<Service>
+	public struct Service : IEquatable<Service>
 	{
 		private readonly IPEndPoint _endPoint;
 		private readonly string _name;

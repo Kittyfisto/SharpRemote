@@ -2,9 +2,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using SharpRemote.Broadcasting;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
+using SharpRemote.ServiceDiscovery;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -12,12 +12,14 @@ namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// 
+	/// A socket remoting end point that accepts one incoming connection from a <see cref="SocketRemotingEndPointClient"/>.
 	/// </summary>
 	public sealed class SocketRemotingEndPointServer
 		: AbstractIPSocketRemotingEndPoint
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		private readonly NetworkServiceDiscoverer _networkServiceDiscoverer;
 
 		private RegisteredService _peerNameRegistration;
 		private Socket _serverSocket;
@@ -31,16 +33,19 @@ namespace SharpRemote
 		/// <param name="clientAuthenticator">The authenticator, if any, to authenticate a client against a server (both need to use the same authenticator)</param>
 		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
+		/// <param name="networkServiceDiscoverer">The discoverer used to register this server as a service with the name <paramref name="name"/> and whatever endpoint <see cref="Bind(IPAddress)"/> is given</param>
 		public SocketRemotingEndPointServer(string name = null,
 		                              IAuthenticator clientAuthenticator = null,
 		                              IAuthenticator serverAuthenticator = null,
-		                              ITypeResolver customTypeResolver = null)
+		                              ITypeResolver customTypeResolver = null,
+			                          NetworkServiceDiscoverer networkServiceDiscoverer = null)
 			: base(EndPointType.Server,
 			name,
 			clientAuthenticator,
 			serverAuthenticator,
 			customTypeResolver)
 		{
+			_networkServiceDiscoverer = networkServiceDiscoverer;
 		}
 
 		/// <summary>
@@ -80,9 +85,9 @@ namespace SharpRemote
 			_serverSocket.BeginAccept(OnIncomingConnection, null);
 			Log.InfoFormat("EndPoint '{0}' listening on {1}", Name, LocalEndPoint);
 
-			if (Name != null)
+			if (Name != null && _networkServiceDiscoverer != null)
 			{
-				_peerNameRegistration = P2P.RegisterService(Name, LocalEndPoint);
+				_peerNameRegistration = _networkServiceDiscoverer.RegisterService(Name, LocalEndPoint);
 				Log.InfoFormat("Endpoint '{0}@{1}' published to local cloud", Name, LocalEndPoint);
 			}
 		}

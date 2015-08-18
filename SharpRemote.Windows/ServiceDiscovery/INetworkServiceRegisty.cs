@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SharpRemote.Broadcasting
+namespace SharpRemote.ServiceDiscovery
 {
 	internal interface INetworkServiceRegisty
 	{

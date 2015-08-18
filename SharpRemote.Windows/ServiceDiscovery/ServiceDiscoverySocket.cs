@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using log4net;
 
-namespace SharpRemote.Broadcasting
+namespace SharpRemote.ServiceDiscovery
 {
 	/// <summary>
 	/// Service discovery socket implementation that is bound to a single address (and thus to a single network interface).
@@ -16,61 +16,66 @@ namespace SharpRemote.Broadcasting
 		, IDisposable
 	{
 		private readonly INetworkServiceRegisty _services;
-		private const ushort Port = 65335;
 		private const int MaxLength = 508;
 		private const string NoName = "";
-
-		private static readonly IPAddress MulticastAddress = IPAddress.Parse("239.255.255.255");
-		private static readonly IPEndPoint MulticastEndPoint = new IPEndPoint(MulticastAddress, Port);
 
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly Socket _socket;
 		private readonly IPAddress _localAddress;
+		private readonly IPEndPoint _localEndPoint;
+		private readonly IPEndPoint _multicastEndPoint;
+		private readonly IPAddress _multicastAddress;
+
 		private bool _isDisposed;
 
-		public ServiceDiscoverySocket(NetworkInterface iface, IPAddress address, INetworkServiceRegisty services)
+		public ServiceDiscoverySocket(NetworkInterface iface,
+		                              IPAddress localAddress,
+		                              IPAddress multicastAddress,
+		                              int port,
+		                              int ttl,
+		                              INetworkServiceRegisty services)
 		{
 			_services = services;
-			_localAddress = address;
+			_localAddress = localAddress;
+			_localEndPoint = new IPEndPoint(_localAddress, port);
+			_multicastAddress = multicastAddress;
+			_multicastEndPoint = new IPEndPoint(multicastAddress, port);
+
 			_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
 				{
 					MulticastLoopback = true,
 				};
-			_socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 2);
+			_socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, ttl);
 			_socket.SetSocketOption(SocketOptionLevel.Socket,
 			                        SocketOptionName.ReuseAddress, true);
-			_socket.Bind(new IPEndPoint(address, Port));
-			JoinMulticastGroup(_socket, iface, address);
+			_socket.Bind(new IPEndPoint(localAddress, port));
 
-			BeginReceive();
-		}
-
-		private static void JoinMulticastGroup(Socket socket, NetworkInterface iface, IPAddress address)
-		{
-			if (address.AddressFamily == AddressFamily.InterNetwork)
+			if (_localAddress.AddressFamily == AddressFamily.InterNetwork)
 			{
 				try
 				{
-					socket.SetSocketOption(SocketOptionLevel.IP,
-					                       SocketOptionName.AddMembership,
-					                       new MulticastOption(MulticastAddress,
-					                                           address));
+					_socket.SetSocketOption(SocketOptionLevel.IP,
+										   SocketOptionName.AddMembership,
+										   new MulticastOption(_multicastAddress,
+															   _localAddress));
 
 					Log.DebugFormat("Joined multicast group {0} for {1}@{2}",
-					                MulticastAddress,
-					                address,
-					                iface.Name);
+									_multicastAddress,
+									_localAddress,
+									iface.Name);
 				}
 				catch (SocketException e)
 				{
 					Log.DebugFormat("Unable to join multicast group {0} for {1}@{2}: {3}",
-					                MulticastAddress,
-					                address,
-					                iface.Name,
-					                e);
+									_multicastAddress,
+									_localAddress,
+									iface.Name,
+									e);
 				}
 			}
+
+			BeginReceive();
 		}
 
 		private void BeginReceive()
@@ -81,7 +86,7 @@ namespace SharpRemote.Broadcasting
 					return;
 
 				var buffer = new byte[MaxLength];
-				EndPoint endPoint = new IPEndPoint(IPAddress.Any, Port);
+				EndPoint endPoint = _localEndPoint;
 				_socket.BeginReceiveFrom(buffer, 0, buffer.Length,
 				                         SocketFlags.None,
 				                         ref endPoint,
@@ -93,7 +98,7 @@ namespace SharpRemote.Broadcasting
 		{
 			try
 			{
-				EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, Port);
+				EndPoint remoteEndPoint = _localEndPoint;
 				int length;
 				var buffer = (byte[])ar.AsyncState;
 				lock (_socket)
@@ -176,7 +181,7 @@ namespace SharpRemote.Broadcasting
 					}
 
 					byte[] buffer = Message.CreateResponse(service.Name, endPoint);
-					_socket.SendTo(buffer, MulticastEndPoint);
+					_socket.SendTo(buffer, _multicastEndPoint);
 				}
 			}
 		}
@@ -190,7 +195,7 @@ namespace SharpRemote.Broadcasting
 				if (_isDisposed)
 					return;
 
-				_socket.SendTo(query, MulticastEndPoint);
+				_socket.SendTo(query, _multicastEndPoint);
 			}
 		}
 

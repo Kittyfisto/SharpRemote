@@ -1,12 +1,14 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace SharpRemote.Broadcasting
+namespace SharpRemote.ServiceDiscovery
 {
 	internal sealed class ServiceRegistry
 		: INetworkServiceRegisty
+		, IEnumerable<RegisteredService>
 	{
 		private readonly List<RegisteredService> _services;
 		private readonly object _syncRoot;
@@ -17,14 +19,16 @@ namespace SharpRemote.Broadcasting
 			_services = new List<RegisteredService>();
 		}
 
-		public RegisteredService RegisterService(string name, IPEndPoint ep)
+		public RegisteredService RegisterService(string name, IPEndPoint endPoint)
 		{
-			if (string.IsNullOrEmpty(name))
-				throw new ArgumentException("A name must be non-null and contain at least one character", "name");
-			if (ep == null)
-				throw new ArgumentNullException("ep");
+			if (name == null)
+				throw new ArgumentNullException("name");
+			if (name == "")
+				throw new ArgumentException("A name must consist of at least one character", "name");
+			if (endPoint == null)
+				throw new ArgumentNullException("endPoint");
 
-			var service = new RegisteredService(name, ep);
+			var service = new RegisteredService(name, endPoint);
 			lock (_syncRoot)
 			{
 				_services.Add(service);
@@ -48,6 +52,19 @@ namespace SharpRemote.Broadcasting
 			{
 				return _services.Where(x => x.Name == name || x.Name == "");
 			}
+		}
+
+		public IEnumerator<RegisteredService> GetEnumerator()
+		{
+			lock (_syncRoot)
+			{
+				return _services.ToList().GetEnumerator();
+			}
+		}
+
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return GetEnumerator();
 		}
 	}
 }

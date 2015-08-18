@@ -1326,19 +1326,7 @@ namespace SharpRemote
 			}
 		}
 
-		/// <summary>
-		///     Performs the authentication between client & server (if necessary) from the client-side.
-		/// </summary>
-		/// <param name="socket"></param>
-		/// <param name="timeout"></param>
-		protected bool TryPerformOutgoingHandshake(Socket socket, TimeSpan timeout)
-		{
-			ErrorType errorType;
-			string error;
-			return TryPerformOutgoingHandshake(socket, timeout, out errorType, out error);
-		}
-
-		enum ErrorType
+		protected enum ErrorType
 		{
 			None,
 
@@ -1354,7 +1342,7 @@ namespace SharpRemote
 		/// <param name="timeout"></param>
 		/// <param name="errorType"></param>
 		/// <param name="error"></param>
-		private bool TryPerformOutgoingHandshake(Socket socket,
+		protected bool TryPerformOutgoingHandshake(Socket socket,
 			TimeSpan timeout,
 			out ErrorType errorType,
 			out string error)

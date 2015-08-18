@@ -3,7 +3,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 
-namespace SharpRemote.Broadcasting
+namespace SharpRemote.ServiceDiscovery
 {
 	internal static class Message
 	{

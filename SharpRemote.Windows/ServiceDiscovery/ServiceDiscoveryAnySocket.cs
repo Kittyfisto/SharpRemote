@@ -7,27 +7,42 @@ using System.Net.Sockets;
 using System.Reflection;
 using log4net;
 
-namespace SharpRemote.Broadcasting
+namespace SharpRemote.ServiceDiscovery
 {
 	/// <summary>
 	/// Service discovery socket that is bound to any address (and thus any network interface).
 	/// </summary>
-	internal sealed class AnyServiceDiscoverySocket
+	internal sealed class ServiceDiscoveryAnySocket
 		: IServiceDiscoverySocket
 		  , IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly INetworkServiceRegisty _services;
+		private readonly IPAddress _multicastAddress;
+		private readonly int _port;
+		private readonly int _ttl;
 		private readonly Dictionary<IPAddress, ServiceDiscoverySocket> _sockets;
 		private readonly object _syncRoot;
 
-		public AnyServiceDiscoverySocket(INetworkServiceRegisty services)
+		public ServiceDiscoveryAnySocket(INetworkServiceRegisty services,
+		                                 IPAddress multicastAddress,
+		                                 int port,
+		                                 int ttl)
 		{
 			if (services == null)
 				throw new ArgumentNullException("services");
+			if (multicastAddress == null)
+				throw new ArgumentNullException("multicastAddress");
+			if (port <= 0 || port >= ushort.MaxValue)
+				throw new ArgumentOutOfRangeException("port");
+			if (ttl <= 0 || ttl >= byte.MaxValue)
+				throw new ArgumentOutOfRangeException("ttl");
 
 			_services = services;
+			_multicastAddress = multicastAddress;
+			_port = port;
+			_ttl = ttl;
 			_sockets = new Dictionary<IPAddress, ServiceDiscoverySocket>();
 			_syncRoot = new object();
 
@@ -109,7 +124,13 @@ namespace SharpRemote.Broadcasting
 								               address,
 								               iface.Name);
 
-								socket = new ServiceDiscoverySocket(iface, address, _services);
+								socket = new ServiceDiscoverySocket(iface,
+								                                    address,
+																	_multicastAddress,
+																	_port,
+																	_ttl,
+								                                    _services);
+
 								_sockets.Add(address, socket);
 								socket.OnResponseReceived += SocketOnResponseReceived;
 							}

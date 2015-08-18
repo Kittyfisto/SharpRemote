@@ -161,7 +161,9 @@ namespace SharpRemote.Hosting
 				}
 			}
 
-			_endPoint = new SocketRemotingEndPointServer(customTypeResolver: customTypeResolver);
+			_endPoint = new SocketRemotingEndPointServer(
+				customTypeResolver: customTypeResolver
+				);
 
 			_heartbeatSubject = new Heartbeat();
 			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat) _heartbeatSubject);

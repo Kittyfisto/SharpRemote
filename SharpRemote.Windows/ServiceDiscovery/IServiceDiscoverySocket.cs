@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SharpRemote.Broadcasting
+namespace SharpRemote.ServiceDiscovery
 {
 	/// <summary>
 	/// Represents a socket that is capable of querying the network for services

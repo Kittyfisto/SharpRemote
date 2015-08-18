@@ -5,18 +5,32 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.Broadcasting;
+using SharpRemote.ServiceDiscovery;
 
 namespace SharpRemote.Test.Broadcasting
 {
 	[TestFixture]
-	public sealed class P2PTest
+	public sealed class NetworkServiceDiscovererTest
 	{
+		private NetworkServiceDiscoverer _discoverer;
+
+		[TestFixtureSetUp]
+		public void TestFixtureSetUp()
+		{
+			_discoverer = new NetworkServiceDiscoverer();
+		}
+
+		[TestFixtureTearDown]
+		public void TestFixtureTearDown()
+		{
+			_discoverer.Dispose();
+		}
+
 		[Test]
 		[Description("Verifies that when no services are registered, then none can be found")]
 		public void TestFindAllServices1()
 		{
-			var services = P2P.FindAllServices();
+			var services = _discoverer.FindAllServices();
 			services.Should().BeEmpty();
 		}
 
@@ -27,9 +41,9 @@ namespace SharpRemote.Test.Broadcasting
 			const string name = "Foobar";
 			var ep = new IPEndPoint(IPAddress.Parse("123.241.108.21"), 12345);
 
-			using (P2P.RegisterService(name, ep))
+			using (_discoverer.RegisterService(name, ep))
 			{
-				var services = P2P.FindServices(name);
+				var services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
 				services.Should().Equal(new[]
 					{
@@ -45,10 +59,10 @@ namespace SharpRemote.Test.Broadcasting
 			const string name = "Foobar";
 			var ep = new IPEndPoint(IPAddress.Parse("123.241.108.21"), 12345);
 
-			using (P2P.RegisterService(name, ep))
-			using (P2P.RegisterService("Not Foobar", new IPEndPoint(IPAddress.Any, 1243)))
+			using (_discoverer.RegisterService(name, ep))
+			using (_discoverer.RegisterService("Not Foobar", new IPEndPoint(IPAddress.Any, 1243)))
 			{
-				var services = P2P.FindServices(name);
+				var services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
 				services.Should().Equal(new[]
 					{
@@ -65,13 +79,13 @@ namespace SharpRemote.Test.Broadcasting
 			var ep1 = new IPEndPoint(IPAddress.Parse("123.241.108.21"), 12345);
 			var ep2 = new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1243);
 
-			using (P2P.RegisterService(name, ep1))
+			using (_discoverer.RegisterService(name, ep1))
 			{
 				List<Service> services;
 
-				using (P2P.RegisterService(name, ep2))
+				using (_discoverer.RegisterService(name, ep2))
 				{
-					services = P2P.FindServices(name);
+					services = _discoverer.FindServices(name);
 					services.Should().NotBeNull();
 					services.Count.Should().Be(2);
 					services.Should().Contain(new Service(name, ep1));
@@ -82,11 +96,11 @@ namespace SharpRemote.Test.Broadcasting
 					service.Name.Should().Be(name);
 				}
 
-				services = P2P.FindServices(name);
+				services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
 				services.Should().BeEquivalentTo(new[]
 						{
-							new Service(name, ep1),
+							new Service(name, ep1)
 						});
 			}
 		}
@@ -98,9 +112,9 @@ namespace SharpRemote.Test.Broadcasting
 			const string name = "Foobar";
 			var ep = new IPEndPoint(IPAddress.Any, 12345);
 
-			using (P2P.RegisterService(name, ep))
+			using (_discoverer.RegisterService(name, ep))
 			{
-				var services = P2P.FindServices(name);
+				var services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
 
 				var iPv4Interfaces = NetworkInterface.GetAllNetworkInterfaces()

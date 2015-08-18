@@ -8,8 +8,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using SharpRemote.Broadcasting;
 using SharpRemote.Hosting;
+using SharpRemote.ServiceDiscovery;
 using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
@@ -23,15 +23,18 @@ namespace ConsoleApplication1
 		{
 			XmlConfigurator.Configure(new FileInfo("ConsoleApplication1.exe.config"));
 
-			//var s = P2P.RegisterService("Foo", new IPEndPoint(IPAddress.Any, 54321));
-
-			while (true)
+			using (var discoverer = new NetworkServiceDiscoverer())
 			{
-				var services = P2P.FindServices("Foo");
-				Console.WriteLine("Found {0} service(s): {1}",
-				                  services.Count,
-				                  string.Join(", ", services));
-				Thread.Sleep(1000);
+				//var s = discoverer.RegisterService("Foo", new IPEndPoint(IPAddress.Any, 54321));
+
+				while (true)
+				{
+					var services = discoverer.FindServices("Foo");
+					Console.WriteLine("Found {0} service(s): {1}",
+									  services.Count,
+									  string.Join(", ", services));
+					Thread.Sleep(1000);
+				}
 			}
 
 #if DEBUG

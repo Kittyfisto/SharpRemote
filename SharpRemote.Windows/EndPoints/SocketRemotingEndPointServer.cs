@@ -141,6 +141,8 @@ namespace SharpRemote
 
 					PerformIncomingHandshake(socket);
 
+					FireOnConnected(socket.RemoteEndPoint);
+
 					success = true;
 				}
 			}

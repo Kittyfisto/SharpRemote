@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using FluentAssertions;
 using NUnit.Framework;
 
@@ -89,5 +91,33 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			}
 		}
 
+
+		[Test]
+		[Description("Verifies that the OnDisconnected event is fired when the connection is disconnected for both the client and the server")]
+		public void TestDisconnect4()
+		{
+			using (var client = CreateClient("Rep#1"))
+			using (var server = CreateServer("Rep#2"))
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+
+				var clients = new List<EndPoint>();
+				var servers = new List<EndPoint>();
+				client.OnDisconnected += clients.Add;
+				server.OnDisconnected += servers.Add;
+
+				var clientEp = client.LocalEndPoint;
+				var serverEp = server.LocalEndPoint;
+
+				client.Disconnect();
+
+				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(2))
+					.Should().BeTrue();
+
+				clients.Should().Equal(serverEp);
+				servers.Should().Equal(clientEp);
+			}
+		}
 	}
 }

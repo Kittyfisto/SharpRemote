@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -95,57 +96,36 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[Repeat(10)]
-		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
-		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
+		[Description(
+			"Verifies that the OnDisconnected event is fired when the connection is disconnected for both the client and the server"
+			)]
 		public void TestDisconnect4()
 		{
-			const int numTasks = 64;
-			const int numMethodCalls = 1000;
-			var timeout = TimeSpan.FromSeconds(5);
-
 			using (var client = CreateClient("Rep#1"))
 			using (var server = CreateServer("Rep#2"))
 			{
 				server.Bind(IPAddress.Loopback);
 				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
 
-				var subject = new Mock<IVoidMethod>();
-				server.CreateServant(1, subject.Object);
-				var proxy = client.CreateProxy<IVoidMethod>(1);
+				var clients = new List<EndPoint>();
+				var servers = new List<EndPoint>();
+				client.OnDisconnected += clients.Add;
+				server.OnDisconnected += servers.Add;
 
-				var tasks = Enumerable.Range(0, numTasks)
-									  .Select(x => Task.Factory.StartNew(() =>
-									  {
-										  for (int n = 0; n < numMethodCalls; ++n)
-										  {
-											  proxy.DoStuff();
+				var clientEp = client.LocalEndPoint;
+				var serverEp = server.LocalEndPoint;
 
-											  if (n == numMethodCalls / 2)
-												  server.Disconnect();
-										  }
-									  }, TaskCreationOptions.LongRunning)).ToArray();
+				client.Disconnect();
 
-				foreach (var task in tasks)
-				{
-					bool thrown = false;
-					try
-					{
-						task.Wait(timeout)
-							.Should().BeTrue("Because the task certainly shouldn't have deadlocked");
-					}
-					catch (AggregateException e)
-					{
-						thrown = (e.InnerException is NotConnectedException ||
-								  e.InnerException is ConnectionLostException);
-						if (!thrown)
-							throw;
-					}
+				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(2))
+					.Should().BeTrue();
 
-					thrown.Should().BeTrue("Because all tasks should've either thrown a connection lost or a not connected exception");
-				}
+				clients.Should().Equal(serverEp);
+				servers.Should().Equal(clientEp);
 			}
 		}
+
+
 
 		[Test]
 		[Repeat(10)]
@@ -163,24 +143,21 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				server.Bind(IPAddress.Loopback);
 				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
 
-				var subject = new Mock<IReturnsTask>();
-				subject.Setup(x => x.DoStuff()).Returns(() => Task.FromResult(1));
-
+				var subject = new Mock<IVoidMethod>();
 				server.CreateServant(1, subject.Object);
-				var proxy = client.CreateProxy<IReturnsTask>(1);
+				var proxy = client.CreateProxy<IVoidMethod>(1);
 
 				var tasks = Enumerable.Range(0, numTasks)
-									  .Select(x => Task.Factory.StartNew(() =>
-									  {
-										  for (int n = 0; n < numMethodCalls; ++n)
-										  {
-											  proxy.DoStuff()
-											       .Wait();
+				                      .Select(x => Task.Factory.StartNew(() =>
+					                      {
+						                      for (int n = 0; n < numMethodCalls; ++n)
+						                      {
+							                      proxy.DoStuff();
 
-											  if (n == numMethodCalls / 2)
-												  server.Disconnect();
-										  }
-									  }, TaskCreationOptions.LongRunning)).ToArray();
+							                      if (n == numMethodCalls/2)
+								                      server.Disconnect();
+						                      }
+					                      }, TaskCreationOptions.LongRunning)).ToArray();
 
 				foreach (var task in tasks)
 				{
@@ -188,7 +165,62 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					try
 					{
 						task.Wait(timeout)
-							.Should().BeTrue("Because the task certainly shouldn't have deadlocked");
+						    .Should().BeTrue("Because the task certainly shouldn't have deadlocked");
+					}
+					catch (AggregateException e)
+					{
+						thrown = (e.InnerException is NotConnectedException ||
+						          e.InnerException is ConnectionLostException);
+						if (!thrown)
+							throw;
+					}
+
+					thrown.Should().BeTrue("Because all tasks should've either thrown a connection lost or a not connected exception");
+				}
+			}
+		}
+
+		[Test]
+		[Repeat(10)]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
+		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
+		public void TestDisconnect6()
+		{
+			const int numTasks = 64;
+			const int numMethodCalls = 1000;
+			var timeout = TimeSpan.FromSeconds(5);
+
+			using (var client = CreateClient("Rep#1"))
+			using (var server = CreateServer("Rep#2"))
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+				var subject = new Mock<IReturnsTask>();
+				subject.Setup(x => x.DoStuff()).Returns(() => Task.FromResult(1));
+
+				server.CreateServant(1, subject.Object);
+				var proxy = client.CreateProxy<IReturnsTask>(1);
+
+				var tasks = Enumerable.Range(0, numTasks)
+				                      .Select(x => Task.Factory.StartNew(() =>
+					                      {
+						                      for (int n = 0; n < numMethodCalls; ++n)
+						                      {
+							                      proxy.DoStuff()
+							                           .Wait();
+
+							                      if (n == numMethodCalls/2)
+								                      server.Disconnect();
+						                      }
+					                      }, TaskCreationOptions.LongRunning)).ToArray();
+
+				foreach (var task in tasks)
+				{
+					bool thrown = false;
+					try
+					{
+						task.Wait(timeout)
+						    .Should().BeTrue("Because the task certainly shouldn't have deadlocked");
 					}
 					catch (AggregateException e)
 					{

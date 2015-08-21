@@ -817,10 +817,16 @@ namespace SharpRemote
 
 		private void Disconnect(EndPointDisconnectReason reason)
 		{
+			EndPoint remoteEndPoint;
+			bool hasDisconnected = false;
+
 			lock (_syncRoot)
 			{
+				remoteEndPoint = InternalRemoteEndPoint;
+
 				if (_socket != null)
 				{
+					hasDisconnected = true;
 					_disconnectReason = reason;
 					if (IsFailure(reason))
 					{
@@ -872,6 +878,12 @@ namespace SharpRemote
 
 				InternalRemoteEndPoint = null;
 			}
+
+			var fn2 = OnDisconnected;
+			if (hasDisconnected && fn2 != null)
+			{
+				fn2(remoteEndPoint);
+			}
 		}
 
 		private void SendGoodbye()
@@ -898,6 +910,27 @@ namespace SharpRemote
 			{
 			}
 		}
+
+		protected void FireOnConnected(EndPoint endPoint)
+		{
+			var fn = OnConnected;
+			if (fn != null)
+				fn(endPoint);
+		}
+
+		/// <summary>
+		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/>
+		/// is created.
+		/// </summary>
+		/// <remarks>
+		/// The event is fired with the endpoint of the *other* <see cref="AbstractSocketRemotingEndPoint"/>.
+		/// </remarks>
+		public event Action<EndPoint> OnConnected;
+
+		/// <summary>
+		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/> is disconnected.
+		/// </summary>
+		public event Action<EndPoint> OnDisconnected;
 
 		/// <summary>
 		///     This event is invoked right before a socket is to be closed due to failure of:

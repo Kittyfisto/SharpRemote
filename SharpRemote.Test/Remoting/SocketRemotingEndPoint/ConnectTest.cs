@@ -462,5 +462,45 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				server.RemoteEndPoint.Should().Be(client2.LocalEndPoint);
 			}
 		}
+
+		[Test]
+		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
+		public void TestConnect24()
+		{
+			using (var client = CreateClient())
+			using (var server = CreateServer())
+			{
+				var clients = new List<EndPoint>();
+				var servers = new List<EndPoint>();
+				client.OnConnected += clients.Add;
+				server.OnConnected += servers.Add;
+
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint);
+
+				clients.Should().Equal(client.RemoteEndPoint);
+				servers.Should().Equal(server.RemoteEndPoint);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
+		public void TestConnect25()
+		{
+			using (var client = CreateClient())
+			using (var server = CreateServer())
+			{
+				var clients = new List<EndPoint>();
+				var servers = new List<EndPoint>();
+				client.OnConnected += clients.Add;
+				server.OnConnected += servers.Add;
+
+				server.Bind(IPAddress.Loopback);
+				client.TryConnect(server.LocalEndPoint).Should().BeTrue();
+
+				clients.Should().Equal(client.RemoteEndPoint);
+				servers.Should().Equal(server.RemoteEndPoint);
+			}
+		}
 	}
 }

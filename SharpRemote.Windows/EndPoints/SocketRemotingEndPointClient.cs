@@ -220,6 +220,8 @@ namespace SharpRemote
 				RemoteEndPoint = endPoint;
 				LocalEndPoint = (IPEndPoint)socket.LocalEndPoint;
 
+				FireOnConnected(endPoint);
+
 				success = true;
 				exception = null;
 				return true;

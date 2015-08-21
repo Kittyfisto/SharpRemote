@@ -405,7 +405,6 @@ namespace SharpRemote
 
 		protected Socket Socket
 		{
-			get { return _socket; }
 			set { _socket = value; }
 		}
 
@@ -537,10 +536,6 @@ namespace SharpRemote
 		                                                string methodName,
 		                                                MemoryStream arguments)
 		{
-			Socket socket = _socket;
-			if (socket == null)
-				throw new NotConnectedException(_name);
-
 			long rpcId = Interlocked.Increment(ref _nextRpcId);
 
 			if (Log.IsDebugEnabled)
@@ -558,10 +553,6 @@ namespace SharpRemote
 
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
-			Socket socket = _socket;
-			if (socket == null)
-				throw new NotConnectedException(_name);
-
 			long rpcId = Interlocked.Increment(ref _nextRpcId);
 
 			if (Log.IsDebugEnabled)
@@ -755,12 +746,20 @@ namespace SharpRemote
 					}
 				};
 
-			PendingMethodCall call = _pendingMethodCalls.Enqueue(servantId,
-			                                                     interfaceType,
-			                                                     methodName,
-			                                                     arguments,
-			                                                     rpcId,
-			                                                     onCallFinished);
+			PendingMethodCall call;
+			lock (_syncRoot)
+			{
+				if (!IsConnected)
+					throw new NotConnectedException(_name);
+
+				call = _pendingMethodCalls.Enqueue(servantId,
+																	 interfaceType,
+																	 methodName,
+																	 arguments,
+																	 rpcId,
+																	 onCallFinished);
+			}
+
 			Interlocked.Add(ref _numBytesSent, call.MessageLength);
 			Interlocked.Increment(ref _numCallsInvoked);
 
@@ -773,11 +772,17 @@ namespace SharpRemote
 			PendingMethodCall call = null;
 			try
 			{
-				call = _pendingMethodCalls.Enqueue(servantId,
-				                                   interfaceType,
-				                                   methodName,
-				                                   arguments,
-				                                   rpcId);
+				lock (_syncRoot)
+				{
+					if (!IsConnected)
+						throw new NotConnectedException(_name);
+
+					call = _pendingMethodCalls.Enqueue(servantId,
+													  interfaceType,
+													  methodName,
+													  arguments,
+													  rpcId);
+				}
 
 				Interlocked.Add(ref _numBytesSent, call.MessageLength);
 				Interlocked.Increment(ref _numCallsInvoked);
@@ -854,6 +859,12 @@ namespace SharpRemote
 					}
 					catch (SocketException)
 					{
+					}
+					catch (NullReferenceException)
+					{
+						// I suspect that either I forgot to lock one method call on _socket
+						// or there's a bug in its implementation - either way this method may
+						// throw a NullReferenceException from inside Disconnect.
 					}
 
 					_socket = null;
@@ -951,6 +962,14 @@ namespace SharpRemote
 					try
 					{
 						Socket socket = _socket;
+						if (socket == null)
+						{
+							if (Log.IsDebugEnabled)
+								Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
+
+							return;
+						}
+
 						var response = new MemoryStream();
 						var writer = new BinaryWriter(response, Encoding.UTF8);
 						try

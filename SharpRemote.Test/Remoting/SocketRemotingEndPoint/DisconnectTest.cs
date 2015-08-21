@@ -1,7 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Moq;
 using NUnit.Framework;
+using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 {
@@ -89,5 +94,113 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			}
 		}
 
+		[Test]
+		[Repeat(10)]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
+		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
+		public void TestDisconnect4()
+		{
+			const int numTasks = 64;
+			const int numMethodCalls = 1000;
+			var timeout = TimeSpan.FromSeconds(5);
+
+			using (var client = CreateClient("Rep#1"))
+			using (var server = CreateServer("Rep#2"))
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+
+				var subject = new Mock<IVoidMethod>();
+				server.CreateServant(1, subject.Object);
+				var proxy = client.CreateProxy<IVoidMethod>(1);
+
+				var tasks = Enumerable.Range(0, numTasks)
+									  .Select(x => Task.Factory.StartNew(() =>
+									  {
+										  for (int n = 0; n < numMethodCalls; ++n)
+										  {
+											  proxy.DoStuff();
+
+											  if (n == numMethodCalls / 2)
+												  server.Disconnect();
+										  }
+									  }, TaskCreationOptions.LongRunning)).ToArray();
+
+				foreach (var task in tasks)
+				{
+					bool thrown = false;
+					try
+					{
+						task.Wait(timeout)
+							.Should().BeTrue("Because the task certainly shouldn't have deadlocked");
+					}
+					catch (AggregateException e)
+					{
+						thrown = (e.InnerException is NotConnectedException ||
+								  e.InnerException is ConnectionLostException);
+						if (!thrown)
+							throw;
+					}
+
+					thrown.Should().BeTrue("Because all tasks should've either thrown a connection lost or a not connected exception");
+				}
+			}
+		}
+
+		[Test]
+		[Repeat(10)]
+		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
+		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
+		public void TestDisconnect5()
+		{
+			const int numTasks = 64;
+			const int numMethodCalls = 1000;
+			var timeout = TimeSpan.FromSeconds(5);
+
+			using (var client = CreateClient("Rep#1"))
+			using (var server = CreateServer("Rep#2"))
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+
+				var subject = new Mock<IReturnsTask>();
+				subject.Setup(x => x.DoStuff()).Returns(() => Task.FromResult(1));
+
+				server.CreateServant(1, subject.Object);
+				var proxy = client.CreateProxy<IReturnsTask>(1);
+
+				var tasks = Enumerable.Range(0, numTasks)
+									  .Select(x => Task.Factory.StartNew(() =>
+									  {
+										  for (int n = 0; n < numMethodCalls; ++n)
+										  {
+											  proxy.DoStuff()
+											       .Wait();
+
+											  if (n == numMethodCalls / 2)
+												  server.Disconnect();
+										  }
+									  }, TaskCreationOptions.LongRunning)).ToArray();
+
+				foreach (var task in tasks)
+				{
+					bool thrown = false;
+					try
+					{
+						task.Wait(timeout)
+							.Should().BeTrue("Because the task certainly shouldn't have deadlocked");
+					}
+					catch (AggregateException e)
+					{
+						e = e.Flatten();
+						e.InnerExceptions.Any(x => x is ConnectionLostException ||
+						                           x is NotConnectedException).Should().BeTrue();
+						thrown = true;
+					}
+
+					thrown.Should().BeTrue("Because all tasks should've either thrown a connection lost or a not connected exception");
+				}
+			}
+		}
 	}
 }

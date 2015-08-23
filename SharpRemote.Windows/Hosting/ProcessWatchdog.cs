@@ -192,6 +192,8 @@ namespace SharpRemote.Hosting
 			_process.TryKill();
 			_process.TryDispose();
 			_hasProcessExited = true;
+			_hostedProcessId = null;
+			_remotePort = null;
 
 			lock (_syncRoot)
 			{
@@ -200,6 +202,9 @@ namespace SharpRemote.Hosting
 			}
 		}
 
+		/// <summary>
+		/// The port used by the hosted process.
+		/// </summary>
 		public int? RemotePort
 		{
 			get { return _remotePort; }

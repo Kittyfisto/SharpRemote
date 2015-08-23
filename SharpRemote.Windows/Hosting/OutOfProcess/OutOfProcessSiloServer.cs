@@ -270,7 +270,7 @@ namespace SharpRemote.Hosting
 				{
 					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost) host);
 
-					_endPoint.Bind(IPAddress.Loopback);
+					_endPoint.Bind(IPAddress.Any);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);
 					Console.WriteLine(ProcessWatchdog.Constants.ReadyMessage);
 

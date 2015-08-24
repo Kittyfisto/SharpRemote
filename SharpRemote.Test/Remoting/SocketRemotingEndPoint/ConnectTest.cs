@@ -500,6 +500,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				server.Bind(IPAddress.Loopback);
 				client.TryConnect(server.LocalEndPoint).Should().BeTrue();
 
+				WaitFor(() => server.IsConnected, TimeSpan.FromSeconds(1));
+
 				clients.Should().Equal(client.RemoteEndPoint);
 				servers.Should().Equal(server.RemoteEndPoint);
 			}

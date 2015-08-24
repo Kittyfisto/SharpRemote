@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using InTheHand.Net;
@@ -108,6 +109,17 @@ namespace SharpRemote.EndPoints
 		{
 			get { throw new NotImplementedException(); }
 		}
+
+		public TimeSpan RoundtripTime
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+#pragma warning disable 67
+		public event Action<EndPoint> OnConnected;
+		public event Action<EndPoint> OnDisconnected;
+		public event Action<EndPointDisconnectReason> OnFailure;
+#pragma warning restore 67
 
 		public void Disconnect()
 		{

@@ -35,18 +35,24 @@ namespace SharpRemote
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// <param name="networkServiceDiscoverer">The discoverer used to register this server as a service with the name <paramref name="name"/> and whatever endpoint <see cref="Bind(IPAddress)"/> is given</param>
 		/// <param name="serializer">The serializer used to serialize and deserialize values - if none is specified then a new one is created</param>
+		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
+		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		public SocketRemotingEndPointServer(string name = null,
 		                              IAuthenticator clientAuthenticator = null,
 		                              IAuthenticator serverAuthenticator = null,
 		                                    ITypeResolver customTypeResolver = null,
 		                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                    Serializer serializer = null)
+		                                    Serializer serializer = null,
+		                                    HeartbeatSettings heartbeatSettings = null,
+		                                    LatencySettings latencySettings = null)
 			: base(EndPointType.Server,
 			       name,
 			       clientAuthenticator,
 			       serverAuthenticator,
 			       customTypeResolver,
-			       serializer)
+			       serializer,
+			       heartbeatSettings,
+			       latencySettings)
 		{
 			_networkServiceDiscoverer = networkServiceDiscoverer;
 		}

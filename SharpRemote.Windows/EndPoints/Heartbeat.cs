@@ -7,7 +7,7 @@ namespace SharpRemote
 	/// <summary>
 	/// Default <see cref="IHeartbeat"/> implementation that returns immediately.
 	/// </summary>
-	public sealed class Heartbeat
+	internal sealed class Heartbeat
 		: IHeartbeat
 	{
 		public Task Beat()

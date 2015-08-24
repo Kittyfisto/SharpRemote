@@ -7,7 +7,6 @@ using System.Threading;
 using log4net;
 
 // ReSharper disable CheckNamespace
-
 namespace SharpRemote.Hosting
 // ReSharper restore CheckNamespace
 {
@@ -32,8 +31,6 @@ namespace SharpRemote.Hosting
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private readonly ITypeResolver _customTypeResolver;
 		private readonly SocketRemotingEndPointServer _endPoint;
-		private readonly Heartbeat _heartbeatSubject;
-		private readonly Latency _latencySubject;
 
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
@@ -164,12 +161,30 @@ namespace SharpRemote.Hosting
 			_endPoint = new SocketRemotingEndPointServer(
 				customTypeResolver: customTypeResolver
 				);
+			_endPoint.OnConnected += EndPointOnOnConnected;
+			_endPoint.OnDisconnected += EndPointOnOnDisconnected;
+			_endPoint.OnFailure += EndPointOnOnFailure;
+		}
 
-			_heartbeatSubject = new Heartbeat();
-			_endPoint.CreateServant(OutOfProcessSilo.Constants.HeartbeatId, (IHeartbeat) _heartbeatSubject);
+		private void EndPointOnOnFailure(EndPointDisconnectReason endPointDisconnectReason)
+		{
+			var fn = OnFailure;
+			if (fn != null)
+				fn(endPointDisconnectReason);
+		}
 
-			_latencySubject = new Latency();
-			_endPoint.CreateServant(OutOfProcessSilo.Constants.LatencyProbeId, (ILatency) _latencySubject);
+		private void EndPointOnOnDisconnected(EndPoint remoteEndPoint)
+		{
+			var fn = OnDisconnected;
+			if (fn != null)
+				fn(remoteEndPoint);
+		}
+
+		private void EndPointOnOnConnected(EndPoint remoteEndPoint)
+		{
+			var fn = OnConnected;
+			if (fn != null)
+				fn(remoteEndPoint);
 		}
 
 		/// <summary>
@@ -204,6 +219,15 @@ namespace SharpRemote.Hosting
 		{
 			get { return _endPoint.IsConnected; }
 		}
+
+		public TimeSpan RoundtripTime
+		{
+			get { return _endPoint.RoundtripTime; }
+		}
+
+		public event Action<EndPoint> OnConnected;
+		public event Action<EndPoint> OnDisconnected;
+		public event Action<EndPointDisconnectReason> OnFailure;
 
 		public void Disconnect()
 		{

@@ -33,20 +33,26 @@ namespace SharpRemote
 		/// <param name="clientAuthenticator">The authenticator, if any, to authenticate a client against a server (both need to use the same authenticator)</param>
 		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
-		/// /// <param name="networkServiceDiscoverer">The discoverer used to find services by name within the local network</param>
+		/// <param name="networkServiceDiscoverer">The discoverer used to find services by name within the local network</param>
 		/// <param name="serializer">The serializer used serialize and deserialize values - if none is specified a new one is created</param>
+		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
+		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		public SocketRemotingEndPointClient(string name = null,
 		                              IAuthenticator clientAuthenticator = null,
 		                                    IAuthenticator serverAuthenticator = null,
 		                                    ITypeResolver customTypeResolver = null,
 		                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                    Serializer serializer = null)
+		                                    Serializer serializer = null,
+		                                    HeartbeatSettings heartbeatSettings = null,
+		                                    LatencySettings latencySettings = null)
 			: base(EndPointType.Client,
 			       name,
 			       clientAuthenticator,
 			       serverAuthenticator,
 			       customTypeResolver,
-			       serializer)
+			       serializer,
+			       heartbeatSettings,
+			       latencySettings)
 		{
 			_networkServiceDiscoverer = networkServiceDiscoverer;
 		}

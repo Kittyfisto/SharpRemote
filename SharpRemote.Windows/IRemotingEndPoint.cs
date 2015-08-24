@@ -24,6 +24,35 @@ namespace SharpRemote
 		bool IsConnected { get; }
 
 		/// <summary>
+		/// The current average round trip time or <see cref="TimeSpan.Zero"/> in
+		/// case nothing was measured.
+		/// </summary>
+		TimeSpan RoundtripTime { get; }
+
+		/// <summary>
+		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/>
+		/// is created.
+		/// </summary>
+		/// <remarks>
+		/// The event is fired with the endpoint of the *other* <see cref="AbstractSocketRemotingEndPoint"/>.
+		/// </remarks>
+		event Action<EndPoint> OnConnected;
+
+		/// <summary>
+		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/> is disconnected.
+		/// </summary>
+		event Action<EndPoint> OnDisconnected;
+
+		/// <summary>
+		///     This event is invoked right before a socket is to be closed due to failure of:
+		///     - the connection between endpoints
+		///     - a failure of the remote process
+		///     - a failure of SharpRemote
+		///     - something else ;)
+		/// </summary>
+		event Action<EndPointDisconnectReason> OnFailure;
+
+		/// <summary>
 		///     Disconnects this endpoint from its remote endpoint.
 		/// </summary>
 		/// <remarks>

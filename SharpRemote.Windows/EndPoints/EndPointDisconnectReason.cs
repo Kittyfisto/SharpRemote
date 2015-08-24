@@ -36,5 +36,10 @@ namespace SharpRemote
 		/// The connection was dropped because an unexpected exception.
 		/// </summary>
 		UnhandledException,
+
+		/// <summary>
+		/// The connection was dropped because the heartbeat monitor reported a failure.
+		/// </summary>
+		HeartbeatFailure,
 	}
 }

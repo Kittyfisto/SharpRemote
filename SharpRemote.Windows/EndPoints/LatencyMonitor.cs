@@ -11,11 +11,11 @@ namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// This class is responsible for measuring the average latency of a <see cref="ILatency.Roundtrip()"/>
-	/// invocation. It can be used by installing a <see cref="ILatency"/> proxy on the side that wants to
-	/// measure the latency and a <see cref="Latency"/> servant on the other side.
+	///     This class is responsible for measuring the average latency of a <see cref="ILatency.Roundtrip()" />
+	///     invocation. It can be used by installing a <see cref="ILatency" /> proxy on the side that wants to
+	///     measure the latency and a <see cref="Latency" /> servant on the other side.
 	/// </summary>
-	public sealed class LatencyMonitor
+	internal sealed class LatencyMonitor
 		: IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -24,14 +24,15 @@ namespace SharpRemote
 		private readonly ILatency _latencyGrain;
 		private readonly RingBuffer<TimeSpan> _measurements;
 		private readonly object _syncRoot;
-		private readonly Task _task;
+		private Task _task;
 
 		private volatile bool _isDisposed;
 		private TimeSpan _roundTripTime;
+		private bool _isRunning;
 
 		/// <summary>
-		/// Initializes this latency monitor with the given interval and number of samples over which
-		/// the average latency is determined.
+		///     Initializes this latency monitor with the given interval and number of samples over which
+		///     the average latency is determined.
 		/// </summary>
 		/// <param name="latencyGrain"></param>
 		/// <param name="interval"></param>
@@ -50,12 +51,11 @@ namespace SharpRemote
 			_interval = interval;
 			_latencyGrain = latencyGrain;
 			_measurements = new RingBuffer<TimeSpan>(numSamples);
-			_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
 		}
 
 		/// <summary>
-		/// Initializes this latency monitor with the given interval and number of samples over which
-		/// the average latency is determined.
+		///     Initializes this latency monitor with the given interval and number of samples over which
+		///     the average latency is determined.
 		/// </summary>
 		/// <param name="latencyGrain"></param>
 		/// <param name="settings"></param>
@@ -67,10 +67,10 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The average roundtrip time of a <see cref="ILatency.Roundtrip()"/> call.
-		/// Can be used to determine the base overhead of the remoting system.
+		///     The average roundtrip time of a <see cref="ILatency.Roundtrip()" /> call.
+		///     Can be used to determine the base overhead of the remoting system.
 		/// </summary>
-		public TimeSpan RoundTripTime
+		public TimeSpan RoundtripTime
 		{
 			get
 			{
@@ -81,23 +81,43 @@ namespace SharpRemote
 			}
 		}
 
+		/// <summary>
+		/// Whether or not this latency monitor has been disposed of.
+		/// </summary>
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
+		}
+
 		public void Dispose()
 		{
+			Stop();
 			_isDisposed = true;
 		}
 
 		/// <summary>
-		/// Starts this latency monitor, e.g. begins measuring the latency.
+		///     Starts this latency monitor, e.g. begins measuring the latency.
 		/// </summary>
 		public void Start()
 		{
+			_isRunning = true;
+			_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
 			_task.Start();
+		}
+
+		/// <summary>
+		///     Stops the latency monitor from perform any further measurements.
+		/// </summary>
+		public void Stop()
+		{
+			_isRunning = false;
+			_task = null;
 		}
 
 		private void MeasureLatencyLoop()
 		{
 			var sw = new Stopwatch();
-			while (!_isDisposed)
+			while (_isRunning)
 			{
 				TimeSpan toSleep;
 				if (!MeasureLatency(sw, out toSleep))
@@ -127,7 +147,7 @@ namespace SharpRemote
 				TimeSpan rtt = sw.Elapsed;
 
 				_measurements.Enqueue(rtt);
-				TimeSpan averageRtt = TimeSpan.FromTicks((long) (((double)_measurements.Sum(x => x.Ticks))/_measurements.Length));
+				TimeSpan averageRtt = TimeSpan.FromTicks((long) (((double) _measurements.Sum(x => x.Ticks))/_measurements.Length));
 
 				lock (_syncRoot)
 				{

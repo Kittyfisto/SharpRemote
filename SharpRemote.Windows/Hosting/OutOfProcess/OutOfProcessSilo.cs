@@ -33,8 +33,6 @@ namespace SharpRemote.Hosting
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly ProcessWatchdog _process;
-		private readonly HeartbeatMonitor _heartbeatMonitor;
-		private readonly LatencyMonitor _latencyMonitor;
 		private readonly SocketRemotingEndPointClient _endPoint;
 		private readonly ISubjectHost _subjectHost;
 		private readonly object _syncRoot;
@@ -136,17 +134,12 @@ namespace SharpRemote.Hosting
 				throw new ArgumentException("postMortemSettings");
 
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
-			                                             serializer: serializer);
+			                                             serializer: serializer,
+			                                             heartbeatSettings: heartbeatSettings,
+			                                             latencySettings: latencySettings);
 			_endPoint.OnFailure += EndPointOnOnFailure;
 
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
-
-			var heartbeat = _endPoint.CreateProxy<IHeartbeat>(Constants.HeartbeatId);
-			_heartbeatMonitor = new HeartbeatMonitor(heartbeat, heartbeatSettings ?? new HeartbeatSettings());
-			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
-
-			var latency = _endPoint.CreateProxy<ILatency>(Constants.LatencyProbeId);
-			_latencyMonitor = new LatencyMonitor(latency, latencySettings ?? new LatencySettings());
 
 			_syncRoot = new object();
 
@@ -174,10 +167,6 @@ namespace SharpRemote.Hosting
 			{
 				var port = _process.RemotePort;
 				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
-
-				// After a successful connection, we can enable the heartbeat monitor so we're notified of failures
-				_heartbeatMonitor.Start();
-				_latencyMonitor.Start();
 			}
 			catch (Exception e)
 			{
@@ -199,25 +188,13 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		public TimeSpan RoundtripTime
 		{
-			get { return _latencyMonitor.RoundTripTime; }
+			get { return _endPoint.RoundtripTime; }
 		}
 
 		/// <summary>
 		/// Is called when the endpoint reports a failure.
 		/// </summary>
 		private void EndPointOnOnFailure(EndPointDisconnectReason reason)
-		{
-			Log.ErrorFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
-			HandleFailure(reason);
-		}
-
-		/// <summary>
-		/// Is called when the monitor detects a failure of the host process
-		/// by:
-		/// - lack of heartbeats
-		/// - exception during heartbeats
-		/// </summary>
-		private void HeartbeatMonitorOnOnFailure()
 		{
 			lock (_syncRoot)
 			{
@@ -228,8 +205,8 @@ namespace SharpRemote.Hosting
 					return;
 			}
 
-			Log.ErrorFormat("Heartbeat monitor detected a failure in the host process (PID: {0})", _process.HostedProcessId);
-			HandleFailure(null);
+			Log.ErrorFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
+			HandleFailure(reason);
 		}
 
 		private void ProcessOnOnFaultDetected(ProcessFaultReason processFaultReason)
@@ -247,34 +224,31 @@ namespace SharpRemote.Hosting
 			}
 		}
 
-		private void HandleFailure(EndPointDisconnectReason? endPointReason)
+		private void HandleFailure(EndPointDisconnectReason endPointReason)
 		{
 			SiloFaultReason reason;
-			if (endPointReason != null)
+			switch (endPointReason)
 			{
-				switch (endPointReason.Value)
-				{
-					case EndPointDisconnectReason.ReadFailure:
-					case EndPointDisconnectReason.RpcInvalidResponse:
-						reason = SiloFaultReason.ConnectionFailure;
-						break;
+				case EndPointDisconnectReason.ReadFailure:
+				case EndPointDisconnectReason.RpcInvalidResponse:
+					reason = SiloFaultReason.ConnectionFailure;
+					break;
 
-					case EndPointDisconnectReason.RequestedByEndPoint:
-					case EndPointDisconnectReason.RequestedByRemotEndPoint:
-						reason = SiloFaultReason.ConnectionClosed;
-						break;
+				case EndPointDisconnectReason.RequestedByEndPoint:
+				case EndPointDisconnectReason.RequestedByRemotEndPoint:
+					reason = SiloFaultReason.ConnectionClosed;
+					break;
 
-					// ReSharper disable RedundantCaseLabel
-					case EndPointDisconnectReason.UnhandledException:
-					// ReSharper restore RedundantCaseLabel
-					default:
-						reason = SiloFaultReason.UnhandledException;
-						break;
-				}
-			}
-			else
-			{
-				reason = SiloFaultReason.HeartbeatFailure;
+				case EndPointDisconnectReason.HeartbeatFailure:
+					reason = SiloFaultReason.HeartbeatFailure;
+					break;
+
+				// ReSharper disable RedundantCaseLabel
+				case EndPointDisconnectReason.UnhandledException:
+				// ReSharper restore RedundantCaseLabel
+				default:
+					reason = SiloFaultReason.UnhandledException;
+					break;
 			}
 
 			HandleFailure(reason, dueToEndPoint: true);
@@ -512,9 +486,6 @@ namespace SharpRemote.Hosting
 				_isDisposing = true;
 			}
 
-			_heartbeatMonitor.TryDispose();
-			_latencyMonitor.TryDispose();
-
 			if (!HasProcessFailed)
 			{
 				_subjectHost.TryDispose();
@@ -543,17 +514,6 @@ namespace SharpRemote.Hosting
 			///     The id of the grain that is used to instantiate further subjects.
 			/// </summary>
 			public const ulong SubjectHostId = ulong.MaxValue;
-
-			/// <summary>
-			/// The id of the grain that is used to detect whether or not the host process
-			/// has failed.
-			/// </summary>
-			public const ulong HeartbeatId = ulong.MaxValue - 1;
-
-			/// <summary>
-			/// 
-			/// </summary>
-			public const ulong LatencyProbeId = ulong.MaxValue - 2;
 
 			/// <summary>
 			/// </summary>

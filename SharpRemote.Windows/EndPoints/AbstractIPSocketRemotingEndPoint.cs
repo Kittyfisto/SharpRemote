@@ -31,13 +31,18 @@ namespace SharpRemote
 		                                          IAuthenticator clientAuthenticator = null,
 		                                          IAuthenticator serverAuthenticator = null,
 		                                          ITypeResolver customTypeResolver = null,
-		                                          Serializer serializer = null)
+		                                          Serializer serializer = null,
+		                                          HeartbeatSettings heartbeatSettings = null,
+		                                          LatencySettings latencySettings = null)
 			: base(new GrainIdGenerator(type),
 			       name,
+			       type,
 			       clientAuthenticator,
 			       serverAuthenticator,
 			       customTypeResolver,
-			       serializer)
+			       serializer,
+			       heartbeatSettings,
+			       latencySettings)
 		{}
 
 		/// <summary>

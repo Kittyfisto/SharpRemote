@@ -2,10 +2,7 @@
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	/// <summary>
-	/// 
-	/// </summary>
-	public sealed class Latency
+	internal sealed class Latency
 		: ILatency
 	{
 		public void Roundtrip()

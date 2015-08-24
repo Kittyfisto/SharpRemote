@@ -310,8 +310,9 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				Thread.Sleep(201);
 
 				// After having forced a collection, the proxy is reclaimed by the GC and thus
-				// the list of proxie's should be empty.
-				server.Proxies.Should().BeEmpty();
+				// the list of proxie's should be empty (besides the ILatency and IHeartbeat interface
+				// which are always installed on each endpoint).
+				server.Proxies.Count().Should().Be(2);
 				server.NumProxiesCollected.Should().Be(1);
 				server.GarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
 			}
@@ -341,8 +342,9 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				Thread.Sleep(201);
 
 				// After having forced a collection, the proxy is reclaimed by the GC and thus
-				// the list of proxie's should be empty.
-				server.Proxies.Should().BeEmpty();
+				// the list of proxie's should be empty (besides the ILatency and IHeartbeat interface
+				// which are always installed on each endpoint).
+				server.Proxies.Count().Should().Be(2);
 				server.NumProxiesCollected.Should().Be(1);
 				server.GarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
 			}
@@ -367,8 +369,9 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				GC.Collect(2, GCCollectionMode.Forced);
 
 				// After having forced a collection, the proxy is reclaimed by the GC and thus
-				// the list of proxie's should be empty.
-				server.Proxies.Should().BeEmpty();
+				// the list of proxie's should be empty (besides the ILatency and IHeartbeat interface
+				// which are always installed on each endpoint).
+				server.Proxies.Count().Should().Be(2);
 				var actualProxy = server.GetExistingOrCreateNewProxy<IGetFloatProperty>(42);
 				actualProxy.Should().NotBeNull();
 			}

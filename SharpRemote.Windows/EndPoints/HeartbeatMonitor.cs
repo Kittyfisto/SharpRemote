@@ -12,7 +12,7 @@ namespace SharpRemote
 	///     Responsible for invoking the heartbeat interface regularly.
 	///     Notifies in case of skipped beats.
 	/// </summary>
-	public sealed class HeartbeatMonitor
+	internal sealed class HeartbeatMonitor
 		: IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -27,10 +27,11 @@ namespace SharpRemote
 		private volatile bool _isDisposed;
 		private DateTime? _lastHeartbeat;
 		private long _numHeartbeats;
+		private bool _isStarted;
 
 		/// <summary>
-		/// Initializes this heartbeat monitor with the given heartbeat interface and
-		/// settings that define how often a heartbeat measurement is performed.
+		///     Initializes this heartbeat monitor with the given heartbeat interface and
+		///     settings that define how often a heartbeat measurement is performed.
 		/// </summary>
 		/// <param name="heartbeat"></param>
 		/// <param name="settings"></param>
@@ -43,8 +44,8 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Initializes this heartbeat monitor with the given heartbeat interface and
-		/// settings that define how often a heartbeat measurement is performed.
+		///     Initializes this heartbeat monitor with the given heartbeat interface and
+		///     settings that define how often a heartbeat measurement is performed.
 		/// </summary>
 		/// <param name="heartbeat"></param>
 		/// <param name="heartBeatInterval"></param>
@@ -67,8 +68,8 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The configured heartbeat interval, e.g. the amount of time that shall pass before
-		///  a new heartbeat is started.
+		///     The configured heartbeat interval, e.g. the amount of time that shall pass before
+		///     a new heartbeat is started.
 		/// </summary>
 		public TimeSpan Interval
 		{
@@ -76,8 +77,8 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The amount of time for which a heartbeat may not return (e.g. fail) before the connection is assumed
-		/// to be dead.
+		///     The amount of time for which a heartbeat may not return (e.g. fail) before the connection is assumed
+		///     to be dead.
 		/// </summary>
 		public TimeSpan FailureInterval
 		{
@@ -85,7 +86,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The total number of heartbeats performed since <see cref="Start"/>.
+		///     The total number of heartbeats performed since <see cref="Start" />.
 		/// </summary>
 		public long NumHeartbeats
 		{
@@ -99,7 +100,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The point in time where the last heartbeat was performed.
+		///     The point in time where the last heartbeat was performed.
 		/// </summary>
 		public DateTime? LastHeartbeat
 		{
@@ -107,7 +108,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Whether or not this heartbeat is disposed of.
+		///     Whether or not this heartbeat is disposed of.
 		/// </summary>
 		public bool IsDisposed
 		{
@@ -115,7 +116,15 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Whether or not a failure has been detected.
+		/// Whether or not <see cref="Start()"/> has been called (and <see cref="Stop()"/> has not since then).
+		/// </summary>
+		public bool IsStarted
+		{
+			get { return _isStarted; }
+		}
+
+		/// <summary>
+		///     Whether or not a failure has been detected.
 		/// </summary>
 		public bool FailureDetected
 		{
@@ -126,25 +135,42 @@ namespace SharpRemote
 		{
 			lock (_syncRoot)
 			{
+				_isStarted = false;
 				_isDisposed = false;
 			}
 		}
 
 		/// <summary>
-		/// Starts this heartbeat monitor.
+		///     Starts this heartbeat monitor.
 		/// </summary>
 		/// <remarks>
-		/// Resets the <see cref="FailureDetected"/> property to false.
+		///     Resets the <see cref="FailureDetected" /> property to false.
 		/// </remarks>
 		public void Start()
 		{
-			_failureDetected = false;
+			lock (_syncRoot)
+			{
+				_failureDetected = false;
+				_isStarted = true;
+			}
 			_task.Start();
+		}
+
+		/// <summary>
+		/// Stops the heartbeat monitor, failures will no longer be reported, nor
+		/// will the proxy be accessed in any way.
+		/// </summary>
+		public void Stop()
+		{
+			lock (_syncRoot)
+			{
+				_isStarted = false;
+			}
 		}
 
 		private void MeasureHeartbeats()
 		{
-			while (!_isDisposed)
+			while (_isStarted)
 			{
 				try
 				{
@@ -235,6 +261,9 @@ namespace SharpRemote
 			lock (_syncRoot)
 			{
 				if (_isDisposed)
+					return;
+
+				if (!_isStarted)
 					return;
 			}
 

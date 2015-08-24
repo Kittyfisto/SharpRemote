@@ -13,11 +13,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.Exceptions;
+using SharpRemote.Extensions;
 using SharpRemote.Tasks;
 using log4net;
 
 // ReSharper disable CheckNamespace
-
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
@@ -30,6 +30,11 @@ namespace SharpRemote
 		  , IRemotingEndPoint
 		  , IEndPointChannel
 	{
+		private const ulong ServerLatencyServantId = ulong.MaxValue - 1;
+		private const ulong ServerHeartbeatServantId = ulong.MaxValue - 2;
+		private const ulong ClientLatencyServantId = ulong.MaxValue - 3;
+		private const ulong ClientHeartbeatServantId = ulong.MaxValue - 4;
+
 		private const string AuthenticationRequiredMessage = "Authentication required";
 		private const string NoAuthenticationRequiredMessage = "No Authentication required";
 		private const string AuthenticationResponseMessage = "Authentication";
@@ -128,6 +133,25 @@ namespace SharpRemote
 		private readonly Stopwatch _garbageCollectionTime;
 		private readonly Timer _garbageCollectionTimer;
 
+		#region Latency Measurements
+
+		private readonly Latency _localLatency;
+		private readonly ILatency _remoteLatency;
+		private LatencyMonitor _latencyMonitor;
+
+		#endregion
+
+		#region Heartbeat
+
+		private readonly Heartbeat _localHeartbeat;
+		private readonly IHeartbeat _remoteHeartbeat;
+		private readonly HeartbeatSettings _heartbeatSettings;
+		private readonly LatencySettings _latencySettings;
+		private HeartbeatMonitor _heartbeatMonitor;
+		private bool _isDisposing;
+
+		#endregion
+
 		#endregion
 
 		/// <summary>
@@ -158,10 +182,13 @@ namespace SharpRemote
 
 		internal AbstractSocketRemotingEndPoint(GrainIdGenerator idGenerator,
 		                                        string name,
+		                                        EndPointType type,
 		                                        IAuthenticator clientAuthenticator = null,
 		                                        IAuthenticator serverAuthenticator = null,
 		                                        ITypeResolver customTypeResolver = null,
-		                                        Serializer serializer = null)
+		                                        Serializer serializer = null,
+		                                        HeartbeatSettings heartbeatSettings = null,
+		                                        LatencySettings latencySettings = null)
 		{
 			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
 
@@ -199,6 +226,45 @@ namespace SharpRemote
 
 			_garbageCollectionTime = new Stopwatch();
 			_garbageCollectionTimer = new Timer(CollectGarbage, null, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
+
+			_localHeartbeat = new Heartbeat();
+			_localLatency = new Latency();
+			switch (type)
+			{
+				case EndPointType.Client:
+					CreateServant<IHeartbeat>(ClientHeartbeatServantId, _localHeartbeat);
+					_remoteHeartbeat = CreateProxy<IHeartbeat>(ServerHeartbeatServantId);
+
+					CreateServant<ILatency>(ClientLatencyServantId, _localLatency);
+					_remoteLatency = CreateProxy<ILatency>(ServerLatencyServantId);
+					break;
+
+				case EndPointType.Server:
+					CreateServant<IHeartbeat>(ServerHeartbeatServantId, _localHeartbeat);
+					_remoteHeartbeat = CreateProxy<IHeartbeat>(ClientHeartbeatServantId);
+
+					CreateServant<ILatency>(ServerLatencyServantId, _localLatency);
+					_remoteLatency = CreateProxy<ILatency>(ClientLatencyServantId);
+					break;
+			}
+
+			_heartbeatSettings = heartbeatSettings;
+			_latencySettings = latencySettings;
+		}
+
+		private void HeartbeatMonitorOnOnFailure()
+		{
+			lock (_syncRoot)
+			{
+				// If we're disposing this silo (or have disposed it alrady), then the heartbeat monitor
+				// reported a failure that we caused intentionally (by killing the host process) and thus
+				// this "failure" musn't be reported.
+				if (_isDisposed || _isDisposing)
+					return;
+			}
+
+			Log.ErrorFormat("Heartbeat monitor detected a failure with the connection to '{0}'", InternalRemoteEndPoint);
+			Disconnect(EndPointDisconnectReason.HeartbeatFailure);
 		}
 
 		#region Reading from / Writing to socket
@@ -572,21 +638,29 @@ namespace SharpRemote
 		{
 			lock (_syncRoot)
 			{
-				//_pendingWrites.Dispose();
-
-				Disconnect();
-				DisposeAdditional();
-				_garbageCollectionTimer.Dispose();
-
-				// Another thread could still be accessing this dictionary.
-				// Therefore we need to guard this one against concurrent access...
-				lock (_servantsById)
+				_isDisposing = true;
+				try
 				{
-					_servantsBySubject.Dispose();
-					_servantsById.Clear();
-				}
+					//_pendingWrites.Dispose();
 
-				_isDisposed = true;
+					Disconnect();
+					DisposeAdditional();
+					_garbageCollectionTimer.Dispose();
+
+					// Another thread could still be accessing this dictionary.
+					// Therefore we need to guard this one against concurrent access...
+					lock (_servantsById)
+					{
+						_servantsBySubject.Dispose();
+						_servantsById.Clear();
+					}
+
+					_isDisposed = true;
+				}
+				finally
+				{
+					_isDisposing = false;
+				}
 			}
 		}
 
@@ -598,6 +672,18 @@ namespace SharpRemote
 		public bool IsConnected
 		{
 			get { return InternalRemoteEndPoint != null; }
+		}
+
+		public TimeSpan RoundtripTime
+		{
+			get
+			{
+				var monitor = _latencyMonitor;
+				if (monitor != null)
+					return monitor.RoundtripTime;
+
+				return TimeSpan.Zero;
+			}
 		}
 
 		public void Disconnect()
@@ -826,6 +912,13 @@ namespace SharpRemote
 
 				if (_socket != null)
 				{
+					_heartbeatMonitor.OnFailure -= HeartbeatMonitorOnOnFailure;
+					_heartbeatMonitor.Stop();
+					_heartbeatMonitor.TryDispose();
+
+					_latencyMonitor.Stop();
+					_latencyMonitor.TryDispose();
+
 					hasDisconnected = true;
 					_disconnectReason = reason;
 					if (IsFailure(reason))
@@ -879,11 +972,7 @@ namespace SharpRemote
 				InternalRemoteEndPoint = null;
 			}
 
-			var fn2 = OnDisconnected;
-			if (hasDisconnected && fn2 != null)
-			{
-				fn2(remoteEndPoint);
-			}
+			FireOnDisconnected(hasDisconnected, remoteEndPoint);
 		}
 
 		private void SendGoodbye()
@@ -913,9 +1002,41 @@ namespace SharpRemote
 
 		protected void FireOnConnected(EndPoint endPoint)
 		{
+			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat, _heartbeatSettings ?? new HeartbeatSettings());
+			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
+			_heartbeatMonitor.Start();
+
+			_latencyMonitor = new LatencyMonitor(_remoteLatency, _latencySettings ?? new LatencySettings());
+			_latencyMonitor.Start();
+
 			var fn = OnConnected;
 			if (fn != null)
-				fn(endPoint);
+			{
+				try
+				{
+					fn(endPoint);
+				}
+				catch (Exception e)
+				{
+					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
+				}
+			}
+		}
+
+		private void FireOnDisconnected(bool hasDisconnected, EndPoint remoteEndPoint)
+		{
+			var fn2 = OnDisconnected;
+			if (hasDisconnected && fn2 != null)
+			{
+				try
+				{
+					fn2(remoteEndPoint);
+				}
+				catch (Exception e)
+				{
+					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
+				}
+			}
 		}
 
 		/// <summary>

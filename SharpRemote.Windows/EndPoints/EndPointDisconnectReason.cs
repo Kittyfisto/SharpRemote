@@ -33,7 +33,7 @@ namespace SharpRemote
 		RpcInvalidResponse,
 
 		/// <summary>
-		/// The connection was dropped because an unexpected 
+		/// The connection was dropped because an unexpected exception.
 		/// </summary>
 		UnhandledException,
 	}

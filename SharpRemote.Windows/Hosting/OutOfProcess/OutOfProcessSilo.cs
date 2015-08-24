@@ -517,7 +517,7 @@ namespace SharpRemote.Hosting
 
 			/// <summary>
 			/// </summary>
-			public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(1);
+			public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
 		}
 	}
 }

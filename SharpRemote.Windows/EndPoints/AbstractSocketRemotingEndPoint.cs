@@ -927,12 +927,22 @@ namespace SharpRemote
 
 				if (_socket != null)
 				{
-					_heartbeatMonitor.OnFailure -= HeartbeatMonitorOnOnFailure;
-					_heartbeatMonitor.Stop();
-					_heartbeatMonitor.TryDispose();
+					var heartbeatMonitor = _heartbeatMonitor;
+					if (heartbeatMonitor != null)
+					{
+						heartbeatMonitor.OnFailure -= HeartbeatMonitorOnOnFailure;
+						heartbeatMonitor.Stop();
+						heartbeatMonitor.TryDispose();
+						_heartbeatMonitor = null;
+					}
 
-					_latencyMonitor.Stop();
-					_latencyMonitor.TryDispose();
+					var latencyMonitor = _latencyMonitor;
+					if (latencyMonitor != null)
+					{
+						latencyMonitor.Stop();
+						latencyMonitor.TryDispose();
+						_latencyMonitor = null;
+					}
 
 					hasDisconnected = true;
 					_disconnectReason = reason;

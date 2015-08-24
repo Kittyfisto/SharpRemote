@@ -506,6 +506,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("Wont run on the shitty CI server")]
 		[Description("Verifies that after a connection is established, latency measurements are performed")]
 		public void TestConnect26()
 		{

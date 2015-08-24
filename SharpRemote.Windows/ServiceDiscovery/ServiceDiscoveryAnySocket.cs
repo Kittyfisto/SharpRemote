@@ -120,19 +120,32 @@ namespace SharpRemote.ServiceDiscovery
 							ServiceDiscoverySocket socket;
 							if (!_sockets.TryGetValue(address, out socket))
 							{
-								Log.InfoFormat("Creating service discovery socket for {0}@{1}",
-								               address,
-								               iface.Name);
+								try
+								{
+									socket = new ServiceDiscoverySocket(iface,
+																		address,
+																		_multicastAddress,
+																		_port,
+																		_ttl,
+																		_services);
+								}
+								catch (SocketException e)
+								{
+									Log.WarnFormat("Caught unexpected exception while creating service discovery socket for {0}@{1}: {2}",
+									                addr,
+									                iface.Name,
+									                e);
+								}
 
-								socket = new ServiceDiscoverySocket(iface,
-								                                    address,
-																	_multicastAddress,
-																	_port,
-																	_ttl,
-								                                    _services);
+								if (socket != null)
+								{
+									Log.InfoFormat("Created service discovery socket for {0}@{1}",
+											   address,
+											   iface.Name);
 
-								_sockets.Add(address, socket);
-								socket.OnResponseReceived += SocketOnResponseReceived;
+									_sockets.Add(address, socket);
+									socket.OnResponseReceived += SocketOnResponseReceived;
+								}
 							}
 
 							currentAddresses.Add(address);

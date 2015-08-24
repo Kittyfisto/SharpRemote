@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
+using SharpRemote.Attributes;
 
 namespace SharpRemote.CodeGeneration.Remoting
 {
@@ -232,12 +233,31 @@ namespace SharpRemote.CodeGeneration.Remoting
 
 			Type returnType = method.ReturnType;
 			ICustomAttributeProvider returnAttributes = remoteMethod.ReturnTypeCustomAttributes;
+			bool hasAsyncAttribute = remoteMethod.GetCustomAttribute<AsyncRemoteAttribute>() != null;
 			bool isAsync = returnType == typeof (Task) ||
-			               returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof (Task<>);
+			               (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof (Task<>)) ||
+			               hasAsyncAttribute;
 
 			if (isAsync)
 			{
-				Type taskReturnType = returnType != typeof (Task) ? returnType.GetGenericArguments()[0] : typeof (void);
+				Type taskReturnType;
+				if (hasAsyncAttribute)
+				{
+					if (returnType != typeof (void))
+						throw new ArgumentException(string.Format("Method {0}.{1} has the AsyncRemote attribute applied, but it's return type is not 'void' - this is not supported",
+							InterfaceType.Name,
+							method.Name));
+
+					taskReturnType = typeof (void);
+				}
+				else if (returnType == typeof (Task))
+				{
+					taskReturnType = typeof(void);
+				}
+				else
+				{
+					taskReturnType = returnType.GetGenericArguments()[0];
+				}
 
 				var type = (TypeBuilder) method.DeclaringType;
 
@@ -267,6 +287,9 @@ namespace SharpRemote.CodeGeneration.Remoting
 					gen.Emit(OpCodes.Newobj, Methods.ActionTaskOfMemoryStreamIntPtrCtor);
 
 					gen.Emit(OpCodes.Call, Methods.TaskMemoryStreamContinueWith);
+
+					if (hasAsyncAttribute)
+						gen.Emit(OpCodes.Pop);
 				}
 				else
 				{
@@ -294,15 +317,23 @@ namespace SharpRemote.CodeGeneration.Remoting
 				invokeGen.Emit(OpCodes.Call, Methods.TaskGetIsFaulted);
 				invokeGen.Emit(OpCodes.Brfalse, hasResult);
 				// {
-				//    throw task.Exception;
-				invokeGen.Emit(OpCodes.Ldarg_1);
-				invokeGen.Emit(OpCodes.Call, Methods.TaskGetException);
-				invokeGen.Emit(OpCodes.Throw);
+				if (hasAsyncAttribute)
+				{
+					invokeGen.Emit(OpCodes.Ldarg_1);
+					invokeGen.Emit(OpCodes.Call, Methods.TaskGetException);
+					invokeGen.Emit(OpCodes.Pop);
+				}
+				else
+				{
+					//    throw task.Exception;
+					invokeGen.Emit(OpCodes.Ldarg_1);
+					invokeGen.Emit(OpCodes.Call, Methods.TaskGetException);
+					invokeGen.Emit(OpCodes.Throw);
+				}
 				// }
 				// else
 				// {
 				//    return ReadValue(task.Result);
-				invokeGen.EmitWriteLine("Didn't fault");
 				invokeGen.MarkLabel(hasResult);
 				if (taskReturnType != typeof(void))
 				{

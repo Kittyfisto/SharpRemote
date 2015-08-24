@@ -141,6 +141,7 @@
     <Compile Include="Types\Interfaces\IReturnsObjectArray.cs" />
     <Compile Include="Types\Interfaces\IReturnsTask.cs" />
     <Compile Include="Types\Classes\Listener.cs" />
+    <Compile Include="Types\Interfaces\IVoidMethodAsyncAttribute.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IReturnsObjectMethod.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IReturnsType.cs" />
     <Compile Include="Types\Interfaces\IVoidMethodObjectParameter.cs" />

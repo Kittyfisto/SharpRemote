@@ -27,6 +27,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		"Verifies the behaviour of two connected RemotingEndPoint instances regarding successful (in terms of the connection) behaviour"
 		)]
 	public class AcceptanceTest
+		: AbstractTest
 	{
 		private SocketRemotingEndPointServer _server;
 		private SocketRemotingEndPointClient _client;
@@ -760,6 +761,80 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			objects[2].Should().BeSameAs(objects[0]);
 			objects[3].Should().Be(42);
 			objects[4].Should().Be("Hello World!");
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that a method applied with the Async attribute is truly invoked async")]
+		public void TestAsyncAttribute1()
+		{
+			const ulong servantId = 29;
+			var syncRoot = new object();
+
+			string actualMessage = null;
+			bool called = false;
+			var subject = new Mock<IVoidMethodAsyncAttribute>();
+			subject.Setup(x => x.Do(It.IsAny<string>()))
+			       .Callback((string message) =>
+				       {
+						   lock (syncRoot)
+						   {
+							   actualMessage = message;
+							   called = true;
+						   }
+				       });
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IVoidMethodAsyncAttribute>(servantId);
+
+			var t = Task.Factory.StartNew(() =>
+				{
+					lock (syncRoot)
+					{
+						proxy.Do("Test");
+					}
+				});
+			t.Wait(TimeSpan.FromSeconds(2))
+				.Should().BeTrue("Because this method shouldn't deadlock when executed asynchronously");
+
+			WaitFor(() => called, TimeSpan.FromSeconds(1))
+				.Should().BeTrue("Because the remote method should've been invoked well within one second");
+			actualMessage.Should().Be("Test");
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that when a method applied with the Async attribute throws an exception, the exception is properly handled and doesn't tear down the entire process")]
+		public void TestAsyncAttribute2()
+		{
+			var exceptions = new List<Exception>();
+			EventHandler<UnobservedTaskExceptionEventArgs> fn = (sender, args) => exceptions.Add(args.Exception);
+			TaskScheduler.UnobservedTaskException += fn;
+			try
+			{
+				const ulong servantId = 30;
+
+				bool called = false;
+				var subject = new Mock<IVoidMethodAsyncAttribute>();
+				subject.Setup(x => x.Do(It.IsAny<string>()))
+					   .Callback((string message) =>
+						   {
+							   called = true;
+							   throw new ArgumentException("Foobar");
+						   });
+				_server.CreateServant(servantId, subject.Object);
+				var proxy = _client.CreateProxy<IVoidMethodAsyncAttribute>(servantId);
+
+				proxy.Do("Test");
+
+				WaitFor(() => called, TimeSpan.FromSeconds(1))
+				.Should().BeTrue("Because the remote method should've been invoked well within one second");
+
+				GC.Collect(2, GCCollectionMode.Forced);
+
+				exceptions.Should().BeEmpty();
+			}
+			finally
+			{
+				TaskScheduler.UnobservedTaskException -= fn;
+			}
 		}
 	}
 }

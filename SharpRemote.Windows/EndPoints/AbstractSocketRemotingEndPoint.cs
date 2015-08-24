@@ -819,6 +819,7 @@ namespace SharpRemote
 						{
 							var formatter = new BinaryFormatter();
 							var e = (Exception) formatter.Deserialize(finishedCall.Reader.BaseStream);
+							LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
 							taskSource.SetException(e);
 						}
 						else
@@ -883,6 +884,7 @@ namespace SharpRemote
 				{
 					var formatter = new BinaryFormatter();
 					var e = (Exception) formatter.Deserialize(call.Reader.BaseStream);
+					LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
 					throw e;
 				}
 				else
@@ -896,6 +898,19 @@ namespace SharpRemote
 				{
 					_pendingMethodCalls.Recycle(call);
 				}
+			}
+		}
+
+		private void LogRemoteMethodCallException(long rpcId, ulong servantId, string interfaceType, string methodName, Exception exception)
+		{
+			if (Log.IsErrorEnabled)
+			{
+				Log.ErrorFormat("RPC invocation #{0} on {1}.{2} (#{3}) threw: {4}",
+												rpcId,
+												interfaceType,
+												methodName,
+												servantId,
+												exception);
 			}
 		}
 

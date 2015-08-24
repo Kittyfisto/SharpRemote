@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\AsyncAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
     <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />

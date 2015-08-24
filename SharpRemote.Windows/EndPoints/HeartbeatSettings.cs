@@ -1,7 +1,9 @@
 ﻿using System;
 using SharpRemote.Hosting;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// Used to configure the heartbeat mechanism of <see cref="ISilo"/>s.

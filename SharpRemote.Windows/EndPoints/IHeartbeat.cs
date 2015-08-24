@@ -1,6 +1,8 @@
 ﻿using System.Threading.Tasks;
 
+// ReSharper disable CheckNamespace
 namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// This interface is used to detected failures of remote endpoints.

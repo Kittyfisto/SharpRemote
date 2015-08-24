@@ -4,13 +4,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using log4net;
 
-namespace SharpRemote.Hosting
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	///     Responsible for invoking the heartbeat interface regularly.
 	///     Notifies in case of skipped beats.
 	/// </summary>
-	internal sealed class HeartbeatMonitor
+	public sealed class HeartbeatMonitor
 		: IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -26,6 +28,12 @@ namespace SharpRemote.Hosting
 		private DateTime? _lastHeartbeat;
 		private long _numHeartbeats;
 
+		/// <summary>
+		/// Initializes this heartbeat monitor with the given heartbeat interface and
+		/// settings that define how often a heartbeat measurement is performed.
+		/// </summary>
+		/// <param name="heartbeat"></param>
+		/// <param name="settings"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        HeartbeatSettings settings)
 			: this(
@@ -34,6 +42,14 @@ namespace SharpRemote.Hosting
 		{
 		}
 
+		/// <summary>
+		/// Initializes this heartbeat monitor with the given heartbeat interface and
+		/// settings that define how often a heartbeat measurement is performed.
+		/// </summary>
+		/// <param name="heartbeat"></param>
+		/// <param name="heartBeatInterval"></param>
+		/// <param name="failureThreshold"></param>
+		/// <param name="enabledWithAttachedDebugger"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat, TimeSpan heartBeatInterval, int failureThreshold,
 		                        bool enabledWithAttachedDebugger)
 		{
@@ -50,16 +66,27 @@ namespace SharpRemote.Hosting
 			_task = new Task(MeasureHeartbeats, TaskCreationOptions.LongRunning);
 		}
 
+		/// <summary>
+		/// The configured heartbeat interval, e.g. the amount of time that shall pass before
+		///  a new heartbeat is started.
+		/// </summary>
 		public TimeSpan Interval
 		{
 			get { return _interval; }
 		}
 
+		/// <summary>
+		/// The amount of time for which a heartbeat may not return (e.g. fail) before the connection is assumed
+		/// to be dead.
+		/// </summary>
 		public TimeSpan FailureInterval
 		{
 			get { return _failureInterval; }
 		}
 
+		/// <summary>
+		/// The total number of heartbeats performed since <see cref="Start"/>.
+		/// </summary>
 		public long NumHeartbeats
 		{
 			get
@@ -71,16 +98,25 @@ namespace SharpRemote.Hosting
 			}
 		}
 
+		/// <summary>
+		/// The point in time where the last heartbeat was performed.
+		/// </summary>
 		public DateTime? LastHeartbeat
 		{
 			get { return _lastHeartbeat; }
 		}
 
+		/// <summary>
+		/// Whether or not this heartbeat is disposed of.
+		/// </summary>
 		public bool IsDisposed
 		{
 			get { return _isDisposed; }
 		}
 
+		/// <summary>
+		/// Whether or not a failure has been detected.
+		/// </summary>
 		public bool FailureDetected
 		{
 			get { return _failureDetected; }
@@ -94,8 +130,15 @@ namespace SharpRemote.Hosting
 			}
 		}
 
+		/// <summary>
+		/// Starts this heartbeat monitor.
+		/// </summary>
+		/// <remarks>
+		/// Resets the <see cref="FailureDetected"/> property to false.
+		/// </remarks>
 		public void Start()
 		{
+			_failureDetected = false;
 			_task.Start();
 		}
 

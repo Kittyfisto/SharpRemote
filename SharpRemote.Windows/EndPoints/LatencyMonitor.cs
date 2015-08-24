@@ -6,9 +6,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using log4net;
 
-namespace SharpRemote.Hosting
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
-	internal sealed class LatencyMonitor
+	/// <summary>
+	/// This class is responsible for measuring the average latency of a <see cref="ILatency.Roundtrip()"/>
+	/// invocation. It can be used by installing a <see cref="ILatency"/> proxy on the side that wants to
+	/// measure the latency and a <see cref="Latency"/> servant on the other side.
+	/// </summary>
+	public sealed class LatencyMonitor
 		: IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -22,6 +29,13 @@ namespace SharpRemote.Hosting
 		private volatile bool _isDisposed;
 		private TimeSpan _roundTripTime;
 
+		/// <summary>
+		/// Initializes this latency monitor with the given interval and number of samples over which
+		/// the average latency is determined.
+		/// </summary>
+		/// <param name="latencyGrain"></param>
+		/// <param name="interval"></param>
+		/// <param name="numSamples"></param>
 		public LatencyMonitor(
 			ILatency latencyGrain,
 			TimeSpan interval,
@@ -39,6 +53,12 @@ namespace SharpRemote.Hosting
 			_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
 		}
 
+		/// <summary>
+		/// Initializes this latency monitor with the given interval and number of samples over which
+		/// the average latency is determined.
+		/// </summary>
+		/// <param name="latencyGrain"></param>
+		/// <param name="settings"></param>
 		public LatencyMonitor(ILatency latencyGrain, LatencySettings settings)
 			: this(latencyGrain,
 			       settings.Interval,
@@ -46,6 +66,10 @@ namespace SharpRemote.Hosting
 		{
 		}
 
+		/// <summary>
+		/// The average roundtrip time of a <see cref="ILatency.Roundtrip()"/> call.
+		/// Can be used to determine the base overhead of the remoting system.
+		/// </summary>
 		public TimeSpan RoundTripTime
 		{
 			get
@@ -62,6 +86,9 @@ namespace SharpRemote.Hosting
 			_isDisposed = true;
 		}
 
+		/// <summary>
+		/// Starts this latency monitor, e.g. begins measuring the latency.
+		/// </summary>
 		public void Start()
 		{
 			_task.Start();

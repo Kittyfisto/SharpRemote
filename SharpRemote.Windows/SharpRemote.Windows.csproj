@@ -50,6 +50,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
+    <Compile Include="EndPoints\ILatency.cs" />
+    <Compile Include="EndPoints\Latency.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
     <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />
     <Compile Include="ServiceDiscovery\INetworkServiceRegisty.cs" />
@@ -98,7 +100,7 @@
     <Compile Include="GrainIdRange.cs" />
     <Compile Include="HashHelpers.cs" />
     <Compile Include="Hosting\CRuntimeVersions.cs" />
-    <Compile Include="Hosting\LatencySettings.cs" />
+    <Compile Include="EndPoints\LatencySettings.cs" />
     <Compile Include="Exceptions\GrainIdRangeExhaustedException.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSiloServer.cs" />
     <Compile Include="Hosting\PostMortemSettings.cs" />
@@ -112,14 +114,13 @@
     <Compile Include="ProcessAccessFlags.cs" />
     <Compile Include="RingBuffer.cs" />
     <Compile Include="Hosting\DefaultImplementationRegistry.cs" />
-    <Compile Include="Hosting\HeartbeatMonitor.cs" />
-    <Compile Include="Hosting\Heartbeat.cs" />
-    <Compile Include="HeartbeatSettings.cs" />
-    <Compile Include="Hosting\ILatency.cs" />
-    <Compile Include="Hosting\LatencyMonitor.cs" />
+    <Compile Include="EndPoints\HeartbeatMonitor.cs" />
+    <Compile Include="EndPoints\Heartbeat.cs" />
+    <Compile Include="EndPoints\HeartbeatSettings.cs" />
+    <Compile Include="EndPoints\LatencyMonitor.cs" />
     <Compile Include="Hosting\SiloFaultReason.cs" />
     <Compile Include="Hosting\SiloFaultResolution.cs" />
-    <Compile Include="IHeartbeat.cs" />
+    <Compile Include="EndPoints\IHeartbeat.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />
     <Compile Include="Exceptions\AuthenticationException.cs" />

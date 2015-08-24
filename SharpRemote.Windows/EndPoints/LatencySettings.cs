@@ -1,6 +1,8 @@
 ﻿using System;
 
-namespace SharpRemote.Hosting
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// This class is used to describe if and how latency measurements are performed.

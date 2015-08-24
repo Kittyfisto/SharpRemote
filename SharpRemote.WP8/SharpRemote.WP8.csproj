@@ -98,6 +98,9 @@
     <Compile Include="..\SharpRemote.Windows\EndPoints\AbstractEndPoint.cs">
       <Link>EndPoints\AbstractEndPoint.cs</Link>
     </Compile>
+    <Compile Include="..\SharpRemote.Windows\EndPoints\EndPointDisconnectReason.cs">
+      <Link>EndPoints\EndPointDisconnectReason.cs</Link>
+    </Compile>
     <Compile Include="..\SharpRemote.Windows\EndPoints\MethodInvocation.cs">
       <Link>EndPoints\MethodInvocation.cs</Link>
     </Compile>

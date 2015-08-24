@@ -295,7 +295,6 @@ namespace SharpRemote.CodeGeneration.Remoting
 				invokeGen.Emit(OpCodes.Brfalse, hasResult);
 				// {
 				//    throw task.Exception;
-				invokeGen.EmitWriteLine("Faulted");
 				invokeGen.Emit(OpCodes.Ldarg_1);
 				invokeGen.Emit(OpCodes.Call, Methods.TaskGetException);
 				invokeGen.Emit(OpCodes.Throw);

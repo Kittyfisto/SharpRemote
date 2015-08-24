@@ -125,10 +125,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			}
 		}
 
-
-
 		[Test]
-		[Repeat(10)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
 		public void TestDisconnect5()
@@ -181,7 +178,6 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[Repeat(10)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
 		public void TestDisconnect6()

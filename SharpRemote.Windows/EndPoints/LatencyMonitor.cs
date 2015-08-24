@@ -28,7 +28,7 @@ namespace SharpRemote
 
 		private volatile bool _isDisposed;
 		private TimeSpan _roundTripTime;
-		private bool _isRunning;
+		private bool _isStarted;
 
 		/// <summary>
 		///     Initializes this latency monitor with the given interval and number of samples over which
@@ -89,6 +89,14 @@ namespace SharpRemote
 			get { return _isDisposed; }
 		}
 
+		/// <summary>
+		/// Whether or not <see cref="Start()"/> has been called (and <see cref="Stop()"/> has not since then).
+		/// </summary>
+		public bool IsStarted
+		{
+			get { return _isStarted; }
+		}
+
 		public void Dispose()
 		{
 			Stop();
@@ -100,7 +108,7 @@ namespace SharpRemote
 		/// </summary>
 		public void Start()
 		{
-			_isRunning = true;
+			_isStarted = true;
 			_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
 			_task.Start();
 		}
@@ -110,14 +118,14 @@ namespace SharpRemote
 		/// </summary>
 		public void Stop()
 		{
-			_isRunning = false;
+			_isStarted = false;
 			_task = null;
 		}
 
 		private void MeasureLatencyLoop()
 		{
 			var sw = new Stopwatch();
-			while (_isRunning)
+			while (_isStarted)
 			{
 				TimeSpan toSleep;
 				if (!MeasureLatency(sw, out toSleep))

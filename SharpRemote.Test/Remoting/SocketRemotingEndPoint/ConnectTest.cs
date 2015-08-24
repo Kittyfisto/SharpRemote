@@ -502,5 +502,36 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				servers.Should().Equal(server.RemoteEndPoint);
 			}
 		}
+
+		[Test]
+		[Description("Verifies that after a connection is established, latency measurements are performed")]
+		public void TestConnect26()
+		{
+			var settings = new LatencySettings
+				{
+					Interval = TimeSpan.FromTicks(10),
+					NumSamples = 20
+				};
+
+			using (var client = CreateClient(latencySettings: settings))
+			using (var server = CreateServer(latencySettings: settings))
+			{
+				client.RoundtripTime.Should().Be(TimeSpan.Zero);
+				server.RoundtripTime.Should().Be(TimeSpan.Zero);
+
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint);
+				Thread.Sleep(TimeSpan.FromMilliseconds(100));
+
+				var clientRoundtrip = client.RoundtripTime;
+				var serverRoundtrip = server.RoundtripTime;
+
+				Console.WriteLine("Client: {0}μs", clientRoundtrip.Ticks / 10);
+				Console.WriteLine("Server: {0}μs", serverRoundtrip.Ticks / 10);
+
+				clientRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);
+				serverRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);
+			}
+		}
 	}
 }

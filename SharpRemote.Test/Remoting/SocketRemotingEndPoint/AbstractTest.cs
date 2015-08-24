@@ -18,22 +18,32 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);
 		}
 
+		[TestFixtureTearDown]
+		public void TestFixtureTearDown()
+		{
+			TestLogger.DisableConsoleLogging();
+		}
+
 		protected SocketRemotingEndPointClient CreateClient(string name = null, IAuthenticator clientAuthenticator = null,
 		                                                    IAuthenticator serverAuthenticator = null,
-		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
+		                                                    LatencySettings latencySettings = null)
 		{
 			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
-			                                        networkServiceDiscoverer);
+			                                        networkServiceDiscoverer,
+			                                        latencySettings: latencySettings);
 		}
 
 		protected SocketRemotingEndPointServer CreateServer(string name = null, IAuthenticator clientAuthenticator = null,
 		                                                    IAuthenticator serverAuthenticator = null,
-		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
+		                                                    LatencySettings latencySettings = null)
 		{
 			return new SocketRemotingEndPointServer(name,
 			                                        clientAuthenticator,
 			                                        serverAuthenticator, null,
-			                                        networkServiceDiscoverer);
+			                                        networkServiceDiscoverer,
+			                                        latencySettings: latencySettings);
 		}
 
 		protected static bool WaitFor(Func<bool> fn, TimeSpan timeout)

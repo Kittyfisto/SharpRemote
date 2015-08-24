@@ -33,6 +33,12 @@ namespace SharpRemote.Test.Hosting
 			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
 		}
 
+		[TestFixtureTearDown]
+		public void TestFixtureTearDown()
+		{
+			TestLogger.DisableConsoleLogging();
+		}
+
 		[Test]
 		[Description("Verifies that starting the default host process succeeds")]
 		public void TestStart1()

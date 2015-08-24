@@ -11,7 +11,6 @@ using Moq;
 using NUnit.Framework;
 using SharpRemote.Extensions;
 using SharpRemote.Hosting;
-using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Exceptions;
@@ -51,6 +50,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		[TestFixtureTearDown]
 		public void TearDown()
 		{
+			TestLogger.DisableConsoleLogging();
+
 			_server.TryDispose();
 			_client.TryDispose();
 		}

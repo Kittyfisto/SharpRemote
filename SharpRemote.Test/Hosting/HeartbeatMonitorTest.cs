@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.Hosting;
 
 namespace SharpRemote.Test.Hosting
 {
@@ -30,6 +29,7 @@ namespace SharpRemote.Test.Hosting
 			monitor.FailureInterval.Should()
 			       .Be(TimeSpan.FromSeconds(10),
 			           "because we specified that 4 skipped heartbeats are to indicate failure which translates to 10 seconds");
+			monitor.IsStarted.Should().BeFalse();
 			monitor.IsDisposed.Should().BeFalse();
 		}
 
@@ -58,6 +58,47 @@ namespace SharpRemote.Test.Hosting
 			new Action(() => new HeartbeatMonitor(_heartbeat.Object, TimeSpan.FromSeconds(2), 0, true))
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureThreshold");
+		}
+
+		[Test]
+		[Description("Verifies that Start() sets the IsStarted property to true")]
+		public void TestStart()
+		{
+			using (var monitor = new HeartbeatMonitor(_heartbeat.Object, new HeartbeatSettings()))
+			{
+				monitor.IsStarted.Should().BeFalse();
+				monitor.Start();
+				monitor.IsStarted.Should().BeTrue();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Stop() sets the IsStarted property to false")]
+		public void TestStop()
+		{
+			using (var monitor = new HeartbeatMonitor(_heartbeat.Object, new HeartbeatSettings()))
+			{
+				monitor.Start();
+				monitor.IsStarted.Should().BeTrue();
+				monitor.Stop();
+				monitor.IsStarted.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Dispose sets the IsStarted property to false, even when Stop() hasn't been called")]
+		public void TestDispose()
+		{
+			HeartbeatMonitor monitor;
+			using (monitor = new HeartbeatMonitor(_heartbeat.Object, new HeartbeatSettings()))
+			{
+				monitor.IsDisposed.Should().BeFalse();
+
+				monitor.Start();
+				monitor.IsStarted.Should().BeTrue();
+			}
+			monitor.IsStarted.Should().BeFalse();
+			monitor.IsDisposed.Should().BeTrue();
 		}
 
 		[Test]

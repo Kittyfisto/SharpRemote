@@ -136,7 +136,7 @@ namespace SharpRemote
 			lock (_syncRoot)
 			{
 				_isStarted = false;
-				_isDisposed = false;
+				_isDisposed = true;
 			}
 		}
 

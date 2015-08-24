@@ -27,6 +27,12 @@ namespace SharpRemote.Test
 			hierarchy.Configured = true;
 		}
 
+		public static void DisableConsoleLogging()
+		{
+			var hierarchy = (Hierarchy)LogManager.GetRepository();
+			hierarchy.Clear();
+		}
+
 		public static void SetLevel<T>(Level level)
 		{
 			var hierarchy = (Hierarchy) LogManager.GetRepository();

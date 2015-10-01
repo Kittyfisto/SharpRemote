@@ -47,5 +47,15 @@ namespace SharpRemote
 		public NoSuchServantException(ulong objectId)
 			: base(string.Format("No such servant: {0}", objectId))
 		{}
+
+		/// <summary>
+		/// Initializes a new instance of this exception with the given object id.
+		/// </summary>
+		/// <param name="objectId">The object id of the <see cref="IGrain"/> that could not be found</param>
+		/// <param name="typeName">The interface the <see cref="IGrain"/> should implement</param>
+		/// <param name="methodName">The method that should have been invoked in the process</param>
+		public NoSuchServantException(ulong objectId, string typeName, string methodName)
+			: base(string.Format("No such servant: {0} while calling {1}.{2}", objectId, typeName, methodName))
+		{ }
 	}
 }

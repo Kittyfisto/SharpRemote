@@ -903,9 +903,9 @@ namespace SharpRemote
 
 		private void LogRemoteMethodCallException(long rpcId, ulong servantId, string interfaceType, string methodName, Exception exception)
 		{
-			if (Log.IsErrorEnabled)
+			if (Log.IsDebugEnabled)
 			{
-				Log.ErrorFormat("RPC invocation #{0} on {1}.{2} (#{3}) threw: {4}",
+				Log.DebugFormat("RPC invocation #{0} on {1}.{2} (#{3}) threw: {4}",
 												rpcId,
 												interfaceType,
 												methodName,
@@ -1027,7 +1027,7 @@ namespace SharpRemote
 
 		protected void FireOnConnected(EndPoint endPoint)
 		{
-			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat, _heartbeatSettings ?? new HeartbeatSettings());
+			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat, Diagnostics.Debugger.Instance, _heartbeatSettings ?? new HeartbeatSettings());
 			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
 			_heartbeatMonitor.Start();
 
@@ -1315,7 +1315,7 @@ namespace SharpRemote
 				}
 				else
 				{
-					throw new NoSuchServantException(servantId);
+					throw new NoSuchServantException(servantId, typeName, methodName);
 				}
 			}
 		}

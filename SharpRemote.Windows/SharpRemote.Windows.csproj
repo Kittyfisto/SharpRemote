@@ -51,6 +51,8 @@
   <ItemGroup>
     <Compile Include="Attributes\AsyncRemoteAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
+    <Compile Include="Diagnostics\Debugger.cs" />
+    <Compile Include="Diagnostics\IDebugger.cs" />
     <Compile Include="EndPoints\ILatency.cs" />
     <Compile Include="EndPoints\Latency.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />

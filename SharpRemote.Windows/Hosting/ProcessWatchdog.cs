@@ -132,7 +132,7 @@ namespace SharpRemote.Hosting
 
 				if (!_waitHandle.WaitOne(Constants.ProcessReadyTimeout))
 					throw new HandshakeException(string.Format("Process {0} failed to communicate used port number in time ({1}s)",
-															   _process.StartInfo.FileName,
+															   _startInfo.FileName,
 															   Constants.ProcessReadyTimeout.TotalSeconds));
 
 				int? port = _remotePort;

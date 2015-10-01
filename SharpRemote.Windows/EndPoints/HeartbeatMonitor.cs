@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using SharpRemote.Diagnostics;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -17,6 +18,7 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private readonly IDebugger _debugger;
 		private readonly bool _enabledWithAttachedDebugger;
 		private readonly TimeSpan _failureInterval;
 		private readonly IHeartbeat _heartbeat;
@@ -34,11 +36,13 @@ namespace SharpRemote
 		///     settings that define how often a heartbeat measurement is performed.
 		/// </summary>
 		/// <param name="heartbeat"></param>
+		/// <param name="debugger"></param>
 		/// <param name="settings"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
+		                        IDebugger debugger,
 		                        HeartbeatSettings settings)
 			: this(
-				heartbeat, settings.Interval, settings.SkippedHeartbeatThreshold,
+				heartbeat, debugger, settings.Interval, settings.SkippedHeartbeatThreshold,
 				settings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached)
 		{
 		}
@@ -48,18 +52,21 @@ namespace SharpRemote
 		///     settings that define how often a heartbeat measurement is performed.
 		/// </summary>
 		/// <param name="heartbeat"></param>
+		/// <param name="debugger"></param>
 		/// <param name="heartBeatInterval"></param>
 		/// <param name="failureThreshold"></param>
 		/// <param name="enabledWithAttachedDebugger"></param>
-		public HeartbeatMonitor(IHeartbeat heartbeat, TimeSpan heartBeatInterval, int failureThreshold,
+		public HeartbeatMonitor(IHeartbeat heartbeat, IDebugger debugger, TimeSpan heartBeatInterval, int failureThreshold,
 		                        bool enabledWithAttachedDebugger)
 		{
 			if (heartbeat == null) throw new ArgumentNullException("heartbeat");
+			if (debugger == null) throw new ArgumentNullException("debugger");
 			if (heartBeatInterval < TimeSpan.Zero) throw new ArgumentOutOfRangeException("heartBeatInterval");
 			if (failureThreshold < 1) throw new ArgumentOutOfRangeException("failureThreshold");
 
 			_syncRoot = new object();
 			_heartbeat = heartbeat;
+			_debugger = debugger;
 			_interval = heartBeatInterval;
 			_enabledWithAttachedDebugger = enabledWithAttachedDebugger;
 			_failureInterval = heartBeatInterval +
@@ -239,7 +246,8 @@ namespace SharpRemote
 
 			try
 			{
-				if (!task.Wait(_failureInterval) && _enabledWithAttachedDebugger)
+				if (!task.Wait(_failureInterval) &&
+					(!_debugger.IsDebuggerAttached || _enabledWithAttachedDebugger))
 				{
 					return false;
 				}

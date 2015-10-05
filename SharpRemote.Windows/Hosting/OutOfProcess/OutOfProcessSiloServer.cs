@@ -32,6 +32,11 @@ namespace SharpRemote.Hosting
 		private readonly ITypeResolver _customTypeResolver;
 		private readonly SocketRemotingEndPointServer _endPoint;
 
+		internal SocketRemotingEndPointServer EndPoint
+		{
+			get { return _endPoint; }
+		}
+
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
 		private readonly PostMortemSettings _postMortemSettings;
@@ -49,9 +54,13 @@ namespace SharpRemote.Hosting
 		///         cref="PostMortemSettings" />
 		///     )
 		/// </param>
+		/// <param name="heartbeatSettings"></param>
+		/// <param name="latencySettings"></param>
 		public OutOfProcessSiloServer(string[] args,
 		                              ITypeResolver customTypeResolver = null,
-		                              PostMortemSettings postMortemSettings = null)
+		                              PostMortemSettings postMortemSettings = null,
+		                              HeartbeatSettings heartbeatSettings = null,
+		                              LatencySettings latencySettings = null)
 		{
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 			{
@@ -159,8 +168,11 @@ namespace SharpRemote.Hosting
 			}
 
 			_endPoint = new SocketRemotingEndPointServer(
-				customTypeResolver: customTypeResolver
+				customTypeResolver: customTypeResolver,
+				heartbeatSettings: heartbeatSettings,
+				latencySettings: latencySettings
 				);
+
 			_endPoint.OnConnected += EndPointOnOnConnected;
 			_endPoint.OnDisconnected += EndPointOnOnDisconnected;
 			_endPoint.OnFailure += EndPointOnOnFailure;

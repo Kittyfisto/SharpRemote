@@ -162,6 +162,9 @@ namespace SharpRemote.Hosting
 		/// <exception cref="SharpRemoteException"></exception>
 		public void Start()
 		{
+			if (_process.IsProcessRunning)
+				throw new InvalidOperationException();
+
 			_process.Start();
 			try
 			{

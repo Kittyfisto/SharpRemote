@@ -32,12 +32,21 @@ namespace SharpRemote
 		public int NumSamples;
 
 		/// <summary>
+		/// Whether or not latency measurements shall be performed.
+		/// </summary>
+		/// <remarks>
+		/// The default value is true.
+		/// </remarks>
+		public bool PerformLatencyMeasurements;
+
+		/// <summary>
 		/// Initializes a new instance of this class with default values.
 		/// </summary>
 		public LatencySettings()
 		{
 			Interval = TimeSpan.FromMilliseconds(100);
 			NumSamples = 10;
+			PerformLatencyMeasurements = true;
 		}
 	}
 }

@@ -24,6 +24,11 @@ namespace SharpRemote
 		public bool ReportSkippedHeartbeatsAsFailureWithDebuggerAttached;
 
 		/// <summary>
+		/// Whether or not the heartbeat mechanism should be used for fault detection.
+		/// </summary>
+		public bool UseHeartbeatForFaultDetection;
+
+		/// <summary>
 		/// The minimum amount of time that shall pass between heartbeat checks.
 		/// </summary>
 		/// <remarks>
@@ -45,6 +50,7 @@ namespace SharpRemote
 		public HeartbeatSettings()
 		{
 			ReportSkippedHeartbeatsAsFailureWithDebuggerAttached = false;
+			UseHeartbeatForFaultDetection = true;
 			Interval = TimeSpan.FromSeconds(1);
 			SkippedHeartbeatThreshold = 10;
 		}

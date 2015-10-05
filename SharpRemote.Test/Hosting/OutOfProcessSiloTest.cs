@@ -119,6 +119,17 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[Description("Verifies that calling Start() after it has succeeded is not allowed")]
+		public void TestStart5()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				new Action(silo.Start).ShouldNotThrow();
+				new Action(silo.Start).ShouldThrow<InvalidOperationException>();
+			}
+		}
+
+		[Test]
 		[LocalTest("Time critical tests dont run on the C/I server")]
 		[Description("Verifies that latency measurements are performed and that they are sound")]
 		public void TestRoundtripTime()

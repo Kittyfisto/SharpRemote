@@ -248,8 +248,24 @@ namespace SharpRemote
 					break;
 			}
 
-			_heartbeatSettings = heartbeatSettings;
-			_latencySettings = latencySettings;
+			_heartbeatSettings = heartbeatSettings ?? new HeartbeatSettings();
+			_latencySettings = latencySettings ?? new LatencySettings();
+		}
+
+		/// <summary>
+		/// The settings used for latency measurements.
+		/// </summary>
+		public LatencySettings LatencySettings
+		{
+			get { return _latencySettings; }
+		}
+
+		/// <summary>
+		/// The settings used for the heartbeat mechanism.
+		/// </summary>
+		public HeartbeatSettings HeartbeatSettings
+		{
+			get { return _heartbeatSettings; }
 		}
 
 		private void HeartbeatMonitorOnOnFailure()
@@ -263,8 +279,19 @@ namespace SharpRemote
 					return;
 			}
 
-			Log.ErrorFormat("Heartbeat monitor detected a failure with the connection to '{0}'", InternalRemoteEndPoint);
-			Disconnect(EndPointDisconnectReason.HeartbeatFailure);
+			bool disconnecting = _heartbeatSettings.UseHeartbeatForFaultDetection;
+			if (disconnecting)
+			{
+				Log.ErrorFormat("Heartbeat monitor detected a failure with the connection to '{0}': Disconnecting the endpoint",
+				                InternalRemoteEndPoint);
+				Disconnect(EndPointDisconnectReason.HeartbeatFailure);
+			}
+			else
+			{
+				Log.WarnFormat(
+					"Heartbeat monitor reported a failure with the connection to '{0}': Ignoring as per heartbeat-settings...",
+					InternalRemoteEndPoint);
+			}
 		}
 
 		#region Reading from / Writing to socket
@@ -1027,11 +1054,14 @@ namespace SharpRemote
 
 		protected void FireOnConnected(EndPoint endPoint)
 		{
-			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat, Diagnostics.Debugger.Instance, _heartbeatSettings ?? new HeartbeatSettings());
+			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
+			                                         Diagnostics.Debugger.Instance,
+			                                         _heartbeatSettings);
+
 			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
 			_heartbeatMonitor.Start();
 
-			_latencyMonitor = new LatencyMonitor(_remoteLatency, _latencySettings ?? new LatencySettings());
+			_latencyMonitor = new LatencyMonitor(_remoteLatency, _latencySettings);
 			_latencyMonitor.Start();
 
 			var fn = OnConnected;

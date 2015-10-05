@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using FluentAssertions;
 using NUnit.Framework;
@@ -198,6 +199,46 @@ namespace SharpRemote.Test.Hosting
 				actualSettings.NumMinidumpsRetained.Should().Be(100);
 				actualSettings.MinidumpFolder.Should().Be(@"C:\foo dumps\");
 				actualSettings.MinidumpName.Should().Be("Test");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that the settings passed to the ctor are properly forwarded to the socket endpoint")]
+		public void TestCtor7()
+		{
+			var args = new[]
+				{
+					Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture),
+				};
+			var heartbeatSettings = new HeartbeatSettings
+				{
+					Interval = TimeSpan.FromSeconds(1.5),
+					ReportSkippedHeartbeatsAsFailureWithDebuggerAttached = true,
+					SkippedHeartbeatThreshold = 11
+				};
+			var latencySettings = new LatencySettings
+				{
+					Interval = TimeSpan.FromSeconds(1.5),
+					NumSamples = 8,
+					PerformLatencyMeasurements = true
+				};
+
+			using (var server = new OutOfProcessSiloServer(args,
+				heartbeatSettings: heartbeatSettings,
+				latencySettings: latencySettings))
+			{
+				var endPoint = server.EndPoint;
+				endPoint.Should().NotBeNull();
+
+				endPoint.LatencySettings.Should().BeSameAs(latencySettings);
+				endPoint.LatencySettings.Interval.Should().Be(TimeSpan.FromSeconds(1.5));
+				endPoint.LatencySettings.NumSamples.Should().Be(8);
+				endPoint.LatencySettings.PerformLatencyMeasurements.Should().BeTrue();
+
+				endPoint.HeartbeatSettings.Should().BeSameAs(heartbeatSettings);
+				endPoint.HeartbeatSettings.Interval.Should().Be(TimeSpan.FromSeconds(1.5));
+				endPoint.HeartbeatSettings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached.Should().BeTrue();
+				endPoint.HeartbeatSettings.SkippedHeartbeatThreshold.Should().Be(11);
 			}
 		}
 	}

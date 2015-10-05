@@ -6,6 +6,7 @@ using SharpRemote.Diagnostics;
 using log4net;
 
 // ReSharper disable CheckNamespace
+
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
@@ -27,9 +28,9 @@ namespace SharpRemote
 		private readonly Task _task;
 		private bool _failureDetected;
 		private volatile bool _isDisposed;
+		private bool _isStarted;
 		private DateTime? _lastHeartbeat;
 		private long _numHeartbeats;
-		private bool _isStarted;
 
 		/// <summary>
 		///     Initializes this heartbeat monitor with the given heartbeat interface and
@@ -42,7 +43,10 @@ namespace SharpRemote
 		                        IDebugger debugger,
 		                        HeartbeatSettings settings)
 			: this(
-				heartbeat, debugger, settings.Interval, settings.SkippedHeartbeatThreshold,
+				heartbeat,
+				debugger,
+				settings.Interval,
+				settings.SkippedHeartbeatThreshold,
 				settings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached)
 		{
 		}
@@ -123,7 +127,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Whether or not <see cref="Start()"/> has been called (and <see cref="Stop()"/> has not since then).
+		///     Whether or not <see cref="Start()" /> has been called (and <see cref="Stop()" /> has not since then).
 		/// </summary>
 		public bool IsStarted
 		{
@@ -164,8 +168,8 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Stops the heartbeat monitor, failures will no longer be reported, nor
-		/// will the proxy be accessed in any way.
+		///     Stops the heartbeat monitor, failures will no longer be reported, nor
+		///     will the proxy be accessed in any way.
 		/// </summary>
 		public void Stop()
 		{
@@ -247,7 +251,7 @@ namespace SharpRemote
 			try
 			{
 				if (!task.Wait(_failureInterval) &&
-					(!_debugger.IsDebuggerAttached || _enabledWithAttachedDebugger))
+				    (!_debugger.IsDebuggerAttached || _enabledWithAttachedDebugger))
 				{
 					return false;
 				}

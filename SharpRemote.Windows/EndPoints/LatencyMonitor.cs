@@ -21,6 +21,7 @@ namespace SharpRemote
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly TimeSpan _interval;
+		private readonly bool _performLatencyMeasurements;
 		private readonly ILatency _latencyGrain;
 		private readonly RingBuffer<TimeSpan> _measurements;
 		private readonly object _syncRoot;
@@ -37,10 +38,12 @@ namespace SharpRemote
 		/// <param name="latencyGrain"></param>
 		/// <param name="interval"></param>
 		/// <param name="numSamples"></param>
+		/// <param name="performLatencyMeasurements"></param>
 		public LatencyMonitor(
 			ILatency latencyGrain,
 			TimeSpan interval,
-			int numSamples
+			int numSamples,
+			bool performLatencyMeasurements
 			)
 		{
 			if (latencyGrain == null) throw new ArgumentNullException("latencyGrain");
@@ -49,6 +52,7 @@ namespace SharpRemote
 
 			_syncRoot = new object();
 			_interval = interval;
+			_performLatencyMeasurements = performLatencyMeasurements;
 			_latencyGrain = latencyGrain;
 			_measurements = new RingBuffer<TimeSpan>(numSamples);
 		}
@@ -62,7 +66,8 @@ namespace SharpRemote
 		public LatencyMonitor(ILatency latencyGrain, LatencySettings settings)
 			: this(latencyGrain,
 			       settings.Interval,
-			       settings.NumSamples)
+			       settings.NumSamples,
+			settings.PerformLatencyMeasurements)
 		{
 		}
 
@@ -109,8 +114,11 @@ namespace SharpRemote
 		public void Start()
 		{
 			_isStarted = true;
-			_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
-			_task.Start();
+			if (_performLatencyMeasurements)
+			{
+				_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
+				_task.Start();
+			}
 		}
 
 		/// <summary>

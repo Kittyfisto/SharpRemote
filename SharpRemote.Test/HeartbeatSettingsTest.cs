@@ -14,6 +14,7 @@ namespace SharpRemote.Test
 			var @default = new HeartbeatSettings();
 			@default.Interval.Should().Be(TimeSpan.FromSeconds(1));
 			@default.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached.Should().BeFalse();
+			@default.UseHeartbeatForFaultDetection.Should().BeTrue();
 			@default.SkippedHeartbeatThreshold.Should().Be(10);
 		}
 	}

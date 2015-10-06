@@ -149,6 +149,7 @@ namespace SharpRemote
 		private readonly LatencySettings _latencySettings;
 		private HeartbeatMonitor _heartbeatMonitor;
 		private bool _isDisposing;
+		private DateTime _lastRead;
 
 		#endregion
 
@@ -280,7 +281,17 @@ namespace SharpRemote
 			}
 
 			bool disconnecting = _heartbeatSettings.UseHeartbeatForFaultDetection;
-			if (disconnecting)
+			var now = DateTime.Now;
+			var difference = now - _lastRead;
+			var heartbeatMonitor = _heartbeatMonitor;
+			if (heartbeatMonitor != null && difference < _heartbeatMonitor.FailureInterval)
+			{
+				Log.WarnFormat(
+					"Heartbeat monitor reported {0} missed heartbeats on the connection to '{1}', but the connection is merely heavily used",
+					_heartbeatSettings.SkippedHeartbeatThreshold,
+					InternalRemoteEndPoint);
+			}
+			else if (disconnecting)
 			{
 				Log.ErrorFormat("Heartbeat monitor detected a failure with the connection to '{0}': Disconnecting the endpoint",
 				                InternalRemoteEndPoint);
@@ -379,6 +390,7 @@ namespace SharpRemote
 						var type = (MessageType) reader.ReadByte();
 
 						Interlocked.Add(ref _numBytesReceived, length + 4);
+						_lastRead = DateTime.Now;
 
 						EndPointDisconnectReason? r;
 						if (!HandleMessage(rpcId, type, reader, out r))

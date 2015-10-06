@@ -60,7 +60,10 @@ namespace SharpRemote
 		/// <param name="heartBeatInterval"></param>
 		/// <param name="failureThreshold"></param>
 		/// <param name="enabledWithAttachedDebugger"></param>
-		public HeartbeatMonitor(IHeartbeat heartbeat, IDebugger debugger, TimeSpan heartBeatInterval, int failureThreshold,
+		public HeartbeatMonitor(IHeartbeat heartbeat,
+		                        IDebugger debugger,
+		                        TimeSpan heartBeatInterval,
+		                        int failureThreshold,
 		                        bool enabledWithAttachedDebugger)
 		{
 			if (heartbeat == null) throw new ArgumentNullException("heartbeat");

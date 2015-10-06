@@ -251,7 +251,6 @@ namespace SharpRemote.Test.Hosting
 
 			// There should be 10 heartbeats in a perfect world, let's just verify that we've got half of that
 			monitor.NumHeartbeats.Should().BeGreaterOrEqualTo(5);
-			monitor.NumHeartbeats.Should().Be(actualNumHeartbeats);
 		}
 	}
 }

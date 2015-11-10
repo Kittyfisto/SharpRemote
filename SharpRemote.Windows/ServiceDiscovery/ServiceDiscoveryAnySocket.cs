@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Threading;
 using log4net;
 
 namespace SharpRemote.ServiceDiscovery
@@ -93,80 +94,129 @@ namespace SharpRemote.ServiceDiscovery
 		{
 			lock (_syncRoot)
 			{
-				NetworkInterface[] ifaces = NetworkInterface.GetAllNetworkInterfaces();
-				var currentAddresses = new HashSet<IPAddress>();
-
-				//
-				// #1: Add sockets for addresses that we haven't bound to (yet)...
-				//
-				foreach (NetworkInterface iface in ifaces)
+				try
 				{
-					var status = iface.OperationalStatus;
-					if (status != OperationalStatus.Up)
+					IEnumerable<NetworkInterface> ifaces = GetAllNetworkInterfaces();
+					var currentAddresses = new HashSet<IPAddress>();
+
+					//
+					// #1: Add sockets for addresses that we haven't bound to (yet)...
+					//
+					foreach (NetworkInterface iface in ifaces)
 					{
-						if (Log.IsDebugEnabled)
-							Log.DebugFormat("Ignoring network interface {0} because it's status is {1}",
-							                iface.Name,
-							                status);
-					}
-					else
-					{
-					IPInterfaceProperties props = iface.GetIPProperties();
-					foreach (UnicastIPAddressInformation addr in props.UnicastAddresses)
-					{
-						IPAddress address = addr.Address;
-						if (address.AddressFamily == AddressFamily.InterNetwork)
+						var status = iface.OperationalStatus;
+						if (status != OperationalStatus.Up)
 						{
-							ServiceDiscoverySocket socket;
-							if (!_sockets.TryGetValue(address, out socket))
+							if (Log.IsDebugEnabled)
+								Log.DebugFormat("Ignoring network interface {0} because it's status is {1}",
+												iface.Name,
+												status);
+						}
+						else
+						{
+							IPInterfaceProperties props = iface.GetIPProperties();
+							foreach (UnicastIPAddressInformation addr in props.UnicastAddresses)
 							{
-								try
+								IPAddress address = addr.Address;
+								if (address.AddressFamily == AddressFamily.InterNetwork)
 								{
-									socket = new ServiceDiscoverySocket(iface,
-																		address,
-																		_multicastAddress,
-																		_port,
-																		_ttl,
-																		_services);
-								}
-								catch (SocketException e)
-								{
-									Log.WarnFormat("Caught unexpected exception while creating service discovery socket for {0}@{1}: {2}",
-									                addr,
-									                iface.Name,
-									                e);
-								}
+									ServiceDiscoverySocket socket;
+									if (!_sockets.TryGetValue(address, out socket))
+									{
+										try
+										{
+											socket = new ServiceDiscoverySocket(iface,
+																				address,
+																				_multicastAddress,
+																				_port,
+																				_ttl,
+																				_services);
+										}
+										catch (SocketException e)
+										{
+											Log.WarnFormat("Caught unexpected exception while creating service discovery socket for {0}@{1}: {2}",
+															addr,
+															iface.Name,
+															e);
+										}
 
-								if (socket != null)
-								{
-									Log.InfoFormat("Created service discovery socket for {0}@{1}",
-											   address,
-											   iface.Name);
+										if (socket != null)
+										{
+											Log.InfoFormat("Created service discovery socket for {0}@{1}",
+													   address,
+													   iface.Name);
 
-									_sockets.Add(address, socket);
-									socket.OnResponseReceived += SocketOnResponseReceived;
+											_sockets.Add(address, socket);
+											socket.OnResponseReceived += SocketOnResponseReceived;
+										}
+									}
+
+									currentAddresses.Add(address);
 								}
 							}
-
-							currentAddresses.Add(address);
 						}
 					}
+
+					//
+					// #2: Remove sockets for addresses that are no longer in use...
+					//
+					foreach (var pair in _sockets.ToList())
+					{
+						if (!currentAddresses.Contains(pair.Key))
+						{
+							pair.Value.Dispose();
+							pair.Value.OnResponseReceived -= SocketOnResponseReceived;
+							_sockets.Remove(pair.Key);
+						}
 					}
 				}
-
-				//
-				// #2: Remove sockets for addresses that are no longer in use...
-				//
-				foreach (var pair in _sockets.ToList())
+				catch (Exception e)
 				{
-					if (!currentAddresses.Contains(pair.Key))
-					{
-						pair.Value.Dispose();
-						pair.Value.OnResponseReceived -= SocketOnResponseReceived;
-						_sockets.Remove(pair.Key);
-					}
+					// This method is invoked from callbacks which is why we're not allowed to throw any exception
+					Log.ErrorFormat("Caught unexpected exception while binding socket to all adapters: {0}", e);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Retrieves the list of all current network interfaces on this computer.
+		/// </summary>
+		/// <returns></returns>
+		private IEnumerable<NetworkInterface> GetAllNetworkInterfaces()
+		{
+			// For some reason I do not know, the operation may fail, therefore
+			// we're preparing for this scenario!
+			var backoffTimes = new[]
+				{
+					TimeSpan.FromMilliseconds(10),
+					TimeSpan.FromMilliseconds(100),
+					TimeSpan.FromMilliseconds(1000)
+				};
+
+			NetworkInterface[] ifaces = null;
+			foreach (var backoffTime in backoffTimes)
+			{
+				try
+				{
+					ifaces = NetworkInterface.GetAllNetworkInterfaces();
+					break;
+				}
+				catch (NetworkInformationException e)
+				{
+					Log.WarnFormat("Unable to retrieve all network interfaces, trying again in {0}: {1}",
+					               backoffTime,
+					               e);
+					Thread.Sleep(backoffTime);
+				}
+				catch (Exception e)
+				{
+					Log.ErrorFormat("Unable to retrieve all network interfaces: {0}",
+								   e);
+					break;
+				}
+			}
+
+			return ifaces ?? new NetworkInterface[0];
 		}
 	}
 }

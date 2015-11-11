@@ -179,6 +179,18 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[Description("Verifies that the endpoint settings are properly forwarded")]
+		public void TestCtor2()
+		{
+			var endPointSettings = new EndPointSettings {MaxConcurrentCalls = 42};
+			using (var server = CreateServer(endPointSettings: endPointSettings))
+			{
+				server.EndPointSettings.Should().NotBeNull();
+				server.EndPointSettings.MaxConcurrentCalls.Should().Be(42);
+			}
+		}
+
+		[Test]
 		[Description("Verifies that disposing the endpoint actually closes the listening socket")]
 		public void TestDispose1()
 		{

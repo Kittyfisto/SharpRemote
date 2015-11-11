@@ -34,16 +34,19 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			                                        latencySettings: latencySettings);
 		}
 
-		protected SocketRemotingEndPointServer CreateServer(string name = null, IAuthenticator clientAuthenticator = null,
+		protected SocketRemotingEndPointServer CreateServer(string name = null,
+		                                                    IAuthenticator clientAuthenticator = null,
 		                                                    IAuthenticator serverAuthenticator = null,
 		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                                    LatencySettings latencySettings = null)
+		                                                    LatencySettings latencySettings = null,
+		                                                    EndPointSettings endPointSettings = null)
 		{
 			return new SocketRemotingEndPointServer(name,
 			                                        clientAuthenticator,
 			                                        serverAuthenticator, null,
 			                                        networkServiceDiscoverer,
-			                                        latencySettings: latencySettings);
+			                                        latencySettings: latencySettings,
+			                                        endPointSettings: endPointSettings);
 		}
 
 		protected static bool WaitFor(Func<bool> fn, TimeSpan timeout)

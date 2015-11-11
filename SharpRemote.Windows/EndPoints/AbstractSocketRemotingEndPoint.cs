@@ -273,6 +273,14 @@ namespace SharpRemote
 			get { return _heartbeatSettings; }
 		}
 
+		/// <summary>
+		/// The settings used for the endpoint itself (max. number of concurrent calls, etc...).
+		/// </summary>
+		public EndPointSettings EndPointSettings
+		{
+			get { return _endpointSettings; }
+		}
+
 		private void HeartbeatMonitorOnOnFailure()
 		{
 			lock (_syncRoot)

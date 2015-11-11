@@ -376,5 +376,52 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				actualProxy.Should().NotBeNull();
 			}
 		}
+
+		[Test]
+		[Description("Verifies that when the connection is dropped because of a connection-failure, the OnFailure event is invoked")]
+		public void TestOnFailure1()
+		{
+			using (var server = new SocketRemotingEndPointServer())
+			using (var client = new SocketRemotingEndPointClient())
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint);
+
+				EndPointDisconnectReason? reason = null;
+				client.OnFailure += r => reason = r;
+
+				server.DisconnectByFailure();
+				WaitFor(() => reason != null, TimeSpan.FromSeconds(1))
+					.Should().BeTrue("Because the client should've detected and reported the failure");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that invoking a method on a proxy from inside OnFailure doesn't cause a deadlock")]
+		public void TestOnFailure2()
+		{
+			using (var server = new SocketRemotingEndPointServer())
+			using (var client = new SocketRemotingEndPointClient())
+			{
+				var subject = new Mock<IVoidMethod>();
+				server.CreateServant(42, subject.Object);
+				var proxy = client.CreateProxy<IVoidMethod>(42);
+
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint);
+
+				bool failed = false;
+				client.OnFailure += r =>
+					{
+						new Action(proxy.DoStuff)
+							.ShouldThrow<NotConnectedException>();
+						failed = true;
+					};
+
+				server.DisconnectByFailure();
+				WaitFor(() => failed, TimeSpan.FromSeconds(2))
+					.Should().BeTrue("Because the client should've detected and reported the failure");
+			}
+		}
 	}
 }

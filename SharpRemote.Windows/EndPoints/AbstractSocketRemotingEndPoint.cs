@@ -955,16 +955,31 @@ namespace SharpRemote
 
 		protected abstract void DisposeAdditional();
 
+		/// <summary>
+		/// Performs a "hard" disconnect as if a failure occured.
+		/// Is used to implement certain unit-tests where the connection
+		/// failed (cable disconnected, etc...).
+		/// </summary>
+		internal void DisconnectByFailure()
+		{
+			Disconnect(EndPointDisconnectReason.ReadFailure);
+		}
+
 		private void Disconnect(EndPointDisconnectReason reason)
 		{
 			EndPoint remoteEndPoint;
+			Socket socket;
 			bool hasDisconnected = false;
 
 			lock (_syncRoot)
 			{
 				remoteEndPoint = InternalRemoteEndPoint;
+				socket = _socket;
 
-				if (_socket != null)
+				InternalRemoteEndPoint = null;
+				_socket = null;
+
+				if (socket != null)
 				{
 					var heartbeatMonitor = _heartbeatMonitor;
 					if (heartbeatMonitor != null)
@@ -985,6 +1000,7 @@ namespace SharpRemote
 
 					hasDisconnected = true;
 					_disconnectReason = reason;
+
 					if (IsFailure(reason))
 					{
 						Action<EndPointDisconnectReason> fn = OnFailure;
@@ -1011,14 +1027,12 @@ namespace SharpRemote
 					// end when it requested the disconnect
 					if (!IsFailure(reason) && reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
 					{
-						SendGoodbye();
+						SendGoodbye(socket);
 					}
 
 					try
 					{
-						var socket = _socket;
-						if (socket != null)
-							socket.Disconnect(false);
+						socket.Disconnect(false);
 					}
 					catch (SocketException)
 					{
@@ -1029,17 +1043,13 @@ namespace SharpRemote
 						// or there's a bug in its implementation - either way this method may
 						// throw a NullReferenceException from inside Disconnect.
 					}
-
-					_socket = null;
 				}
-
-				InternalRemoteEndPoint = null;
 			}
 
 			FireOnDisconnected(hasDisconnected, remoteEndPoint);
 		}
 
-		private void SendGoodbye()
+		private void SendGoodbye(Socket socket)
 		{
 			try
 			{
@@ -1056,7 +1066,7 @@ namespace SharpRemote
 					writer.Flush();
 					stream.Position = 0;
 
-					_socket.Send(stream.GetBuffer(), 0, messageSize + 4, SocketFlags.None);
+					socket.Send(stream.GetBuffer(), 0, messageSize + 4, SocketFlags.None);
 				}
 			}
 			catch (SocketException)

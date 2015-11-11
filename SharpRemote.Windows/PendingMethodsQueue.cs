@@ -3,8 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
+using log4net;
 
 namespace SharpRemote
 {
@@ -19,7 +21,9 @@ namespace SharpRemote
 		private readonly BlockingCollection<PendingMethodCall> _pendingWrites;
 		private readonly Dictionary<long, PendingMethodCall> _pendingCalls;
 
-		private const int MaxConcurrency = 1000;
+		private const int MaxConcurrency = 2000;
+
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		public PendingMethodsQueue()
 		{
@@ -127,6 +131,10 @@ namespace SharpRemote
 			{
 				_pendingWrites.Add(message);
 			}
+
+			// show warning when we exceed the concurrency threshold for writes
+			if (_pendingWrites.Count > MaxConcurrency/2 && _pendingWrites.Count % 10 == 0)
+				Log.WarnFormat("pending writes queue reached threshold: {0}/{1}", _pendingWrites.Count, MaxConcurrency);
 
 			return message;
 		}

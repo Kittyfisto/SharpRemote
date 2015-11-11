@@ -9,7 +9,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 	public abstract class AbstractTest
 	{
 		[TestFixtureSetUp]
-		public void TestFixtureSetUp()
+		public virtual void TestFixtureSetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);

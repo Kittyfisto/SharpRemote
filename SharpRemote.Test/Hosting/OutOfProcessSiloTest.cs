@@ -9,6 +9,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
 using SharpRemote.Test.CodeGeneration.Serialization;
+using SharpRemote.Test.Remoting.SocketRemotingEndPoint;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
@@ -21,9 +22,10 @@ namespace SharpRemote.Test.Hosting
 	[TestFixture]
 	[LocalTest("")]
 	public sealed class OutOfProcessSiloTest
+		: AbstractTest
 	{
 		[TestFixtureSetUp]
-		public void TestFixtureSetUp()
+		public override void TestFixtureSetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<OutOfProcessSilo>(Level.Info);
@@ -31,12 +33,6 @@ namespace SharpRemote.Test.Hosting
 			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
 			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
 			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
-		}
-
-		[TestFixtureTearDown]
-		public void TestFixtureTearDown()
-		{
-			TestLogger.DisableConsoleLogging();
 		}
 
 		[Test]
@@ -280,7 +276,9 @@ namespace SharpRemote.Test.Hosting
 				new Action(proxy.Do)
 					.ShouldThrow<ConnectionLostException>("Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
-				silo.HasProcessFailed.Should().BeTrue("Because an aborted thread that is currently invoking a remote method call should cause SharpRemote to kill the host process and report failure");
+				WaitFor(() => silo.HasProcessFailed, TimeSpan.FromSeconds(1))
+					.Should()
+					.BeTrue("Because an aborted thread that is currently invoking a remote method call should cause SharpRemote to kill the host process and report failure");
 				silo.IsProcessRunning.Should().BeFalse();
 
 				(reason == SiloFaultReason.ConnectionFailure ||
@@ -304,9 +302,11 @@ namespace SharpRemote.Test.Hosting
 				new Action(proxy.Do)
 					.ShouldThrow<ConnectionLostException>("Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
-				silo.HasProcessFailed.Should().BeTrue("Because an unexpected exit of the host process counts as a failure");
+				WaitFor(() => silo.HasProcessFailed, TimeSpan.FromSeconds(1))
+					.Should().BeTrue("Because an unexpected exit of the host process counts as a failure");
 				silo.IsProcessRunning.Should().BeFalse();
 
+				WaitFor(() => reason != null, TimeSpan.FromSeconds(1)).Should().BeTrue();
 				(reason == SiloFaultReason.ConnectionFailure ||
 				 reason == SiloFaultReason.HostProcessExited).Should().BeTrue();
 				resolution.Should().Be(SiloFaultResolution.Shutdown);
@@ -343,7 +343,10 @@ namespace SharpRemote.Test.Hosting
 					})
 					.ShouldThrow<ConnectionLostException>("Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
-				silo.HasProcessFailed.Should().BeTrue("Because the heartbeat mechanism should have detected that the endpoint doesn't respond anymore");
+				WaitFor(()=>silo.HasProcessFailed, TimeSpan.FromSeconds(1)).Should().BeTrue("Because the heartbeat mechanism should have detected that the endpoint doesn't respond anymore");
+				WaitFor(() => reason1 != null, TimeSpan.FromSeconds(1)).Should().BeTrue();
+				WaitFor(() => reason2 != null, TimeSpan.FromSeconds(1)).Should().BeTrue();
+
 				silo.IsProcessRunning.Should().BeFalse();
 				reason1.Should().Be(SiloFaultReason.HeartbeatFailure);
 				reason2.Should().Be(reason1);

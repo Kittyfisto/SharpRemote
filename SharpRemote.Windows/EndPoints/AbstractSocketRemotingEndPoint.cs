@@ -1001,22 +1001,6 @@ namespace SharpRemote
 					hasDisconnected = true;
 					_disconnectReason = reason;
 
-					if (IsFailure(reason))
-					{
-						Action<EndPointDisconnectReason> fn = OnFailure;
-						if (fn != null)
-						{
-							try
-							{
-								fn(reason);
-							}
-							catch (Exception e)
-							{
-								Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
-							}
-						}
-					}
-
 					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
 
 					CancellationTokenSource.Cancel();
@@ -1025,9 +1009,16 @@ namespace SharpRemote
 					// If we are disconnecting because of a failure, then we don't notify the other end
 					// and drop the connection immediately. Also there's no need to notify the other
 					// end when it requested the disconnect
-					if (!IsFailure(reason) && reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
+					if (!IsFailure(reason))
 					{
-						SendGoodbye(socket);
+						if (reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
+						{
+							SendGoodbye(socket);
+						}
+					}
+					else
+					{
+						EmitOnFailure(reason);
 					}
 
 					try
@@ -1046,7 +1037,23 @@ namespace SharpRemote
 				}
 			}
 
-			FireOnDisconnected(hasDisconnected, remoteEndPoint);
+			EmitOnDisconnected(hasDisconnected, remoteEndPoint);
+		}
+
+		private void EmitOnFailure(EndPointDisconnectReason reason)
+		{
+			Action<EndPointDisconnectReason> fn = OnFailure;
+			if (fn != null)
+			{
+				try
+				{
+					fn(reason);
+				}
+				catch (Exception e)
+				{
+					Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
+				}
+			}
 		}
 
 		private void SendGoodbye(Socket socket)
@@ -1100,7 +1107,7 @@ namespace SharpRemote
 			}
 		}
 
-		private void FireOnDisconnected(bool hasDisconnected, EndPoint remoteEndPoint)
+		private void EmitOnDisconnected(bool hasDisconnected, EndPoint remoteEndPoint)
 		{
 			var fn2 = OnDisconnected;
 			if (hasDisconnected && fn2 != null)

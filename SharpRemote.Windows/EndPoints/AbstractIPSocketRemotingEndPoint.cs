@@ -33,7 +33,8 @@ namespace SharpRemote
 		                                          ITypeResolver customTypeResolver = null,
 		                                          Serializer serializer = null,
 		                                          HeartbeatSettings heartbeatSettings = null,
-		                                          LatencySettings latencySettings = null)
+		                                          LatencySettings latencySettings = null,
+		                                          EndPointSettings endPointSettings = null)
 			: base(new GrainIdGenerator(type),
 			       name,
 			       type,
@@ -42,7 +43,8 @@ namespace SharpRemote
 			       customTypeResolver,
 			       serializer,
 			       heartbeatSettings,
-			       latencySettings)
+			       latencySettings,
+			       endPointSettings)
 		{}
 
 		/// <summary>

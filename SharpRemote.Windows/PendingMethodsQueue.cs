@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -21,15 +22,23 @@ namespace SharpRemote
 		private readonly BlockingCollection<PendingMethodCall> _pendingWrites;
 		private readonly Dictionary<long, PendingMethodCall> _pendingCalls;
 
-		private const int MaxConcurrency = 2000;
+		private readonly int _maxConcurrentCalls;
 
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public PendingMethodsQueue()
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="maxConcurrentCalls">The total number of concurrent calls that may be pending at any given time, any further call stalls the calling thread, even if async</param>
+		public PendingMethodsQueue(int maxConcurrentCalls = 2000)
 		{
+			if (maxConcurrentCalls < 0)
+				throw new ArgumentOutOfRangeException("maxConcurrentCalls");
+
+			_maxConcurrentCalls = maxConcurrentCalls;
 			_syncRoot = new object();
 			_recycledMessages = new Queue<PendingMethodCall>();
-			_pendingWrites = new BlockingCollection<PendingMethodCall>(MaxConcurrency);
+			_pendingWrites = new BlockingCollection<PendingMethodCall>(_maxConcurrentCalls);
 			_pendingCalls = new Dictionary<long, PendingMethodCall>();
 		}
 
@@ -133,8 +142,8 @@ namespace SharpRemote
 			}
 
 			// show warning when we exceed the concurrency threshold for writes
-			if (_pendingWrites.Count > MaxConcurrency/2 && _pendingWrites.Count % 10 == 0)
-				Log.WarnFormat("pending writes queue reached threshold: {0}/{1}", _pendingWrites.Count, MaxConcurrency);
+			if (_pendingWrites.Count > _maxConcurrentCalls/2 && _pendingWrites.Count % 10 == 0)
+				Log.WarnFormat("pending writes queue reached threshold: {0}/{1}", _pendingWrites.Count, _maxConcurrentCalls);
 
 			return message;
 		}

@@ -37,14 +37,16 @@ namespace SharpRemote
 		/// <param name="serializer">The serializer used to serialize and deserialize values - if none is specified then a new one is created</param>
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
+		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		public SocketRemotingEndPointServer(string name = null,
-		                              IAuthenticator clientAuthenticator = null,
-		                              IAuthenticator serverAuthenticator = null,
+		                                    IAuthenticator clientAuthenticator = null,
+		                                    IAuthenticator serverAuthenticator = null,
 		                                    ITypeResolver customTypeResolver = null,
 		                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
 		                                    Serializer serializer = null,
 		                                    HeartbeatSettings heartbeatSettings = null,
-		                                    LatencySettings latencySettings = null)
+		                                    LatencySettings latencySettings = null,
+		                                    EndPointSettings endPointSettings = null)
 			: base(EndPointType.Server,
 			       name,
 			       clientAuthenticator,
@@ -52,7 +54,8 @@ namespace SharpRemote
 			       customTypeResolver,
 			       serializer,
 			       heartbeatSettings,
-			       latencySettings)
+			       latencySettings,
+			       endPointSettings)
 		{
 			_networkServiceDiscoverer = networkServiceDiscoverer;
 		}

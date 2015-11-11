@@ -54,13 +54,15 @@ namespace SharpRemote.Hosting
 		///         cref="PostMortemSettings" />
 		///     )
 		/// </param>
-		/// <param name="heartbeatSettings"></param>
-		/// <param name="latencySettings"></param>
+		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
+		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
+		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		public OutOfProcessSiloServer(string[] args,
 		                              ITypeResolver customTypeResolver = null,
 		                              PostMortemSettings postMortemSettings = null,
 		                              HeartbeatSettings heartbeatSettings = null,
-		                              LatencySettings latencySettings = null)
+		                              LatencySettings latencySettings = null,
+		                              EndPointSettings endPointSettings = null)
 		{
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 			{
@@ -170,7 +172,8 @@ namespace SharpRemote.Hosting
 			_endPoint = new SocketRemotingEndPointServer(
 				customTypeResolver: customTypeResolver,
 				heartbeatSettings: heartbeatSettings,
-				latencySettings: latencySettings
+				latencySettings: latencySettings,
+				endPointSettings: endPointSettings
 				);
 
 			_endPoint.OnConnected += EndPointOnOnConnected;
@@ -289,7 +292,21 @@ namespace SharpRemote.Hosting
 		///     <see cref="OutOfProcessSilo" /> is being disposed of or because the parent process
 		///     quits unexpectedly.
 		/// </summary>
+		/// <remarks>
+		/// Binds the endpoint to <see cref="IPAddress.Any"/>.
+		/// </remarks>
 		public void Run()
+		{
+			Run(IPAddress.Any);
+		}
+
+		/// <summary>
+		///     Runs the server and blocks until a shutdown command is received because the
+		///     <see cref="OutOfProcessSilo" /> is being disposed of or because the parent process
+		///     quits unexpectedly.
+		/// </summary>
+		/// <param name="address">The ip-address this endpoint shall bind itself to</param>
+		public void Run(IPAddress address)
 		{
 			Console.WriteLine(ProcessWatchdog.Constants.BootingMessage);
 
@@ -306,7 +323,7 @@ namespace SharpRemote.Hosting
 				{
 					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost) host);
 
-					_endPoint.Bind(IPAddress.Any);
+					_endPoint.Bind(address);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);
 					Console.WriteLine(ProcessWatchdog.Constants.ReadyMessage);
 

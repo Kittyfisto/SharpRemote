@@ -116,6 +116,7 @@ namespace SharpRemote.Hosting
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
+		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -125,7 +126,8 @@ namespace SharpRemote.Hosting
 			Serializer serializer = null,
 			HeartbeatSettings heartbeatSettings = null,
 			LatencySettings latencySettings = null,
-			PostMortemSettings postMortemSettings = null
+			PostMortemSettings postMortemSettings = null,
+			EndPointSettings endPointSettings = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -136,7 +138,8 @@ namespace SharpRemote.Hosting
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
 			                                             heartbeatSettings: heartbeatSettings,
-			                                             latencySettings: latencySettings);
+			                                             latencySettings: latencySettings,
+			                                             endPointSettings: endPointSettings);
 			_endPoint.OnFailure += EndPointOnOnFailure;
 
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);

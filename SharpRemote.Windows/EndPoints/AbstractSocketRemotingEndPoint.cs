@@ -120,6 +120,7 @@ namespace SharpRemote
 
 		#region Method Invocation
 
+		private readonly EndPointSettings _endpointSettings;
 		private readonly PendingMethodsQueue _pendingMethodCalls;
 		private readonly Dictionary<long, MethodInvocation> _pendingMethodInvocations;
 		protected CancellationTokenSource CancellationTokenSource;
@@ -189,7 +190,8 @@ namespace SharpRemote
 		                                        ITypeResolver customTypeResolver = null,
 		                                        Serializer serializer = null,
 		                                        HeartbeatSettings heartbeatSettings = null,
-		                                        LatencySettings latencySettings = null)
+		                                        LatencySettings latencySettings = null,
+		                                        EndPointSettings endPointSettings = null)
 		{
 			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
 
@@ -219,7 +221,9 @@ namespace SharpRemote
 
 			_servantCreator = new ServantCreator(_module, _serializer, this, this);
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
-			_pendingMethodCalls = new PendingMethodsQueue();
+
+			_endpointSettings = endPointSettings ?? new EndPointSettings();
+			_pendingMethodCalls = new PendingMethodsQueue(_endpointSettings.MaxConcurrentCalls);
 			_pendingMethodInvocations = new Dictionary<long, MethodInvocation>();
 
 			_clientAuthenticator = clientAuthenticator;

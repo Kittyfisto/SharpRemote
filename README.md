@@ -2,7 +2,7 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/e4s3he430y1a27cb?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote)
 
-SharpRemote is a free and active open-source project aimed at developing distributed applications that run accross different processes and/or machines.
+SharpRemote is a free and active open-source project aimed at developing distributed applications that run accross different processes, machines and networks.
 
 SharpRemote is supported on Windows 7, 8 and 10 and requires .NET 4.5 or higher.
 

@@ -24,19 +24,19 @@ Instead of requring remote-able interface definitions to be written in an [IDL](
 
 ## Q&A
 
-**Are remote method calls synchronous or asynchronous?**
+**Are remote method calls synchronous or asynchronous?**  
 All remote method calls are synchronous, unless they return a Task/Task<T> or are attributed with the [AsyncRemote] attribute. The latter can only be attributed to method calls with a Void return type.
 
-**How are concurrent calls on the same object handled?**
+**How are concurrent calls on the same object handled?**  
 By default, method calls are dispatched using TaskScheduler.Default and thus may be invoked in parallel (if called at the same time).
 
-**Can I specify the degree of parallelism to which method calls are invoked?**
+**Can I specify the degree of parallelism to which method calls are invoked?**  
 Yes. This can be done by attributing the method with the [Invoke] attribute. The degree can be limited to "per-method", "per-object" and "per-type".
 
 **How are values serialized?**  
 Values, e.g. types which derrive from ValueType, are always serialized by value; that is field by field. This behaviour cannot be changed.
 
-**How are classes serialized?**
+**How are classes serialized?**  
 Identical to how values are serialized, e.g. by value. This bevahiour can be configured by attributing the class in question (or any of its sub-types) with the [ByReference] attribute. 
 
 **Can custom classes be serialized by reference?**  

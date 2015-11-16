@@ -25,7 +25,7 @@ Instead of requring remote-able interface definitions to be written in an [IDL](
 ## Q&A
 
 **Are remote method calls synchronous or asynchronous?**  
-All remote method calls are synchronous, unless they return a Task/Task<T> or are attributed with the [AsyncRemote] attribute. The latter can only be attributed to method calls with a Void return type.
+All remote method calls are synchronous, unless they return a Task/Task&lt;T&gt; or are attributed with the [AsyncRemote] attribute. The latter can only be attributed to method calls with a Void return type.
 
 **How are concurrent calls on the same object handled?**  
 By default, method calls are dispatched using TaskScheduler.Default and thus may be invoked in parallel (if called at the same time).

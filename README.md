@@ -27,11 +27,35 @@ Instead of requring remote-able interface definitions to be written in an [IDL](
 **Are remote method calls synchronous or asynchronous?**  
 All remote method calls are synchronous, unless they return a Task/Task&lt;T&gt; or are attributed with the [AsyncRemote] attribute. The latter can only be attributed to method calls with a Void return type.
 
+**When should I use synchronous/asynchronous calls?**  
+Synchronous code is easier to write, understand and to maintain and thus should be preferred. Unless absolutely necessary, synchronous code should be your go-to solution, especially if your asynchronous code is as follows:
+
+```c#
+var task = myProxy.DoStuff();  
+task.Wait();  
+```
+
+Asynchronous method calls may improve your performance tremendously, but this depends on the amount of calls, as well as the latency involved. In general, the higher the latency or the higher the amount of calls per second, the more benefit you get from switching to asynchronous invocations.  
+As always, **measure first, optimize later**.
+
 **How are concurrent calls on the same object handled?**  
 By default, method calls are dispatched using TaskScheduler.Default and thus may be invoked in parallel (if called at the same time).
 
 **Can I specify the degree of parallelism to which method calls are invoked?**  
 Yes. This can be done by attributing the method with the [Invoke] attribute. The degree can be limited to "per-method", "per-object" and "per-type".
+
+**How are failures handled?**  
+SharpRemote promises that each and every remote method call is eventually executed. Individual remote method calls can never time out, instead the health of the entire connection is used to determine whether a failure occured. A connection is said to have failed when the underlying socket reports a failure or when the connection doesn't process any method call for a certain amount of time.
+As soon as a failure happens, SharpRemote tears down the connection and notifies all pending or currently executing calls by throwing the following exceptions on the calling thread:
+
+*SharpRemote.ConnectionLostException*  
+The connection was interrupted **while** the method call occured **or** was pending. The method may or may not have been executed in the remote process.
+
+*SharpRemote.NotConnectedException*
+The method call was performed *after* a connection was lost or *before* a connection was established. Either way the method was definately not executed in the remote process.
+
+**How can I avoid running into "failures" introduced by pausing the involved processes with a debugger?**  
+You can either deactivate the timeout detection of a connection completely by setting the HeartbeatSettings.UseHeartbeatForFaultDetection property to false or by attaching a debugger to **every** process involved and setting the HeartbeatSettings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached property to false.
 
 **How are values serialized?**  
 Values, e.g. types which derrive from ValueType, are always serialized by value; that is field by field. This behaviour cannot be changed.

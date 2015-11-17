@@ -57,17 +57,28 @@ The method call was performed *after* a connection was lost or *before* a connec
 **How can I avoid running into "failures" introduced by pausing the involved processes with a debugger?**  
 You can either deactivate the timeout detection of a connection completely by setting the HeartbeatSettings.UseHeartbeatForFaultDetection property to false or by attaching a debugger to **every** process involved and setting the HeartbeatSettings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached property to false.
 
-**How are values serialized?**  
-Values, e.g. types which derrive from ValueType, are always serialized by value; that is field by field. This behaviour cannot be changed.
+**What types are supported for serialization?**  
+A lot of native .NET types are supported out of the box (integer, floating-point, string, datetime, etc...). User defined types must either be attributed with the [ByReference] or [DataContract] attribute. The latter requires all fields / properties that shall be serializable be marked with the [DataMember] attribute.
 
-**How are classes serialized?**  
-Identical to how values are serialized, e.g. by value. This bevahiour can be configured by attributing the class in question (or any of its sub-types) with the [ByReference] attribute. 
+**What does the DataContract attribute imply?**  
+The object (be it derrived from object or ValueType) is serialized as a value: (backing) field for field. Only fields and/or properties attributed with the [DataMember] attribute are serialized, all others are skipped.
+Calling the same method with a value-type object as the only parameter twice results in the entire object-graph to be serialized twice, once for each method call.
 
-**Can custom classes be serialized by reference?**  
-Not yet. It will be implemented as soon as there is demand for it (contact me).
+**What does the ByReference attribute imply?**  
+The object-graph is never serialized: passing such an object into a method causes the invoked method to be passed either a new proxy or be passed an existing proxy that *references* said object. Accessing any property of such a proxy-object results in its own remote method call.
+
+**What's a proxy?**  
+A proxy is an object that presents an identical interface to its subject, but is, in fact, a different object. To any outsider, however, the proxy is virtually indistinguishable from the subject itself. In SharpRemote a proxy object represents an object on a different process, machine and/or network: Method calls to proxy result in the corresponding to be invoked on the subject - event invocations on the subject are invoked on the proxy.
+
+**So proxies are allocated on demand for reference types - when are they destroyed?**  
+As answered previously, proxies are automatically generated when a [ByReference] object is used as a parameter and/or return value. Proxy objects will be automatically collected by the garbage collector when they are no longer reachable.
+
+**Can non-custom classes be serialized by reference?**  
+No. Currently, a class or interface must be attributed with the [ByReference] attribute in order to introduce said behaviour.
+Contact me if this is an essential feature for you.
 
 **How do you handle polymorphism?**  
-A method which takes an object parameter behaves identical to a method which takes a Foo parameter, if both are called with Foo-objects. The former may perform slightly worse due to having to query the object's type first.
+An object's true type is queried (in case the method parameter / return type is non sealed) and then dynamic dispatch (if necessary) is used to invoke the class'es serialization behaviour.
 
 ## Samples
 

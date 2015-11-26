@@ -201,6 +201,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that TryConnect() succeeds when both server and client side authentication is enabled and both challenges are met")]
 		public void TestTryConnect13()
 		{

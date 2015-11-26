@@ -43,6 +43,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that Connect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect2()
 		{
@@ -71,6 +72,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that TryConnect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect23()
 		{
@@ -391,6 +393,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
 		public void TestConnect20()
 		{
@@ -415,6 +418,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 		[Test]
 		[Repeat(10)]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
 		public void TestConnect21()
 		{
@@ -464,6 +468,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
 		public void TestConnect24()
 		{
@@ -486,6 +491,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
 		public void TestConnect25()
 		{

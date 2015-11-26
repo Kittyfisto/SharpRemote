@@ -390,6 +390,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that when the connection is dropped because of a connection-failure, the OnFailure event is invoked")]
 		public void TestOnFailure1()
 		{
@@ -409,6 +410,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that invoking a method on a proxy from inside OnFailure doesn't cause a deadlock")]
 		public void TestOnFailure2()
 		{

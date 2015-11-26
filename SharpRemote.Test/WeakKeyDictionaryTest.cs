@@ -285,6 +285,7 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that the insertion performance is comparable to an ordinary dictionary")]
 		public void TestAddPerformance()
 		{

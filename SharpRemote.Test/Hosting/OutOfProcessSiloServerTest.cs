@@ -172,6 +172,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
+		[LocalTest("Doesn't work on build server")]
 		public void TestCtor6()
 		{
 			var args = new[]

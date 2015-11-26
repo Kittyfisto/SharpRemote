@@ -49,7 +49,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			                                        endPointSettings: endPointSettings);
 		}
 
-		protected static bool WaitFor(Func<bool> fn, TimeSpan timeout)
+		public static bool WaitFor(Func<bool> fn, TimeSpan timeout)
 		{
 			DateTime start = DateTime.Now;
 			DateTime now = start;

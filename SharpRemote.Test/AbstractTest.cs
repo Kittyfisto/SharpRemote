@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading;
 using NUnit.Framework;
 using SharpRemote.ServiceDiscovery;
 using log4net.Core;
 
-namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
+namespace SharpRemote.Test
 {
 	public abstract class AbstractTest
 	{
@@ -16,6 +17,13 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
 			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
 			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);
+		}
+
+		[SetUp]
+		public void SetUp()
+		{
+			Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+			Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
 		}
 
 		[TestFixtureTearDown]

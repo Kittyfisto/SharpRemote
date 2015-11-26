@@ -10,6 +10,7 @@ namespace SharpRemote.Test
 {
 	[TestFixture]
 	public sealed class WeakKeyDictionaryTest
+		: AbstractTest
 	{
 		private static void EnsureIntegrity<TKey, TValue>(WeakKeyDictionary<TKey, TValue> dictionary) where TKey : class
 		{

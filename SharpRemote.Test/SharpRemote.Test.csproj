@@ -56,7 +56,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblySetUp.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializerTest.cs" />

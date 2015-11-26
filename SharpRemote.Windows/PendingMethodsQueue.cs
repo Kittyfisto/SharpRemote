@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading;
-using log4net;
 
 namespace SharpRemote
 {
@@ -24,7 +21,7 @@ namespace SharpRemote
 
 		private readonly int _maxConcurrentCalls;
 
-		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private bool _isDisposed;
 
 		/// <summary>
 		/// 
@@ -42,6 +39,11 @@ namespace SharpRemote
 			_pendingCalls = new Dictionary<long, PendingMethodCall>();
 		}
 
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
+		}
+
 		/// <summary>
 		/// Retrieves the next message for writing from the queue.
 		/// </summary>
@@ -50,7 +52,7 @@ namespace SharpRemote
 		/// <returns></returns>
 		public byte[] TakePendingWrite(CancellationToken token, out int length)
 		{
-			var message = _pendingWrites.Take(token);
+			PendingMethodCall message = _pendingWrites.Take(token);
 			return message.GetMessage(out length);
 		}
 
@@ -136,14 +138,7 @@ namespace SharpRemote
 
 			message.Reset(servantId, interfaceType, methodName, arguments, rpcId, callback);
 
-			lock (_pendingWrites)
-			{
-				_pendingWrites.Add(message);
-			}
-
-			// show warning when we exceed the concurrency threshold for writes
-			if (_pendingWrites.Count > _maxConcurrentCalls/2 && _pendingWrites.Count % 10 == 0)
-				Log.WarnFormat("pending writes queue reached threshold: {0}/{1}", _pendingWrites.Count, _maxConcurrentCalls);
+			_pendingWrites.Add(message);
 
 			return message;
 		}
@@ -151,6 +146,7 @@ namespace SharpRemote
 		public void Dispose()
 		{
 			_pendingWrites.Dispose();
+			_isDisposed = true;
 		}
 	}
 }

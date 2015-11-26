@@ -56,6 +56,7 @@
     <Compile Include="EndPoints\EndPointSettings.cs" />
     <Compile Include="EndPoints\ILatency.cs" />
     <Compile Include="EndPoints\Latency.cs" />
+    <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
     <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />
     <Compile Include="ServiceDiscovery\INetworkServiceRegisty.cs" />

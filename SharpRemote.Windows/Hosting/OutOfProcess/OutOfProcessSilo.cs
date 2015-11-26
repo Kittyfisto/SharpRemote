@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
+using SharpRemote.Hosting.OutOfProcess;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -32,6 +33,7 @@ namespace SharpRemote.Hosting
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private readonly FailureSettings _failureSettings;
 		private readonly ProcessWatchdog _process;
 		private readonly SocketRemotingEndPointClient _endPoint;
 		private readonly ISubjectHost _subjectHost;
@@ -117,6 +119,7 @@ namespace SharpRemote.Hosting
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
+		/// <param name="failureSettings"></param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -127,14 +130,24 @@ namespace SharpRemote.Hosting
 			HeartbeatSettings heartbeatSettings = null,
 			LatencySettings latencySettings = null,
 			PostMortemSettings postMortemSettings = null,
-			EndPointSettings endPointSettings = null
+			EndPointSettings endPointSettings = null,
+			FailureSettings failureSettings = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
 			if (string.IsNullOrWhiteSpace(process)) throw new ArgumentException("process");
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 				throw new ArgumentException("postMortemSettings");
+			if (failureSettings != null)
+			{
+				if (failureSettings.ProcessReadyTimeout <= TimeSpan.Zero)
+					throw new ArgumentOutOfRangeException("failureSettings.ProcessReadyTimeout");
 
+				if (failureSettings.EndPointConnectTimeout <= TimeSpan.Zero)
+					throw new ArgumentOutOfRangeException("failureSettings.EndPointConnectTimeout");
+			}
+
+			_failureSettings = failureSettings ?? new FailureSettings();
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
 			                                             heartbeatSettings: heartbeatSettings,
@@ -172,7 +185,8 @@ namespace SharpRemote.Hosting
 			try
 			{
 				var port = _process.RemotePort;
-				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value), Constants.ConnectionTimeout);
+				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value),
+				                  _failureSettings.EndPointConnectTimeout);
 			}
 			catch (Exception e)
 			{
@@ -520,10 +534,6 @@ namespace SharpRemote.Hosting
 			///     The id of the grain that is used to instantiate further subjects.
 			/// </summary>
 			public const ulong SubjectHostId = ulong.MaxValue;
-
-			/// <summary>
-			/// </summary>
-			public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
 		}
 	}
 }

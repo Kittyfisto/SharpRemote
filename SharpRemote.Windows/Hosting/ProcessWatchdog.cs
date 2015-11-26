@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
+using SharpRemote.Hosting.OutOfProcess;
 using log4net;
 
 namespace SharpRemote.Hosting
@@ -39,6 +40,7 @@ namespace SharpRemote.Hosting
 		private Process _process;
 		private ProcessFaultReason? _reason;
 		private int? _remotePort;
+		private readonly FailureSettings _failureSettings;
 
 		/// <summary>
 		///     Initializes a new instance of this ProcessWatchdog with the specified options.
@@ -47,6 +49,7 @@ namespace SharpRemote.Hosting
 		/// <param name="process"></param>
 		/// <param name="options"></param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
+		/// <param name="failureSettings"></param>
 		/// <exception cref="ArgumentNullException">
 		///     When <paramref name="process" /> is null
 		/// </exception>
@@ -56,7 +59,8 @@ namespace SharpRemote.Hosting
 		public ProcessWatchdog(
 			string process = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
-			PostMortemSettings postMortemSettings = null
+			PostMortemSettings postMortemSettings = null,
+			FailureSettings failureSettings = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -75,6 +79,7 @@ namespace SharpRemote.Hosting
 				}
 			}
 
+			_failureSettings = failureSettings ?? new FailureSettings();
 			_waitHandle = new ManualResetEvent(false);
 			_hostedProcessState = HostState.BootPending;
 			_syncRoot = new object();
@@ -130,10 +135,10 @@ namespace SharpRemote.Hosting
 				_hasProcessExited = false;
 				_process.BeginOutputReadLine();
 
-				if (!_waitHandle.WaitOne(Constants.ProcessReadyTimeout))
+				if (!_waitHandle.WaitOne(_failureSettings.ProcessReadyTimeout))
 					throw new HandshakeException(string.Format("Process {0} failed to communicate used port number in time ({1}s)",
-															   _startInfo.FileName,
-															   Constants.ProcessReadyTimeout.TotalSeconds));
+					                                           _startInfo.FileName,
+					                                           _failureSettings.ProcessReadyTimeout));
 
 				int? port = _remotePort;
 				if (port == null)
@@ -389,12 +394,6 @@ namespace SharpRemote.Hosting
 			public const string BootingMessage = "booting";
 			public const string ReadyMessage = "ready";
 			public const string ShutdownMessage = "goodbye";
-
-			/// <summary>
-			///     The maximum amount of time the host process has to send the "ready" message before it is assumed
-			///     to be dead / crashed / broken.
-			/// </summary>
-			public static readonly TimeSpan ProcessReadyTimeout = TimeSpan.FromSeconds(10);
 		}
 	}
 }

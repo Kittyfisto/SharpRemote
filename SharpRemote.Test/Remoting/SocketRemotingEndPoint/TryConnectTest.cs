@@ -11,6 +11,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		: AbstractTest
 	{
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that TryConnect() can establish a connection with an endpoint in the same process")]
 		public void TestTryConnect1()
 		{
@@ -164,6 +165,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that TryConnect() succeeds when server-side authentication is enabled and the challenge is met")]
 		public void TestTryConnect11()
 		{

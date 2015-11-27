@@ -71,6 +71,7 @@
     <Compile Include="AbstractTest.cs" />
     <Compile Include="Remoting\SocketRemotingEndPoint\ConnectTest.cs" />
     <Compile Include="Remoting\SocketRemotingEndPoint\DisconnectTest.cs" />
+    <Compile Include="Remoting\SocketRemotingEndPoint\SocketRemotingEndPointServerTest.cs" />
     <Compile Include="Remoting\SocketRemotingEndPoint\TryConnectTest.cs" />
     <Compile Include="Types\Classes\ByReferenceAndDataContract.cs" />
     <Compile Include="Types\Classes\ByReferenceClass.cs" />

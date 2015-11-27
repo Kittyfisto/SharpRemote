@@ -192,7 +192,7 @@ namespace SharpRemote
 
 		internal static Socket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
 		{
-			const ushort firstSocket = 49152;
+			const ushort firstSocket = 49153;
 			const ushort lastSocket = 65535;
 
 			return CreateSocketAndBindToAnyPort(address, firstSocket, lastSocket, out localAddress);

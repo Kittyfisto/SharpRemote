@@ -23,6 +23,7 @@ namespace SharpRemote.Hosting
 		internal const string SharpRemoteHost = "SharpRemote.Host.exe";
 
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private readonly int _parentPid;
 
 		private readonly PostMortemSettings _postMortemSettings;
@@ -41,6 +42,7 @@ namespace SharpRemote.Hosting
 		private ProcessFaultReason? _reason;
 		private int? _remotePort;
 		private readonly FailureSettings _failureSettings;
+		private Exception _startupException;
 
 		/// <summary>
 		///     Initializes a new instance of this ProcessWatchdog with the specified options.
@@ -124,6 +126,7 @@ namespace SharpRemote.Hosting
 
 			_process.Exited += ProcessOnExited;
 			_process.OutputDataReceived += ProcessOnOutputDataReceived;
+			_startupException = null;
 
 			Log.DebugFormat("Starting host '{0}' for parent process (PID: {1})",
 							_startInfo.FileName,
@@ -136,9 +139,19 @@ namespace SharpRemote.Hosting
 				_process.BeginOutputReadLine();
 
 				if (!_waitHandle.WaitOne(_failureSettings.ProcessReadyTimeout))
+				{
 					throw new HandshakeException(string.Format("Process {0} failed to communicate used port number in time ({1}s)",
 					                                           _startInfo.FileName,
 					                                           _failureSettings.ProcessReadyTimeout));
+				}
+
+				if (_startupException != null)
+				{
+					throw new HandshakeException(
+						string.Format("Process '{0}' caught an unexpected exception during startup and subsequently failed",
+									  _startInfo.FileName),
+						_startupException);
+				}
 
 				int? port = _remotePort;
 				if (port == null)
@@ -366,6 +379,7 @@ namespace SharpRemote.Hosting
 		{
 			string message = args.Data;
 			EmitHostOutputWritten(message);
+
 			switch (message)
 			{
 				case Constants.BootingMessage:
@@ -381,19 +395,43 @@ namespace SharpRemote.Hosting
 					_hostedProcessState = HostState.None;
 					break;
 
+				case null:
+					break;
+
 				default:
-					int port;
-					if (int.TryParse(message, out port))
-						_remotePort = port;
+
+					if (message.StartsWith(Constants.ExceptionMessage))
+					{
+						var encodedException = message.Substring(Constants.ExceptionMessage.Length);
+						_startupException = DecodeException(encodedException);
+						_waitHandle.Set();
+					}
+					else
+					{
+						int port;
+						if (int.TryParse(message, out port))
+							_remotePort = port;
+					}
 					break;
 			}
 		}
 
 		internal static class Constants
 		{
+			public const string ExceptionMessage = "exception ";
 			public const string BootingMessage = "booting";
 			public const string ReadyMessage = "ready";
 			public const string ShutdownMessage = "goodbye";
+		}
+
+		internal static Exception DecodeException(string encodedException)
+		{
+			using (var stream = new MemoryStream(Convert.FromBase64String(encodedException)))
+			using (var reader = new BinaryReader(stream))
+			{
+				var actualException = AbstractEndPoint.ReadException(reader);
+				return actualException;
+			}
 		}
 	}
 }

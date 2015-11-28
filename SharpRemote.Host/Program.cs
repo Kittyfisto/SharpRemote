@@ -29,6 +29,8 @@ namespace SharpRemote.Host
 			catch (Exception e)
 			{
 				Log.ErrorFormat("Caught unexpected exception, terminating...: {0}", e);
+
+				OutOfProcessSiloServer.ReportException(e);
 			}
 		}
 

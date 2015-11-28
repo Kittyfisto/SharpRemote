@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
+using SharpRemote.Exceptions;
 using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.CodeGeneration.Serialization;
@@ -123,6 +124,20 @@ namespace SharpRemote.Test.Hosting
 			{
 				new Action(silo.Start).ShouldNotThrow();
 				new Action(silo.Start).ShouldThrow<InvalidOperationException>();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown in the child process are marshalled back")]
+		public void TestStart6()
+		{
+			using (var silo = new OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe"))
+			{
+				new Action(silo.Start)
+					.ShouldThrow<HandshakeException>()
+					.WithMessage("Process 'SharpRemote.Host.FailsStartup.exe' caught an unexpected exception during startup and subsequently failed")
+					.WithInnerException<FileNotFoundException>()
+					.WithInnerMessage("Shit happens");
 			}
 		}
 

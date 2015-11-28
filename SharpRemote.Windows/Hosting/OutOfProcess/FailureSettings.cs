@@ -15,6 +15,10 @@ namespace SharpRemote.Hosting.OutOfProcess
 		/// <remarks>
 		/// Is set to 10 seconds by default.
 		/// </remarks>
+		/// <remarks>
+		/// If your (custom) application requires a lot of startup time then you can change this setting to a higher
+		/// value to tolerate this.
+		/// </remarks>
 		public TimeSpan ProcessReadyTimeout;
 
 		/// <summary>

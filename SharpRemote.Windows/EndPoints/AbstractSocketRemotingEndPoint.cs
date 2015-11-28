@@ -868,8 +868,7 @@ namespace SharpRemote
 						}
 						else if ((finishedCall.MessageType & MessageType.Exception) != 0)
 						{
-							var formatter = new BinaryFormatter();
-							var e = (Exception) formatter.Deserialize(finishedCall.Reader.BaseStream);
+							var e = ReadException(finishedCall.Reader);
 							LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
 							taskSource.SetException(e);
 						}
@@ -933,8 +932,7 @@ namespace SharpRemote
 				}
 				else if ((call.MessageType & MessageType.Exception) != 0)
 				{
-					var formatter = new BinaryFormatter();
-					var e = (Exception) formatter.Deserialize(call.Reader.BaseStream);
+					var e = ReadException(call.Reader);
 					LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
 					throw e;
 				}

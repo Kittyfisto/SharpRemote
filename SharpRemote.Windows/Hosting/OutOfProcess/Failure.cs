@@ -1,11 +1,9 @@
-﻿// ReSharper disable CheckNamespace
-namespace SharpRemote.Hosting
-// ReSharper restore CheckNamespace
+﻿namespace SharpRemote.Hosting.OutOfProcess
 {
 	/// <summary>
 	/// Describes the various reasons why the out of process silo faulted.
 	/// </summary>
-	public enum SiloFaultReason
+	public enum Failure
 	{
 		/// <summary>
 		/// The configured amount of heartbeats were unanswered and thus the heartbeat monitor

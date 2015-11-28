@@ -39,26 +39,16 @@ namespace SharpRemote.Hosting
 		private readonly ISubjectHost _subjectHost;
 		private readonly object _syncRoot;
 
+		private readonly IFailureHandler _failureHandler;
+
 		private bool _isDisposed;
 		private bool _isDisposing;
-		private SiloFaultReason? _reason;
+		private Failure? _reason;
 
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
 		/// </summary>
 		public event Action<string> OnHostOutputWritten;
-
-		/// <summary>
-		/// Is invoked when a fault in the remote process has been detected and is invoked prior to handling
-		/// this failure.
-		/// </summary>
-		public event Action<SiloFaultReason> OnFaultDetected;
-
-		/// <summary>
-		/// Is invoked when a fault in the remote process has been detected an handled.
-		/// The parameters contain both the original reason and how its been handled.
-		/// </summary>
-		public event Action<SiloFaultReason, SiloFaultResolution> OnFaultHandled;
 
 		/// <summary>
 		/// Whether or not the process has failed.
@@ -131,7 +121,8 @@ namespace SharpRemote.Hosting
 			LatencySettings latencySettings = null,
 			PostMortemSettings postMortemSettings = null,
 			EndPointSettings endPointSettings = null,
-			FailureSettings failureSettings = null
+			FailureSettings failureSettings = null,
+			IFailureHandler failureHandler = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -148,6 +139,8 @@ namespace SharpRemote.Hosting
 			}
 
 			_failureSettings = failureSettings ?? new FailureSettings();
+			_failureHandler = failureHandler;
+
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
 			                                             heartbeatSettings: heartbeatSettings,
@@ -234,47 +227,47 @@ namespace SharpRemote.Hosting
 			switch (processFaultReason)
 			{
 				case ProcessFaultReason.HostProcessExited:
-					HandleFailure(SiloFaultReason.HostProcessExited, false);
+					HandleFailure(Failure.HostProcessExited, false);
 					break;
 
 				default:
-				case ProcessFaultReason.UnhandledException:
-					HandleFailure(SiloFaultReason.UnhandledException, false);
+				/*case ProcessFaultReason.UnhandledException:*/
+					HandleFailure(Failure.UnhandledException, false);
 					break;
 			}
 		}
 
 		private void HandleFailure(EndPointDisconnectReason endPointReason)
 		{
-			SiloFaultReason reason;
+			Failure reason;
 			switch (endPointReason)
 			{
 				case EndPointDisconnectReason.ReadFailure:
 				case EndPointDisconnectReason.RpcInvalidResponse:
-					reason = SiloFaultReason.ConnectionFailure;
+					reason = Failure.ConnectionFailure;
 					break;
 
 				case EndPointDisconnectReason.RequestedByEndPoint:
 				case EndPointDisconnectReason.RequestedByRemotEndPoint:
-					reason = SiloFaultReason.ConnectionClosed;
+					reason = Failure.ConnectionClosed;
 					break;
 
 				case EndPointDisconnectReason.HeartbeatFailure:
-					reason = SiloFaultReason.HeartbeatFailure;
+					reason = Failure.HeartbeatFailure;
 					break;
 
 				// ReSharper disable RedundantCaseLabel
 				case EndPointDisconnectReason.UnhandledException:
 				// ReSharper restore RedundantCaseLabel
 				default:
-					reason = SiloFaultReason.UnhandledException;
+					reason = Failure.UnhandledException;
 					break;
 			}
 
 			HandleFailure(reason, dueToEndPoint: true);
 		}
 
-		private void HandleFailure(SiloFaultReason reason, bool dueToEndPoint)
+		private void HandleFailure(Failure failure, bool dueToEndPoint)
 		{
 			lock (_syncRoot)
 			{
@@ -284,43 +277,94 @@ namespace SharpRemote.Hosting
 				if (_reason != null)
 					return;
 
-				_reason = reason;
+				_reason = failure;
 			}
 
+			var decision = Decision.Stop;
 			try
 			{
-				var fn = OnFaultDetected;
-				if (fn != null)
-					fn(reason);
+				if (_failureHandler != null)
+				{
+					var handlerResolution = _failureHandler.DecideFaultResolution(failure);
+					if (handlerResolution != null)
+						decision = handlerResolution.Value;
+				}
 			}
 			catch (Exception e)
 			{
 				Log.WarnFormat("OnFaultDetected threw an exception - ignoring it: {0}", e);
 			}
 
-			// TODO: Think of a better way to handle failures thant to quit ;)
-			if (reason != SiloFaultReason.HostProcessExited)
+			if (failure != Failure.HostProcessExited)
 			{
 				_process.TryKill();
 			}
 
 			// We don't want to call disconnect in case this method is executing because 
 			// of an endpoint failure - because we're called from the endpoint's Disconnect method.
-			// Calling disconnect again would overwrite the disconnect reason...
+			// Calling disconnect again would overwrite the disconnect failure...
 			if (!dueToEndPoint)
 			{
 				_endPoint.Disconnect();
 			}
 
+			var resolution = ResolveFailure(failure, decision);
+
 			try
 			{
-				var fn = OnFaultHandled;
-				if (fn != null)
-					fn(reason, SiloFaultResolution.Shutdown);
+				if (_failureHandler != null)
+					_failureHandler.OnResolutionFinished(failure, decision, resolution);
 			}
 			catch (Exception e)
 			{
-				Log.WarnFormat("OnFaultResolved threw an exception - ignoring it: {0}", e);
+				Log.WarnFormat("IFailureHandler.OnResolutionFinished threw an exception - ignoring it: {0}", e);
+			}
+		}
+
+		/// <summary>
+		/// Actually tries to resolve the failure (if possible).
+		/// </summary>
+		/// <param name="failure"></param>
+		/// <param name="decision"></param>
+		/// <returns></returns>
+		private Resolution ResolveFailure(Failure failure, Decision decision)
+		{
+			switch (decision)
+			{
+				case Decision.Stop: //< No need to do anything further...
+					return Resolution.Stopped;
+
+				case Decision.RestartHost:
+					try
+					{
+						Start();
+						return Resolution.Restarted;
+					}
+					catch (Exception e)
+					{
+						Log.FatalFormat("Tried to resolve the failure '{0}' by restarting the host - but this failed as well - we have to give up: {1}",
+						                failure,
+						                e);
+
+						try
+						{
+							var handler = _failureHandler;
+							if (handler != null)
+								handler.OnResolutionFailed(failure, decision, e);
+						}
+						catch (Exception ex)
+						{
+							Log.WarnFormat("IFailureHandler.OnResolutionFailed threw an exception - ignoring it: {0}", ex);
+						}
+
+						return Resolution.Stopped;
+					}
+
+				default:
+					Log.WarnFormat("Unknown decision '{0}' - interpreting it as '{1}'",
+					               decision,
+					               Decision.Stop);
+					return Resolution.Stopped;
 			}
 		}
 

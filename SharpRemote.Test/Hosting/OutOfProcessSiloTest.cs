@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
+using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.CodeGeneration.Serialization;
 using SharpRemote.Test.Remoting.SocketRemotingEndPoint;
 using SharpRemote.Test.Types.Classes;
@@ -213,6 +214,28 @@ namespace SharpRemote.Test.Hosting
 				tree.Should().BeOfType<Tree>();
 				serializer.IsTypeRegistered<Tree>().Should().BeTrue("Because the serializer specified in the ctor should've been used to deserialize the value returned by the grain; in turn registering it with said serializer");
 			}
+		}
+
+		[Test]
+		[Description("Verifies that specifying negative / zero failure timeouts is not allowed")]
+		public void TestCtor6()
+		{
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings {EndPointConnectTimeout = TimeSpan.FromSeconds(-1)}))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.EndPointConnectTimeout");
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.Zero }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.EndPointConnectTimeout");
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.FromSeconds(-1) }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.ProcessReadyTimeout");
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.Zero }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.ProcessReadyTimeout");
 		}
 
 		[Test]

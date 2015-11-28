@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Tasks;
+using SharpRemote.Test.Remoting.SocketRemotingEndPoint;
 
 namespace SharpRemote.Test.Tasks
 {
 	[TestFixture]
 	public sealed class SerialTaskSchedulerTest
+		: AbstractTest
 	{
 		[Test]
 		public void TestCtor()
@@ -77,17 +79,15 @@ namespace SharpRemote.Test.Tasks
 		[Description("Verifies that the executing thread is only started once a task has been queued and that it is stopped if no task has been queued for at least the specified amount timr")]
 		public void TestStarStopThread()
 		{
-			var timeout = TimeSpan.FromMilliseconds(100);
-			using (var scheduler = new SerialTaskScheduler(timeout, true))
+			using (var scheduler = new SerialTaskScheduler(TimeSpan.FromMilliseconds(100), true))
 			{
 				scheduler.IsExecutingThreadRunning.Should().BeFalse("Because no task has ever been scheduled and thus no additional thread should be waiting for it");
 				scheduler.QueueTask(() => { });
 				scheduler.IsExecutingThreadRunning.Should().BeTrue("Because a task has just been queued");
 
-				Thread.Sleep((int) (timeout.TotalMilliseconds*2));
-				scheduler.IsExecutingThreadRunning.Should()
-				         .BeFalse(
-					         "Because for twice the timeout no additional task has been executed and thus the thread should've been ended");
+				// Fucking AppVeyor is so incredibly slow, no amount of timeout is enough.
+				WaitFor(() => scheduler.IsExecutingThreadRunning == false,
+				        TimeSpan.FromSeconds(10)).Should().BeTrue("Because for twice the timeout no additional task has been executed and thus the thread should've been ended");
 
 				scheduler.Exceptions.Should().BeEmpty("Because no exceptions should've been thrown in the process");
 			}

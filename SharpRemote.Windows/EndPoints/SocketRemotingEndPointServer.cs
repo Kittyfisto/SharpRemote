@@ -190,14 +190,24 @@ namespace SharpRemote
 			}
 		}
 
-		private Socket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
+		internal static Socket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
+		{
+			const ushort firstSocket = 49152;
+			const ushort lastSocket = 65535;
+
+			return CreateSocketAndBindToAnyPort(address, firstSocket, lastSocket, out localAddress);
+		}
+
+		internal static Socket CreateSocketAndBindToAnyPort(IPAddress address,
+			ushort firstSocket,
+			ushort lastSocket,
+			out IPEndPoint localAddress)
 		{
 			AddressFamily family = address.AddressFamily;
 			var socket = new Socket(family, SocketType.Stream, ProtocolType.Tcp);
 			try
 			{
-				const ushort firstSocket = 49152;
-				const ushort lastSocket = 65535;
+				socket.ExclusiveAddressUse = true;
 
 				localAddress = null;
 				for (ushort i = firstSocket; i <= lastSocket; ++i)

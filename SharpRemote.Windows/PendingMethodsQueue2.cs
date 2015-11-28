@@ -9,7 +9,7 @@ namespace SharpRemote
 	{
 		private readonly int _capacity;
 		private readonly Stack<PendingMethodCall> _buffer;
-		private readonly PriorityQueue<>
+		//private readonly PriorityQueue<>
 		private bool _isDisposed;
 
 		public PendingMethodsQueue2(int capacity)
@@ -31,7 +31,7 @@ namespace SharpRemote
 		{
 			var call = _buffer.Pop();
 			call.Reset(servantId, interfaceType, methodName, arguments, rpcId, callback);
-			
+			throw new NotImplementedException();
 		}
 
 		public bool IsDisposed

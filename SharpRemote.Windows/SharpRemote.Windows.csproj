@@ -58,6 +58,7 @@
     <Compile Include="EndPoints\Latency.cs" />
     <Compile Include="Buffer.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
+    <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
     <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />
     <Compile Include="ServiceDiscovery\INetworkServiceRegisty.cs" />

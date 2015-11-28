@@ -10,6 +10,7 @@ namespace SharpRemote.Test
 {
 	[TestFixture]
 	public sealed class WeakKeyDictionaryTest
+		: AbstractTest
 	{
 		private static void EnsureIntegrity<TKey, TValue>(WeakKeyDictionary<TKey, TValue> dictionary) where TKey : class
 		{
@@ -285,6 +286,7 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that the insertion performance is comparable to an ordinary dictionary")]
 		public void TestAddPerformance()
 		{
@@ -318,6 +320,7 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
+		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description("Verifies that the retrieval performance is comparable to an ordinary dictionary")]
 		public void TestTryGetValuePerformance()
 		{

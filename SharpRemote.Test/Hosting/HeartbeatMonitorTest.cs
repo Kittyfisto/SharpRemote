@@ -10,9 +10,10 @@ namespace SharpRemote.Test.Hosting
 {
 	[TestFixture]
 	public sealed class HeartbeatMonitorTest
+		: AbstractTest
 	{
 		[SetUp]
-		public void SetUp()
+		public void SetUp2()
 		{
 			_heartbeat = new Mock<IHeartbeat>();
 			_debugger = new Mock<IDebugger>();

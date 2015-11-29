@@ -632,7 +632,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					}
 					catch (Exception e)
 					{
-						throw new Exception(string.Format("Receive failed (Connected: {0}): {1}",
+						throw new Exception(string.Format("Receive #{0} failed (Connected: {1}): {2}",
+						                                  i,
 						                                  isConnected,
 						                                  e.Message),
 						                    e);

@@ -630,6 +630,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 						throw new Exception(string.Format("Connect failed: {0}", e.Message), e);
 					}
 
+					client.Send(new byte[256]);
+
 					try
 					{
 						int length = client.Receive(new byte[256]);

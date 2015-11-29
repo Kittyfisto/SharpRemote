@@ -607,11 +607,13 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					server.ExclusiveAddressUse = true;
 					server.Bind(new IPEndPoint(IPAddress.Loopback, 49152));
 
+					bool isConnected = false;
 					server.Listen(5);
 					server.BeginAccept(ar =>
 						{
 							var serverCon = server.EndAccept(ar);
 							serverCon.Send(new byte[256]);
+							isConnected = true;
 						}, null);
 
 					try
@@ -623,8 +625,18 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 						throw new Exception(string.Format("Connect failed: {0}", e.Message), e);
 					}
 
-					int length = client.Receive(new byte[256]);
-					length.Should().Be(256);
+					try
+					{
+						int length = client.Receive(new byte[256]);
+						length.Should().Be(256);
+					}
+					catch (Exception e)
+					{
+						throw new Exception(string.Format("Receive failed (Connected: {0}): {1}",
+						                                  isConnected,
+						                                  e.Message),
+						                    e);
+					}
 				}
 			}
 		}

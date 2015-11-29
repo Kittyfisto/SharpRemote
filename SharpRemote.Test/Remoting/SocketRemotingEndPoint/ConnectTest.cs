@@ -603,6 +603,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				{
 					client.ExclusiveAddressUse = true;
 					client.ReceiveTimeout = 1000;
+					client.Blocking = true;
 
 					server.ExclusiveAddressUse = true;
 					server.Bind(new IPEndPoint(IPAddress.Loopback, 49152));

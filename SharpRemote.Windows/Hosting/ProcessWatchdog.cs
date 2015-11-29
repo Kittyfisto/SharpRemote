@@ -271,12 +271,20 @@ namespace SharpRemote.Hosting
 		}
 
 		/// <summary>
+		/// The filename of the executable, as given in the constructor.
+		/// </summary>
+		public string HostExecutableName
+		{
+			get { return _startInfo.FileName; }
+		}
+
+		/// <summary>
 		///     This event is invoked whenever the host has written a complete line to its console.
 		/// </summary>
 		public event Action<string> OnHostOutputWritten;
 
 		/// <summary>
-		///     Is invoked when a fault in the remote process has been detected and is invoked prior to handling
+		///     Is invoked when a failure in the remote process has been detected and is invoked prior to handling
 		///     this failure.
 		/// </summary>
 		public event Action<ProcessFaultReason> OnFaultDetected;

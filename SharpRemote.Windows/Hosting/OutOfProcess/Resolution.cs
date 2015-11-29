@@ -1,7 +1,7 @@
 ﻿namespace SharpRemote.Hosting.OutOfProcess
 {
 	/// <summary>
-	/// Describes the various states of how (and if) a fault has been resolved.
+	/// Describes the various states of how (and if) a failure has been resolved.
 	/// </summary>
 	public enum Resolution
 	{

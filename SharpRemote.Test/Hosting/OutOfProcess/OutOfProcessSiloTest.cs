@@ -90,7 +90,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that the failure event is NEVER raised once a silo has been disposed of")]
 		public void TestDispose2()
 		{
-			bool faultDetected = false;
+			bool failureDetected = false;
 			var settings = new FailureSettings
 				{
 					HeartbeatSettings =
@@ -101,19 +101,19 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 
 			var handler = new Mock<IFailureHandler>();
 			handler.Setup(x => x.OnFailure(It.IsAny<Failure>()))
-			       .Callback((Failure unused) => faultDetected = true);
+			       .Callback((Failure unused) => failureDetected = true);
 
 			using (var silo = new OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
 			{
 				silo.Start();
-				faultDetected.Should().BeFalse("Because the host process shouldn't fault now");
+				failureDetected.Should().BeFalse("Because the host process shouldn't have failed now");
 			}
 
 			Thread.Sleep(100);
 
-			faultDetected.Should()
+			failureDetected.Should()
 			             .BeFalse(
-				             "Because even though the process is no longer running, the silo shouldn't have reported a fault because it's been properly disposed of");
+				             "Because even though the process is no longer running, the silo shouldn't have reported a failure because it's been properly disposed of");
 		}
 
 		[Test]

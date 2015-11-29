@@ -30,7 +30,7 @@ namespace SharpRemote.Hosting
 	///        catch(Exception e)
 	///        {
 	///           // This will marshall the exception back to the parent process so you can
-	///           // actually know and programmatically react to the fault.
+	///           // actually know and programmatically react to the failure.
 	///           OutOfProcessSiloServer.ReportException(e);
 	///        }
 	///     }

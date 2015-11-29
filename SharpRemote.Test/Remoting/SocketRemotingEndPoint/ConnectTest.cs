@@ -602,7 +602,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				using (var server = new Socket(family, socket, protocol))
 				{
 					client.ExclusiveAddressUse = true;
-					client.ReceiveTimeout = 1000;
+					client.ReceiveTimeout = 10000;
 					client.Blocking = true;
 
 					server.ExclusiveAddressUse = true;

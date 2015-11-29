@@ -15,6 +15,18 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 	public sealed class ConnectTest
 		: AbstractTest
 	{
+		public override Type[] Loggers
+		{
+			get
+			{
+				return new[]
+					{
+						typeof (SocketRemotingEndPointClient),
+						typeof (SocketRemotingEndPointServer)
+					};
+			}
+		}
+
 		[Test]
 		[Description("Verifies that Connect() can establish a connection with an endpoint in the same process")]
 		public void TestConnect1()
@@ -542,6 +554,97 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				clientRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);
 				serverRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);
+			}
+		}
+
+		[Test]
+		[LocalTest("Doesn't work on AppVeyor for some reason")]
+		[Description("Verifies that connections can be created and closed as fast as possible")]
+		public void TestConnect27()
+		{
+			var heartbeatSettings = new HeartbeatSettings
+				{
+					UseHeartbeatFailureDetection = false
+				};
+			var latencySettings = new LatencySettings
+				{
+					PerformLatencyMeasurements = false
+				};
+
+
+			for (int i = 0; i < 100; ++i)
+			{
+				using (
+					SocketRemotingEndPointClient client = CreateClient("perf_client", latencySettings: latencySettings,
+					                                                   heartbeatSettings: heartbeatSettings))
+				{
+					using (
+						SocketRemotingEndPointServer server = CreateServer("perf_server", latencySettings: latencySettings,
+						                                                   heartbeatSettings: heartbeatSettings))
+					{
+						server.Bind(IPAddress.Loopback);
+						client.Connect(server.LocalEndPoint);
+						client.Disconnect();
+					}
+				}
+			}
+		}
+
+		[Test]
+		[Ignore("Why doesn't this work on AppVeyor - I Just don't get it...")]
+		public void TestConnect28()
+		{
+			for (int i = 0; i < 1000; ++i)
+			{
+				const AddressFamily family = AddressFamily.InterNetwork;
+				const SocketType socket = SocketType.Stream;
+				const ProtocolType protocol = ProtocolType.Tcp;
+				using (var client = new Socket(family, socket, protocol))
+				using (var server = new Socket(family, socket, protocol))
+				{
+					client.ReceiveTimeout = 10000;
+
+					server.ExclusiveAddressUse = true;
+					server.Bind(new IPEndPoint(IPAddress.Loopback, 60310));
+
+					bool isConnected = false;
+					server.Listen(1);
+					server.BeginAccept(ar =>
+						{
+							Console.WriteLine("BeginAccept handler");
+							var serverCon = server.EndAccept(ar);
+							Console.WriteLine("EndAccept called");
+
+							isConnected = true;
+							serverCon.Send(new byte[256]);
+						}, null);
+
+					try
+					{
+						client.Connect(server.LocalEndPoint);
+						Console.WriteLine("socket.Connected: {0} to {1}", client.Connected, client.RemoteEndPoint);
+					}
+					catch (Exception e)
+					{
+						throw new Exception(string.Format("Connect failed: {0}", e.Message), e);
+					}
+
+					client.Send(new byte[256]);
+
+					try
+					{
+						int length = client.Receive(new byte[256]);
+						length.Should().Be(256);
+					}
+					catch (Exception e)
+					{
+						throw new Exception(string.Format("Receive #{0} failed (Connected: {1}): {2}",
+						                                  i,
+						                                  isConnected,
+						                                  e.Message),
+						                    e);
+					}
+				}
 			}
 		}
 	}

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
 
-namespace SharpRemote.Test.Hosting
+namespace SharpRemote.Test.Hosting.OutOfProcess
 {
 	[TestFixture]
 	public sealed class OutOfProcessSiloServerTest
@@ -14,6 +15,28 @@ namespace SharpRemote.Test.Hosting
 		public void TestFixtureSetUp()
 		{
 			
+		}
+
+		[Test]
+		[Description("Verifies that EncodeException() encodes the given exception in a string as base64")]
+		public void TestEncodeException()
+		{
+			var exception = new ArgumentNullException("whatever");
+			string encoded = null;
+			new Action(() => encoded = OutOfProcessSiloServer.EncodeException(exception))
+				.ShouldNotThrow();
+
+			encoded.Should().NotBeNull();
+			encoded.Length.Should().BeGreaterThan(0);
+
+			using (var stream = new MemoryStream(Convert.FromBase64String(encoded)))
+			using (var reader = new BinaryReader(stream))
+			{
+				var actualException = AbstractEndPoint.ReadException(reader);
+				actualException.Should().NotBeNull();
+				actualException.Should().BeOfType<ArgumentNullException>();
+				actualException.Message.Should().Be(exception.Message);
+			}
 		}
 
 		[Test]

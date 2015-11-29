@@ -171,13 +171,17 @@ namespace SharpRemote
 					{
 						Log.DebugFormat("Task to connect to '{0}' started", endPoint);
 
-						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+							{
+								ExclusiveAddressUse = true,
+								Blocking = true,
+							};
 
-						Log.DebugFormat("Socket to connect to '{0}' created", endPoint);
+						Log.DebugFormat("EndPoint '{0}' connecting to remote endpoint '{1}'", Name, endPoint);
 
 						socket.Connect(endPoint);
 
-						Log.DebugFormat("Socket connected to '{0}'", endPoint);
+						Log.DebugFormat("EndPoint '{0}' successfully connected to remote endpoint '{1}'", Name, endPoint);
 
 						return null;
 					}
@@ -228,6 +232,8 @@ namespace SharpRemote
 
 				RemoteEndPoint = endPoint;
 				LocalEndPoint = (IPEndPoint)socket.LocalEndPoint;
+
+				Log.InfoFormat("EndPoint '{0}' successfully connected to '{1}'", Name, endPoint);
 
 				FireOnConnected(endPoint);
 

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SharpRemote.Hosting;
 using SharpRemote.ServiceDiscovery;
 using SharpRemote.Test.Hosting;
+using SharpRemote.Test.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using log4net.Config;

@@ -1,0 +1,112 @@
+﻿using System;
+using FluentAssertions;
+using NUnit.Framework;
+using SharpRemote.Hosting;
+using SharpRemote.Hosting.OutOfProcess;
+using SharpRemote.Test.Types.Classes;
+using SharpRemote.Test.Types.Interfaces.NativeTypes;
+
+namespace SharpRemote.Test.Hosting.OutOfProcess
+{
+	[TestFixture]
+	public sealed class CtorTest
+		: AbstractTest
+	{
+		[Test]
+		public void TestCtor1()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.IsDisposed.Should().BeFalse();
+				silo.HasProcessFailed.Should().BeFalse();
+				silo.IsProcessRunning.Should().BeFalse();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that specifying a null executable name is not allowed")]
+		public void TestCtor2()
+		{
+			new Action(() => new OutOfProcessSilo(null))
+				.ShouldThrow<ArgumentNullException>();
+		}
+
+		[Test]
+		[Description("Verifies that specifying an empty executable name is not allowed")]
+		public void TestCtor3()
+		{
+			new Action(() => new OutOfProcessSilo(""))
+				.ShouldThrow<ArgumentException>();
+		}
+
+		[Test]
+		[Description("Verifies that specifying a whitespace executable name is not allowed")]
+		public void TestCtor4()
+		{
+			new Action(() => new OutOfProcessSilo("	"))
+				.ShouldThrow<ArgumentException>();
+		}
+
+		[Test]
+		[Description("Verifies that the serializer specified in the ctor is actually used - instead of a new one")]
+		public void TestCtor5()
+		{
+			var serializer = new Serializer();
+			serializer.IsTypeRegistered<Tree>().Should().BeFalse();
+
+			using (var silo = new OutOfProcessSilo(serializer: serializer))
+			{
+				silo.Start();
+				var grain = silo.CreateGrain<IReturnsObjectMethod, ReturnsTree>();
+				var tree = grain.GetListener();
+				tree.Should().NotBeNull();
+				tree.Should().BeOfType<Tree>();
+				serializer.IsTypeRegistered<Tree>().Should().BeTrue("Because the serializer specified in the ctor should've been used to deserialize the value returned by the grain; in turn registering it with said serializer");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that specifying negative / zero heartbeat timeouts/thresholds is not allowed")]
+		public void TestCtor6()
+		{
+			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { Interval = TimeSpan.Zero } }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("The heartbeat interval must be greater than zero\r\nParameter name: heartbeatSettings.Interval");
+
+			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings{HeartbeatSettings = { Interval = TimeSpan.FromSeconds(-1) }}))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("The heartbeat interval must be greater than zero\r\nParameter name: heartbeatSettings.Interval");
+
+			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = 0} }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("The skipped heartbeat threshold must be greater than zero\r\nParameter name: heartbeatSettings.SkippedHeartbeatThreshold");
+
+			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = -1 } }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("The skipped heartbeat threshold must be greater than zero\r\nParameter name: heartbeatSettings.SkippedHeartbeatThreshold");
+		}
+
+		[Test]
+		[Description("Verifies that specifying negative / zero failure timeouts is not allowed")]
+		public void TestCtor7()
+		{
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.FromSeconds(-1) }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.Zero }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.FromSeconds(-1) }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
+			new Action(
+				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.Zero }))
+				.ShouldThrow<ArgumentOutOfRangeException>()
+				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
+		}
+
+	}
+}

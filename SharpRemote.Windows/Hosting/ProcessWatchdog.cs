@@ -23,12 +23,14 @@ namespace SharpRemote.Hosting
 		internal const string SharpRemoteHost = "SharpRemote.Host.exe";
 
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private readonly int _parentPid;
 
 		private readonly PostMortemSettings _postMortemSettings;
 		private readonly ProcessStartInfo _startInfo;
 		private readonly object _syncRoot;
 		private readonly ManualResetEvent _waitHandle;
+		private readonly TimeSpan _processReadyTimeout;
 
 		private bool _hasProcessExited;
 
@@ -40,7 +42,7 @@ namespace SharpRemote.Hosting
 		private Process _process;
 		private ProcessFaultReason? _reason;
 		private int? _remotePort;
-		private readonly FailureSettings _failureSettings;
+		private Exception _startupException;
 
 		/// <summary>
 		///     Initializes a new instance of this ProcessWatchdog with the specified options.
@@ -49,7 +51,7 @@ namespace SharpRemote.Hosting
 		/// <param name="process"></param>
 		/// <param name="options"></param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
-		/// <param name="failureSettings"></param>
+		/// <param name="processReadyTimeout">The amount of time the host process has to report being ready before it is assumed to be dead</param>
 		/// <exception cref="ArgumentNullException">
 		///     When <paramref name="process" /> is null
 		/// </exception>
@@ -60,7 +62,7 @@ namespace SharpRemote.Hosting
 			string process = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
 			PostMortemSettings postMortemSettings = null,
-			FailureSettings failureSettings = null
+			TimeSpan? processReadyTimeout = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -79,7 +81,7 @@ namespace SharpRemote.Hosting
 				}
 			}
 
-			_failureSettings = failureSettings ?? new FailureSettings();
+			_processReadyTimeout = processReadyTimeout ?? new FailureSettings().ProcessReadyTimeout;
 			_waitHandle = new ManualResetEvent(false);
 			_hostedProcessState = HostState.BootPending;
 			_syncRoot = new object();
@@ -107,7 +109,7 @@ namespace SharpRemote.Hosting
 		}
 
 		/// <summary>
-		///     Starts this silo
+		///     Starts the child process.
 		/// </summary>
 		/// <exception cref="FileNotFoundException">When the specified executable could not be found</exception>
 		/// <exception cref="Win32Exception">When the </exception>
@@ -116,29 +118,68 @@ namespace SharpRemote.Hosting
 		/// </exception>
 		public void Start()
 		{
-			_process = new Process
-			{
-				StartInfo = _startInfo,
-				EnableRaisingEvents = true,
-			};
+			int unused;
+			Start(out unused);
+		}
 
-			_process.Exited += ProcessOnExited;
-			_process.OutputDataReceived += ProcessOnOutputDataReceived;
+		/// <summary>
+		///     Starts the child process.
+		/// </summary>
+		/// <exception cref="FileNotFoundException">When the specified executable could not be found</exception>
+		/// <exception cref="Win32Exception">When the </exception>
+		/// <exception cref="HandshakeException">
+		///     The handshake between this and the <see cref="OutOfProcessSiloServer" /> of the remote process failed
+		/// </exception>
+		public void Start(out int pid)
+		{
+			lock (_syncRoot)
+			{
+				// Make sure to remove everything from the old process
+				// and especially make sure that we don't receive events from
+				// it!
+				if (_process != null)
+				{
+					_process.Exited -= ProcessOnExited;
+					_process.OutputDataReceived -= ProcessOnOutputDataReceived;
+				}
+
+				// Prepare the new process
+				_process = new Process
+				{
+					StartInfo = _startInfo,
+					EnableRaisingEvents = true,
+				};
+				_process.Exited += ProcessOnExited;
+				_process.OutputDataReceived += ProcessOnOutputDataReceived;
+				_startupException = null;
+				_remotePort = null;
+				_waitHandle.Reset();
+			}
 
 			Log.DebugFormat("Starting host '{0}' for parent process (PID: {1})",
 							_startInfo.FileName,
 							_parentPid);
 
-			StartHostProcess();
+			StartHostProcess(out pid);
 			try
 			{
 				_hasProcessExited = false;
 				_process.BeginOutputReadLine();
 
-				if (!_waitHandle.WaitOne(_failureSettings.ProcessReadyTimeout))
+				if (!_waitHandle.WaitOne(_processReadyTimeout))
+				{
 					throw new HandshakeException(string.Format("Process {0} failed to communicate used port number in time ({1}s)",
-					                                           _startInfo.FileName,
-					                                           _failureSettings.ProcessReadyTimeout));
+															   _startInfo.FileName,
+															   _processReadyTimeout));
+				}
+
+				if (_startupException != null)
+				{
+					throw new HandshakeException(
+						string.Format("Process '{0}' caught an unexpected exception during startup and subsequently failed",
+									  _startInfo.FileName),
+						_startupException);
+				}
 
 				int? port = _remotePort;
 				if (port == null)
@@ -148,9 +189,10 @@ namespace SharpRemote.Hosting
 			}
 			catch (Exception e)
 			{
-				Log.WarnFormat("Caught unexpected exception after having started the host process (PID: {1}): {0}",
-							   e,
-							   _hostedProcessId);
+				Log.WarnFormat("Caught unexpected exception after having started the host application '{0}' (PID: {1}): {2}",
+				               _startInfo.FileName,
+				               _hostedProcessId,
+				               e);
 
 				_process.TryKill();
 				_process.TryDispose();
@@ -172,9 +214,19 @@ namespace SharpRemote.Hosting
 			var id = _hostedProcessId;
 			if (id != null)
 			{
-				_hostedProcessState = HostState.Dead;
-				_hasProcessFailed = true;
-				_hasProcessExited = true;
+				lock (_syncRoot)
+				{
+					if (_process != null)
+					{
+						_process.Exited -= ProcessOnExited;
+						_process.OutputDataReceived -= ProcessOnOutputDataReceived;
+					}
+
+					_hostedProcessState = HostState.Dead;
+					_remotePort = null;
+					_hasProcessFailed = true;
+					_hasProcessExited = true;
+				}
 
 				ProcessExtensions.TryKill(id.Value);
 			}
@@ -196,12 +248,12 @@ namespace SharpRemote.Hosting
 
 			_process.TryKill();
 			_process.TryDispose();
-			_hasProcessExited = true;
-			_hostedProcessId = null;
-			_remotePort = null;
 
 			lock (_syncRoot)
 			{
+				_hasProcessExited = true;
+				_hostedProcessId = null;
+				_remotePort = null;
 				_isDisposed = true;
 				_isDisposing = false;
 			}
@@ -258,12 +310,20 @@ namespace SharpRemote.Hosting
 		}
 
 		/// <summary>
+		/// The filename of the executable, as given in the constructor.
+		/// </summary>
+		public string HostExecutableName
+		{
+			get { return _startInfo.FileName; }
+		}
+
+		/// <summary>
 		///     This event is invoked whenever the host has written a complete line to its console.
 		/// </summary>
 		public event Action<string> OnHostOutputWritten;
 
 		/// <summary>
-		///     Is invoked when a fault in the remote process has been detected and is invoked prior to handling
+		///     Is invoked when a failure in the remote process has been detected and is invoked prior to handling
 		///     this failure.
 		/// </summary>
 		public event Action<ProcessFaultReason> OnFaultDetected;
@@ -302,6 +362,10 @@ namespace SharpRemote.Hosting
 			ProcessFaultReason reason;
 			lock (_syncRoot)
 			{
+				// We have to make sure that we ignore events from previously spawned processes!
+				if (sender != _process)
+					return;
+
 				if (_isDisposed || _isDisposing)
 					return;
 
@@ -316,6 +380,7 @@ namespace SharpRemote.Hosting
 				_process.TryKill();
 			}
 
+			_remotePort = null;
 			_hasProcessExited = true;
 			_hasProcessFailed = true;
 
@@ -337,14 +402,14 @@ namespace SharpRemote.Hosting
 			if (handler != null) handler(message);
 		}
 
-		private void StartHostProcess()
+		private void StartHostProcess(out int pid)
 		{
 			try
 			{
 				if (!_process.Start())
 					throw new SharpRemoteException(string.Format("Failed to start process {0}", _process.StartInfo.FileName));
 
-				_hostedProcessId = _process.Id;
+				_hostedProcessId = pid = _process.Id;
 			}
 			catch (Win32Exception e)
 			{
@@ -352,7 +417,7 @@ namespace SharpRemote.Hosting
 				{
 					case Win32Error.ERROR_FILE_NOT_FOUND:
 
-						Log.ErrorFormat("Unable to start host process '{0}' because the file cannot be found", _startInfo.FileName);
+						Log.ErrorFormat("Unable to start host application '{0}' because the file cannot be found", _startInfo.FileName);
 
 						throw new FileNotFoundException(e.Message, e);
 
@@ -366,6 +431,7 @@ namespace SharpRemote.Hosting
 		{
 			string message = args.Data;
 			EmitHostOutputWritten(message);
+
 			switch (message)
 			{
 				case Constants.BootingMessage:
@@ -381,19 +447,43 @@ namespace SharpRemote.Hosting
 					_hostedProcessState = HostState.None;
 					break;
 
+				case null:
+					break;
+
 				default:
-					int port;
-					if (int.TryParse(message, out port))
-						_remotePort = port;
+
+					if (message.StartsWith(Constants.ExceptionMessage))
+					{
+						var encodedException = message.Substring(Constants.ExceptionMessage.Length);
+						_startupException = DecodeException(encodedException);
+						_waitHandle.Set();
+					}
+					else
+					{
+						int port;
+						if (int.TryParse(message, out port))
+							_remotePort = port;
+					}
 					break;
 			}
 		}
 
 		internal static class Constants
 		{
+			public const string ExceptionMessage = "exception ";
 			public const string BootingMessage = "booting";
 			public const string ReadyMessage = "ready";
 			public const string ShutdownMessage = "goodbye";
+		}
+
+		internal static Exception DecodeException(string encodedException)
+		{
+			using (var stream = new MemoryStream(Convert.FromBase64String(encodedException)))
+			using (var reader = new BinaryReader(stream))
+			{
+				var actualException = AbstractEndPoint.ReadException(reader);
+				return actualException;
+			}
 		}
 	}
 }

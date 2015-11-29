@@ -56,7 +56,12 @@
     <Compile Include="EndPoints\EndPointSettings.cs" />
     <Compile Include="EndPoints\ILatency.cs" />
     <Compile Include="EndPoints\Latency.cs" />
+    <Compile Include="EndPoints\HeartbeatSettings.cs" />
+    <Compile Include="Hosting\OutOfProcess\Decision.cs" />
+    <Compile Include="Hosting\OutOfProcess\RestartOnFailureStrategy.cs" />
     <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
+    <Compile Include="Hosting\OutOfProcess\IFailureHandler.cs" />
+    <Compile Include="Hosting\OutOfProcess\ZeroFailureToleranceStrategy.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
     <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />
     <Compile Include="ServiceDiscovery\INetworkServiceRegisty.cs" />
@@ -121,10 +126,9 @@
     <Compile Include="Hosting\DefaultImplementationRegistry.cs" />
     <Compile Include="EndPoints\HeartbeatMonitor.cs" />
     <Compile Include="EndPoints\Heartbeat.cs" />
-    <Compile Include="EndPoints\HeartbeatSettings.cs" />
     <Compile Include="EndPoints\LatencyMonitor.cs" />
-    <Compile Include="Hosting\SiloFaultReason.cs" />
-    <Compile Include="Hosting\SiloFaultResolution.cs" />
+    <Compile Include="Hosting\OutOfProcess\Failure.cs" />
+    <Compile Include="Hosting\OutOfProcess\Resolution.cs" />
     <Compile Include="EndPoints\IHeartbeat.cs" />
     <Compile Include="EndPoints\MethodInvocation.cs" />
     <Compile Include="EndPoints\WebRemotingEndPoint.cs" />

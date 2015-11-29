@@ -19,7 +19,7 @@ namespace SharpRemote.Hosting
 	/// </summary>
 	/// <remarks>
 	/// Can be used to host objects either in the SharpRemote.Host.exe or in a custom application
-	/// of your choice by creating a <see cref="OutOfProcessSiloServer"/> and calling <see cref="OutOfProcessSiloServer.Run"/>.
+	/// of your choice by creating a <see cref="OutOfProcessSiloServer"/> and calling <see cref="OutOfProcessSiloServer.Run()"/>.
 	/// </remarks>
 	/// <example>
 	/// using (var silo = new OutOfProcessSilo())
@@ -39,9 +39,12 @@ namespace SharpRemote.Hosting
 		private readonly ISubjectHost _subjectHost;
 		private readonly object _syncRoot;
 
+		private readonly IFailureHandler _failureHandler;
+
+		private ulong _nextObjectId;
 		private bool _isDisposed;
 		private bool _isDisposing;
-		private SiloFaultReason? _reason;
+		private Failure? _currentFailure;
 
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
@@ -49,16 +52,10 @@ namespace SharpRemote.Hosting
 		public event Action<string> OnHostOutputWritten;
 
 		/// <summary>
-		/// Is invoked when a fault in the remote process has been detected and is invoked prior to handling
-		/// this failure.
+		/// This event is invoked whenever the host process was successfully started, and a connection
+		/// to it was established.
 		/// </summary>
-		public event Action<SiloFaultReason> OnFaultDetected;
-
-		/// <summary>
-		/// Is invoked when a fault in the remote process has been detected an handled.
-		/// The parameters contain both the original reason and how its been handled.
-		/// </summary>
-		public event Action<SiloFaultReason, SiloFaultResolution> OnFaultHandled;
+		public event Action OnHostStarted;
 
 		/// <summary>
 		/// Whether or not the process has failed.
@@ -115,11 +112,11 @@ namespace SharpRemote.Hosting
 		/// <param name="options"></param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// <param name="serializer">The serializer used to serialize and deserialize values - if none is specifed then a new one is created</param>
-		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
-		/// <param name="failureSettings"></param>
+		/// <param name="failureSettings">The settings specifying when a failure is assumed to have occured in the host process - if none are specified, then defaults are used</param>
+		/// <param name="failureHandler">The object responsible for deciding how failures are dealt with - if none is specified then a new <see cref="ZeroFailureToleranceStrategy"/> is used</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -127,11 +124,11 @@ namespace SharpRemote.Hosting
 			ProcessOptions options = ProcessOptions.HideConsole,
 			ITypeResolver customTypeResolver = null,
 			Serializer serializer = null,
-			HeartbeatSettings heartbeatSettings = null,
 			LatencySettings latencySettings = null,
 			PostMortemSettings postMortemSettings = null,
 			EndPointSettings endPointSettings = null,
-			FailureSettings failureSettings = null
+			FailureSettings failureSettings = null,
+			IFailureHandler failureHandler = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -141,16 +138,18 @@ namespace SharpRemote.Hosting
 			if (failureSettings != null)
 			{
 				if (failureSettings.ProcessReadyTimeout <= TimeSpan.Zero)
-					throw new ArgumentOutOfRangeException("failureSettings.ProcessReadyTimeout");
+					throw new ArgumentOutOfRangeException("failureSettings", "ProcessReadyTimeout should be greater than zero");
 
 				if (failureSettings.EndPointConnectTimeout <= TimeSpan.Zero)
-					throw new ArgumentOutOfRangeException("failureSettings.EndPointConnectTimeout");
+					throw new ArgumentOutOfRangeException("failureSettings", "EndPointConnectTimeout should be greater than zero");
 			}
 
 			_failureSettings = failureSettings ?? new FailureSettings();
+			_failureHandler = failureHandler ?? new ZeroFailureToleranceStrategy();
+
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
-			                                             heartbeatSettings: heartbeatSettings,
+			                                             heartbeatSettings: _failureSettings.HeartbeatSettings,
 			                                             latencySettings: latencySettings,
 			                                             endPointSettings: endPointSettings);
 			_endPoint.OnFailure += EndPointOnOnFailure;
@@ -170,7 +169,7 @@ namespace SharpRemote.Hosting
 		}
 
 		/// <summary>
-		/// Starts this silo 
+		/// Starts this silo.
 		/// </summary>
 		/// <exception cref="FileNotFoundException">When the specified executable could not be found</exception>
 		/// <exception cref="Win32Exception">When the </exception>
@@ -178,28 +177,67 @@ namespace SharpRemote.Hosting
 		/// <exception cref="SharpRemoteException"></exception>
 		public void Start()
 		{
+			int unused;
+			StartInternal(out unused);
+
+			Log.InfoFormat(
+				"Host process '{0}' (PID: {1}) successfully started",
+				_process.HostExecutableName,
+				_process.HostedProcessId);
+		}
+
+		private void StartInternal(out int pid)
+		{
 			if (_process.IsProcessRunning)
 				throw new InvalidOperationException();
 
-			_process.Start();
+			_process.Start(out pid);
 			try
 			{
 				var port = _process.RemotePort;
 				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value),
 				                  _failureSettings.EndPointConnectTimeout);
 			}
+			catch (HandshakeException e)
+			{
+				Log.WarnFormat("Unable to establish a connection with the host process (PID: {1}): {0}",
+				               e,
+				               _process.HostedProcessId);
+
+				_process.TryKill();
+
+				throw;
+			}
 			catch (Exception e)
 			{
 				Log.WarnFormat("Caught unexpected exception after having started the host process (PID: {1}): {0}",
-					e,
-					_process.HostedProcessId);
+				               e,
+				               _process.HostedProcessId);
 
 				_process.TryKill();
 
 				throw;
 			}
 
-			Log.InfoFormat("Connection to {0} established", _endPoint.RemoteEndPoint);
+			//
+			// POINT OF NO FAILURE BELOW
+			//
+
+			lock (_syncRoot)
+			{
+				_currentFailure = null;
+			}
+
+			try
+			{
+				var fn = OnHostStarted;
+				if (fn != null)
+					fn();
+			}
+			catch (Exception e)
+			{
+				Log.WarnFormat("The OnHostStarted event threw an exception, please don't do that: {0}", e);
+			}
 		}
 
 		/// <summary>
@@ -225,7 +263,9 @@ namespace SharpRemote.Hosting
 					return;
 			}
 
-			Log.ErrorFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
+			// The socket will have logged all this information already thus we can skip it here
+			Log.DebugFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
+
 			HandleFailure(reason);
 		}
 
@@ -234,93 +274,145 @@ namespace SharpRemote.Hosting
 			switch (processFaultReason)
 			{
 				case ProcessFaultReason.HostProcessExited:
-					HandleFailure(SiloFaultReason.HostProcessExited, false);
+					HandleFailure(Failure.HostProcessExited, false);
 					break;
 
 				default:
-				case ProcessFaultReason.UnhandledException:
-					HandleFailure(SiloFaultReason.UnhandledException, false);
+				/*case ProcessFaultReason.UnhandledException:*/
+					HandleFailure(Failure.UnhandledException, false);
 					break;
 			}
 		}
 
 		private void HandleFailure(EndPointDisconnectReason endPointReason)
 		{
-			SiloFaultReason reason;
+			Failure reason;
 			switch (endPointReason)
 			{
 				case EndPointDisconnectReason.ReadFailure:
 				case EndPointDisconnectReason.RpcInvalidResponse:
-					reason = SiloFaultReason.ConnectionFailure;
+					reason = Failure.ConnectionFailure;
 					break;
 
 				case EndPointDisconnectReason.RequestedByEndPoint:
 				case EndPointDisconnectReason.RequestedByRemotEndPoint:
-					reason = SiloFaultReason.ConnectionClosed;
+					reason = Failure.ConnectionClosed;
 					break;
 
 				case EndPointDisconnectReason.HeartbeatFailure:
-					reason = SiloFaultReason.HeartbeatFailure;
+					reason = Failure.HeartbeatFailure;
 					break;
 
 				// ReSharper disable RedundantCaseLabel
 				case EndPointDisconnectReason.UnhandledException:
 				// ReSharper restore RedundantCaseLabel
 				default:
-					reason = SiloFaultReason.UnhandledException;
+					reason = Failure.UnhandledException;
 					break;
 			}
 
 			HandleFailure(reason, dueToEndPoint: true);
 		}
 
-		private void HandleFailure(SiloFaultReason reason, bool dueToEndPoint)
+		private void HandleFailure(Failure failure, bool dueToEndPoint)
 		{
 			lock (_syncRoot)
 			{
 				if (_isDisposed || _isDisposing)
 					return;
 
-				if (_reason != null)
+				if (_currentFailure != null)
 					return;
 
-				_reason = reason;
+				_currentFailure = failure;
 			}
 
+			var decision = Decision.Stop;
 			try
 			{
-				var fn = OnFaultDetected;
-				if (fn != null)
-					fn(reason);
+				var handlerResolution = _failureHandler.OnFailure(failure);
+				if (handlerResolution != null)
+					decision = handlerResolution.Value;
 			}
 			catch (Exception e)
 			{
 				Log.WarnFormat("OnFaultDetected threw an exception - ignoring it: {0}", e);
 			}
 
-			// TODO: Think of a better way to handle failures thant to quit ;)
-			if (reason != SiloFaultReason.HostProcessExited)
+			if (failure != Failure.HostProcessExited)
 			{
 				_process.TryKill();
 			}
 
 			// We don't want to call disconnect in case this method is executing because 
 			// of an endpoint failure - because we're called from the endpoint's Disconnect method.
-			// Calling disconnect again would overwrite the disconnect reason...
+			// Calling disconnect again would overwrite the disconnect failure...
 			if (!dueToEndPoint)
 			{
 				_endPoint.Disconnect();
 			}
 
+			var resolution = ResolveFailure(failure, decision);
+
 			try
 			{
-				var fn = OnFaultHandled;
-				if (fn != null)
-					fn(reason, SiloFaultResolution.Shutdown);
+				_failureHandler.OnResolutionFinished(failure, decision, resolution);
 			}
 			catch (Exception e)
 			{
-				Log.WarnFormat("OnFaultResolved threw an exception - ignoring it: {0}", e);
+				Log.WarnFormat("IFailureHandler.OnResolutionFinished threw an exception - ignoring it: {0}", e);
+			}
+		}
+
+		/// <summary>
+		/// Actually tries to resolve the failure (if possible).
+		/// </summary>
+		/// <param name="failure"></param>
+		/// <param name="decision"></param>
+		/// <returns></returns>
+		private Resolution ResolveFailure(Failure failure, Decision decision)
+		{
+			switch (decision)
+			{
+				case Decision.Stop: //< No need to do anything further...
+					return Resolution.Stopped;
+
+				case Decision.RestartHost:
+					try
+					{
+						int pid;
+						StartInternal(out pid);
+
+						Log.InfoFormat("Successfully recovered from failure '{0}' by restarting the host application '{1}' (PID: {2})",
+						               failure,
+						               _process.HostExecutableName,
+						               pid);
+
+						return Resolution.Restarted;
+					}
+					catch (Exception e)
+					{
+						Log.FatalFormat("Tried to resolve the failure '{0}' by restarting the host - but this failed as well - we have to give up: {1}",
+						                failure,
+						                e);
+
+						try
+						{
+							_failureHandler.OnResolutionFailed(failure, decision, e);
+						}
+						catch (Exception ex)
+						{
+							Log.WarnFormat("IFailureHandler.OnResolutionFailed threw an exception - ignoring it: {0}", ex);
+						}
+
+						return Resolution.Stopped;
+					}
+
+				default:
+					Log.WarnFormat("Unknown decision '{0}' - interpreting it as '{1}'",
+					               decision,
+					               Decision.Stop);
+					return Resolution.Stopped;
 			}
 		}
 
@@ -386,9 +478,15 @@ namespace SharpRemote.Hosting
 				Log.DebugFormat("Creating grain using the registered default implementation for interface '{0}'", typeof(TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof(TInterface);
-			ulong id = _subjectHost.CreateSubject3(interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject3(objectId, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 
@@ -402,9 +500,15 @@ namespace SharpRemote.Hosting
 				                typeof (TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof (TInterface);
-			ulong id = _subjectHost.CreateSubject2(assemblyQualifiedTypeName, interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject2(objectId, assemblyQualifiedTypeName, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 
@@ -418,9 +522,15 @@ namespace SharpRemote.Hosting
 				                typeof (TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof (TInterface);
-			ulong id = _subjectHost.CreateSubject1(implementation, interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject1(objectId, implementation, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 
@@ -433,9 +543,15 @@ namespace SharpRemote.Hosting
 								typeof(TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof(TInterface);
-			ulong id = _subjectHost.CreateSubject1(typeof(TImplementation), interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject1(objectId, typeof(TImplementation), interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 

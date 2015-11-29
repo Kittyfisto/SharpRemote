@@ -9,6 +9,25 @@ namespace SharpRemote.Test.Hosting
 	public sealed class ProcessWatchdogTest
 	{
 		[Test]
+		[Description("Verifies that after the process has been killed, the watchdog no longer reports the host process as alive - nor its current port")]
+		public void TestTryKill()
+		{
+			using (var watchdog = new ProcessWatchdog())
+			{
+				watchdog.Start();
+
+				watchdog.RemotePort.Should().HaveValue();
+				watchdog.IsProcessRunning.Should().BeTrue();
+				watchdog.HasProcessFailed.Should().BeFalse();
+
+				watchdog.TryKill();
+				watchdog.RemotePort.Should().NotHaveValue();
+				watchdog.IsProcessRunning.Should().BeFalse();
+				watchdog.HasProcessFailed.Should().BeTrue();
+			}
+		}
+
+		[Test]
 		public void TestDispose1()
 		{
 			var watchdog = new ProcessWatchdog();

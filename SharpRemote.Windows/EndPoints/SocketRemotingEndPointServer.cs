@@ -68,7 +68,10 @@ namespace SharpRemote
 		{
 			if (ep == null) throw new ArgumentNullException("ep");
 
-			var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+			var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+				{
+					ExclusiveAddressUse = true
+				};
 			socket.Bind(ep);
 			_serverSocket = socket;
 			LocalEndPoint = ep;
@@ -142,11 +145,8 @@ namespace SharpRemote
 				}
 				else
 				{
-					if (Log.IsDebugEnabled)
-					{
-						Log.DebugFormat("Incoming connection from '{0}', starting handshake...",
-										socket.RemoteEndPoint);
-					}
+					// TODO: Set to debug again
+					Log.InfoFormat("Incoming connection from '{0}', starting handshake...", socket.RemoteEndPoint);
 
 					PerformIncomingHandshake(socket);
 

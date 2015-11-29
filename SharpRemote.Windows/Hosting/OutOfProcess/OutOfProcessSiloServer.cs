@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -16,13 +17,22 @@ namespace SharpRemote.Hosting
 	/// <example>
 	///     public static void main(string[] arguments)
 	///     {
-	///     // Put any additional/required initialization here.
-	///     using (var silo = new OutOfProcessSiloServer(arguments))
-	///     {
-	///     // This is the place to register any additional interfaces with this silo
-	///     // silo.CreateServant(id, (IMyCustomInterface)new MyCustomImplementation());
-	///     silo.Run();
-	///     }
+	///        try
+	///        {
+	///           // Put any additional/required initialization here.
+	///           using (var silo = new OutOfProcessSiloServer(arguments))
+	///           {
+	///              // This is the place to register any additional interfaces with this silo
+	///              // silo.CreateServant(id, (IMyCustomInterface)new MyCustomImplementation());
+	///              silo.Run();
+	///           }
+	///        }
+	///        catch(Exception e)
+	///        {
+	///           // This will marshall the exception back to the parent process so you can
+	///           // actually know and programmatically react to the failure.
+	///           OutOfProcessSiloServer.ReportException(e);
+	///        }
 	///     }
 	/// </example>
 	public sealed class OutOfProcessSiloServer
@@ -310,13 +320,10 @@ namespace SharpRemote.Hosting
 		{
 			Console.WriteLine(ProcessWatchdog.Constants.BootingMessage);
 
-			const ulong firstServantId = 0;
-
 			try
 			{
 				using (_endPoint)
 				using (var host = new SubjectHost(_endPoint,
-				                                  firstServantId,
 				                                  _registry,
 				                                  OnSubjectHostDisposed,
 				                                  _customTypeResolver))
@@ -325,6 +332,7 @@ namespace SharpRemote.Hosting
 
 					_endPoint.Bind(address);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);
+					Log.InfoFormat("Port sent to host process");
 					Console.WriteLine(ProcessWatchdog.Constants.ReadyMessage);
 
 					_waitHandle.WaitOne();
@@ -353,7 +361,35 @@ namespace SharpRemote.Hosting
 
 		private void OnSubjectHostDisposed()
 		{
+			Log.Info("Parent process orders shutdown...");
 			_waitHandle.Set();
+		}
+
+		/// <summary>
+		/// Shall be called by user code when an exception occurred during startup of the server
+		/// and shall be reported back to the <see cref="OutOfProcessSilo"/>.
+		/// </summary>
+		/// <param name="exception"></param>
+		public static void ReportException(Exception exception)
+		{
+			var encodedException = EncodeException(exception);
+			Console.WriteLine("{0}{1}",
+			                  ProcessWatchdog.Constants.ExceptionMessage,
+			                  encodedException);
+		}
+
+		internal static string EncodeException(Exception exception)
+		{
+			using (var stream = new MemoryStream())
+			using (var writer = new BinaryWriter(stream))
+			{
+				AbstractEndPoint.WriteException(writer, exception);
+
+				var length = (int)stream.Length;
+				var data = stream.GetBuffer();
+				var encodedException = Convert.ToBase64String(data, 0, length);
+				return encodedException;
+			}
 		}
 	}
 }

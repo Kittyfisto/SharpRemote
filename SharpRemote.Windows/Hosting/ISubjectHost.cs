@@ -11,24 +11,28 @@ namespace SharpRemote.Hosting
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="objectId"></param>
 		/// <param name="type"></param>
 		/// <param name="interfaceType"></param>
 		/// <returns></returns>
-		ulong CreateSubject1(Type type, Type interfaceType);
+		void CreateSubject1(ulong objectId, Type type, Type interfaceType);
 
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="objectId"></param>
 		/// <param name="assemblyQualifiedTypeName"></param>
 		/// <param name="interfaceType"></param>
 		/// <returns></returns>
-		ulong CreateSubject2(string assemblyQualifiedTypeName, Type interfaceType);
+		void CreateSubject2(ulong objectId, string assemblyQualifiedTypeName, Type interfaceType);
 
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="objectId"></param>
+		/// <param name="interfaceType"></param>
 		/// <returns></returns>
-		ulong CreateSubject3(Type interfaceType);
+		void CreateSubject3(ulong objectId, Type interfaceType);
 
 		/// <summary>
 		/// 

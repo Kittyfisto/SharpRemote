@@ -132,6 +132,9 @@ namespace SharpRemote.Hosting
 							_startInfo.FileName,
 							_parentPid);
 
+			_remotePort = null;
+			_waitHandle.Reset();
+
 			StartHostProcess();
 			try
 			{
@@ -186,6 +189,7 @@ namespace SharpRemote.Hosting
 			if (id != null)
 			{
 				_hostedProcessState = HostState.Dead;
+				_remotePort = null;
 				_hasProcessFailed = true;
 				_hasProcessExited = true;
 
@@ -337,6 +341,7 @@ namespace SharpRemote.Hosting
 				_process.TryKill();
 			}
 
+			_remotePort = null;
 			_hasProcessExited = true;
 			_hasProcessFailed = true;
 

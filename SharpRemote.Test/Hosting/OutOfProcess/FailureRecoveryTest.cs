@@ -26,10 +26,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			{
 				return new[]
 					{
-						typeof (OutOfProcessSilo),
-						/*typeof (AbstractSocketRemotingEndPoint),
-					typeof (AbstractIPSocketRemotingEndPoint),
-					typeof (SocketRemotingEndPointClient)*/
+						typeof (OutOfProcessSilo)
 					};
 			}
 		}
@@ -126,7 +123,6 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
-		[Repeat(10)]
 		[Description("Verifies that the host process is restarted when it stops reacting to heartbeats")]
 		public void TestRestart4()
 		{

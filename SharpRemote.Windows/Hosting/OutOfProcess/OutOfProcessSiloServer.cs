@@ -332,6 +332,7 @@ namespace SharpRemote.Hosting
 
 					_endPoint.Bind(address);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);
+					Log.InfoFormat("Port sent to host process");
 					Console.WriteLine(ProcessWatchdog.Constants.ReadyMessage);
 
 					_waitHandle.WaitOne();
@@ -360,6 +361,7 @@ namespace SharpRemote.Hosting
 
 		private void OnSubjectHostDisposed()
 		{
+			Log.Info("Parent process orders shutdown...");
 			_waitHandle.Set();
 		}
 

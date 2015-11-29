@@ -142,11 +142,8 @@ namespace SharpRemote
 				}
 				else
 				{
-					if (Log.IsDebugEnabled)
-					{
-						Log.DebugFormat("Incoming connection from '{0}', starting handshake...",
-										socket.RemoteEndPoint);
-					}
+					// TODO: Set to debug again
+					Log.InfoFormat("Incoming connection from '{0}', starting handshake...", socket.RemoteEndPoint);
 
 					PerformIncomingHandshake(socket);
 

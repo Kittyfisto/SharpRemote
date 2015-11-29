@@ -21,7 +21,7 @@ namespace SharpRemote.Test
 			var hierarchy = (Hierarchy) LogManager.GetRepository();
 			var appender = new ConsoleAppender
 				{
-					Layout = new PatternLayout("%-20message %n"),
+					Layout = new PatternLayout("%date %-20message %n"),
 				};
 			hierarchy.Root.AddAppender(appender);
 			hierarchy.Root.Level = level;

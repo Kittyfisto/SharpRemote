@@ -570,11 +570,16 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					PerformLatencyMeasurements = false
 				};
 
-			using (var client = CreateClient("perf_client", latencySettings: latencySettings, heartbeatSettings: heartbeatSettings))
+
+			for (int i = 0; i < 100; ++i)
 			{
-				for (int i = 0; i < 100; ++i)
+				using (
+					SocketRemotingEndPointClient client = CreateClient("perf_client", latencySettings: latencySettings,
+					                                                   heartbeatSettings: heartbeatSettings))
 				{
-					using (var server = CreateServer("perf_server", latencySettings: latencySettings, heartbeatSettings: heartbeatSettings))
+					using (
+						SocketRemotingEndPointServer server = CreateServer("perf_server", latencySettings: latencySettings,
+						                                                   heartbeatSettings: heartbeatSettings))
 					{
 						server.Bind(IPAddress.Loopback);
 						client.Connect(server.LocalEndPoint);

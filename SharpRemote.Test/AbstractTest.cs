@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Threading;
 using NUnit.Framework;
+using SharpRemote.Hosting;
 using SharpRemote.ServiceDiscovery;
 using log4net.Core;
 
@@ -13,11 +14,20 @@ namespace SharpRemote.Test
 		public virtual void TestFixtureSetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
-			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
-			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
-			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
-			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);
+			var loggers = Loggers;
+			if (loggers != null)
+			{
+				foreach (var logger in loggers)
+				{
+					TestLogger.SetLevel(logger, Level.Info);
+				}
+			}
 		}
+
+		/// <summary>
+		/// The loggers that shall be enabled for this test and write to the console.
+		/// </summary>
+		public virtual Type[] Loggers { get { return null; } }
 
 		[SetUp]
 		public void SetUp()

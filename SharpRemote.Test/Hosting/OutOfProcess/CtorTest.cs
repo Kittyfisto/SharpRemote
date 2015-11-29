@@ -93,19 +93,19 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			new Action(
 				() => new OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.FromSeconds(-1) }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
-				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.EndPointConnectTimeout");
+				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
 				() => new OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.Zero }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
-				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.EndPointConnectTimeout");
+				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
 				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.FromSeconds(-1) }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
-				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.ProcessReadyTimeout");
+				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
 				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.Zero }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
-				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureSettings.ProcessReadyTimeout");
+				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
 		}
 
 	}

@@ -16,7 +16,7 @@ using SharpRemote.Test.Types.Interfaces;
 namespace SharpRemote.Test.Hosting.OutOfProcess
 {
 	[TestFixture]
-	public sealed class FaultDetectionTest
+	public sealed class FailureDetectionTest
 		: AbstractTest
 	{
 		[Test]

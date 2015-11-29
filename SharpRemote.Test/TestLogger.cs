@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿using System;
+using log4net;
 using log4net.Appender;
 using log4net.Core;
 using log4net.Layout;
@@ -33,11 +34,16 @@ namespace SharpRemote.Test
 			hierarchy.Clear();
 		}
 
+		public static void SetLevel(Type type, Level level)
+		{
+			var hierarchy = (Hierarchy)LogManager.GetRepository();
+			var logger = (Logger)hierarchy.GetLogger(type.FullName);
+			logger.Level = level;
+		}
+
 		public static void SetLevel<T>(Level level)
 		{
-			var hierarchy = (Hierarchy) LogManager.GetRepository();
-			var logger = (Logger) hierarchy.GetLogger(typeof (T).FullName);
-			logger.Level = level;
+			SetLevel(typeof(T), level);
 		}
 
 		#endregion

@@ -64,9 +64,9 @@
     <Compile Include="HeartbeatSettingsTest.cs" />
     <Compile Include="Hosting\LatencyMonitorTest.cs" />
     <Compile Include="Hosting\OutOfProcess\CtorTest.cs" />
-    <Compile Include="Hosting\OutOfProcess\FaultDetectionTest.cs" />
+    <Compile Include="Hosting\OutOfProcess\FailureDetectionTest.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSiloServerTest.cs" />
-    <Compile Include="Hosting\OutOfProcess\RecoveryTest.cs" />
+    <Compile Include="Hosting\OutOfProcess\FailureRecoveryTest.cs" />
     <Compile Include="Hosting\OutOfProcess\StartTest.cs" />
     <Compile Include="Hosting\ProcessWatchdogTest.cs" />
     <Compile Include="Key.cs" />

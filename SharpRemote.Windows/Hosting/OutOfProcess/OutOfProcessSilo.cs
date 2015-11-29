@@ -19,7 +19,7 @@ namespace SharpRemote.Hosting
 	/// </summary>
 	/// <remarks>
 	/// Can be used to host objects either in the SharpRemote.Host.exe or in a custom application
-	/// of your choice by creating a <see cref="OutOfProcessSiloServer"/> and calling <see cref="OutOfProcessSiloServer.Run"/>.
+	/// of your choice by creating a <see cref="OutOfProcessSiloServer"/> and calling <see cref="OutOfProcessSiloServer.Run()"/>.
 	/// </remarks>
 	/// <example>
 	/// using (var silo = new OutOfProcessSilo())
@@ -49,6 +49,12 @@ namespace SharpRemote.Hosting
 		/// This event is invoked whenever the host has written a complete line to its console.
 		/// </summary>
 		public event Action<string> OnHostOutputWritten;
+
+		/// <summary>
+		/// This event is invoked whenever the host process was successfully started, and a connection
+		/// to it was established.
+		/// </summary>
+		public event Action OnHostStarted;
 
 		/// <summary>
 		/// Whether or not the process has failed.
@@ -131,10 +137,10 @@ namespace SharpRemote.Hosting
 			if (failureSettings != null)
 			{
 				if (failureSettings.ProcessReadyTimeout <= TimeSpan.Zero)
-					throw new ArgumentOutOfRangeException("failureSettings.ProcessReadyTimeout");
+					throw new ArgumentOutOfRangeException("failureSettings", "ProcessReadyTimeout should be greater than zero");
 
 				if (failureSettings.EndPointConnectTimeout <= TimeSpan.Zero)
-					throw new ArgumentOutOfRangeException("failureSettings.EndPointConnectTimeout");
+					throw new ArgumentOutOfRangeException("failureSettings", "EndPointConnectTimeout should be greater than zero");
 			}
 
 			_failureSettings = failureSettings ?? new FailureSettings();
@@ -162,7 +168,7 @@ namespace SharpRemote.Hosting
 		}
 
 		/// <summary>
-		/// Starts this silo 
+		/// Starts this silo.
 		/// </summary>
 		/// <exception cref="FileNotFoundException">When the specified executable could not be found</exception>
 		/// <exception cref="Win32Exception">When the </exception>
@@ -191,7 +197,26 @@ namespace SharpRemote.Hosting
 				throw;
 			}
 
-			Log.InfoFormat("Connection to {0} established", _endPoint.RemoteEndPoint);
+			//
+			// POINT OF NO FAILURE BELOW
+			//
+
+			Log.InfoFormat(
+				"Host process '{0}' (PID: {1}) successfully started and connection to its endpoint at {2} established",
+				_process.HostExecutableName,
+				_process.HostedProcessId,
+				_endPoint.RemoteEndPoint);
+
+			try
+			{
+				var fn = OnHostStarted;
+				if (fn != null)
+					fn();
+			}
+			catch (Exception e)
+			{
+				Log.WarnFormat("The OnHostStarted event threw an exception, please don't do that: {0}", e);
+			}
 		}
 
 		/// <summary>

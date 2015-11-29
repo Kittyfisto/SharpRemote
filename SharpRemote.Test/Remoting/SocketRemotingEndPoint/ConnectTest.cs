@@ -558,6 +558,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[LocalTest("Doesn't work on AppVeyor for some reason")]
 		[Description("Verifies that connections can be created and closed as fast as possible")]
 		public void TestConnect27()
 		{
@@ -585,6 +586,36 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 						client.Connect(server.LocalEndPoint);
 						client.Disconnect();
 					}
+				}
+			}
+		}
+
+		[Test]
+		public void TestConnect28()
+		{
+			for (int i = 0; i < 1000; ++i)
+			{
+				const AddressFamily family = AddressFamily.InterNetwork;
+				const SocketType socket = SocketType.Stream;
+				const ProtocolType protocol = ProtocolType.Tcp;
+				using (var client = new Socket(family, socket, protocol))
+				using (var server = new Socket(family, socket, protocol))
+				{
+					client.ExclusiveAddressUse = true;
+					client.ReceiveTimeout = 100;
+
+					server.ExclusiveAddressUse = true;
+					server.Bind(new IPEndPoint(IPAddress.Loopback, 49152));
+
+					server.Listen(5);
+					server.BeginAccept(ar =>
+						{
+							var serverCon = server.EndAccept(ar);
+							serverCon.Send(new byte[256]);
+						}, null);
+
+					client.Connect(server.LocalEndPoint);
+					client.Receive(new byte[256]);
 				}
 			}
 		}

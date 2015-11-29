@@ -134,15 +134,6 @@ namespace SharpRemote.Hosting
 		{
 			lock (_syncRoot)
 			{
-				// Make sure to remove everything from the old process
-				// and especially make sure that we don't receive events from
-				// it!
-				if (_process != null)
-				{
-					_process.Exited -= ProcessOnExited;
-					_process.OutputDataReceived -= ProcessOnOutputDataReceived;
-				}
-
 				// Prepare the new process
 				_process = new Process
 				{

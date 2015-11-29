@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
@@ -8,6 +9,26 @@ namespace SharpRemote.Test.Hosting
 	[TestFixture]
 	public sealed class ProcessWatchdogTest
 	{
+		[Test]
+		[Description("Verifies that starting a process again immediately after having been killed works")]
+		public void TestStartKillStart()
+		{
+			using (var watchdog = new ProcessWatchdog())
+			{
+				watchdog.Start();
+				watchdog.IsProcessRunning.Should().BeTrue();
+				watchdog.HasProcessFailed.Should().BeFalse();
+
+				var pid = watchdog.HostedProcessId.Value;
+				var proc = Process.GetProcessById(pid);
+				proc.Kill();
+
+				watchdog.Start();
+				watchdog.IsProcessRunning.Should().BeTrue("Because we've just started that process again");
+				watchdog.HasProcessFailed.Should().BeFalse("Because we've just started that process again");
+			}
+		}
+
 		[Test]
 		[Description("Verifies that after the process has been killed, the watchdog no longer reports the host process as alive - nor its current port")]
 		public void TestTryKill()

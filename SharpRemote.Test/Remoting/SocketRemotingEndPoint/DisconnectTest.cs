@@ -118,8 +118,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				client.Disconnect();
 
-				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(2))
-					.Should().BeTrue();
+				WaitFor(() => clients.Count > 0, TimeSpan.FromSeconds(2)).Should().BeTrue();
+				WaitFor(() => servers.Count > 0, TimeSpan.FromSeconds(2)).Should().BeTrue();
 
 				clients.Should().Equal(serverEp);
 				servers.Should().Equal(clientEp);

@@ -181,7 +181,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					.Should().BeTrue("Because an unexpected exit of the host process counts as a failure");
 				silo.IsProcessRunning.Should().BeFalse();
 
-				WaitFor(() => failure != null, TimeSpan.FromSeconds(1)).Should().BeTrue();
+				WaitFor(() => resolution != null, TimeSpan.FromSeconds(1)).Should().BeTrue();
 				(failure == Failure.ConnectionFailure ||
 				 failure == Failure.HostProcessExited).Should().BeTrue();
 				resolution.Should().Be(Resolution.Stopped);

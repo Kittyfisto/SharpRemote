@@ -609,7 +609,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					server.Bind(new IPEndPoint(IPAddress.Loopback, 49152));
 
 					bool isConnected = false;
-					server.Listen(5);
+					server.Listen(1);
 					server.BeginAccept(ar =>
 						{
 							Console.WriteLine("BeginAccept handler");

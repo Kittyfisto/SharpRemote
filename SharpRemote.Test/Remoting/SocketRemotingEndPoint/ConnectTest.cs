@@ -612,7 +612,10 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					server.Listen(5);
 					server.BeginAccept(ar =>
 						{
+							Console.WriteLine("BeginAccept handler");
 							var serverCon = server.EndAccept(ar);
+							Console.WriteLine("EndAccept called");
+
 							isConnected = true;
 							serverCon.Send(new byte[256]);
 						}, null);

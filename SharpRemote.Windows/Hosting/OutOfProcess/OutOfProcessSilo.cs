@@ -188,11 +188,21 @@ namespace SharpRemote.Hosting
 				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value),
 				                  _failureSettings.EndPointConnectTimeout);
 			}
+			catch (HandshakeException e)
+			{
+				Log.WarnFormat("Unable to establish a connection with the host process (PID: {1}): {0}",
+				               e,
+				               _process.HostedProcessId);
+
+				_process.TryKill();
+
+				throw;
+			}
 			catch (Exception e)
 			{
 				Log.WarnFormat("Caught unexpected exception after having started the host process (PID: {1}): {0}",
-					e,
-					_process.HostedProcessId);
+				               e,
+				               _process.HostedProcessId);
 
 				_process.TryKill();
 
@@ -244,7 +254,9 @@ namespace SharpRemote.Hosting
 					return;
 			}
 
-			Log.ErrorFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
+			// The socket will have logged all this information already thus we can skip it here
+			Log.DebugFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
+
 			HandleFailure(reason);
 		}
 

@@ -68,7 +68,10 @@ namespace SharpRemote
 		{
 			if (ep == null) throw new ArgumentNullException("ep");
 
-			var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+			var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+				{
+					ExclusiveAddressUse = true
+				};
 			socket.Bind(ep);
 			_serverSocket = socket;
 			LocalEndPoint = ep;

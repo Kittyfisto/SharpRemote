@@ -606,7 +606,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					client.Blocking = true;
 
 					server.ExclusiveAddressUse = true;
-					server.Bind(new IPEndPoint(IPAddress.Loopback, 49152));
+					server.Bind(new IPEndPoint(IPAddress.Loopback, 60310));
 
 					bool isConnected = false;
 					server.Listen(1);

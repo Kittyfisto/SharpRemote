@@ -620,6 +620,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					try
 					{
 						client.Connect(server.LocalEndPoint);
+						Console.WriteLine("socket.Connected: {0}", client.Connected);
 					}
 					catch (Exception e)
 					{

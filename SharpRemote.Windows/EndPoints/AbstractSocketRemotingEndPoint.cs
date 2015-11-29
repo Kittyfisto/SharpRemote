@@ -1438,8 +1438,12 @@ namespace SharpRemote
 			{
 				messageType = null;
 				message = null;
-				error = string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
-				                      timeout.TotalSeconds, err);
+				error =
+					string.Format("EndPoint '{0}' failed to receive message from remote endpoint '{1}' in time: {2}s (error: {3})",
+					              Name,
+					              remoteEndPoint,
+					              timeout.TotalSeconds,
+					              err);
 				return false;
 			}
 
@@ -1448,7 +1452,7 @@ namespace SharpRemote
 			{
 				messageType = null;
 				message = null;
-				error = string.Format("The message received from endpoint '{0}' is malformatted",
+				error = string.Format("The message received from remote endpoint '{0}' is malformatted",
 				                      remoteEndPoint);
 				return false;
 			}
@@ -1458,8 +1462,12 @@ namespace SharpRemote
 			{
 				messageType = null;
 				message = null;
-				error = string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
-				                      timeout.TotalSeconds, err);
+				error =
+					string.Format("EndPoint '{0}' failed to receive message from remote endpoint '{1}' in time: {2}s (error: {3})",
+					              Name,
+					              remoteEndPoint,
+					              timeout.TotalSeconds,
+					              err);
 				return false;
 			}
 
@@ -1512,7 +1520,8 @@ namespace SharpRemote
 				SocketError err;
 				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
 				{
-					error = string.Format("Failed to send {0} to endpoint '{1}': {2}",
+					error = string.Format("EndPoint '{0}' failed to send {1} to remote endpoint '{2}': {3}",
+					                      Name,
 					                      messageType,
 					                      remoteEndPoint,
 					                      err);

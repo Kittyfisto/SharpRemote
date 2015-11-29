@@ -572,7 +572,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 			using (var client = CreateClient("perf_client", latencySettings: latencySettings, heartbeatSettings: heartbeatSettings))
 			{
-				for (int i = 0; i < 1000; ++i)
+				for (int i = 0; i < 100; ++i)
 				{
 					using (var server = CreateServer("perf_server", latencySettings: latencySettings, heartbeatSettings: heartbeatSettings))
 					{

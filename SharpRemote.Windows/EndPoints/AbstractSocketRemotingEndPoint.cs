@@ -987,6 +987,7 @@ namespace SharpRemote
 			EndPoint remoteEndPoint;
 			Socket socket;
 			bool hasDisconnected = false;
+			bool emitOnFailure = false;
 
 			lock (_syncRoot)
 			{
@@ -1035,7 +1036,7 @@ namespace SharpRemote
 					}
 					else
 					{
-						EmitOnFailure(reason);
+						emitOnFailure = true;
 					}
 
 					try
@@ -1052,6 +1053,11 @@ namespace SharpRemote
 						// throw a NullReferenceException from inside Disconnect.
 					}
 				}
+			}
+
+			if (emitOnFailure)
+			{
+				EmitOnFailure(reason);
 			}
 
 			EmitOnDisconnected(hasDisconnected, remoteEndPoint);

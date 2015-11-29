@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Hosting.OutOfProcess;
@@ -41,6 +42,7 @@ namespace SharpRemote.Hosting
 
 		private readonly IFailureHandler _failureHandler;
 
+		private ulong _nextObjectId;
 		private bool _isDisposed;
 		private bool _isDisposing;
 		private Failure? _reason;
@@ -115,7 +117,7 @@ namespace SharpRemote.Hosting
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		/// <param name="failureSettings">The settings specifying when a failure is assumed to have occured in the host process - if none are specified, then defaults are used</param>
-		/// <param name="failureHandler">The object responsible for deciding how failures are dealt with - if none is specified then a new <see cref="DefaultFailureHandler"/> is used</param>
+		/// <param name="failureHandler">The object responsible for deciding how failures are dealt with - if none is specified then a new <see cref="ZeroFailureToleranceStrategy"/> is used</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -144,7 +146,7 @@ namespace SharpRemote.Hosting
 			}
 
 			_failureSettings = failureSettings ?? new FailureSettings();
-			_failureHandler = failureHandler ?? new DefaultFailureHandler();
+			_failureHandler = failureHandler ?? new ZeroFailureToleranceStrategy();
 
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
@@ -357,6 +359,8 @@ namespace SharpRemote.Hosting
 				case Decision.RestartHost:
 					try
 					{
+						// This is a really bad hack but because we don't use GUIDs (yet) to identify
+						// objects, 
 						Start();
 						return Resolution.Restarted;
 					}
@@ -448,9 +452,15 @@ namespace SharpRemote.Hosting
 				Log.DebugFormat("Creating grain using the registered default implementation for interface '{0}'", typeof(TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof(TInterface);
-			ulong id = _subjectHost.CreateSubject3(interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject3(objectId, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 
@@ -464,9 +474,15 @@ namespace SharpRemote.Hosting
 				                typeof (TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof (TInterface);
-			ulong id = _subjectHost.CreateSubject2(assemblyQualifiedTypeName, interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject2(objectId, assemblyQualifiedTypeName, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 
@@ -480,9 +496,15 @@ namespace SharpRemote.Hosting
 				                typeof (TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof (TInterface);
-			ulong id = _subjectHost.CreateSubject1(implementation, interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject1(objectId, implementation, interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 
@@ -495,9 +517,15 @@ namespace SharpRemote.Hosting
 								typeof(TInterface).FullName);
 			}
 
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
 			Type interfaceType = typeof(TInterface);
-			ulong id = _subjectHost.CreateSubject1(typeof(TImplementation), interfaceType);
-			var proxy = _endPoint.CreateProxy<TInterface>(id);
+			_subjectHost.CreateSubject1(objectId, typeof(TImplementation), interfaceType);
+			var proxy = _endPoint.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 

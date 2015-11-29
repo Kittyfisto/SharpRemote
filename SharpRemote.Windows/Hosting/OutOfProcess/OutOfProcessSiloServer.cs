@@ -320,13 +320,10 @@ namespace SharpRemote.Hosting
 		{
 			Console.WriteLine(ProcessWatchdog.Constants.BootingMessage);
 
-			const ulong firstServantId = 0;
-
 			try
 			{
 				using (_endPoint)
 				using (var host = new SubjectHost(_endPoint,
-				                                  firstServantId,
 				                                  _registry,
 				                                  OnSubjectHostDisposed,
 				                                  _customTypeResolver))

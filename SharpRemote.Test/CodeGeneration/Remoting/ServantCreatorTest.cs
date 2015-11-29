@@ -249,20 +249,22 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			subject.Setup(x => x.Dispose())
 			       .Callback(() => disposed = true);
 
+			ulong? actualId = null;
 			Type @interface = null;
 			Type @impl = null;
-			subject.Setup(x => x.CreateSubject1(It.IsAny<Type>(), It.IsAny<Type>()))
-			       .Returns((Type a, Type b) =>
+			subject.Setup(x => x.CreateSubject1(It.IsAny<ulong>(), It.IsAny<Type>(), It.IsAny<Type>()))
+			       .Callback((ulong id, Type a, Type b) =>
 				       {
+					       actualId = id;
 					       @interface = a;
 					       @impl = b;
-					       return 42;
 				       });
 
 			IServant servant = TestGenerate(subject.Object);
 
 			var arguments = new MemoryStream();
 			var writer = new BinaryWriter(arguments);
+			writer.Write((ulong)42);
 			writer.Write(true);
 			writer.Write(typeof (IGetStringProperty).AssemblyQualifiedName);
 			writer.Write(true);
@@ -271,6 +273,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			var output = new MemoryStream();
 			servant.Invoke("CreateSubject1", new BinaryReader(arguments), new BinaryWriter(output));
+			actualId.Should().Be(42ul);
 			@interface.Should().Be<IGetStringProperty>();
 			@impl.Should().Be<GetStringPropertyImplementation>();
 

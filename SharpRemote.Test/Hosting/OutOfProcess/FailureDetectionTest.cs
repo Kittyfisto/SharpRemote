@@ -350,7 +350,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAssert>();
 
 					Task task = Task.Factory.StartNew(() => { new Action(proxy.Do).ShouldThrow<ConnectionLostException>(); });
-					task.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+					task.Wait(TimeSpan.FromSeconds(20)).Should().BeTrue();
 
 					handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
 					resolution.Should().Be(Resolution.Stopped);

@@ -6,16 +6,18 @@ using log4net;
 namespace SharpRemote.Hosting.OutOfProcess
 {
 	/// <summary>
-	/// The default <see cref="IFailureHandler"/> implementation that controls how host-process failures are handled.
+	/// A <see cref="IFailureHandler"/> implementation that simply restarts the host process when failures occur.
+	/// Both failures during start as well as failures during normal operation are expected, and if they happen, they
+	/// are resolved by restarting the host process.
 	/// </summary>
 	/// <remarks>
-	/// Tollerates a maximum of 10 successive Start() failures before giving up, unless the host process reported
+	/// Tolerates a maximum of 10 successive Start() failures before giving up, unless the host process reported
 	/// a <see cref="FileNotFoundException"/> in which case it gives up immediately.
 	/// </remarks>
 	/// <remarks>
-	/// Every failure after a successful start results in the host process being restarted.
+	/// Tolerates an unlimited amount of failures during normal operations and simply restarts the host process if one occurs.
 	/// </remarks>
-	public sealed class DefaultFailureHandler
+	public sealed class RestartOnFailureStrategy
 		: IFailureHandler
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -27,7 +29,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		/// 
 		/// </summary>
 		/// <param name="startFailureThreshold">The maximum amount of times the host process may fail starting until it is assumed to be broken and no more restart is tried</param>
-		public DefaultFailureHandler(int startFailureThreshold = 10)
+		public RestartOnFailureStrategy(int startFailureThreshold = 10)
 		{
 			if (startFailureThreshold < 0)
 				throw new ArgumentOutOfRangeException("startFailureThreshold");

@@ -18,8 +18,10 @@ namespace SharpRemote.Hosting
 		private readonly SocketRemotingEndPointServer _server;
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
-		private bool _isDisposed;
 		private readonly DefaultImplementationRegistry _registry;
+		private readonly object _syncRoot;
+		private bool _isDisposed;
+		private ulong _nextObjectId;
 
 		private Type GetType(string assemblyQualifiedName)
 		{
@@ -39,14 +41,16 @@ namespace SharpRemote.Hosting
 		{
 			_customTypeResolver = customTypeResolver;
 			const int subjectHostId = 0;
-
+			_nextObjectId = subjectHostId + 1;
 
 			_client = new SocketRemotingEndPointClient();
 			_subjectHostProxy = _client.CreateProxy<ISubjectHost>(subjectHostId);
 
+			_syncRoot = new object();
+
 			_server = new SocketRemotingEndPointServer();
 			_registry = new DefaultImplementationRegistry();
-			_subjectHost = new SubjectHost(_server, subjectHostId + 1, _registry);
+			_subjectHost = new SubjectHost(_server, _registry);
 			_server.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);
 			_server.Bind(IPAddress.Loopback);
 
@@ -77,15 +81,27 @@ namespace SharpRemote.Hosting
 
 		public TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters) where TInterface : class
 		{
-			var id = _subjectHostProxy.CreateSubject1(implementation, typeof (TInterface));
-			var proxy = _client.CreateProxy<TInterface>(id);
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
+			_subjectHostProxy.CreateSubject1(objectId, implementation, typeof (TInterface));
+			var proxy = _client.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 
 		public TInterface CreateGrain<TInterface, TImplementation>(params object[] parameters) where TInterface : class where TImplementation : TInterface
 		{
-			var id = _subjectHostProxy.CreateSubject1(typeof(TImplementation), typeof(TInterface));
-			var proxy = _client.CreateProxy<TInterface>(id);
+			ulong objectId;
+			lock (_syncRoot)
+			{
+				objectId = _nextObjectId++;
+			}
+
+			_subjectHostProxy.CreateSubject1(objectId, typeof(TImplementation), typeof(TInterface));
+			var proxy = _client.CreateProxy<TInterface>(objectId);
 			return proxy;
 		}
 

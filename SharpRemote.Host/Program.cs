@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using SharpRemote.Hosting;
 using log4net;
@@ -23,7 +24,7 @@ namespace SharpRemote.Host
 
 				using (var silo = new OutOfProcessSiloServer(args))
 				{
-					silo.Run();
+					silo.Run(IPAddress.Loopback);
 				}
 			}
 			catch (Exception e)

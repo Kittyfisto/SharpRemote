@@ -229,7 +229,7 @@ namespace SharpRemote
 				RemoteEndPoint = endPoint;
 				LocalEndPoint = (IPEndPoint)socket.LocalEndPoint;
 
-				Log.InfoFormat("Successfully connected to '{0}'", endPoint);
+				Log.InfoFormat("EndPoint '{0}' successfully connected to '{1}'", Name, endPoint);
 
 				FireOnConnected(endPoint);
 

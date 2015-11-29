@@ -613,8 +613,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					server.BeginAccept(ar =>
 						{
 							var serverCon = server.EndAccept(ar);
-							serverCon.Send(new byte[256]);
 							isConnected = true;
+							serverCon.Send(new byte[256]);
 						}, null);
 
 					try

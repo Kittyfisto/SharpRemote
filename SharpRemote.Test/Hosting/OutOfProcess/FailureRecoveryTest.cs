@@ -22,7 +22,16 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 
 		public override Type[] Loggers
 		{
-			get { return new[] {typeof (OutOfProcessSilo)}; }
+			get
+			{
+				return new[]
+					{
+						typeof (OutOfProcessSilo),
+						/*typeof (AbstractSocketRemotingEndPoint),
+					typeof (AbstractIPSocketRemotingEndPoint),
+					typeof (SocketRemotingEndPointClient)*/
+					};
+			}
 		}
 
 		[SetUp]
@@ -33,6 +42,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 				{
 					HeartbeatSettings =
 						{
+							ReportSkippedHeartbeatsAsFailureWithDebuggerAttached = true,
 							Interval = TimeSpan.FromMilliseconds(100)
 						}
 				};
@@ -66,8 +76,34 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
-		[Description("Verifies that after the host process is restarted, it can be used again")]
+		[Description("Verifies that the silo is capable of recovering from 2 successive failures in a short time")]
 		public void TestRestart2()
+		{
+			_silo.Start();
+
+			_silo.OnHostStarted += () => _startHandle.Set();
+			var oldPid = _silo.HostProcessId.Value;
+			var proc = Process.GetProcessById(oldPid);
+			proc.Kill();
+
+			_startHandle.WaitOne(TimeSpan.FromSeconds(1)).Should().BeTrue("because the silo should've restarted the host process automatically");
+			var newPid = _silo.HostProcessId;
+			newPid.Should().HaveValue();
+			newPid.Should().NotBe(oldPid);
+
+			_startHandle.Reset();
+			proc = Process.GetProcessById(newPid.Value);
+			proc.Kill();
+
+			_startHandle.WaitOne(TimeSpan.FromSeconds(1)).Should().BeTrue("because the silo should've restarted the host process automatically");
+			var thirdPid = _silo.HostProcessId;
+			thirdPid.Should().HaveValue();
+			thirdPid.Should().NotBe(oldPid);
+		}
+
+		[Test]
+		[Description("Verifies that after the host process is restarted, it can be used again")]
+		public void TestRestart3()
 		{
 			IGetInt32Property someGrain = null;
 			_silo.OnHostStarted += () =>
@@ -90,9 +126,9 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
-		//[Repeat(10)]
+		[Repeat(10)]
 		[Description("Verifies that the host process is restarted when it stops reacting to heartbeats")]
-		public void TestRestart3()
+		public void TestRestart4()
 		{
 			IGetInt32Property someGrain = null;
 			IVoidMethodNoParameters killer = null;

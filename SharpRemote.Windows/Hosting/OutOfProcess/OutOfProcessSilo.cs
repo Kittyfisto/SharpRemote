@@ -4,7 +4,6 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Net;
 using System.Reflection;
-using System.Threading;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Hosting.OutOfProcess;
@@ -45,7 +44,7 @@ namespace SharpRemote.Hosting
 		private ulong _nextObjectId;
 		private bool _isDisposed;
 		private bool _isDisposing;
-		private Failure? _reason;
+		private Failure? _currentFailure;
 
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
@@ -213,6 +212,11 @@ namespace SharpRemote.Hosting
 			// POINT OF NO FAILURE BELOW
 			//
 
+			lock (_syncRoot)
+			{
+				_currentFailure = null;
+			}
+
 			Log.InfoFormat(
 				"Host process '{0}' (PID: {1}) successfully started",
 				_process.HostExecutableName,
@@ -311,10 +315,10 @@ namespace SharpRemote.Hosting
 				if (_isDisposed || _isDisposing)
 					return;
 
-				if (_reason != null)
+				if (_currentFailure != null)
 					return;
 
-				_reason = failure;
+				_currentFailure = failure;
 			}
 
 			var decision = Decision.Stop;

@@ -30,6 +30,7 @@ namespace SharpRemote.Hosting
 		private readonly ProcessStartInfo _startInfo;
 		private readonly object _syncRoot;
 		private readonly ManualResetEvent _waitHandle;
+		private readonly TimeSpan _processReadyTimeout;
 
 		private bool _hasProcessExited;
 
@@ -41,7 +42,6 @@ namespace SharpRemote.Hosting
 		private Process _process;
 		private ProcessFaultReason? _reason;
 		private int? _remotePort;
-		private readonly FailureSettings _failureSettings;
 		private Exception _startupException;
 
 		/// <summary>
@@ -51,7 +51,7 @@ namespace SharpRemote.Hosting
 		/// <param name="process"></param>
 		/// <param name="options"></param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
-		/// <param name="failureSettings"></param>
+		/// <param name="processReadyTimeout">The amount of time the host process has to report being ready before it is assumed to be dead</param>
 		/// <exception cref="ArgumentNullException">
 		///     When <paramref name="process" /> is null
 		/// </exception>
@@ -62,7 +62,7 @@ namespace SharpRemote.Hosting
 			string process = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
 			PostMortemSettings postMortemSettings = null,
-			FailureSettings failureSettings = null
+			TimeSpan? processReadyTimeout = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -81,7 +81,7 @@ namespace SharpRemote.Hosting
 				}
 			}
 
-			_failureSettings = failureSettings ?? new FailureSettings();
+			_processReadyTimeout = processReadyTimeout ?? new FailureSettings().ProcessReadyTimeout;
 			_waitHandle = new ManualResetEvent(false);
 			_hostedProcessState = HostState.BootPending;
 			_syncRoot = new object();
@@ -138,11 +138,11 @@ namespace SharpRemote.Hosting
 				_hasProcessExited = false;
 				_process.BeginOutputReadLine();
 
-				if (!_waitHandle.WaitOne(_failureSettings.ProcessReadyTimeout))
+				if (!_waitHandle.WaitOne(_processReadyTimeout))
 				{
 					throw new HandshakeException(string.Format("Process {0} failed to communicate used port number in time ({1}s)",
 					                                           _startInfo.FileName,
-					                                           _failureSettings.ProcessReadyTimeout));
+															   _processReadyTimeout));
 				}
 
 				if (_startupException != null)

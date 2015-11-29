@@ -100,7 +100,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 				};
 
 			var handler = new Mock<IFailureHandler>();
-			handler.Setup(x => x.DecideFaultResolution(It.IsAny<Failure>()))
+			handler.Setup(x => x.OnFailure(It.IsAny<Failure>()))
 			       .Callback((Failure unused) => faultDetected = true);
 
 			using (var silo = new OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))

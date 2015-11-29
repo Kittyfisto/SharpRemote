@@ -25,7 +25,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		{
 			Failure? failure = null;
 			var handler = new Mock<IFailureHandler>();
-			handler.Setup(x => x.DecideFaultResolution(It.IsAny<Failure>()))
+			handler.Setup(x => x.OnFailure(It.IsAny<Failure>()))
 			       .Callback((Failure x) => failure = x);
 
 			using (var silo = new OutOfProcessSilo(failureHandler: handler.Object))
@@ -63,7 +63,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 				Resolution? resolution = null;
 
 				var handler = new Mock<IFailureHandler>();
-				handler.Setup(x => x.DecideFaultResolution(It.IsAny<Failure>()))
+				handler.Setup(x => x.OnFailure(It.IsAny<Failure>()))
 				       .Callback((Failure f) =>
 					       {
 						       failure1 = f;
@@ -199,7 +199,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			Resolution? resolution = null;
 
 			var handler = new Mock<IFailureHandler>();
-			handler.Setup(x => x.DecideFaultResolution(It.IsAny<Failure>()))
+			handler.Setup(x => x.OnFailure(It.IsAny<Failure>()))
 			       .Callback((Failure f) => failure1 = f);
 			handler.Setup(x => x.OnResolutionFinished(It.IsAny<Failure>(), It.IsAny<Decision>(), It.IsAny<Resolution>()))
 			       .Callback((Failure f, Decision d, Resolution r) =>

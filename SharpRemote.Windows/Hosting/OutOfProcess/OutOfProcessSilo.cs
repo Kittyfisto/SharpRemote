@@ -109,7 +109,7 @@ namespace SharpRemote.Hosting
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		/// <param name="failureSettings">The settings specifying when a failure is assumed to have occured in the host process - if none are specified, then defaults are used</param>
-		/// <param name="failureHandler"></param>
+		/// <param name="failureHandler">The object responsible for deciding how failures are dealt with - if none is specified then a new <see cref="DefaultFailureHandler"/> is used</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -138,7 +138,7 @@ namespace SharpRemote.Hosting
 			}
 
 			_failureSettings = failureSettings ?? new FailureSettings();
-			_failureHandler = failureHandler;
+			_failureHandler = failureHandler ?? new DefaultFailureHandler();
 
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
@@ -282,12 +282,9 @@ namespace SharpRemote.Hosting
 			var decision = Decision.Stop;
 			try
 			{
-				if (_failureHandler != null)
-				{
-					var handlerResolution = _failureHandler.DecideFaultResolution(failure);
-					if (handlerResolution != null)
-						decision = handlerResolution.Value;
-				}
+				var handlerResolution = _failureHandler.OnFailure(failure);
+				if (handlerResolution != null)
+					decision = handlerResolution.Value;
 			}
 			catch (Exception e)
 			{
@@ -311,8 +308,7 @@ namespace SharpRemote.Hosting
 
 			try
 			{
-				if (_failureHandler != null)
-					_failureHandler.OnResolutionFinished(failure, decision, resolution);
+				_failureHandler.OnResolutionFinished(failure, decision, resolution);
 			}
 			catch (Exception e)
 			{
@@ -347,9 +343,7 @@ namespace SharpRemote.Hosting
 
 						try
 						{
-							var handler = _failureHandler;
-							if (handler != null)
-								handler.OnResolutionFailed(failure, decision, e);
+							_failureHandler.OnResolutionFailed(failure, decision, e);
 						}
 						catch (Exception ex)
 						{

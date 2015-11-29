@@ -9,11 +9,24 @@ namespace SharpRemote.Hosting.OutOfProcess
 	public interface IFailureHandler
 	{
 		/// <summary>
+		/// This method is called when the host process failed to start, did not report to be ready or no connection
+		/// could be established with the host process.
+		/// </summary>
+		/// <param name="numSuccessiveFailures">The amount of previous successive failures to start the host process</param>
+		/// <param name="hostProcessException">The exception caught and reported by the host process during startup - or null if the failure occured due to a timeout / connection problem</param>
+		/// <param name="waitTime">The amount of time the <see cref="OutOfProcessSilo"/> shall wait before attempting to start the host process again</param>
+		/// <returns></returns>
+		Decision? OnStartFailure(
+			int numSuccessiveFailures,
+			Exception hostProcessException,
+			out TimeSpan waitTime);
+
+		/// <summary>
 		/// This method is called when a failure in the host process or between the connection occured.
 		/// </summary>
 		/// <param name="failure">The type of failure that occurred</param>
 		/// <returns>How the failure shall be resolved, or null if the <see cref="OutOfProcessSilo"/> shall decide</returns>
-		Decision? DecideFaultResolution(Failure failure);
+		Decision? OnFailure(Failure failure);
 
 		/// <summary>
 		/// This method is called when resolving the failure by restarting the host didn't work and <see cref="OutOfProcessSilo"/>

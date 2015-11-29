@@ -58,6 +58,7 @@
     <Compile Include="EndPoints\Latency.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />
     <Compile Include="Hosting\OutOfProcess\Decision.cs" />
+    <Compile Include="Hosting\OutOfProcess\DefaultFailureHandler.cs" />
     <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
     <Compile Include="Hosting\OutOfProcess\IFailureHandler.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />

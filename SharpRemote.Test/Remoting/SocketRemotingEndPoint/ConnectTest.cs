@@ -601,9 +601,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				using (var client = new Socket(family, socket, protocol))
 				using (var server = new Socket(family, socket, protocol))
 				{
-					client.ExclusiveAddressUse = true;
 					client.ReceiveTimeout = 10000;
-					client.Blocking = true;
 
 					server.ExclusiveAddressUse = true;
 					server.Bind(new IPEndPoint(IPAddress.Loopback, 60310));

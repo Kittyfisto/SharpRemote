@@ -323,6 +323,9 @@ namespace SharpRemote.Test.Hosting
 					.BeTrue("Because an aborted thread that is currently invoking a remote method call should cause SharpRemote to kill the host process and report failure");
 				silo.IsProcessRunning.Should().BeFalse();
 
+				WaitFor(() => failure != null, TimeSpan.FromSeconds(1))
+					.Should().BeTrue("Because the IFailureHandler should've been notified in time");
+
 				(failure == Failure.ConnectionFailure ||
 				 failure == Failure.HostProcessExited).Should().BeTrue();
 			}

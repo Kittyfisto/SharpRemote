@@ -602,7 +602,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				using (var server = new Socket(family, socket, protocol))
 				{
 					client.ExclusiveAddressUse = true;
-					client.ReceiveTimeout = 100;
+					client.ReceiveTimeout = 1000;
 
 					server.ExclusiveAddressUse = true;
 					server.Bind(new IPEndPoint(IPAddress.Loopback, 49152));
@@ -615,7 +615,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 						}, null);
 
 					client.Connect(server.LocalEndPoint);
-					client.Receive(new byte[256]);
+					int length = client.Receive(new byte[256]);
+					length.Should().Be(256);
 				}
 			}
 		}

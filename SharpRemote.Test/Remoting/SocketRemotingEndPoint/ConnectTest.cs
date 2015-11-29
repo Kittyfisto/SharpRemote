@@ -614,7 +614,15 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 							serverCon.Send(new byte[256]);
 						}, null);
 
-					client.Connect(server.LocalEndPoint);
+					try
+					{
+						client.Connect(server.LocalEndPoint);
+					}
+					catch (Exception e)
+					{
+						throw new Exception(string.Format("Connect failed: {0}", e.Message), e);
+					}
+
 					int length = client.Receive(new byte[256]);
 					length.Should().Be(256);
 				}

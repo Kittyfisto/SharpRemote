@@ -33,7 +33,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		private SocketRemotingEndPointClient _client;
 
 		[TestFixtureSetUp]
-		public void SetUp()
+		public new void SetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
@@ -810,7 +810,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			TaskScheduler.UnobservedTaskException += fn;
 			try
 			{
-				const ulong servantId = 30;
+				const ulong servantId = 33;
 
 				bool called = false;
 				var subject = new Mock<IVoidMethodAsyncAttribute>();

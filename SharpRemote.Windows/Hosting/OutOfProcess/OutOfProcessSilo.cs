@@ -177,10 +177,21 @@ namespace SharpRemote.Hosting
 		/// <exception cref="SharpRemoteException"></exception>
 		public void Start()
 		{
+			int unused;
+			StartInternal(out unused);
+
+			Log.InfoFormat(
+				"Host process '{0}' (PID: {1}) successfully started",
+				_process.HostExecutableName,
+				_process.HostedProcessId);
+		}
+
+		private void StartInternal(out int pid)
+		{
 			if (_process.IsProcessRunning)
 				throw new InvalidOperationException();
 
-			_process.Start();
+			_process.Start(out pid);
 			try
 			{
 				var port = _process.RemotePort;
@@ -216,11 +227,6 @@ namespace SharpRemote.Hosting
 			{
 				_currentFailure = null;
 			}
-
-			Log.InfoFormat(
-				"Host process '{0}' (PID: {1}) successfully started",
-				_process.HostExecutableName,
-				_process.HostedProcessId);
 
 			try
 			{
@@ -374,9 +380,14 @@ namespace SharpRemote.Hosting
 				case Decision.RestartHost:
 					try
 					{
-						// This is a really bad hack but because we don't use GUIDs (yet) to identify
-						// objects, 
-						Start();
+						int pid;
+						StartInternal(out pid);
+
+						Log.InfoFormat("Successfully recovered from failure '{0}' by restarting the host application '{1}' (PID: {2})",
+						               failure,
+						               _process.HostExecutableName,
+						               pid);
+
 						return Resolution.Restarted;
 					}
 					catch (Exception e)

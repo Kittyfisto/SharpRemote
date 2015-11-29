@@ -42,7 +42,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		{
 			if (numSuccessiveFailures > _startFailureThreshold)
 			{
-				Log.ErrorFormat("The host process failed to be started {0} times in a row - giving up", _startFailureThreshold);
+				Log.ErrorFormat("The host application failed to be started {0} times in a row - giving up", _startFailureThreshold);
 				waitTime = TimeSpan.Zero;
 				return Decision.Stop;
 			}
@@ -52,7 +52,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 				var fileNotFound = hostProcessException as FileNotFoundException;
 				if (fileNotFound != null)
 				{
-					Log.ErrorFormat("The host process failed to start because '{0}' was not found - giving up: {1}",
+					Log.ErrorFormat("The host application failed to start because '{0}' was not found - giving up: {1}",
 					                fileNotFound.FileName,
 					                fileNotFound);
 
@@ -62,7 +62,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 
 				waitTime = TimeSpan.FromMilliseconds(numSuccessiveFailures*_baseWaitTime.TotalMilliseconds);
 				Log.WarnFormat(
-					"The host process failed to start because if caught an unexpected exception - trying again in {0} ms: {1}",
+					"The host application failed to start because of an unexpected exception - trying again in {0} ms: {1}",
 					waitTime,
 					hostProcessException);
 				return Decision.RestartHost;

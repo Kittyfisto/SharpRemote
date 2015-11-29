@@ -142,5 +142,32 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var newPid = _silo.HostProcessId;
 			someGrain.Value.Should().Be(newPid);
 		}
+
+		[Test]
+		[Description("Verifies that the host process can be restarted many times")]
+		public void TestRestart5()
+		{
+			_silo.Start();
+			_silo.OnHostStarted += () => _startHandle.Set();
+
+			const int numRestarts = 100;
+			for (int i = 0; i < numRestarts; ++i)
+			{
+				_startHandle.Reset();
+
+				var pid = _silo.HostProcessId.Value;
+				var proc = Process.GetProcessById(pid);
+				proc.Kill();
+
+				_startHandle.WaitOne(TimeSpan.FromSeconds(5))
+							.Should().BeTrue("Because the host process should've been restarted");
+
+				if (!_silo.IsProcessRunning)
+				{
+					Debugger.Launch();
+					_silo.IsProcessRunning.Should().BeTrue();
+				}
+			}
+		}
 	}
 }

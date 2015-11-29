@@ -56,6 +56,7 @@
     <Compile Include="EndPoints\EndPointSettings.cs" />
     <Compile Include="EndPoints\ILatency.cs" />
     <Compile Include="EndPoints\Latency.cs" />
+    <Compile Include="EndPoints\HeartbeatSettings.cs" />
     <Compile Include="Hosting\OutOfProcess\Decision.cs" />
     <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
     <Compile Include="Hosting\OutOfProcess\IFailureHandler.cs" />
@@ -123,7 +124,6 @@
     <Compile Include="Hosting\DefaultImplementationRegistry.cs" />
     <Compile Include="EndPoints\HeartbeatMonitor.cs" />
     <Compile Include="EndPoints\Heartbeat.cs" />
-    <Compile Include="EndPoints\HeartbeatSettings.cs" />
     <Compile Include="EndPoints\LatencyMonitor.cs" />
     <Compile Include="Hosting\OutOfProcess\Failure.cs" />
     <Compile Include="Hosting\OutOfProcess\Resolution.cs" />

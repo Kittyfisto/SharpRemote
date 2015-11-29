@@ -105,11 +105,11 @@ namespace SharpRemote.Hosting
 		/// <param name="options"></param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// <param name="serializer">The serializer used to serialize and deserialize values - if none is specifed then a new one is created</param>
-		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
-		/// <param name="failureSettings"></param>
+		/// <param name="failureSettings">The settings specifying when a failure is assumed to have occured in the host process - if none are specified, then defaults are used</param>
+		/// <param name="failureHandler"></param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -117,7 +117,6 @@ namespace SharpRemote.Hosting
 			ProcessOptions options = ProcessOptions.HideConsole,
 			ITypeResolver customTypeResolver = null,
 			Serializer serializer = null,
-			HeartbeatSettings heartbeatSettings = null,
 			LatencySettings latencySettings = null,
 			PostMortemSettings postMortemSettings = null,
 			EndPointSettings endPointSettings = null,
@@ -143,7 +142,7 @@ namespace SharpRemote.Hosting
 
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
-			                                             heartbeatSettings: heartbeatSettings,
+			                                             heartbeatSettings: _failureSettings.HeartbeatSettings,
 			                                             latencySettings: latencySettings,
 			                                             endPointSettings: endPointSettings);
 			_endPoint.OnFailure += EndPointOnOnFailure;

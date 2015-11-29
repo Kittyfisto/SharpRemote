@@ -11,6 +11,12 @@ namespace SharpRemote
 	public sealed class HeartbeatSettings
 	{
 		/// <summary>
+		/// Whether or not a "heartbeat" is used to regularly check the status of the host process.
+		/// If the host process should fail to check in, then it is assumed to have faulted and is killed.
+		/// </summary>
+		public bool UseHeartbeatFailureDetection;
+
+		/// <summary>
 		/// Whether or not skipped heartbeats are reported as failures when the debugger
 		/// is attached on the monitoring process.
 		/// </summary>
@@ -22,11 +28,6 @@ namespace SharpRemote
 		/// Is set to false by default.
 		/// </remarks>
 		public bool ReportSkippedHeartbeatsAsFailureWithDebuggerAttached;
-
-		/// <summary>
-		/// Whether or not the heartbeat mechanism should be used for fault detection.
-		/// </summary>
-		public bool UseHeartbeatForFaultDetection;
 
 		/// <summary>
 		/// The minimum amount of time that shall pass between heartbeat checks.
@@ -50,7 +51,7 @@ namespace SharpRemote
 		public HeartbeatSettings()
 		{
 			ReportSkippedHeartbeatsAsFailureWithDebuggerAttached = false;
-			UseHeartbeatForFaultDetection = true;
+			UseHeartbeatFailureDetection = true;
 			Interval = TimeSpan.FromSeconds(1);
 			SkippedHeartbeatThreshold = 10;
 		}

@@ -194,6 +194,13 @@ namespace SharpRemote
 		                                        EndPointSettings endPointSettings = null)
 		{
 			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
+			if (heartbeatSettings != null)
+			{
+				if (heartbeatSettings.Interval <= TimeSpan.Zero)
+					throw new ArgumentOutOfRangeException("heartbeatSettings.Interval", "The heartbeat interval must be greater than zero");
+				if (heartbeatSettings.SkippedHeartbeatThreshold <= 0)
+					throw new ArgumentOutOfRangeException("heartbeatSettings.SkippedHeartbeatThreshold", "The skipped heartbeat threshold must be greater than zero");
+			}
 
 			_idGenerator = idGenerator;
 			_name = name ?? "<Unnamed>";
@@ -292,7 +299,7 @@ namespace SharpRemote
 					return;
 			}
 
-			bool disconnecting = _heartbeatSettings.UseHeartbeatForFaultDetection;
+			bool disconnecting = _heartbeatSettings.UseHeartbeatFailureDetection;
 			var now = DateTime.Now;
 			var difference = now - _lastRead;
 			var heartbeatMonitor = _heartbeatMonitor;

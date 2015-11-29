@@ -214,10 +214,9 @@ namespace SharpRemote.Hosting
 			//
 
 			Log.InfoFormat(
-				"Host process '{0}' (PID: {1}) successfully started and connection to its endpoint at {2} established",
+				"Host process '{0}' (PID: {1}) successfully started",
 				_process.HostExecutableName,
-				_process.HostedProcessId,
-				_endPoint.RemoteEndPoint);
+				_process.HostedProcessId);
 
 			try
 			{

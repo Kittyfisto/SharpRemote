@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Threading;
 using NUnit.Framework;
-using SharpRemote.Hosting;
 using SharpRemote.ServiceDiscovery;
 using log4net.Core;
 
@@ -45,11 +44,13 @@ namespace SharpRemote.Test
 		protected SocketRemotingEndPointClient CreateClient(string name = null, IAuthenticator clientAuthenticator = null,
 		                                                    IAuthenticator serverAuthenticator = null,
 		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                                    LatencySettings latencySettings = null)
+		                                                    LatencySettings latencySettings = null,
+		                                                    HeartbeatSettings heartbeatSettings = null)
 		{
 			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
 			                                        networkServiceDiscoverer,
-			                                        latencySettings: latencySettings);
+			                                        latencySettings: latencySettings,
+			                                        heartbeatSettings: heartbeatSettings);
 		}
 
 		protected SocketRemotingEndPointServer CreateServer(string name = null,
@@ -57,14 +58,16 @@ namespace SharpRemote.Test
 		                                                    IAuthenticator serverAuthenticator = null,
 		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
 		                                                    LatencySettings latencySettings = null,
-		                                                    EndPointSettings endPointSettings = null)
+		                                                    EndPointSettings endPointSettings = null,
+		                                                    HeartbeatSettings heartbeatSettings = null)
 		{
 			return new SocketRemotingEndPointServer(name,
 			                                        clientAuthenticator,
 			                                        serverAuthenticator, null,
 			                                        networkServiceDiscoverer,
 			                                        latencySettings: latencySettings,
-			                                        endPointSettings: endPointSettings);
+			                                        endPointSettings: endPointSettings,
+			                                        heartbeatSettings: heartbeatSettings);
 		}
 
 		public static bool WaitFor(Func<bool> fn, TimeSpan timeout)

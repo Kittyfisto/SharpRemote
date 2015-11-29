@@ -15,6 +15,18 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 	public sealed class ConnectTest
 		: AbstractTest
 	{
+		public override Type[] Loggers
+		{
+			get
+			{
+				return new[]
+					{
+						typeof (SocketRemotingEndPointClient),
+						typeof (SocketRemotingEndPointServer)
+					};
+			}
+		}
+
 		[Test]
 		[Description("Verifies that Connect() can establish a connection with an endpoint in the same process")]
 		public void TestConnect1()
@@ -542,6 +554,33 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				clientRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);
 				serverRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that connections can be created and closed as fast as possible")]
+		public void TestConnect27()
+		{
+			var heartbeatSettings = new HeartbeatSettings
+				{
+					UseHeartbeatFailureDetection = false
+				};
+			var latencySettings = new LatencySettings
+				{
+					PerformLatencyMeasurements = false
+				};
+
+			using (var client = CreateClient(latencySettings: latencySettings, heartbeatSettings: heartbeatSettings))
+			{
+				for (int i = 0; i < 100; ++i)
+				{
+					using (var server = CreateServer(latencySettings: latencySettings, heartbeatSettings: heartbeatSettings))
+					{
+						server.Bind(IPAddress.Loopback);
+						client.Connect(server.LocalEndPoint);
+						client.Disconnect();
+					}
+				}
 			}
 		}
 	}

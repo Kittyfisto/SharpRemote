@@ -21,6 +21,7 @@ namespace SharpRemote
 
 		private readonly IDebugger _debugger;
 		private readonly bool _enabledWithAttachedDebugger;
+		private readonly bool _useHeartbeatFailureDetection;
 		private readonly TimeSpan _failureInterval;
 		private readonly IHeartbeat _heartbeat;
 		private readonly TimeSpan _interval;
@@ -47,7 +48,8 @@ namespace SharpRemote
 				debugger,
 				settings.Interval,
 				settings.SkippedHeartbeatThreshold,
-				settings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached)
+				settings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached,
+				settings.UseHeartbeatFailureDetection)
 		{
 		}
 
@@ -60,11 +62,13 @@ namespace SharpRemote
 		/// <param name="heartBeatInterval"></param>
 		/// <param name="failureThreshold"></param>
 		/// <param name="enabledWithAttachedDebugger"></param>
+		/// <param name="useHeartbeatFailureDetection"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        IDebugger debugger,
 		                        TimeSpan heartBeatInterval,
 		                        int failureThreshold,
-		                        bool enabledWithAttachedDebugger)
+		                        bool enabledWithAttachedDebugger,
+		                        bool useHeartbeatFailureDetection)
 		{
 			if (heartbeat == null) throw new ArgumentNullException("heartbeat");
 			if (debugger == null) throw new ArgumentNullException("debugger");
@@ -76,6 +80,7 @@ namespace SharpRemote
 			_debugger = debugger;
 			_interval = heartBeatInterval;
 			_enabledWithAttachedDebugger = enabledWithAttachedDebugger;
+			_useHeartbeatFailureDetection = useHeartbeatFailureDetection;
 			_failureInterval = heartBeatInterval +
 			                   TimeSpan.FromMilliseconds(failureThreshold*heartBeatInterval.TotalMilliseconds);
 			_task = new Task(MeasureHeartbeats, TaskCreationOptions.LongRunning);
@@ -167,7 +172,11 @@ namespace SharpRemote
 				_failureDetected = false;
 				_isStarted = true;
 			}
-			_task.Start();
+
+			if (_useHeartbeatFailureDetection)
+			{
+				_task.Start();
+			}
 		}
 
 		/// <summary>

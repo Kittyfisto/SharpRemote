@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Moq;
 using NUnit.Framework;
 using SharpRemote.Exceptions;
 using SharpRemote.Hosting;

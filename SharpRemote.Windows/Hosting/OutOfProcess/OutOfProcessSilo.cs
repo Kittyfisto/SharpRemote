@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
@@ -33,18 +32,15 @@ namespace SharpRemote.Hosting
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly FailureSettings _failureSettings;
 		private readonly ProcessWatchdog _process;
 		private readonly SocketRemotingEndPointClient _endPoint;
 		private readonly ISubjectHost _subjectHost;
 		private readonly object _syncRoot;
-
-		private readonly IFailureHandler _failureHandler;
+		private readonly OutOfProcessQueue _queue;
 
 		private ulong _nextObjectId;
 		private bool _isDisposed;
 		private bool _isDisposing;
-		private Failure? _currentFailure;
 
 		/// <summary>
 		/// This event is invoked whenever the host has written a complete line to its console.
@@ -144,15 +140,14 @@ namespace SharpRemote.Hosting
 					throw new ArgumentOutOfRangeException("failureSettings", "EndPointConnectTimeout should be greater than zero");
 			}
 
-			_failureSettings = failureSettings ?? new FailureSettings();
-			_failureHandler = failureHandler ?? new ZeroFailureToleranceStrategy();
+			failureSettings = failureSettings ?? new FailureSettings();
+			failureHandler = failureHandler ?? new ZeroFailureToleranceStrategy();
 
 			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
-			                                             heartbeatSettings: _failureSettings.HeartbeatSettings,
+			                                             heartbeatSettings: failureSettings.HeartbeatSettings,
 			                                             latencySettings: latencySettings,
 			                                             endPointSettings: endPointSettings);
-			_endPoint.OnFailure += EndPointOnOnFailure;
 
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 
@@ -164,8 +159,22 @@ namespace SharpRemote.Hosting
 				postMortemSettings
 				);
 
-			_process.OnFaultDetected += ProcessOnOnFaultDetected;
 			_process.OnHostOutputWritten += EmitHostOutputWritten;
+
+			_queue = new OutOfProcessQueue(
+				_process,
+				_endPoint,
+				failureHandler,
+				failureSettings
+				);
+			_queue.OnHostStarted += QueueOnOnHostStarted;
+		}
+
+		private void QueueOnOnHostStarted()
+		{
+			var fn = OnHostStarted;
+			if (fn != null)
+				fn();
 		}
 
 		/// <summary>
@@ -175,69 +184,15 @@ namespace SharpRemote.Hosting
 		/// <exception cref="Win32Exception">When the </exception>
 		/// <exception cref="HandshakeException">The handshake between this and the <see cref="OutOfProcessSiloServer"/> of the remote process failed</exception>
 		/// <exception cref="SharpRemoteException"></exception>
+		/// <exception cref="AggregateException">The application was started multiple times, but failed to be started & connect every single time - examine <see cref="AggregateException.InnerExceptions"/> property</exception>
 		public void Start()
 		{
-			int unused;
-			StartInternal(out unused);
+			_queue.Start().Wait();
 
 			Log.InfoFormat(
 				"Host process '{0}' (PID: {1}) successfully started",
 				_process.HostExecutableName,
 				_process.HostedProcessId);
-		}
-
-		private void StartInternal(out int pid)
-		{
-			if (_process.IsProcessRunning)
-				throw new InvalidOperationException();
-
-			_process.Start(out pid);
-			try
-			{
-				var port = _process.RemotePort;
-				_endPoint.Connect(new IPEndPoint(IPAddress.Loopback, port.Value),
-				                  _failureSettings.EndPointConnectTimeout);
-			}
-			catch (HandshakeException e)
-			{
-				Log.WarnFormat("Unable to establish a connection with the host process (PID: {1}): {0}",
-				               e,
-				               _process.HostedProcessId);
-
-				_process.TryKill();
-
-				throw;
-			}
-			catch (Exception e)
-			{
-				Log.WarnFormat("Caught unexpected exception after having started the host process (PID: {1}): {0}",
-				               e,
-				               _process.HostedProcessId);
-
-				_process.TryKill();
-
-				throw;
-			}
-
-			//
-			// POINT OF NO FAILURE BELOW
-			//
-
-			lock (_syncRoot)
-			{
-				_currentFailure = null;
-			}
-
-			try
-			{
-				var fn = OnHostStarted;
-				if (fn != null)
-					fn();
-			}
-			catch (Exception e)
-			{
-				Log.WarnFormat("The OnHostStarted event threw an exception, please don't do that: {0}", e);
-			}
 		}
 
 		/// <summary>
@@ -247,173 +202,6 @@ namespace SharpRemote.Hosting
 		public TimeSpan RoundtripTime
 		{
 			get { return _endPoint.RoundtripTime; }
-		}
-
-		/// <summary>
-		/// Is called when the endpoint reports a failure.
-		/// </summary>
-		private void EndPointOnOnFailure(EndPointDisconnectReason reason)
-		{
-			lock (_syncRoot)
-			{
-				// If we're disposing this silo (or have disposed it alrady), then the heartbeat monitor
-				// reported a failure that we caused intentionally (by killing the host process) and thus
-				// this "failure" musn't be reported.
-				if (_isDisposed || _isDisposing)
-					return;
-			}
-
-			// The socket will have logged all this information already thus we can skip it here
-			Log.DebugFormat("SocketEndPoint detected a failure of the connection to the host process: {0}", reason);
-
-			HandleFailure(reason);
-		}
-
-		private void ProcessOnOnFaultDetected(ProcessFaultReason processFaultReason)
-		{
-			switch (processFaultReason)
-			{
-				case ProcessFaultReason.HostProcessExited:
-					HandleFailure(Failure.HostProcessExited, false);
-					break;
-
-				default:
-				/*case ProcessFaultReason.UnhandledException:*/
-					HandleFailure(Failure.UnhandledException, false);
-					break;
-			}
-		}
-
-		private void HandleFailure(EndPointDisconnectReason endPointReason)
-		{
-			Failure reason;
-			switch (endPointReason)
-			{
-				case EndPointDisconnectReason.ReadFailure:
-				case EndPointDisconnectReason.RpcInvalidResponse:
-					reason = Failure.ConnectionFailure;
-					break;
-
-				case EndPointDisconnectReason.RequestedByEndPoint:
-				case EndPointDisconnectReason.RequestedByRemotEndPoint:
-					reason = Failure.ConnectionClosed;
-					break;
-
-				case EndPointDisconnectReason.HeartbeatFailure:
-					reason = Failure.HeartbeatFailure;
-					break;
-
-				// ReSharper disable RedundantCaseLabel
-				case EndPointDisconnectReason.UnhandledException:
-				// ReSharper restore RedundantCaseLabel
-				default:
-					reason = Failure.UnhandledException;
-					break;
-			}
-
-			HandleFailure(reason, dueToEndPoint: true);
-		}
-
-		private void HandleFailure(Failure failure, bool dueToEndPoint)
-		{
-			lock (_syncRoot)
-			{
-				if (_isDisposed || _isDisposing)
-					return;
-
-				if (_currentFailure != null)
-					return;
-
-				_currentFailure = failure;
-			}
-
-			var decision = Decision.Stop;
-			try
-			{
-				var handlerResolution = _failureHandler.OnFailure(failure);
-				if (handlerResolution != null)
-					decision = handlerResolution.Value;
-			}
-			catch (Exception e)
-			{
-				Log.WarnFormat("OnFaultDetected threw an exception - ignoring it: {0}", e);
-			}
-
-			if (failure != Failure.HostProcessExited)
-			{
-				_process.TryKill();
-			}
-
-			// We don't want to call disconnect in case this method is executing because 
-			// of an endpoint failure - because we're called from the endpoint's Disconnect method.
-			// Calling disconnect again would overwrite the disconnect failure...
-			if (!dueToEndPoint)
-			{
-				_endPoint.Disconnect();
-			}
-
-			var resolution = ResolveFailure(failure, decision);
-
-			try
-			{
-				_failureHandler.OnResolutionFinished(failure, decision, resolution);
-			}
-			catch (Exception e)
-			{
-				Log.WarnFormat("IFailureHandler.OnResolutionFinished threw an exception - ignoring it: {0}", e);
-			}
-		}
-
-		/// <summary>
-		/// Actually tries to resolve the failure (if possible).
-		/// </summary>
-		/// <param name="failure"></param>
-		/// <param name="decision"></param>
-		/// <returns></returns>
-		private Resolution ResolveFailure(Failure failure, Decision decision)
-		{
-			switch (decision)
-			{
-				case Decision.Stop: //< No need to do anything further...
-					return Resolution.Stopped;
-
-				case Decision.RestartHost:
-					try
-					{
-						int pid;
-						StartInternal(out pid);
-
-						Log.InfoFormat("Successfully recovered from failure '{0}' by restarting the host application '{1}' (PID: {2})",
-						               failure,
-						               _process.HostExecutableName,
-						               pid);
-
-						return Resolution.Restarted;
-					}
-					catch (Exception e)
-					{
-						Log.FatalFormat("Tried to resolve the failure '{0}' by restarting the host - but this failed as well - we have to give up: {1}",
-						                failure,
-						                e);
-
-						try
-						{
-							_failureHandler.OnResolutionFailed(failure, decision, e);
-						}
-						catch (Exception ex)
-						{
-							Log.WarnFormat("IFailureHandler.OnResolutionFailed threw an exception - ignoring it: {0}", ex);
-						}
-
-						return Resolution.Stopped;
-					}
-
-				default:
-					Log.WarnFormat("Unknown decision '{0}' - interpreting it as '{1}'",
-					               decision,
-					               Decision.Stop);
-					return Resolution.Stopped;
-			}
 		}
 
 		/// <summary>
@@ -621,6 +409,8 @@ namespace SharpRemote.Hosting
 
 				_isDisposing = true;
 			}
+
+			_queue.Dispose();
 
 			if (!HasProcessFailed)
 			{

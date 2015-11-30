@@ -51,7 +51,7 @@ namespace SharpRemote
 		///     IPAddress+Port pair of the connected endPoint in case <see cref="SocketRemotingEndPointClient.Connect(IPEndPoint)" /> has been called.
 		///     Otherwise null.
 		/// </summary>
-		public IPEndPoint RemoteEndPoint
+		public new IPEndPoint RemoteEndPoint
 		{
 			get { return _remoteEndPoint; }
 			protected set { _remoteEndPoint = value; }
@@ -69,7 +69,7 @@ namespace SharpRemote
 		/// has been called.
 		///     Otherwise null.
 		/// </summary>
-		public IPEndPoint LocalEndPoint
+		public new IPEndPoint LocalEndPoint
 		{
 			get { return _localEndPoint; }
 			protected set { _localEndPoint = value; }

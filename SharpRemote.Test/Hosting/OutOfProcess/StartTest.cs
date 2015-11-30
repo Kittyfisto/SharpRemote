@@ -6,6 +6,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Exceptions;
 using SharpRemote.Hosting;
+using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
@@ -118,6 +119,20 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 						"Process 'SharpRemote.Host.FailsStartup.exe' caught an unexpected exception during startup and subsequently failed")
 					.WithInnerException<FileNotFoundException>()
 					.WithInnerMessage("Shit happens");
+			}
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that Start() gives up restarting the (defunct) application after a limited amount of times")]
+		public void TestStart7()
+		{
+			using (var silo = new OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe",
+				failureHandler: new RestartOnFailureStrategy(startFailureThreshold: 20)))
+			{
+				new Action(() => silo.Start())
+					.ShouldThrow<AggregateException>();
+
+				silo.IsProcessRunning.Should().BeFalse();
 			}
 		}
 	}

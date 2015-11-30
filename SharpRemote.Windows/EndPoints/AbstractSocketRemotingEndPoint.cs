@@ -737,6 +737,10 @@ namespace SharpRemote
 			get { return InternalRemoteEndPoint != null; }
 		}
 
+		public ConnectionId CurrentConnectionId
+		{
+			get; protected set; }
+
 		public TimeSpan RoundtripTime
 		{
 			get
@@ -747,6 +751,16 @@ namespace SharpRemote
 
 				return TimeSpan.Zero;
 			}
+		}
+
+		public EndPoint LocalEndPoint
+		{
+			get { return InternalLocalEndPoint; }
+		}
+
+		public EndPoint RemoteEndPoint
+		{
+			get { return InternalRemoteEndPoint; }
 		}
 
 		public void Disconnect()
@@ -993,6 +1007,7 @@ namespace SharpRemote
 			Socket socket;
 			bool hasDisconnected = false;
 			bool emitOnFailure = false;
+			ConnectionId connectionId;
 
 			lock (_syncRoot)
 			{
@@ -1001,6 +1016,9 @@ namespace SharpRemote
 
 				InternalRemoteEndPoint = null;
 				_socket = null;
+
+				connectionId = CurrentConnectionId;
+				CurrentConnectionId = ConnectionId.None;
 
 				if (socket != null)
 				{
@@ -1062,20 +1080,20 @@ namespace SharpRemote
 
 			if (emitOnFailure)
 			{
-				EmitOnFailure(reason);
+				EmitOnFailure(reason, connectionId);
 			}
 
 			EmitOnDisconnected(hasDisconnected, remoteEndPoint);
 		}
 
-		private void EmitOnFailure(EndPointDisconnectReason reason)
+		private void EmitOnFailure(EndPointDisconnectReason reason, ConnectionId connectionId)
 		{
-			Action<EndPointDisconnectReason> fn = OnFailure;
+			var fn = OnFailure;
 			if (fn != null)
 			{
 				try
 				{
-					fn(reason);
+					fn(reason, connectionId);
 				}
 				catch (Exception e)
 				{
@@ -1172,7 +1190,7 @@ namespace SharpRemote
 		///     - a failure of SharpRemote
 		///     - something else ;)
 		/// </summary>
-		public event Action<EndPointDisconnectReason> OnFailure;
+		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 
 		private bool HandleMessage(long rpcId, MessageType type, BinaryReader reader, out EndPointDisconnectReason? reason)
 		{

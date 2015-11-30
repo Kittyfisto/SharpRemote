@@ -403,7 +403,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				client.Connect(server.LocalEndPoint);
 
 				EndPointDisconnectReason? reason = null;
-				client.OnFailure += r => reason = r;
+				client.OnFailure += (r, unused) => reason = r;
 
 				server.DisconnectByFailure();
 				WaitFor(() => reason != null, TimeSpan.FromSeconds(1))
@@ -427,7 +427,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				client.Connect(server.LocalEndPoint);
 
 				bool failed = false;
-				client.OnFailure += r =>
+				client.OnFailure += (r, unused) =>
 					{
 						new Action(proxy.DoStuff)
 							.ShouldThrow<NotConnectedException>();

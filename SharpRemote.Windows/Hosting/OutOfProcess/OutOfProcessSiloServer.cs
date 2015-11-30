@@ -191,11 +191,11 @@ namespace SharpRemote.Hosting
 			_endPoint.OnFailure += EndPointOnOnFailure;
 		}
 
-		private void EndPointOnOnFailure(EndPointDisconnectReason endPointDisconnectReason)
+		private void EndPointOnOnFailure(EndPointDisconnectReason endPointDisconnectReason, ConnectionId id)
 		{
 			var fn = OnFailure;
 			if (fn != null)
-				fn(endPointDisconnectReason);
+				fn(endPointDisconnectReason, id);
 		}
 
 		private void EndPointOnOnDisconnected(EndPoint remoteEndPoint)
@@ -245,14 +245,40 @@ namespace SharpRemote.Hosting
 			get { return _endPoint.IsConnected; }
 		}
 
+		public ConnectionId CurrentConnectionId
+		{
+			get { return _endPoint.CurrentConnectionId; }
+		}
+
 		public TimeSpan RoundtripTime
 		{
 			get { return _endPoint.RoundtripTime; }
 		}
 
+		public EndPoint LocalEndPoint
+		{
+			get { return _endPoint.LocalEndPoint; }
+		}
+
+		public EndPoint RemoteEndPoint
+		{
+			get { return _endPoint.RemoteEndPoint; }
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public event Action<EndPoint> OnConnected;
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public event Action<EndPoint> OnDisconnected;
-		public event Action<EndPointDisconnectReason> OnFailure;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 
 		public void Disconnect()
 		{

@@ -30,7 +30,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		[SetUp]
 		public new void SetUp()
 		{
-			Thread.Sleep(100);
+			Thread.Sleep(TimeSpan.FromSeconds(1));
 		}
 
 		[Test]

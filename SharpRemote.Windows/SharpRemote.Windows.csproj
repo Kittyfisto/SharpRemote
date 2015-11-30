@@ -54,10 +54,12 @@
     <Compile Include="Diagnostics\Debugger.cs" />
     <Compile Include="Diagnostics\IDebugger.cs" />
     <Compile Include="ConnectionId.cs" />
+    <Compile Include="DirectoryInfoExtensions.cs" />
     <Compile Include="EndPoints\EndPointSettings.cs" />
     <Compile Include="EndPoints\ILatency.cs" />
     <Compile Include="EndPoints\Latency.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />
+    <Compile Include="FileInfoExtensions.cs" />
     <Compile Include="Hosting\OutOfProcess\Decision.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessQueue.cs" />
     <Compile Include="Hosting\OutOfProcess\RestartOnFailureStrategy.cs" />

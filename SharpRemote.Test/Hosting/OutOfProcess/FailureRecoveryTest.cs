@@ -83,7 +83,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var proc = Process.GetProcessById(oldPid);
 			proc.Kill();
 
-			_startHandle.WaitOne(TimeSpan.FromSeconds(1)).Should().BeTrue("because the silo should've restarted the host process automatically");
+			_startHandle.WaitOne(TimeSpan.FromSeconds(10)).Should().BeTrue("because the silo should've restarted the host process automatically");
 			var newPid = _silo.HostProcessId;
 			newPid.Should().HaveValue();
 			newPid.Should().NotBe(oldPid);
@@ -92,7 +92,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			proc = Process.GetProcessById(newPid.Value);
 			proc.Kill();
 
-			_startHandle.WaitOne(TimeSpan.FromSeconds(1)).Should().BeTrue("because the silo should've restarted the host process automatically");
+			_startHandle.WaitOne(TimeSpan.FromSeconds(10)).Should().BeTrue("because the silo should've restarted the host process automatically");
 			var thirdPid = _silo.HostProcessId;
 			thirdPid.Should().HaveValue();
 			thirdPid.Should().NotBe(oldPid);

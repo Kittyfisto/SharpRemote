@@ -83,7 +83,8 @@ namespace SharpRemote
 		public bool TryConnect(string endPointName, TimeSpan timeout)
 		{
 			Exception unused;
-			return TryConnect(endPointName, timeout, out unused);
+			ConnectionId unused2;
+			return TryConnect(endPointName, timeout, out unused, out unused2);
 		}
 
 		/// <summary>
@@ -121,34 +122,29 @@ namespace SharpRemote
 					"This endPoint is already connected to another endPoint and cannot establish any more connections");
 
 			Exception unused;
-			return TryConnect(endPoint, timeout, out unused);
+			ConnectionId unused2;
+			return TryConnect(endPoint, timeout, out unused, out unused2);
 		}
 
-		private bool TryConnect(string endPointName, TimeSpan timeout, out Exception exception)
-		{
-			if (endPointName == null) throw new ArgumentNullException("endPointName");
-			if (endPointName == "") throw new ArgumentException("endPointName");
-			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
-			if (_networkServiceDiscoverer == null) throw new InvalidOperationException("No discoverer was specified when creating this client and thus network service discovery by name is not possible");
-
-			var results = _networkServiceDiscoverer.FindServices(endPointName);
-			if (results.Count == 0)
-			{
-				exception = new NoSuchIPEndPointException(endPointName);
-				return false;
-			}
-
-			foreach (var result in results)
-			{
-				if (TryConnect(result.EndPoint, timeout, out exception))
-					return true;
-			}
-
-			exception = new NoSuchIPEndPointException(endPointName);
-			return false;
-		}
-
-		private bool TryConnect(IPEndPoint endPoint, TimeSpan timeout, out Exception exception)
+		/// <summary>
+		///     Tries to connect this endPoint to the given one.
+		/// </summary>
+		/// <param name="endPoint"></param>
+		/// <param name="timeout">The amount of time this method should block and await a successful connection from the remote end-point</param>
+		/// <param name="connectionId"></param>
+		/// <param name="exception"></param>
+		/// <exception cref="ArgumentNullException">
+		///     When <paramref name="endPoint" /> is null
+		/// </exception>
+		/// <exception cref="ArgumentOutOfRangeException">
+		///     When <paramref name="timeout" /> is equal or less than <see cref="TimeSpan.Zero" />
+		/// </exception>
+		/// <exception cref="InvalidOperationException">
+		///     When this endPoint is already connected to another endPoint.
+		/// </exception>
+		public bool TryConnect(IPEndPoint endPoint, TimeSpan timeout,
+			out Exception exception,
+			out ConnectionId connectionId)
 		{
 			if (endPoint == null) throw new ArgumentNullException("endPoint");
 			if (Equals(endPoint, LocalEndPoint))
@@ -172,10 +168,10 @@ namespace SharpRemote
 						Log.DebugFormat("Task to connect to '{0}' started", endPoint);
 
 						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
-							{
-								ExclusiveAddressUse = true,
-								Blocking = true,
-							};
+						{
+							ExclusiveAddressUse = true,
+							Blocking = true,
+						};
 
 						Log.DebugFormat("EndPoint '{0}' connecting to remote endpoint '{1}'", Name, endPoint);
 
@@ -199,19 +195,21 @@ namespace SharpRemote
 				if (!task.Wait(timeout))
 				{
 					exception = new NoSuchIPEndPointException(endPoint, timeout);
+					CurrentConnectionId = connectionId = ConnectionId.None;
 					return false;
 				}
 
 				if (task.Result != null)
 				{
 					exception = new NoSuchIPEndPointException(endPoint, task.Result);
+					CurrentConnectionId = connectionId = ConnectionId.None;
 					return false;
 				}
 
 				TimeSpan remaining = timeout - (DateTime.Now - started);
 				ErrorType errorType;
 				string error;
-				if (!TryPerformOutgoingHandshake(socket, remaining, out errorType, out error))
+				if (!TryPerformOutgoingHandshake(socket, remaining, out errorType, out error, out connectionId))
 				{
 					switch (errorType)
 					{
@@ -227,6 +225,7 @@ namespace SharpRemote
 							exception = new AuthenticationException(error);
 							break;
 					}
+					CurrentConnectionId = connectionId;
 					return false;
 				}
 
@@ -235,7 +234,7 @@ namespace SharpRemote
 
 				Log.InfoFormat("EndPoint '{0}' successfully connected to '{1}'", Name, endPoint);
 
-				FireOnConnected(endPoint);
+				FireOnConnected(endPoint, CurrentConnectionId);
 
 				success = true;
 				exception = null;
@@ -256,13 +255,40 @@ namespace SharpRemote
 			}
 		}
 
+
+		private bool TryConnect(string endPointName, TimeSpan timeout, out Exception exception, out ConnectionId connectionId)
+		{
+			if (endPointName == null) throw new ArgumentNullException("endPointName");
+			if (endPointName == "") throw new ArgumentException("endPointName");
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+			if (_networkServiceDiscoverer == null) throw new InvalidOperationException("No discoverer was specified when creating this client and thus network service discovery by name is not possible");
+
+			var results = _networkServiceDiscoverer.FindServices(endPointName);
+			if (results.Count == 0)
+			{
+				exception = new NoSuchIPEndPointException(endPointName);
+				connectionId = ConnectionId.None;
+				return false;
+			}
+
+			foreach (var result in results)
+			{
+				if (TryConnect(result.EndPoint, timeout, out exception, out connectionId))
+					return true;
+			}
+
+			exception = new NoSuchIPEndPointException(endPointName);
+			connectionId = ConnectionId.None;
+			return false;
+		}
+
 		/// <summary>
 		///     Connects to another endPoint with the given name.
 		/// </summary>
 		/// <param name="endPointName"></param>
-		public void Connect(string endPointName)
+		public ConnectionId Connect(string endPointName)
 		{
-			Connect(endPointName, TimeSpan.FromSeconds(1));
+			return Connect(endPointName, TimeSpan.FromSeconds(1));
 		}
 
 		/// <summary>
@@ -284,7 +310,7 @@ namespace SharpRemote
 		///     - The given endPoint is no <see cref="SocketRemotingEndPointServer" />
 		///     - The given endPoint failed authentication
 		/// </exception>
-		public void Connect(string endPointName, TimeSpan timeout)
+		public ConnectionId Connect(string endPointName, TimeSpan timeout)
 		{
 			if (endPointName == null) throw new ArgumentNullException("endPointName");
 			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
@@ -297,10 +323,14 @@ namespace SharpRemote
 				throw new NoSuchIPEndPointException(endPointName);
 			}
 
+			Exception e = null;
 			foreach (var result in results)
 			{
-				Connect(result.EndPoint, timeout);
+				ConnectionId connectionId;
+				if (TryConnect(result.EndPoint, timeout, out e, out connectionId))
+					return connectionId;
 			}
+			throw e;
 		}
 
 		/// <summary>
@@ -319,9 +349,9 @@ namespace SharpRemote
 		///     - The given endPoint is no <see cref="SocketRemotingEndPointServer" />
 		///     - The given endPoint failed authentication
 		/// </exception>
-		public void Connect(IPEndPoint endPoint)
+		public ConnectionId Connect(IPEndPoint endPoint)
 		{
-			Connect(endPoint, TimeSpan.FromSeconds(1));
+			return Connect(endPoint, TimeSpan.FromSeconds(1));
 		}
 
 		/// <summary>
@@ -349,11 +379,14 @@ namespace SharpRemote
 		/// <exception cref="HandshakeException">
 		///     - The handshake between this and the given endpoint failed
 		/// </exception>
-		public void Connect(IPEndPoint endPoint, TimeSpan timeout)
+		public ConnectionId Connect(IPEndPoint endPoint, TimeSpan timeout)
 		{
 			Exception e;
-			if (!TryConnect(endPoint, timeout, out e))
+			ConnectionId connectionId;
+			if (!TryConnect(endPoint, timeout, out e, out connectionId))
 				throw e;
+
+			return connectionId;
 		}
 
 		protected override void DisposeAdditional()

@@ -40,7 +40,7 @@ namespace SharpRemote.Hosting
 		private bool _isDisposed;
 		private bool _isDisposing;
 		private Process _process;
-		private ProcessFaultReason? _reason;
+		private ProcessFailureReason? _reason;
 		private int? _remotePort;
 		private Exception _startupException;
 
@@ -317,7 +317,7 @@ namespace SharpRemote.Hosting
 		///     Is invoked when a failure in the remote process has been detected and is invoked prior to handling
 		///     this failure.
 		/// </summary>
-		public event Action<ProcessFaultReason> OnFaultDetected;
+		public event Action<int, ProcessFailureReason> OnFaultDetected;
 
 		[Pure]
 		internal static string FormatArguments(int parentPid, PostMortemSettings postMortemSettings)
@@ -350,7 +350,8 @@ namespace SharpRemote.Hosting
 
 		private void ProcessOnExited(object sender, EventArgs args)
 		{
-			ProcessFaultReason reason;
+			var s = (Process) sender;
+			ProcessFailureReason reason;
 			lock (_syncRoot)
 			{
 				// We have to make sure that we ignore events from previously spawned processes!
@@ -363,10 +364,10 @@ namespace SharpRemote.Hosting
 				if (_reason != null)
 					return;
 
-				_reason = reason = ProcessFaultReason.HostProcessExited;
+				_reason = reason = ProcessFailureReason.HostProcessExited;
 			}
 
-			if (reason != ProcessFaultReason.HostProcessExited)
+			if (reason != ProcessFailureReason.HostProcessExited)
 			{
 				_process.TryKill();
 			}
@@ -377,9 +378,9 @@ namespace SharpRemote.Hosting
 
 			try
 			{
-				Action<ProcessFaultReason> fn = OnFaultDetected;
+				var fn = OnFaultDetected;
 				if (fn != null)
-					fn(reason);
+					fn(s.Id, reason);
 			}
 			catch (Exception e)
 			{

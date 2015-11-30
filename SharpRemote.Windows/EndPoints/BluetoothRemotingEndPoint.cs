@@ -110,6 +110,11 @@ namespace SharpRemote.EndPoints
 			get { throw new NotImplementedException(); }
 		}
 
+		public ConnectionId CurrentConnectionId
+		{
+			get { throw new NotImplementedException(); }
+		}
+
 		public TimeSpan RoundtripTime
 		{
 			get { throw new NotImplementedException(); }
@@ -126,9 +131,9 @@ namespace SharpRemote.EndPoints
 		}
 
 #pragma warning disable 67
-		public event Action<EndPoint> OnConnected;
-		public event Action<EndPoint> OnDisconnected;
-		public event Action<EndPointDisconnectReason> OnFailure;
+		public event Action<EndPoint, ConnectionId> OnConnected;
+		public event Action<EndPoint, ConnectionId> OnDisconnected;
+		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 #pragma warning restore 67
 
 		public void Disconnect()

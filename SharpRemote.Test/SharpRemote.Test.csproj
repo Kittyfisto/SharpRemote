@@ -65,6 +65,7 @@
     <Compile Include="Hosting\LatencyMonitorTest.cs" />
     <Compile Include="Hosting\OutOfProcess\CtorTest.cs" />
     <Compile Include="Hosting\OutOfProcess\FailureDetectionTest.cs" />
+    <Compile Include="Hosting\OutOfProcess\OutOfProcessQueueTest.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSiloServerTest.cs" />
     <Compile Include="Hosting\OutOfProcess\FailureRecoveryTest.cs" />
     <Compile Include="Hosting\OutOfProcess\StartTest.cs" />

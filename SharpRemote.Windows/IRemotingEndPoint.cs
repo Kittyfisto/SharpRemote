@@ -24,6 +24,12 @@ namespace SharpRemote
 		bool IsConnected { get; }
 
 		/// <summary>
+		/// The id of the current connection or <see cref="ConnectionId.None"/> if no connection
+		/// is currently established.
+		/// </summary>
+		ConnectionId CurrentConnectionId { get; }
+
+		/// <summary>
 		/// The current average round trip time or <see cref="TimeSpan.Zero"/> in
 		/// case nothing was measured.
 		/// </summary>
@@ -60,7 +66,7 @@ namespace SharpRemote
 		///     - a failure of SharpRemote
 		///     - something else ;)
 		/// </summary>
-		event Action<EndPointDisconnectReason> OnFailure;
+		event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 
 		/// <summary>
 		///     Disconnects this endpoint from its remote endpoint.

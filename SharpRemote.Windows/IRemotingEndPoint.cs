@@ -30,6 +30,16 @@ namespace SharpRemote
 		TimeSpan RoundtripTime { get; }
 
 		/// <summary>
+		/// 
+		/// </summary>
+		EndPoint LocalEndPoint { get; }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		EndPoint RemoteEndPoint { get; }
+
+		/// <summary>
 		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/>
 		/// is created.
 		/// </summary>

@@ -749,6 +749,16 @@ namespace SharpRemote
 			}
 		}
 
+		public EndPoint LocalEndPoint
+		{
+			get { return InternalLocalEndPoint; }
+		}
+
+		public EndPoint RemoteEndPoint
+		{
+			get { return InternalRemoteEndPoint; }
+		}
+
 		public void Disconnect()
 		{
 			Disconnect(EndPointDisconnectReason.RequestedByEndPoint);

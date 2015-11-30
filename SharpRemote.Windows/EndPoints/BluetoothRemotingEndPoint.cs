@@ -115,6 +115,16 @@ namespace SharpRemote.EndPoints
 			get { throw new NotImplementedException(); }
 		}
 
+		public EndPoint LocalEndPoint
+		{
+			get { throw new NotImplementedException(); }
+		}
+
+		public EndPoint RemoteEndPoint
+		{
+			get { throw new NotImplementedException(); }
+		}
+
 #pragma warning disable 67
 		public event Action<EndPoint> OnConnected;
 		public event Action<EndPoint> OnDisconnected;

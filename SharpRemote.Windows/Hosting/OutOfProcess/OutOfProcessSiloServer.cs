@@ -250,8 +250,29 @@ namespace SharpRemote.Hosting
 			get { return _endPoint.RoundtripTime; }
 		}
 
+		public EndPoint LocalEndPoint
+		{
+			get { return _endPoint.LocalEndPoint; }
+		}
+
+		public EndPoint RemoteEndPoint
+		{
+			get { return _endPoint.RemoteEndPoint; }
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public event Action<EndPoint> OnConnected;
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public event Action<EndPoint> OnDisconnected;
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public event Action<EndPointDisconnectReason> OnFailure;
 
 		public void Disconnect()

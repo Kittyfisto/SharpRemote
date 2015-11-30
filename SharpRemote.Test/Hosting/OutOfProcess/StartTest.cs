@@ -129,7 +129,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			using (var silo = new OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe",
 				failureHandler: new RestartOnFailureStrategy(startFailureThreshold: 20)))
 			{
-				new Action(() => silo.Start())
+				new Action(silo.Start)
 					.ShouldThrow<AggregateException>();
 
 				silo.IsProcessRunning.Should().BeFalse();

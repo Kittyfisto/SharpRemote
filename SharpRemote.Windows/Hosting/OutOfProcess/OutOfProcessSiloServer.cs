@@ -198,18 +198,18 @@ namespace SharpRemote.Hosting
 				fn(endPointDisconnectReason, id);
 		}
 
-		private void EndPointOnOnDisconnected(EndPoint remoteEndPoint)
+		private void EndPointOnOnDisconnected(EndPoint remoteEndPoint, ConnectionId connectionId)
 		{
 			var fn = OnDisconnected;
 			if (fn != null)
-				fn(remoteEndPoint);
+				fn(remoteEndPoint, connectionId);
 		}
 
-		private void EndPointOnOnConnected(EndPoint remoteEndPoint)
+		private void EndPointOnOnConnected(EndPoint remoteEndPoint, ConnectionId connectionId)
 		{
 			var fn = OnConnected;
 			if (fn != null)
-				fn(remoteEndPoint);
+				fn(remoteEndPoint, connectionId);
 		}
 
 		/// <summary>
@@ -268,12 +268,12 @@ namespace SharpRemote.Hosting
 		/// <summary>
 		/// 
 		/// </summary>
-		public event Action<EndPoint> OnConnected;
+		public event Action<EndPoint, ConnectionId> OnConnected;
 
 		/// <summary>
 		/// 
 		/// </summary>
-		public event Action<EndPoint> OnDisconnected;
+		public event Action<EndPoint, ConnectionId> OnDisconnected;
 
 		/// <summary>
 		/// 

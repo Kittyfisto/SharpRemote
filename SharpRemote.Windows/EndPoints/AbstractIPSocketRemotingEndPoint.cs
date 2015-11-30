@@ -21,6 +21,7 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private long _previousConnectionId;
 		private Thread _readThread;
 		private Thread _writeThread;
 		private IPEndPoint _remoteEndPoint;
@@ -45,7 +46,9 @@ namespace SharpRemote
 			       heartbeatSettings,
 			       latencySettings,
 			       endPointSettings)
-		{}
+		{
+			_previousConnectionId = 0;
+		}
 
 		/// <summary>
 		///     IPAddress+Port pair of the connected endPoint in case <see cref="SocketRemotingEndPointClient.Connect(IPEndPoint)" /> has been called.
@@ -101,12 +104,13 @@ namespace SharpRemote
 			}
 		}
 
-		protected override void OnHandshakeSucceeded(Socket socket)
+		protected override ConnectionId OnHandshakeSucceeded(Socket socket)
 		{
 			lock (SyncRoot)
 			{
 				Socket = socket;
 				_remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
+				CurrentConnectionId = new ConnectionId(Interlocked.Increment(ref _previousConnectionId));
 				CancellationTokenSource = new CancellationTokenSource();
 
 				var args = new ThreadArgs(socket, CancellationTokenSource.Token);
@@ -126,6 +130,8 @@ namespace SharpRemote
 				_writeThread.Start(args);
 
 				Log.InfoFormat("{0}: Connected to {1}", Name, _remoteEndPoint);
+
+				return CurrentConnectionId;
 			}
 		}
 

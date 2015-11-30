@@ -2,7 +2,6 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.Exceptions;
 using SharpRemote.ServiceDiscovery;
@@ -20,7 +19,6 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private readonly NetworkServiceDiscoverer _networkServiceDiscoverer;
-		private long _previousConnectionId;
 
 		/// <summary>
 		///     Creates a new socket end point that (optionally) is bound to the given
@@ -60,7 +58,6 @@ namespace SharpRemote
 			       endPointSettings)
 		{
 			_networkServiceDiscoverer = networkServiceDiscoverer;
-			_previousConnectionId = 0;
 		}
 
 		/// <summary>
@@ -212,7 +209,7 @@ namespace SharpRemote
 				TimeSpan remaining = timeout - (DateTime.Now - started);
 				ErrorType errorType;
 				string error;
-				if (!TryPerformOutgoingHandshake(socket, remaining, out errorType, out error))
+				if (!TryPerformOutgoingHandshake(socket, remaining, out errorType, out error, out connectionId))
 				{
 					switch (errorType)
 					{
@@ -228,7 +225,7 @@ namespace SharpRemote
 							exception = new AuthenticationException(error);
 							break;
 					}
-					CurrentConnectionId = connectionId = ConnectionId.None;
+					CurrentConnectionId = connectionId;
 					return false;
 				}
 
@@ -237,11 +234,10 @@ namespace SharpRemote
 
 				Log.InfoFormat("EndPoint '{0}' successfully connected to '{1}'", Name, endPoint);
 
-				FireOnConnected(endPoint);
+				FireOnConnected(endPoint, CurrentConnectionId);
 
 				success = true;
 				exception = null;
-				CurrentConnectionId = connectionId = new ConnectionId(Interlocked.Increment(ref _previousConnectionId));
 				return true;
 			}
 			finally

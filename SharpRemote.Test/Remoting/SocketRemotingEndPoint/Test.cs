@@ -193,6 +193,18 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[Description("Verifies that the current connection id is set to none after construction")]
+		public void TestCtor3()
+		{
+			using (var client = CreateClient())
+			using (var server = CreateServer())
+			{
+				client.CurrentConnectionId.Should().Be(ConnectionId.None);
+				server.CurrentConnectionId.Should().Be(ConnectionId.None);
+			}
+		}
+
+		[Test]
 		[Description("Verifies that disposing the endpoint actually closes the listening socket")]
 		public void TestDispose1()
 		{

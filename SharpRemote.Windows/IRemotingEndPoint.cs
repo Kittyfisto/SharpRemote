@@ -52,12 +52,12 @@ namespace SharpRemote
 		/// <remarks>
 		/// The event is fired with the endpoint of the *other* <see cref="AbstractSocketRemotingEndPoint"/>.
 		/// </remarks>
-		event Action<EndPoint> OnConnected;
+		event Action<EndPoint, ConnectionId> OnConnected;
 
 		/// <summary>
 		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/> is disconnected.
 		/// </summary>
-		event Action<EndPoint> OnDisconnected;
+		event Action<EndPoint, ConnectionId> OnDisconnected;
 
 		/// <summary>
 		///     This event is invoked right before a socket is to be closed due to failure of:

@@ -1075,6 +1075,8 @@ namespace SharpRemote
 						// or there's a bug in its implementation - either way this method may
 						// throw a NullReferenceException from inside Disconnect.
 					}
+
+					socket.TryDispose();
 				}
 			}
 

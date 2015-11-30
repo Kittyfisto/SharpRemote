@@ -27,12 +27,6 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			}
 		}
 
-		[SetUp]
-		public new void SetUp()
-		{
-			Thread.Sleep(TimeSpan.FromSeconds(1));
-		}
-
 		[Test]
 		[Description("Verifies that Connect() can establish a connection with an endpoint in the same process")]
 		public void TestConnect1()

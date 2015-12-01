@@ -55,7 +55,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("I swear to god, you cannot run any fucking test on this CI server")]
 		[Description("Verifies that Connect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect2()
 		{
@@ -84,7 +84,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("I swear to god, you cannot run any fucking test on this CI server")]
 		[Description("Verifies that TryConnect() can establish a connection with an endpoint by specifying its name")]
 		public void TestConnect23()
 		{

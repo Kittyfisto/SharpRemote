@@ -173,7 +173,7 @@ namespace SharpRemote
 					{
 						socket.Shutdown(SocketShutdown.Both);
 						socket.Disconnect(false);
-						socket.Dispose();
+						socket.TryDispose();
 					}
 				}
 

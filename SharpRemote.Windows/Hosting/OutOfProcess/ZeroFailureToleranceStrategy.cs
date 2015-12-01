@@ -9,6 +9,8 @@ namespace SharpRemote.Hosting.OutOfProcess
 	public sealed class ZeroFailureToleranceStrategy
 		: IFailureHandler
 	{
+		public event Action OnResolutionFailedEvent;
+
 		public Decision? OnStartFailure(int numSuccessiveFailures, Exception hostProcessException, out TimeSpan waitTime)
 		{
 			waitTime = TimeSpan.Zero;
@@ -22,7 +24,9 @@ namespace SharpRemote.Hosting.OutOfProcess
 
 		public void OnResolutionFailed(Failure failure, Decision decision, Exception exception)
 		{
-			
+			var fn = OnResolutionFailedEvent;
+			if (fn != null)
+				fn();
 		}
 
 		public void OnResolutionFinished(Failure failure, Decision decision, Resolution resolution)

@@ -235,7 +235,7 @@ namespace SharpRemote
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
 
 			_endpointSettings = endPointSettings ?? new EndPointSettings();
-			_pendingMethodCalls = new PendingMethodsQueue(_endpointSettings.MaxConcurrentCalls);
+			_pendingMethodCalls = new PendingMethodsQueue(_name, _endpointSettings.MaxConcurrentCalls);
 			_pendingMethodInvocations = new Dictionary<long, MethodInvocation>();
 
 			_clientAuthenticator = clientAuthenticator;
@@ -909,19 +909,12 @@ namespace SharpRemote
 					}
 				};
 
-			PendingMethodCall call;
-			lock (_syncRoot)
-			{
-				if (!IsConnected)
-					throw new NotConnectedException(_name);
-
-				call = _pendingMethodCalls.Enqueue(servantId,
-																	 interfaceType,
-																	 methodName,
-																	 arguments,
-																	 rpcId,
-																	 onCallFinished);
-			}
+			var call = _pendingMethodCalls.Enqueue(servantId,
+			                                       interfaceType,
+			                                       methodName,
+			                                       arguments,
+			                                       rpcId,
+			                                       onCallFinished);
 
 			Interlocked.Add(ref _numBytesSent, call.MessageLength);
 			Interlocked.Increment(ref _numCallsInvoked);
@@ -935,17 +928,11 @@ namespace SharpRemote
 			PendingMethodCall call = null;
 			try
 			{
-				lock (_syncRoot)
-				{
-					if (!IsConnected)
-						throw new NotConnectedException(_name);
-
-					call = _pendingMethodCalls.Enqueue(servantId,
+				call = _pendingMethodCalls.Enqueue(servantId,
 													  interfaceType,
 													  methodName,
 													  arguments,
 													  rpcId);
-				}
 
 				Interlocked.Add(ref _numBytesSent, call.MessageLength);
 				Interlocked.Increment(ref _numCallsInvoked);
@@ -1015,6 +1002,7 @@ namespace SharpRemote
 				socket = _socket;
 
 				InternalRemoteEndPoint = null;
+				_pendingMethodCalls.IsConnected = false;
 				_socket = null;
 
 				connectionId = CurrentConnectionId;
@@ -1635,6 +1623,7 @@ namespace SharpRemote
 			}
 
 			var connectionId = OnHandshakeSucceeded(socket);
+			_pendingMethodCalls.IsConnected = true;
 			WriteMessage(socket, HandshakeSucceedMessage);
 			return connectionId;
 		}
@@ -1802,6 +1791,7 @@ namespace SharpRemote
 			}
 
 			currentConnectionId = OnHandshakeSucceeded(socket);
+			_pendingMethodCalls.IsConnected = true;
 			errorType = ErrorType.Handshake;
 			error = null;
 			return true;

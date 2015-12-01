@@ -20,18 +20,41 @@ namespace SharpRemote
 		private readonly Dictionary<long, PendingMethodCall> _pendingCalls;
 
 		private readonly int _maxConcurrentCalls;
+		private readonly string _endPointName;
+
+		private bool _isConnected;
+
+		/// <summary>
+		/// Whether or not this endpoint is currently connected.
+		/// </summary>
+		/// <remarks>
+		/// While set to false, all calls to <see cref="Enqueue"/> throw a 
+		/// </remarks>
+		public bool IsConnected
+		{
+			get { return _isConnected; }
+			set
+			{
+				lock (_syncRoot)
+				{
+					_isConnected = value;
+				}
+			}
+		}
 
 		private bool _isDisposed;
 
 		/// <summary>
 		/// 
 		/// </summary>
+		/// <param name="endPointName"></param>
 		/// <param name="maxConcurrentCalls">The total number of concurrent calls that may be pending at any given time, any further call stalls the calling thread, even if async</param>
-		public PendingMethodsQueue(int maxConcurrentCalls = 2000)
+		public PendingMethodsQueue(string endPointName = "", int maxConcurrentCalls = 2000)
 		{
 			if (maxConcurrentCalls < 0)
 				throw new ArgumentOutOfRangeException("maxConcurrentCalls");
 
+			_endPointName = endPointName;
 			_maxConcurrentCalls = maxConcurrentCalls;
 			_syncRoot = new object();
 			_recycledMessages = new Queue<PendingMethodCall>();
@@ -130,6 +153,9 @@ namespace SharpRemote
 
 			lock (_syncRoot)
 			{
+				if (!IsConnected)
+					throw new NotConnectedException(_endPointName);
+
 				message = _recycledMessages.Count > 0
 					          ? _recycledMessages.Dequeue()
 					          : new PendingMethodCall();

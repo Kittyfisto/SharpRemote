@@ -26,7 +26,11 @@ namespace SharpRemote.Test
 		[Test]
 		public void TestEnqueueTooMuch()
 		{
-			var queue = new PendingMethodsQueue(1);
+			var queue = new PendingMethodsQueue(maxConcurrentCalls: 1)
+				{
+					IsConnected = true
+				};
+
 			Task.Factory.StartNew(() =>
 				{
 					queue.Enqueue(1, "", "", new MemoryStream(), 1);
@@ -41,7 +45,7 @@ namespace SharpRemote.Test
 		[Description("Verifies that enqueueing more items than the capacity doesn't deadlock when another thread consumes them again")]
 		public void TestEnqueueDequeue()
 		{
-			var queue = new PendingMethodsQueue(1);
+			var queue = new PendingMethodsQueue(maxConcurrentCalls: 1) {IsConnected = true};
 
 			queue.Enqueue(1, "", "", new MemoryStream(), 1);
 			var writeTask = Task.Factory.StartNew(() =>
@@ -67,7 +71,7 @@ namespace SharpRemote.Test
 		public void TestEnqueuePerformanceOneClient()
 		{
 			const int count = 1000000;
-			var queue = new PendingMethodsQueue(count);
+			var queue = new PendingMethodsQueue(maxConcurrentCalls: count) {IsConnected = true};
 
 			// Warm-up...
 			var stream = new MemoryStream();

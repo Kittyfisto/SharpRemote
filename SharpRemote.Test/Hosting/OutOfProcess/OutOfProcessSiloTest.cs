@@ -38,6 +38,17 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
+		[Description("Verifies that a servant can be created on a not-started silo")]
+		public void TestCreateServant()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				new Action(() => silo.CreateServant(42, new Mock<IVoidMethod>().Object))
+					.ShouldNotThrow();
+			}
+		}
+
+		[Test]
 		[Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
 		public void TestCreate()
 		{

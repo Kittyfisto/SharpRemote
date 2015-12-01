@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Exceptions;
 using SharpRemote.Hosting;
+using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
@@ -118,6 +120,118 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 						"Process 'SharpRemote.Host.FailsStartup.exe' caught an unexpected exception during startup and subsequently failed")
 					.WithInnerException<FileNotFoundException>()
 					.WithInnerMessage("Shit happens");
+			}
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that Start() gives up restarting the (defunct) application after a limited amount of times")]
+		public void TestStart7()
+		{
+			using (var silo = new OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe",
+				failureHandler: new RestartOnFailureStrategy(startFailureThreshold: 20)))
+			{
+				new Action(silo.Start)
+					.ShouldThrow<AggregateException>();
+
+				silo.IsProcessRunning.Should().BeFalse();
+			}
+		}
+
+		class MyFailureHandler: IFailureHandler
+		{
+			private string _directory;
+
+			public MyFailureHandler(string dir)
+			{
+				_directory = dir;
+			}
+
+			public event Action<int, Exception> OnStartFailureCalled;
+
+			public Decision? OnStartFailure(int numSuccessiveFailures, Exception hostProcessException, out TimeSpan waitTime)
+			{
+				var fn = OnStartFailureCalled;
+				if (fn != null)
+					fn(numSuccessiveFailures, hostProcessException);
+
+				waitTime = TimeSpan.Zero;
+
+				if (numSuccessiveFailures == 1)
+				{
+					Copy("SharpRemote.dll", _directory);
+					return Decision.RestartHost;
+				}
+
+				return Decision.Stop;
+			}
+
+			public Decision? OnFailure(Failure failure)
+			{
+				return null;
+			}
+
+			public void OnResolutionFailed(Failure failure, Decision decision, Exception exception)
+			{
+				
+			}
+
+			public void OnResolutionFinished(Failure failure, Decision decision, Resolution resolution)
+			{
+				
+			}
+		}
+
+		[Test]
+		[LocalTest("Doesn't work ")]
+		[NUnit.Framework.Description("Verifies that Start() queries the failure handler when the process fails to be started AND actually tries again")]
+		public void TestStart8()
+		{
+			var dir = Path.Combine(Path.GetTempPath(), "SharpRemote", Guid.NewGuid().ToString());
+
+			var failureHandler = new MyFailureHandler(dir);
+			var onStartFailureCalled = new List<KeyValuePair<int, Exception>>();
+			failureHandler.OnStartFailureCalled += (numFailures, exception) => onStartFailureCalled.Add(new KeyValuePair<int, Exception>(numFailures, exception));
+
+			// Let's start by copying the host executable to a new folder, but let's conveniently forget
+			// an import assembly. This way Start will definately fail...
+			var executable = Copy("SharpRemote.Host.exe", dir);
+			Copy("log4net.dll", dir);
+
+			using (var silo = new OutOfProcessSilo(executable,
+				failureHandler: failureHandler))
+			{
+				new Action(silo.Start)
+					.ShouldNotThrow("Because the error will be corrected after the first start fails");
+
+				onStartFailureCalled.Count.Should().Be(1, "Because starting the application should've failed only once");
+				onStartFailureCalled[0].Key.Should().Be(1);
+				onStartFailureCalled[0].Value.Should().BeOfType<HandshakeException>();
+				silo.IsProcessRunning.Should().BeTrue();
+			}
+		}
+
+		private static string Copy(string fileName, string dir)
+		{
+			bool exists = Directory.Exists(dir);
+			if (!exists)
+				Directory.CreateDirectory(dir);
+
+			var destFileName = Path.Combine(dir, fileName);
+			File.Copy(fileName, destFileName);
+			return destFileName;
+		}
+
+		private static void Clear(string root)
+		{
+			var directory = new DirectoryInfo(root);
+
+			foreach (FileInfo file in directory.GetFiles())
+			{
+				file.TryDelete();
+			}
+			foreach (DirectoryInfo dir in directory.GetDirectories())
+			{
+				dir.TryDelete();
 			}
 		}
 	}

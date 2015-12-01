@@ -16,8 +16,7 @@ using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 namespace SharpRemote.Test.Hosting.OutOfProcess
 {
 	[TestFixture]
-	[LocalTest("")]
-	public sealed partial class OutOfProcessSiloTest
+	public sealed class OutOfProcessSiloTest
 		: AbstractTest
 	{
 		public static string FormatSize(long numBytesSent)
@@ -122,15 +121,6 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var silo = new OutOfProcessSilo();
 			new Action(silo.Dispose)
 				.ShouldNotThrow();
-		}
-
-		[Test]
-		[Description("Verifies that the silo restarts the host process when it's killed")]
-		public void TestFailureRecovery1()
-		{
-			using (var silo = new OutOfProcessSilo())
-			{
-			}
 		}
 
 		[Test]

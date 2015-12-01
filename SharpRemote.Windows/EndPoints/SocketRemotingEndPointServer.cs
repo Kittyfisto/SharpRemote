@@ -145,12 +145,10 @@ namespace SharpRemote
 				}
 				else
 				{
-					// TODO: Set to debug again
-					Log.InfoFormat("Incoming connection from '{0}', starting handshake...", socket.RemoteEndPoint);
+					Log.DebugFormat("Incoming connection from '{0}', starting handshake...", socket.RemoteEndPoint);
 
-					PerformIncomingHandshake(socket);
-
-					FireOnConnected(socket.RemoteEndPoint);
+					var connectionId = PerformIncomingHandshake(socket);
+					FireOnConnected(socket.RemoteEndPoint, connectionId);
 
 					success = true;
 				}
@@ -175,7 +173,7 @@ namespace SharpRemote
 					{
 						socket.Shutdown(SocketShutdown.Both);
 						socket.Disconnect(false);
-						socket.Dispose();
+						socket.TryDispose();
 					}
 				}
 

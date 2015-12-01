@@ -110,8 +110,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				var clients = new List<EndPoint>();
 				var servers = new List<EndPoint>();
-				client.OnDisconnected += clients.Add;
-				server.OnDisconnected += servers.Add;
+				client.OnDisconnected += (ep, unused) => clients.Add(ep);
+				server.OnDisconnected += (ep, unused) => servers.Add(ep);
 
 				var clientEp = client.LocalEndPoint;
 				var serverEp = server.LocalEndPoint;
@@ -229,6 +229,37 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 					thrown.Should().BeTrue("Because all tasks should've either thrown a connection lost or a not connected exception");
 				}
+			}
+		}
+
+		[Test]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
+		[Description("Verifies that OnDisconnected sends the correct connection id")]
+		public void TestDisconnect7()
+		{
+			using (var client = CreateClient())
+			using (var server = CreateServer())
+			{
+				server.Bind(IPAddress.Loopback);
+
+				var ids = new List<ConnectionId>();
+				client.OnDisconnected += (unused, id) => ids.Add(id);
+				client.Connect(server.LocalEndPoint);
+				ids.Should().BeEmpty();
+
+				client.Disconnect();
+				ids.Should().Equal(new[]
+					{
+						new ConnectionId(1)
+					});
+
+				client.Connect(server.LocalEndPoint);
+				client.Disconnect();
+				ids.Should().Equal(new[]
+					{
+						new ConnectionId(1),
+						new ConnectionId(2)
+					});
 			}
 		}
 	}

@@ -92,6 +92,9 @@
     <Compile Include="..\SharpRemote.Windows\Attributes\SingletonFactoryMethodAttribute.cs">
       <Link>Attributes\SingletonFactoryMethodAttribute.cs</Link>
     </Compile>
+    <Compile Include="..\SharpRemote.Windows\ConnectionId.cs">
+      <Link>ConnectionId.cs</Link>
+    </Compile>
     <Compile Include="..\SharpRemote.Windows\Dispatch.cs">
       <Link>Dispatch.cs</Link>
     </Compile>

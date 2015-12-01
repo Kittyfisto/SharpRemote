@@ -33,7 +33,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		private SocketRemotingEndPointClient _client;
 
 		[TestFixtureSetUp]
-		public void SetUp()
+		public new void SetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
@@ -233,24 +233,24 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		{
 			var subject = new Mock<ISubjectHost>();
 
+			ulong? actualId = null;
 			Type type = null;
 			Type @interface = null;
-			const int id = 42;
 
-			subject.Setup(x => x.CreateSubject1(It.IsAny<Type>(), It.IsAny<Type>()))
-			       .Returns((Type a, Type b) =>
+			subject.Setup(x => x.CreateSubject1(It.IsAny<ulong>(), It.IsAny<Type>(), It.IsAny<Type>()))
+			       .Callback((ulong id, Type a, Type b) =>
 				       {
+					       actualId = id;
 					       type = a;
 					       @interface = b;
-					       return id;
 				       });
 
 			const int servantId = 10;
 			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<ISubjectHost>(servantId);
 
-			ulong actualId = proxy.CreateSubject1(typeof (GetStringPropertyImplementation), typeof (IGetStringProperty));
-			actualId.Should().Be(42);
+			proxy.CreateSubject1(42, typeof (GetStringPropertyImplementation), typeof (IGetStringProperty));
+			actualId.Should().Be(42ul);
 			type.Should().Be<GetStringPropertyImplementation>();
 			@interface.Should().Be<IGetStringProperty>();
 		}
@@ -810,7 +810,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			TaskScheduler.UnobservedTaskException += fn;
 			try
 			{
-				const ulong servantId = 30;
+				const ulong servantId = 33;
 
 				bool called = false;
 				var subject = new Mock<IVoidMethodAsyncAttribute>();

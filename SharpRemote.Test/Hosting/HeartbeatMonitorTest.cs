@@ -40,7 +40,7 @@ namespace SharpRemote.Test.Hosting
 			HeartbeatMonitor monitor;
 			using (
 				monitor =
-				new HeartbeatMonitor(_heartbeat.Object, debugger, TimeSpan.FromSeconds(0.01), 1, enabledWithAttachedDebugger))
+				new HeartbeatMonitor(_heartbeat.Object, debugger, TimeSpan.FromSeconds(0.01), 1, enabledWithAttachedDebugger, true))
 			{
 				bool failureDetected = false;
 				monitor.OnFailure += () => failureDetected = true;
@@ -63,6 +63,7 @@ namespace SharpRemote.Test.Hosting
 			                                   Debugger.Instance,
 			                                   TimeSpan.FromSeconds(2),
 			                                   4,
+			                                   true,
 			                                   true);
 			monitor.Interval.Should().Be(TimeSpan.FromSeconds(2));
 			monitor.FailureInterval.Should()
@@ -76,7 +77,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying a null heartbeat interface is not allowed")]
 		public void TestCtor2()
 		{
-			new Action(() => new HeartbeatMonitor(null, Debugger.Instance, TimeSpan.FromSeconds(1), 2, true))
+			new Action(() => new HeartbeatMonitor(null, Debugger.Instance, TimeSpan.FromSeconds(1), 2, true, true))
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Value cannot be null.\r\nParameter name: heartbeat");
 		}
@@ -85,7 +86,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying a null debugger interface is not allowed")]
 		public void TestCtor3()
 		{
-			new Action(() => new HeartbeatMonitor(_heartbeat.Object, null, TimeSpan.FromSeconds(1), 2, true))
+			new Action(() => new HeartbeatMonitor(_heartbeat.Object, null, TimeSpan.FromSeconds(1), 2, true, true))
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Value cannot be null.\r\nParameter name: debugger");
 		}
@@ -94,7 +95,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying a negative heartbeat interval is not allowed")]
 		public void TestCtor4()
 		{
-			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(-1), 2, true))
+			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(-1), 2, true, true))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: heartBeatInterval");
 		}
@@ -103,7 +104,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying less than 1 skipped heartbeat as a failure threshold is not allowed")]
 		public void TestCtor5()
 		{
-			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(2), 0, true))
+			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(2), 0, true, true))
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureThreshold");
 		}
@@ -167,7 +168,7 @@ namespace SharpRemote.Test.Hosting
 			HeartbeatMonitor monitor;
 			using (
 				monitor =
-				new HeartbeatMonitor(_heartbeat.Object, _debugger.Object, TimeSpan.FromSeconds(0.01), 1, enabledWithAttachedDebugger))
+				new HeartbeatMonitor(_heartbeat.Object, _debugger.Object, TimeSpan.FromSeconds(0.01), 1, enabledWithAttachedDebugger, true))
 			{
 				bool failureDetected = false;
 				monitor.OnFailure += () => failureDetected = true;
@@ -237,7 +238,7 @@ namespace SharpRemote.Test.Hosting
 			          .Returns(() => Task.Factory.StartNew(() => { Interlocked.Increment(ref actualNumHeartbeats); }));
 
 			HeartbeatMonitor monitor;
-			using (monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(0.1), 1, true))
+			using (monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(0.1), 1, true, true))
 			{
 				bool failureDetected = false;
 				monitor.OnFailure += () => failureDetected = true;

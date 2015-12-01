@@ -3,7 +3,7 @@
 	/// <summary>
 	/// Describes the various reasons why a process faulted.
 	/// </summary>
-	public enum ProcessFaultReason
+	public enum ProcessFailureReason
 	{
 		/// <summary>
 		/// The connection between both endpoints has been closed due to an unexpected exception

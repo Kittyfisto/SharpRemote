@@ -13,11 +13,20 @@ namespace SharpRemote.Test
 		public virtual void TestFixtureSetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
-			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
-			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
-			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
-			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);
+			var loggers = Loggers;
+			if (loggers != null)
+			{
+				foreach (var logger in loggers)
+				{
+					TestLogger.SetLevel(logger, Level.Info);
+				}
+			}
 		}
+
+		/// <summary>
+		/// The loggers that shall be enabled for this test and write to the console.
+		/// </summary>
+		public virtual Type[] Loggers { get { return null; } }
 
 		[SetUp]
 		public void SetUp()
@@ -35,11 +44,13 @@ namespace SharpRemote.Test
 		protected SocketRemotingEndPointClient CreateClient(string name = null, IAuthenticator clientAuthenticator = null,
 		                                                    IAuthenticator serverAuthenticator = null,
 		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                                    LatencySettings latencySettings = null)
+		                                                    LatencySettings latencySettings = null,
+		                                                    HeartbeatSettings heartbeatSettings = null)
 		{
 			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
 			                                        networkServiceDiscoverer,
-			                                        latencySettings: latencySettings);
+			                                        latencySettings: latencySettings,
+			                                        heartbeatSettings: heartbeatSettings);
 		}
 
 		protected SocketRemotingEndPointServer CreateServer(string name = null,
@@ -47,14 +58,16 @@ namespace SharpRemote.Test
 		                                                    IAuthenticator serverAuthenticator = null,
 		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
 		                                                    LatencySettings latencySettings = null,
-		                                                    EndPointSettings endPointSettings = null)
+		                                                    EndPointSettings endPointSettings = null,
+		                                                    HeartbeatSettings heartbeatSettings = null)
 		{
 			return new SocketRemotingEndPointServer(name,
 			                                        clientAuthenticator,
 			                                        serverAuthenticator, null,
 			                                        networkServiceDiscoverer,
 			                                        latencySettings: latencySettings,
-			                                        endPointSettings: endPointSettings);
+			                                        endPointSettings: endPointSettings,
+			                                        heartbeatSettings: heartbeatSettings);
 		}
 
 		public static bool WaitFor(Func<bool> fn, TimeSpan timeout)

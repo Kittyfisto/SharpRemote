@@ -20,7 +20,6 @@ namespace SharpRemote.Hosting
 		private readonly DefaultImplementationRegistry _registry;
 		private readonly Action _onDisposed;
 
-		private ulong _nextServantId;
 		private bool _isDisposed;
 
 		private Type GetType(string assemblyQualifiedName)
@@ -32,7 +31,6 @@ namespace SharpRemote.Hosting
 		}
 
 		public SubjectHost(IRemotingEndPoint endpoint,
-			ulong firstServantId,
 			DefaultImplementationRegistry registry,
 			Action onDisposed = null,
 			ITypeResolver customTypeResolver = null)
@@ -43,17 +41,16 @@ namespace SharpRemote.Hosting
 			_registry = registry;
 			_customTypeResolver = customTypeResolver;
 			_endpoint = endpoint;
-			_nextServantId = firstServantId;
 			_onDisposed = onDisposed;
 			_syncRoot = new object();
 			_servants = new Dictionary<ulong, IServant>();
 			_subjects = new Dictionary<ulong, object>();
 		}
 
-		public ulong CreateSubject3(Type interfaceType)
+		public void CreateSubject3(ulong objectId, Type interfaceType)
 		{
 			var type = _registry.GetImplementation(interfaceType);
-			return CreateSubject1(type, interfaceType);
+			CreateSubject1(objectId, type, interfaceType);
 		}
 
 		public void RegisterDefaultImplementation(Type implementation, Type interfaceType)
@@ -61,26 +58,23 @@ namespace SharpRemote.Hosting
 			_registry.RegisterDefaultImplementation(implementation, interfaceType);
 		}
 
-		public ulong CreateSubject1(Type type, Type interfaceType)
+		public void CreateSubject1(ulong objectId, Type type, Type interfaceType)
 		{
 			var subject = Activator.CreateInstance(type);
 
 			lock (_syncRoot)
 			{
-				var servantId = _nextServantId++;
-				_subjects.Add(servantId, subject);
+				_subjects.Add(objectId, subject);
 				var method = typeof(IRemotingEndPoint).GetMethod("CreateServant").MakeGenericMethod(interfaceType);
-				var servant = (IServant)method.Invoke(_endpoint, new[] { servantId, subject });
-				_servants.Add(servantId, servant);
-
-				return servantId;
+				var servant = (IServant)method.Invoke(_endpoint, new[] { objectId, subject });
+				_servants.Add(objectId, servant);
 			}
 		}
 
-		public ulong CreateSubject2(string assemblyQualifiedTypeName, Type interfaceType)
+		public void CreateSubject2(ulong objectId, string assemblyQualifiedTypeName, Type interfaceType)
 		{
 			var type = GetType(assemblyQualifiedTypeName);
-			return CreateSubject1(type, interfaceType);
+			CreateSubject1(objectId, type, interfaceType);
 		}
 
 		public void Dispose()

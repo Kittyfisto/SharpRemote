@@ -1,6 +1,7 @@
 # SharpRemote
 
-[![Build status](https://ci.appveyor.com/api/projects/status/e4s3he430y1a27cb?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote)
+Master: [![Build status](https://ci.appveyor.com/api/projects/status/e4s3he430y1a27cb?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote)  
+Dev:    [![Build status](https://ci.appveyor.com/api/projects/status/8icg92xvgfhp1tnf?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote-2j0wg)  
 
 SharpRemote is a free and active open-source project aimed at developing distributed applications that run accross different processes, machines and networks.
 

@@ -7,7 +7,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,12 +34,18 @@ namespace SharpRemote
 		private const ulong ClientLatencyServantId = ulong.MaxValue - 3;
 		private const ulong ClientHeartbeatServantId = ulong.MaxValue - 4;
 
+		private const string AuthenticationChallenge = "auth challenge";
+		private const string AuthenticationResponse = "auth response";
+		private const string AuthenticationVerification = "auth verification";
+		private const string AuthenticationFinished = "auth finished";
+
 		private const string AuthenticationRequiredMessage = "Authentication required";
 		private const string NoAuthenticationRequiredMessage = "No Authentication required";
 		private const string AuthenticationResponseMessage = "Authentication";
 		private const string AuthenticationFailedMessage = "Authentication failed";
 		private const string AuthenticationSucceedMessage = "Authentication succeeded";
 		protected const string HandshakeSucceedMessage = "Handshake succeeded";
+
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		#region Authentication
@@ -194,6 +199,13 @@ namespace SharpRemote
 		                                        EndPointSettings endPointSettings = null)
 		{
 			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
+			if (heartbeatSettings != null)
+			{
+				if (heartbeatSettings.Interval <= TimeSpan.Zero)
+					throw new ArgumentOutOfRangeException("heartbeatSettings.Interval", "The heartbeat interval must be greater than zero");
+				if (heartbeatSettings.SkippedHeartbeatThreshold <= 0)
+					throw new ArgumentOutOfRangeException("heartbeatSettings.SkippedHeartbeatThreshold", "The skipped heartbeat threshold must be greater than zero");
+			}
 
 			_idGenerator = idGenerator;
 			_name = name ?? "<Unnamed>";
@@ -292,7 +304,7 @@ namespace SharpRemote
 					return;
 			}
 
-			bool disconnecting = _heartbeatSettings.UseHeartbeatForFaultDetection;
+			bool disconnecting = _heartbeatSettings.UseHeartbeatFailureDetection;
 			var now = DateTime.Now;
 			var difference = now - _lastRead;
 			var heartbeatMonitor = _heartbeatMonitor;
@@ -725,6 +737,10 @@ namespace SharpRemote
 			get { return InternalRemoteEndPoint != null; }
 		}
 
+		public ConnectionId CurrentConnectionId
+		{
+			get; protected set; }
+
 		public TimeSpan RoundtripTime
 		{
 			get
@@ -735,6 +751,16 @@ namespace SharpRemote
 
 				return TimeSpan.Zero;
 			}
+		}
+
+		public EndPoint LocalEndPoint
+		{
+			get { return InternalLocalEndPoint; }
+		}
+
+		public EndPoint RemoteEndPoint
+		{
+			get { return InternalRemoteEndPoint; }
 		}
 
 		public void Disconnect()
@@ -868,8 +894,7 @@ namespace SharpRemote
 						}
 						else if ((finishedCall.MessageType & MessageType.Exception) != 0)
 						{
-							var formatter = new BinaryFormatter();
-							var e = (Exception) formatter.Deserialize(finishedCall.Reader.BaseStream);
+							var e = ReadException(finishedCall.Reader);
 							LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
 							taskSource.SetException(e);
 						}
@@ -933,8 +958,7 @@ namespace SharpRemote
 				}
 				else if ((call.MessageType & MessageType.Exception) != 0)
 				{
-					var formatter = new BinaryFormatter();
-					var e = (Exception) formatter.Deserialize(call.Reader.BaseStream);
+					var e = ReadException(call.Reader);
 					LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
 					throw e;
 				}
@@ -982,6 +1006,8 @@ namespace SharpRemote
 			EndPoint remoteEndPoint;
 			Socket socket;
 			bool hasDisconnected = false;
+			bool emitOnFailure = false;
+			ConnectionId connectionId;
 
 			lock (_syncRoot)
 			{
@@ -990,6 +1016,9 @@ namespace SharpRemote
 
 				InternalRemoteEndPoint = null;
 				_socket = null;
+
+				connectionId = CurrentConnectionId;
+				CurrentConnectionId = ConnectionId.None;
 
 				if (socket != null)
 				{
@@ -1030,7 +1059,7 @@ namespace SharpRemote
 					}
 					else
 					{
-						EmitOnFailure(reason);
+						emitOnFailure = true;
 					}
 
 					try
@@ -1046,20 +1075,27 @@ namespace SharpRemote
 						// or there's a bug in its implementation - either way this method may
 						// throw a NullReferenceException from inside Disconnect.
 					}
+
+					socket.TryDispose();
 				}
 			}
 
-			EmitOnDisconnected(hasDisconnected, remoteEndPoint);
+			if (emitOnFailure)
+			{
+				EmitOnFailure(reason, connectionId);
+			}
+
+			EmitOnDisconnected(hasDisconnected, remoteEndPoint, connectionId);
 		}
 
-		private void EmitOnFailure(EndPointDisconnectReason reason)
+		private void EmitOnFailure(EndPointDisconnectReason reason, ConnectionId connectionId)
 		{
-			Action<EndPointDisconnectReason> fn = OnFailure;
+			var fn = OnFailure;
 			if (fn != null)
 			{
 				try
 				{
-					fn(reason);
+					fn(reason, connectionId);
 				}
 				catch (Exception e)
 				{
@@ -1093,7 +1129,7 @@ namespace SharpRemote
 			}
 		}
 
-		protected void FireOnConnected(EndPoint endPoint)
+		protected void FireOnConnected(EndPoint endPoint, ConnectionId connectionId)
 		{
 			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
 			                                         Diagnostics.Debugger.Instance,
@@ -1110,7 +1146,7 @@ namespace SharpRemote
 			{
 				try
 				{
-					fn(endPoint);
+					fn(endPoint, connectionId);
 				}
 				catch (Exception e)
 				{
@@ -1119,14 +1155,14 @@ namespace SharpRemote
 			}
 		}
 
-		private void EmitOnDisconnected(bool hasDisconnected, EndPoint remoteEndPoint)
+		private void EmitOnDisconnected(bool hasDisconnected, EndPoint remoteEndPoint, ConnectionId connectionId)
 		{
 			var fn2 = OnDisconnected;
 			if (hasDisconnected && fn2 != null)
 			{
 				try
 				{
-					fn2(remoteEndPoint);
+					fn2(remoteEndPoint, connectionId);
 				}
 				catch (Exception e)
 				{
@@ -1142,12 +1178,12 @@ namespace SharpRemote
 		/// <remarks>
 		/// The event is fired with the endpoint of the *other* <see cref="AbstractSocketRemotingEndPoint"/>.
 		/// </remarks>
-		public event Action<EndPoint> OnConnected;
+		public event Action<EndPoint, ConnectionId> OnConnected;
 
 		/// <summary>
 		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/> is disconnected.
 		/// </summary>
-		public event Action<EndPoint> OnDisconnected;
+		public event Action<EndPoint, ConnectionId> OnDisconnected;
 
 		/// <summary>
 		///     This event is invoked right before a socket is to be closed due to failure of:
@@ -1156,7 +1192,7 @@ namespace SharpRemote
 		///     - a failure of SharpRemote
 		///     - something else ;)
 		/// </summary>
-		public event Action<EndPointDisconnectReason> OnFailure;
+		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 
 		private bool HandleMessage(long rpcId, MessageType type, BinaryReader reader, out EndPointDisconnectReason? reason)
 		{
@@ -1418,7 +1454,12 @@ namespace SharpRemote
 			return _pendingMethodCalls.HandleResponse(rpcId, messageType, reader);
 		}
 
-		private bool TryReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message, out string error)
+		private bool TryReadMessage(Socket socket,
+		                            TimeSpan timeout,
+		                            string messageStep,
+		                            out string messageType,
+		                            out string message,
+		                            out string error)
 		{
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 			var size = new byte[4];
@@ -1427,8 +1468,14 @@ namespace SharpRemote
 			{
 				messageType = null;
 				message = null;
-				error = string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
-				                      timeout.TotalSeconds, err);
+				error =
+					string.Format(
+						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
+						Name,
+						messageStep,
+						remoteEndPoint,
+						timeout.TotalSeconds,
+						err);
 				return false;
 			}
 
@@ -1437,7 +1484,7 @@ namespace SharpRemote
 			{
 				messageType = null;
 				message = null;
-				error = string.Format("The message received from endpoint '{0}' is malformatted",
+				error = string.Format("The message received from remote endpoint '{0}' is malformatted",
 				                      remoteEndPoint);
 				return false;
 			}
@@ -1447,8 +1494,14 @@ namespace SharpRemote
 			{
 				messageType = null;
 				message = null;
-				error = string.Format("Failed to receive message from endpoint '{0}' in time: {1}s (error: {2})", remoteEndPoint,
-				                      timeout.TotalSeconds, err);
+				error =
+					string.Format(
+						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
+						Name,
+						messageStep,
+						remoteEndPoint,
+						timeout.TotalSeconds,
+						err);
 				return false;
 			}
 
@@ -1462,10 +1515,14 @@ namespace SharpRemote
 			return true;
 		}
 
-		protected void ReadMessage(Socket socket, TimeSpan timeout, out string messageType, out string message)
+		protected void ReadMessage(Socket socket,
+			TimeSpan timeout,
+			string messageStep,
+			out string messageType,
+			out string message)
 		{
 			string error;
-			if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+			if (!TryReadMessage(socket, timeout, messageStep, out messageType, out message, out error))
 			{
 				throw new HandshakeException(error);
 			}
@@ -1501,7 +1558,8 @@ namespace SharpRemote
 				SocketError err;
 				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
 				{
-					error = string.Format("Failed to send {0} to endpoint '{1}': {2}",
+					error = string.Format("EndPoint '{0}' failed to send {1} to remote endpoint '{2}': {3}",
+					                      Name,
 					                      messageType,
 					                      remoteEndPoint,
 					                      err);
@@ -1517,7 +1575,7 @@ namespace SharpRemote
 		///     Performs the authentication between client & server (if necessary) from the server-side.
 		/// </summary>
 		/// <param name="socket"></param>
-		protected void PerformIncomingHandshake(Socket socket)
+		protected ConnectionId PerformIncomingHandshake(Socket socket)
 		{
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 			TimeSpan timeout = TimeSpan.FromMinutes(1);
@@ -1532,7 +1590,7 @@ namespace SharpRemote
 				Log.DebugFormat("Creating challenge '{0}' for endpoint '{1}'", challenge, remoteEndPoint);
 				WriteMessage(socket, AuthenticationRequiredMessage, challenge);
 
-				ReadMessage(socket, timeout, out messageType, out message);
+				ReadMessage(socket, timeout, AuthenticationResponse, out messageType, out message);
 				Log.DebugFormat("Received response '{0}' for challenge '{1}' from endpoint '{2}'",
 				                message,
 				                challenge,
@@ -1555,7 +1613,7 @@ namespace SharpRemote
 				WriteMessage(socket, NoAuthenticationRequiredMessage);
 			}
 
-			ReadMessage(socket, timeout, out messageType, out message);
+			ReadMessage(socket, timeout, AuthenticationChallenge, out messageType, out message);
 			if (messageType == AuthenticationRequiredMessage)
 			{
 				if (_serverAuthenticator == null)
@@ -1567,7 +1625,7 @@ namespace SharpRemote
 
 				// After having answered the challenge we wait for a successful response from the client.
 				// If we failed the authentication, then 
-				ReadMessage(socket, timeout, out messageType, out message);
+				ReadMessage(socket, timeout, AuthenticationVerification, out messageType, out message);
 				if (messageType != AuthenticationSucceedMessage)
 					throw new AuthenticationException(string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint));
 			}
@@ -1576,33 +1634,9 @@ namespace SharpRemote
 				throw new HandshakeException();
 			}
 
-			OnHandshakeSucceeded(socket);
+			var connectionId = OnHandshakeSucceeded(socket);
 			WriteMessage(socket, HandshakeSucceedMessage);
-		}
-
-		/// <summary>
-		///     Performs the authentication between client & server (if necessary) from the client-side.
-		/// </summary>
-		/// <param name="socket"></param>
-		/// <param name="timeout"></param>
-		protected void PerformOutgoingHandshake(Socket socket, TimeSpan timeout)
-		{
-			ErrorType errorType;
-			string error;
-			if (!TryPerformOutgoingHandshake(socket, timeout, out errorType, out error))
-			{
-				switch (errorType)
-				{
-					case ErrorType.Handshake:
-						throw new HandshakeException(error);
-
-					case ErrorType.AuthenticationRequired:
-						throw new AuthenticationRequiredException(error);
-
-					default:
-						throw new AuthenticationException(error);
-				}
-			}
+			return connectionId;
 		}
 
 		protected enum ErrorType
@@ -1621,18 +1655,24 @@ namespace SharpRemote
 		/// <param name="timeout"></param>
 		/// <param name="errorType"></param>
 		/// <param name="error"></param>
+		/// <param name="currentConnectionId"></param>
 		protected bool TryPerformOutgoingHandshake(Socket socket,
 			TimeSpan timeout,
 			out ErrorType errorType,
-			out string error)
+			out string error,
+			out ConnectionId currentConnectionId)
 		{
 			string messageType;
 			string message;
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 
-			if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+			if (!TryReadMessage(socket, timeout, AuthenticationChallenge,
+				out messageType,
+				out message,
+				out error))
 			{
 				errorType =  ErrorType.Handshake;
+				currentConnectionId = ConnectionId.None;
 				return false;
 			}
 
@@ -1642,6 +1682,7 @@ namespace SharpRemote
 				{
 					errorType = ErrorType.AuthenticationRequired;
 					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 
@@ -1652,14 +1693,19 @@ namespace SharpRemote
 				if (!TryWriteMessage(socket, AuthenticationResponseMessage, response, out error))
 				{
 					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 
 				// If we failed the authentication, a proper server will tell us so we can
 				// forward this information to the caller.
-				if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+				if (!TryReadMessage(socket, timeout, AuthenticationVerification,
+					out messageType,
+					out message,
+					out error))
 				{
 					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 
@@ -1667,6 +1713,7 @@ namespace SharpRemote
 				{
 					errorType = ErrorType.Authentication;
 					error = string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint);
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 			}
@@ -1681,6 +1728,7 @@ namespace SharpRemote
 					              AuthenticationRequiredMessage,
 					              NoAuthenticationRequiredMessage
 						);
+				currentConnectionId = ConnectionId.None;
 				return false;
 			}
 
@@ -1692,12 +1740,17 @@ namespace SharpRemote
 				if (!TryWriteMessage(socket, AuthenticationRequiredMessage, challenge, out error))
 				{
 					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 
-				if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+				if (!TryReadMessage(socket, timeout, AuthenticationResponse,
+					out messageType,
+					out message,
+					out error))
 				{
 					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 
@@ -1707,39 +1760,48 @@ namespace SharpRemote
 					// the connection...
 					WriteMessage(socket, AuthenticationResponseMessage, AuthenticationFailedMessage);
 					errorType = ErrorType.Authentication;
-					error = string.Format("Endpoint '{0}' failed the authentication challenge",
-					                      remoteEndPoint);
+					error = string.Format("Remote endpoint '{0}' failed the authentication challenge",
+										  remoteEndPoint);
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 
 				if (!TryWriteMessage(socket, AuthenticationSucceedMessage, "", out error))
 				{
 					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
 					return false;
 				}
 
-				Log.InfoFormat("Endpoint '{0}' successfully authenticated", remoteEndPoint);
+				Log.InfoFormat("Remote endpoint '{0}' successfully authenticated", remoteEndPoint);
 			}
 			else
 			{
 				WriteMessage(socket, NoAuthenticationRequiredMessage);
 			}
 
-			if (!TryReadMessage(socket, timeout, out messageType, out message, out error))
+			if (!TryReadMessage(socket, timeout, AuthenticationFinished, out messageType, out message, out error))
 			{
 				errorType = ErrorType.Handshake;
+				currentConnectionId = ConnectionId.None;
 				return false;
 			}
 
 			if (messageType != HandshakeSucceedMessage)
 			{
 				errorType = ErrorType.Handshake;
-				error = string.Format("Endpoint '{0}' failed to finished the handshake", remoteEndPoint);
+				error =
+					string.Format(
+						"EndPoint '{0}' did not receive the correct response from remote endpoint '{1}': Expected '{2}' but received '{3}'",
+						Name,
+						remoteEndPoint,
+						HandshakeSucceedMessage,
+						messageType);
+				currentConnectionId = ConnectionId.None;
 				return false;
 			}
 
-			OnHandshakeSucceeded(socket);
-
+			currentConnectionId = OnHandshakeSucceeded(socket);
 			errorType = ErrorType.Handshake;
 			error = null;
 			return true;
@@ -1749,7 +1811,7 @@ namespace SharpRemote
 		///     Is called when the handshake for the newly incoming message succeeds.
 		/// </summary>
 		/// <param name="socket"></param>
-		protected abstract void OnHandshakeSucceeded(Socket socket);
+		protected abstract ConnectionId OnHandshakeSucceeded(Socket socket);
 
 		public override string ToString()
 		{

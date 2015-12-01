@@ -132,7 +132,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
+		//[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
 		public void TestConnect4()
 		{
@@ -213,7 +213,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("Wont run on the shitty CI server")]
+		//[LocalTest("Wont run on the CI server")]
 		[Description("Verifies that Connect() succeeds when client-side authentication is enabled and the challenge is met")]
 		public void TestConnect9()
 		{
@@ -405,7 +405,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		//[LocalTest("I swear to god, you cannot run any fucking test on this CI server")]
 		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
 		public void TestConnect20()
 		{
@@ -430,7 +430,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 		[Test]
 		[Repeat(10)]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		//[LocalTest("I swear to god, you cannot run any fucking test on this CI server")]
 		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
 		public void TestConnect21()
 		{
@@ -453,7 +453,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
+		//[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that when one client ends a connection, another one can establish one to that server again")]
 		public void TestConnect22()
 		{
@@ -480,7 +480,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		//[LocalTest("I swear to god, you cannot run any fucking test on this CI server")]
 		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
 		public void TestConnect24()
 		{
@@ -503,7 +503,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		//[LocalTest("I swear to god, you cannot run any fucking test on this CI server")]
 		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
 		public void TestConnect25()
 		{

@@ -71,6 +71,7 @@ namespace SharpRemote.Test.CodeGeneration
 		}
 
 		[Test]
+		[LocalTest("Timing sensitive tests don't want to run on AppVeyor")]
 		[Description("Verifies that GetType() is at least 10 times faster than Type.GetType()")]
 		public void TestGetTypePerformance()
 		{

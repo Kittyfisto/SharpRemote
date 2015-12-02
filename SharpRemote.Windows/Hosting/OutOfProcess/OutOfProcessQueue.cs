@@ -283,7 +283,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		/// <param name="pid">The process id of the resulting process, if successfully started</param>
 		/// <param name="connectionId"></param>
 		/// <param name="exceptions">The list that will be filled with the exception(s) relevant to the Start, should any be thrown</param>
-		/// <returns>True when the application was started & a connection established, false otherwise</returns>
+		/// <returns>True when the application was started and a connection established, false otherwise</returns>
 		private LoopResult StartOnce(int currentRestart,
 		                             out int pid,
 		                             out ConnectionId connectionId,

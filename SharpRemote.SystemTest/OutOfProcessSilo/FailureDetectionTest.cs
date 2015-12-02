@@ -10,10 +10,11 @@ using Moq;
 using NUnit.Framework;
 using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
+using SharpRemote.Test;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 
-namespace SharpRemote.Test.Hosting.OutOfProcess
+namespace SharpRemote.SystemTest.OutOfProcessSilo
 {
 	[TestFixture]
 	public sealed class FailureDetectionTest
@@ -28,7 +29,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			handler.Setup(x => x.OnFailure(It.IsAny<Failure>()))
 			       .Callback((Failure x) => failure = x);
 
-			using (var silo = new OutOfProcessSilo(failureHandler: handler.Object))
+			using (var silo = new Hosting.OutOfProcessSilo(failureHandler: handler.Object))
 			{
 				silo.Start();
 
@@ -87,7 +88,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 						}
 					};
 
-				using (var silo = new OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
+				using (var silo = new Hosting.OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
 				{
 					silo.Start();
 					int? id = silo.HostProcessId;
@@ -123,7 +124,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					}
 				};
 
-			using (var silo = new OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
+			using (var silo = new Hosting.OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
 			using (var handle = new ManualResetEvent(false))
 			{
 				handler.Setup(x => x.OnResolutionFinished(It.IsAny<Failure>(), It.IsAny<Decision>(), It.IsAny<Resolution>()))
@@ -168,7 +169,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					       resolution = r;
 				       });
 
-			using (var silo = new OutOfProcessSilo(failureHandler: handler.Object))
+			using (var silo = new Hosting.OutOfProcessSilo(failureHandler: handler.Object))
 			{
 				silo.Start();
 
@@ -218,7 +219,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 						SkippedHeartbeatThreshold = 4
 					}
 				};
-			using (var silo = new OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
+			using (var silo = new Hosting.OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
 			{
 				silo.Start();
 
@@ -261,7 +262,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 						       handle.Set();
 					       });
 
-				using (var silo = new OutOfProcessSilo(failureHandler: handler.Object))
+				using (var silo = new Hosting.OutOfProcessSilo(failureHandler: handler.Object))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
@@ -293,7 +294,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 				Directory.Delete(settings.MinidumpFolder, true);
 			}
 
-			using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+			using (var silo = new Hosting.OutOfProcessSilo(postMortemSettings: settings))
 			{
 				silo.Start();
 				IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
@@ -344,7 +345,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 #endif
 					};
 
-				using (var silo = new OutOfProcessSilo(postMortemSettings: settings, failureHandler: handler.Object))
+				using (var silo = new Hosting.OutOfProcessSilo(postMortemSettings: settings, failureHandler: handler.Object))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAssert>();
@@ -396,7 +397,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					Directory.Delete(settings.MinidumpFolder, true);
 				}
 
-				using (var silo = new OutOfProcessSilo(postMortemSettings: settings, failureHandler: handler.Object))
+				using (var silo = new Hosting.OutOfProcessSilo(postMortemSettings: settings, failureHandler: handler.Object))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAssert>();
@@ -450,7 +451,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 #endif
 					};
 
-				using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+				using (var silo = new Hosting.OutOfProcessSilo(postMortemSettings: settings))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesPureVirtualFunctionCall>();
@@ -504,7 +505,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					Directory.Delete(settings.MinidumpFolder, true);
 				}
 
-				using (var silo = new OutOfProcessSilo(postMortemSettings: settings))
+				using (var silo = new Hosting.OutOfProcessSilo(postMortemSettings: settings))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesPureVirtualFunctionCall>();

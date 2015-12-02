@@ -3,19 +3,19 @@ using System.Diagnostics;
 using System.Threading;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
+using SharpRemote.Test;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
-namespace SharpRemote.Test.Hosting.OutOfProcess
+namespace SharpRemote.SystemTest.OutOfProcessSilo
 {
 	[TestFixture]
 	public sealed class FailureRecoveryTest
 		: AbstractTest
 	{
-		private OutOfProcessSilo _silo;
+		private Hosting.OutOfProcessSilo _silo;
 		private RestartOnFailureStrategy _restartOnFailureHandler;
 		private ManualResetEvent _startHandle;
 		private FailureSettings _settings;
@@ -26,7 +26,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			{
 				return new[]
 					{
-						typeof (OutOfProcessSilo)
+						typeof (Hosting.OutOfProcessSilo)
 					};
 			}
 		}
@@ -43,7 +43,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 							Interval = TimeSpan.FromMilliseconds(100)
 						}
 				};
-			_silo = new OutOfProcessSilo(failureSettings: _settings, failureHandler: _restartOnFailureHandler);
+			_silo = new Hosting.OutOfProcessSilo(failureSettings: _settings, failureHandler: _restartOnFailureHandler);
 
 			_startHandle = new ManualResetEvent(false);
 		}
@@ -144,7 +144,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
-		[Description("Verifies that the host process can be restarted many times")]
+		[Description("Verifies that the host process can be restarted 100 times")]
 		public void TestRestart5()
 		{
 			_silo.Start();

@@ -235,7 +235,7 @@ namespace SharpRemote
 			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
 
 			_endpointSettings = endPointSettings ?? new EndPointSettings();
-			_pendingMethodCalls = new PendingMethodsQueue(_endpointSettings.MaxConcurrentCalls);
+			_pendingMethodCalls = new PendingMethodsQueue(_name, _endpointSettings.MaxConcurrentCalls);
 			_pendingMethodInvocations = new Dictionary<long, MethodInvocation>();
 
 			_clientAuthenticator = clientAuthenticator;
@@ -293,7 +293,7 @@ namespace SharpRemote
 			get { return _endpointSettings; }
 		}
 
-		private void HeartbeatMonitorOnOnFailure()
+		private void HeartbeatMonitorOnOnFailure(ConnectionId currentConnectionId)
 		{
 			lock (_syncRoot)
 			{
@@ -301,6 +301,11 @@ namespace SharpRemote
 				// reported a failure that we caused intentionally (by killing the host process) and thus
 				// this "failure" musn't be reported.
 				if (_isDisposed || _isDisposing)
+					return;
+
+				// We can safely ignore failures reported by the heartbeat monitor that are from any other
+				// than the current connection.
+				if (currentConnectionId != CurrentConnectionId)
 					return;
 			}
 
@@ -319,7 +324,7 @@ namespace SharpRemote
 			{
 				Log.ErrorFormat("Heartbeat monitor detected a failure with the connection to '{0}': Disconnecting the endpoint",
 				                InternalRemoteEndPoint);
-				Disconnect(EndPointDisconnectReason.HeartbeatFailure);
+				Disconnect(currentConnectionId, EndPointDisconnectReason.HeartbeatFailure);
 			}
 			else
 			{
@@ -336,9 +341,9 @@ namespace SharpRemote
 			var args = (ThreadArgs) sock;
 			Socket socket = args.Socket;
 			CancellationToken token = args.Token;
+			ConnectionId currentConnectionId = args.ConnectionId;
 
 			EndPointDisconnectReason reason;
-
 			try
 			{
 				while (true)
@@ -350,7 +355,7 @@ namespace SharpRemote
 					}
 
 					int messageLength;
-					byte[] message = _pendingMethodCalls.TakePendingWrite(token, out messageLength);
+					byte[] message = _pendingMethodCalls.TakePendingWrite(out messageLength);
 
 					if (message == null)
 					{
@@ -376,13 +381,14 @@ namespace SharpRemote
 				Log.ErrorFormat("Caught exception while writing/handling messages: {0}", e);
 			}
 
-			Disconnect(reason);
+			Disconnect(currentConnectionId, reason);
 		}
 
 		protected void ReadLoop(object sock)
 		{
 			var args = (ThreadArgs) sock;
 			Socket socket = args.Socket;
+			var connectionId = args.ConnectionId;
 
 			EndPointDisconnectReason reason;
 
@@ -417,10 +423,16 @@ namespace SharpRemote
 						_lastRead = DateTime.Now;
 
 						EndPointDisconnectReason? r;
-						if (!HandleMessage(rpcId, type, reader, out r))
+						if (!HandleMessage(connectionId, rpcId, type, reader, out r))
 						{
 // ReSharper disable PossibleInvalidOperationException
 							reason = (EndPointDisconnectReason) r;
+
+							if (_name == "client" && reason == EndPointDisconnectReason.RequestedByRemotEndPoint)
+							{
+								int n = 0;
+							}
+
 // ReSharper restore PossibleInvalidOperationException
 
 							break;
@@ -428,13 +440,22 @@ namespace SharpRemote
 					}
 				}
 			}
+			catch (ObjectDisposedException)
+			{
+				// We dispose the socket in Disconnect and therefore SynchronizedRead might throw
+				// this exception. There should be a better way to lazily dispose of the socket, but
+				// the fact that both ReadLoop & WriteLoop access the same socket would require some
+				// sort of synchronization that keeps track of both their lifetimes and dispose of the
+				// socket once neither thread accesses it anymore.
+				reason = EndPointDisconnectReason.RequestedByEndPoint;
+			}
 			catch (Exception e)
 			{
 				reason = EndPointDisconnectReason.UnhandledException;
 				Log.ErrorFormat("Caught exception while reading/handling messages: {0}", e);
 			}
 
-			Disconnect(reason);
+			Disconnect(connectionId, reason);
 		}
 
 		private bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
@@ -765,7 +786,7 @@ namespace SharpRemote
 
 		public void Disconnect()
 		{
-			Disconnect(EndPointDisconnectReason.RequestedByEndPoint);
+			Disconnect(CurrentConnectionId, EndPointDisconnectReason.RequestedByEndPoint);
 		}
 
 		public T CreateProxy<T>(ulong objectId) where T : class
@@ -909,19 +930,12 @@ namespace SharpRemote
 					}
 				};
 
-			PendingMethodCall call;
-			lock (_syncRoot)
-			{
-				if (!IsConnected)
-					throw new NotConnectedException(_name);
-
-				call = _pendingMethodCalls.Enqueue(servantId,
-																	 interfaceType,
-																	 methodName,
-																	 arguments,
-																	 rpcId,
-																	 onCallFinished);
-			}
+			var call = _pendingMethodCalls.Enqueue(servantId,
+			                                       interfaceType,
+			                                       methodName,
+			                                       arguments,
+			                                       rpcId,
+			                                       onCallFinished);
 
 			Interlocked.Add(ref _numBytesSent, call.MessageLength);
 			Interlocked.Increment(ref _numCallsInvoked);
@@ -935,17 +949,11 @@ namespace SharpRemote
 			PendingMethodCall call = null;
 			try
 			{
-				lock (_syncRoot)
-				{
-					if (!IsConnected)
-						throw new NotConnectedException(_name);
-
-					call = _pendingMethodCalls.Enqueue(servantId,
+				call = _pendingMethodCalls.Enqueue(servantId,
 													  interfaceType,
 													  methodName,
 													  arguments,
 													  rpcId);
-				}
 
 				Interlocked.Add(ref _numBytesSent, call.MessageLength);
 				Interlocked.Increment(ref _numCallsInvoked);
@@ -998,10 +1006,10 @@ namespace SharpRemote
 		/// </summary>
 		internal void DisconnectByFailure()
 		{
-			Disconnect(EndPointDisconnectReason.ReadFailure);
+			Disconnect(CurrentConnectionId, EndPointDisconnectReason.ReadFailure);
 		}
 
-		private void Disconnect(EndPointDisconnectReason reason)
+		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason)
 		{
 			EndPoint remoteEndPoint;
 			Socket socket;
@@ -1011,14 +1019,19 @@ namespace SharpRemote
 
 			lock (_syncRoot)
 			{
+				// We can safely ignore failures reported by the heartbeat monitor that are from any other
+				// than the current connection.
+				if (currentConnectionId != CurrentConnectionId)
+					return;
+
 				remoteEndPoint = InternalRemoteEndPoint;
 				socket = _socket;
 
 				InternalRemoteEndPoint = null;
+				_pendingMethodCalls.IsConnected = false;
 				_socket = null;
 
 				connectionId = CurrentConnectionId;
-				CurrentConnectionId = ConnectionId.None;
 
 				if (socket != null)
 				{
@@ -1075,9 +1088,10 @@ namespace SharpRemote
 						// or there's a bug in its implementation - either way this method may
 						// throw a NullReferenceException from inside Disconnect.
 					}
-
 					socket.TryDispose();
 				}
+
+				CurrentConnectionId = ConnectionId.None;
 			}
 
 			if (emitOnFailure)
@@ -1133,7 +1147,8 @@ namespace SharpRemote
 		{
 			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
 			                                         Diagnostics.Debugger.Instance,
-			                                         _heartbeatSettings);
+			                                         _heartbeatSettings,
+													 connectionId);
 
 			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
 			_heartbeatMonitor.Start();
@@ -1194,18 +1209,34 @@ namespace SharpRemote
 		/// </summary>
 		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 
-		private bool HandleMessage(long rpcId, MessageType type, BinaryReader reader, out EndPointDisconnectReason? reason)
+		private bool HandleMessage(
+			ConnectionId currentConnectionId,
+			long rpcId,
+			MessageType type,
+			BinaryReader reader,
+			out EndPointDisconnectReason? reason)
 		{
 			if (type == MessageType.Call)
 			{
 				Interlocked.Increment(ref _numCallsAnswered);
-				HandleRequest(rpcId, reader);
+				HandleRequest(currentConnectionId, rpcId, reader);
 			}
 			else if ((type & MessageType.Return) != 0)
 			{
 				if (!HandleResponse(rpcId, type, reader))
 				{
-					Log.ErrorFormat("There is no pending RPC #{0}, disconnecting...", rpcId);
+					// We only log a true error when we're neither disconnecting, nor disconnected - 
+					// because if either is true then this is quite expected because we've already cleared
+					// the list of pending messages, thus not finding a certain pending call is...
+					// expected.
+					lock (_syncRoot)
+					{
+						if (InternalRemoteEndPoint != null)
+						{
+							Log.ErrorFormat("There is no pending RPC #{0}, disconnecting...", rpcId);
+						}
+					}
+
 					reason = EndPointDisconnectReason.RpcInvalidResponse;
 					return false;
 				}
@@ -1226,8 +1257,13 @@ namespace SharpRemote
 			return true;
 		}
 
-		private void DispatchMethodInvocation(long rpcId, IGrain grain, string typeName, string methodName,
-		                                      BinaryReader reader)
+		private void DispatchMethodInvocation(
+			ConnectionId connectionId,
+			long rpcId,
+			IGrain grain,
+			string typeName,
+			string methodName,
+			BinaryReader reader)
 		{
 			if (!IsTypeSafe(grain.InterfaceType, typeName))
 			{
@@ -1290,13 +1326,13 @@ namespace SharpRemote
 						if (!SynchronizedWrite(socket, data, responseLength, out err))
 						{
 							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
-							Disconnect();
+							Disconnect(connectionId, EndPointDisconnectReason.WriteFailure);
 						}
 					}
 					catch (Exception e)
 					{
 						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
-						Disconnect(EndPointDisconnectReason.UnhandledException);
+						Disconnect(connectionId, EndPointDisconnectReason.UnhandledException);
 					}
 					finally
 					{
@@ -1384,7 +1420,7 @@ namespace SharpRemote
 			}
 		}
 
-		private void HandleRequest(long rpcId, BinaryReader reader)
+		private void HandleRequest(ConnectionId connectionId, long rpcId, BinaryReader reader)
 		{
 			ulong servantId = reader.ReadUInt64();
 			string typeName = reader.ReadString();
@@ -1398,7 +1434,7 @@ namespace SharpRemote
 
 			if (servant != null)
 			{
-				DispatchMethodInvocation(rpcId, servant, typeName, methodName, reader);
+				DispatchMethodInvocation(connectionId, rpcId, servant, typeName, methodName, reader);
 			}
 			else
 			{
@@ -1418,7 +1454,7 @@ namespace SharpRemote
 
 				if (proxy != null)
 				{
-					DispatchMethodInvocation(rpcId, proxy, typeName, methodName, reader);
+					DispatchMethodInvocation(connectionId, rpcId, proxy, typeName, methodName, reader);
 				}
 				else
 				{
@@ -1634,6 +1670,7 @@ namespace SharpRemote
 				throw new HandshakeException();
 			}
 
+			_pendingMethodCalls.IsConnected = true;
 			var connectionId = OnHandshakeSucceeded(socket);
 			WriteMessage(socket, HandshakeSucceedMessage);
 			return connectionId;
@@ -1801,6 +1838,7 @@ namespace SharpRemote
 				return false;
 			}
 
+			_pendingMethodCalls.IsConnected = true;
 			currentConnectionId = OnHandshakeSucceeded(socket);
 			errorType = ErrorType.Handshake;
 			error = null;
@@ -1822,11 +1860,13 @@ namespace SharpRemote
 		{
 			public readonly Socket Socket;
 			public readonly CancellationToken Token;
+			public readonly ConnectionId ConnectionId;
 
-			public ThreadArgs(Socket socket, CancellationToken token)
+			public ThreadArgs(Socket socket, CancellationToken token, ConnectionId connectionId)
 			{
 				Socket = socket;
 				Token = token;
+				ConnectionId = connectionId;
 			}
 		}
 	}

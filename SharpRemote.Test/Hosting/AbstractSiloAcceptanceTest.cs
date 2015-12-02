@@ -11,19 +11,20 @@ namespace SharpRemote.Test.Hosting
 {
 	[TestFixture]
 	public abstract class AbstractSiloAcceptanceTest
+		: AbstractTest
 	{
 		private ISilo _silo;
 
 		protected abstract ISilo Create();
 
 		[TestFixtureSetUp]
-		public void TestFixtureSetUp()
+		public new void TestFixtureSetUp()
 		{
 			_silo = Create();
 		}
 
 		[TestFixtureTearDown]
-		public void TestFixtureTearDown()
+		public new void TestFixtureTearDown()
 		{
 			_silo.Dispose();
 			_silo = null;

@@ -77,12 +77,14 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		public void TestStart4()
 		{
 			const int taskCount = 16;
+			var failureHandler = new RestartOnFailureStrategy();
 			var tasks = new Task[taskCount];
+
 			for (int i = 0; i < taskCount; ++i)
 			{
 				tasks[i] = new Task(() =>
 					{
-						using (var silo = new OutOfProcessSilo())
+						using (var silo = new OutOfProcessSilo(failureHandler: failureHandler))
 						{
 							silo.IsProcessRunning.Should().BeFalse();
 							silo.Start();
@@ -219,20 +221,6 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var destFileName = Path.Combine(dir, fileName);
 			File.Copy(fileName, destFileName);
 			return destFileName;
-		}
-
-		private static void Clear(string root)
-		{
-			var directory = new DirectoryInfo(root);
-
-			foreach (FileInfo file in directory.GetFiles())
-			{
-				file.TryDelete();
-			}
-			foreach (DirectoryInfo dir in directory.GetDirectories())
-			{
-				dir.TryDelete();
-			}
 		}
 	}
 }

@@ -63,8 +63,10 @@ namespace SharpRemote
 			_messageType = messageType;
 			_reader = reader;
 			_waitHandle.Set();
-			if (_callback != null)
-				_callback(this);
+
+			var fn = Interlocked.Exchange(ref _callback, null);
+			if (fn != null)
+				fn(this);
 		}
 
 		public void Reset(ulong servantId,

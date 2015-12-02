@@ -206,7 +206,7 @@ namespace SharpRemote.Test.Hosting
 		}
 
 		[Test]
-		[Repeat(50)]
+		[Repeat(20)]
 		public void TestTaskExceptionObservation()
 		{
 			var settings = new HeartbeatSettings

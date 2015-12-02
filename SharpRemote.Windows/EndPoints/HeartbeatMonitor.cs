@@ -238,6 +238,7 @@ namespace SharpRemote
 			try
 			{
 				task = _heartbeat.Beat();
+				task.ContinueWith(ObserverException, TaskContinuationOptions.OnlyOnFaulted);
 			}
 			catch (NotConnectedException)
 			{
@@ -255,6 +256,15 @@ namespace SharpRemote
 			}
 
 			return true;
+		}
+
+		private void ObserverException(Task task, object unused)
+		{
+			var exception = task.Exception;
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Task (finally) threw exception - ignoring it: {0}", exception);
+			}
 		}
 
 		/// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -202,6 +203,47 @@ namespace SharpRemote.Test.Hosting
 				failureStarted.Should().HaveValue();
 				monitor.NumHeartbeats.Should().BeGreaterOrEqualTo(25);
 			}
+		}
+
+		[Test]
+		[Repeat(50)]
+		public void TestTaskExceptionObservation()
+		{
+			var settings = new HeartbeatSettings
+				{
+					Interval = TimeSpan.FromMilliseconds(10)
+				};
+
+			var exceptions = new List<Exception>();
+			TaskScheduler.UnobservedTaskException += (sender, args) => exceptions.Add(args.Exception);
+
+			using (var heartbeatFailure = new ManualResetEvent(false))
+			using (
+				var monitor = new HeartbeatMonitor(_heartbeat.Object, _debugger.Object, settings, _connectionId))
+			{
+				_heartbeat.Setup(x => x.Beat())
+							.Returns(() =>
+							{
+								var task = new Task(() =>
+								{
+									heartbeatFailure.WaitOne();
+									throw new ConnectionLostException();
+								});
+								task.Start();
+								return task;
+							});
+
+				monitor.OnFailure += id => heartbeatFailure.Set();
+				monitor.Start();
+
+				heartbeatFailure.WaitOne(TimeSpan.FromMilliseconds(500))
+					.Should().BeTrue("Because the task doesn't return before a failure was reported");
+			}
+
+			GC.Collect(2, GCCollectionMode.Forced);
+			GC.WaitForPendingFinalizers();
+
+			exceptions.Should().Equal(new Exception[0]);
 		}
 
 		[Test]

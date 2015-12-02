@@ -113,6 +113,7 @@ namespace SharpRemote.Hosting
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		/// <param name="failureSettings">The settings specifying when a failure is assumed to have occured in the host process - if none are specified, then defaults are used</param>
 		/// <param name="failureHandler">The object responsible for deciding how failures are dealt with - if none is specified then a new <see cref="ZeroFailureToleranceStrategy"/> is used</param>
+		/// <param name="endPointName">The name of the endpoint - used in log messages to differentiate between different endpoints</param>
 		/// <exception cref="ArgumentNullException">When <paramref name="process"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="process"/> is contains only whitespace</exception>
 		public OutOfProcessSilo(
@@ -124,7 +125,8 @@ namespace SharpRemote.Hosting
 			PostMortemSettings postMortemSettings = null,
 			EndPointSettings endPointSettings = null,
 			FailureSettings failureSettings = null,
-			IFailureHandler failureHandler = null
+			IFailureHandler failureHandler = null,
+			string endPointName = null
 			)
 		{
 			if (process == null) throw new ArgumentNullException("process");
@@ -143,7 +145,8 @@ namespace SharpRemote.Hosting
 			failureSettings = failureSettings ?? new FailureSettings();
 			failureHandler = failureHandler ?? new ZeroFailureToleranceStrategy();
 
-			_endPoint = new SocketRemotingEndPointClient(customTypeResolver: customTypeResolver,
+			_endPoint = new SocketRemotingEndPointClient(endPointName,
+			                                             customTypeResolver: customTypeResolver,
 			                                             serializer: serializer,
 			                                             heartbeatSettings: failureSettings.HeartbeatSettings,
 			                                             latencySettings: latencySettings,

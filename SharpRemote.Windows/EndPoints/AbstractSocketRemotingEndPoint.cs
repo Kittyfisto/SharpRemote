@@ -473,7 +473,7 @@ namespace SharpRemote
 				int written = socket.Send(data, 0, length, SocketFlags.None, out err);
 				if (written != length || err != SocketError.Success || !socket.Connected)
 				{
-					Log.ErrorFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
+					Log.DebugFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
 					                data.Length, err, socket.Connected);
 					return false;
 				}

@@ -84,7 +84,6 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
-		[Repeat(10)]
 		[LocalTest("Puts too much stress on AppVeyor")]
 		[NUnit.Framework.Description("Verifies that multiple silos can be started concurrently")]
 		public void TestStart4()

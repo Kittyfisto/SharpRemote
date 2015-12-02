@@ -340,6 +340,7 @@ namespace SharpRemote
 			Socket socket = args.Socket;
 			CancellationToken token = args.Token;
 			ConnectionId currentConnectionId = args.ConnectionId;
+			SocketError? error = null;
 
 			EndPointDisconnectReason reason;
 			try
@@ -361,9 +362,10 @@ namespace SharpRemote
 						break;
 					}
 
-					SocketError error;
-					if (!SynchronizedWrite(socket, message, messageLength, out error))
+					SocketError err;
+					if (!SynchronizedWrite(socket, message, messageLength, out err))
 					{
+						error = err;
 						reason = EndPointDisconnectReason.WriteFailure;
 						break;
 					}
@@ -379,7 +381,7 @@ namespace SharpRemote
 				Log.ErrorFormat("Caught exception while writing/handling messages: {0}", e);
 			}
 
-			Disconnect(currentConnectionId, reason);
+			Disconnect(currentConnectionId, reason, error);
 		}
 
 		protected void ReadLoop(object sock)
@@ -389,6 +391,7 @@ namespace SharpRemote
 			var connectionId = args.ConnectionId;
 
 			EndPointDisconnectReason reason;
+			SocketError? error = null;
 
 			try
 			{
@@ -398,6 +401,7 @@ namespace SharpRemote
 					SocketError err;
 					if (!SynchronizedRead(socket, size, out err))
 					{
+						error = err;
 						reason = EndPointDisconnectReason.ReadFailure;
 						break;
 					}
@@ -408,6 +412,7 @@ namespace SharpRemote
 						var buffer = new byte[length];
 						if (!SynchronizedRead(socket, buffer, out err))
 						{
+							error = err;
 							reason = EndPointDisconnectReason.ReadFailure;
 							break;
 						}
@@ -425,16 +430,15 @@ namespace SharpRemote
 						{
 // ReSharper disable PossibleInvalidOperationException
 							reason = (EndPointDisconnectReason) r;
-
-							if (_name == "client" && reason == EndPointDisconnectReason.RequestedByRemotEndPoint)
-							{
-								int n = 0;
-							}
-
 // ReSharper restore PossibleInvalidOperationException
 
 							break;
 						}
+					}
+					else
+					{
+						reason = EndPointDisconnectReason.ReadFailure;
+						break;
 					}
 				}
 			}
@@ -453,7 +457,7 @@ namespace SharpRemote
 				Log.ErrorFormat("Caught exception while reading/handling messages: {0}", e);
 			}
 
-			Disconnect(connectionId, reason);
+			Disconnect(connectionId, reason, error);
 		}
 
 		private bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
@@ -524,7 +528,7 @@ namespace SharpRemote
 				int read = socket.Receive(buffer, index, toRead, SocketFlags.None, out err);
 				index += read;
 
-				if (err != SocketError.Success || read == 0 || !socket.Connected)
+				if (err != SocketError.Success || read <= 0 || !socket.Connected)
 				{
 					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read,
 					                buffer.Length, err, socket.Connected);
@@ -1007,7 +1011,7 @@ namespace SharpRemote
 			Disconnect(CurrentConnectionId, EndPointDisconnectReason.ReadFailure);
 		}
 
-		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason)
+		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason, SocketError? error = null)
 		{
 			EndPoint remoteEndPoint;
 			Socket socket;
@@ -1027,10 +1031,17 @@ namespace SharpRemote
 				// those threads are almost always reporting a "failure" afterwards.
 				if (IsFailure(reason))
 				{
-					Log.ErrorFormat("Disconnecting EndPoint '{0}' from '{1}' due to: {2}",
-					                _name,
-					                InternalRemoteEndPoint,
-									reason);
+					var builder = new StringBuilder();
+					builder.AppendFormat("Disconnecting EndPoint '{0}' from '{1}' due to: {2}",
+					                     _name,
+					                     InternalRemoteEndPoint,
+					                     reason);
+					if (error != null)
+					{
+						builder.AppendFormat(" (socket returned {0})", error);
+					}
+
+					Log.Error(builder);
 				}
 
 				remoteEndPoint = InternalRemoteEndPoint;
@@ -1334,7 +1345,7 @@ namespace SharpRemote
 						
 						if (!SynchronizedWrite(socket, data, responseLength, out err))
 						{
-							Disconnect(connectionId, EndPointDisconnectReason.WriteFailure);
+							Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
 						}
 					}
 					catch (Exception e)

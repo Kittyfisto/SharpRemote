@@ -72,6 +72,7 @@
     <Compile Include="Key.cs" />
     <Compile Include="Broadcasting\NetworkServiceDiscovererTest.cs" />
     <Compile Include="LatencySettingsTest.cs" />
+    <Compile Include="LogItem.cs" />
     <Compile Include="PendingMethodsQueueTest.cs" />
     <Compile Include="AbstractTest.cs" />
     <Compile Include="Remoting\SocketRemotingEndPoint\ConnectTest.cs" />

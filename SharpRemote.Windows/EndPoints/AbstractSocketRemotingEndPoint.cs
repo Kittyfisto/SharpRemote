@@ -322,8 +322,6 @@ namespace SharpRemote
 			}
 			else if (disconnecting)
 			{
-				Log.ErrorFormat("Heartbeat monitor detected a failure with the connection to '{0}': Disconnecting the endpoint",
-				                InternalRemoteEndPoint);
 				Disconnect(currentConnectionId, EndPointDisconnectReason.HeartbeatFailure);
 			}
 			else
@@ -1024,6 +1022,17 @@ namespace SharpRemote
 				if (currentConnectionId != CurrentConnectionId)
 					return;
 
+				// We DON'T want to emit an error message when we are already disconnected. This is
+				// because Disconnect() doesn't wait for the read/Write thread to stop and therefore
+				// those threads are almost always reporting a "failure" afterwards.
+				if (IsFailure(reason))
+				{
+					Log.ErrorFormat("Disconnecting EndPoint '{0}' from '{1}' due to: {2}",
+					                _name,
+					                InternalRemoteEndPoint,
+									reason);
+				}
+
 				remoteEndPoint = InternalRemoteEndPoint;
 				socket = _socket;
 
@@ -1325,7 +1334,6 @@ namespace SharpRemote
 						
 						if (!SynchronizedWrite(socket, data, responseLength, out err))
 						{
-							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
 							Disconnect(connectionId, EndPointDisconnectReason.WriteFailure);
 						}
 					}

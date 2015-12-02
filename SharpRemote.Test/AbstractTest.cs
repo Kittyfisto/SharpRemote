@@ -16,9 +16,9 @@ namespace SharpRemote.Test
 			var loggers = Loggers;
 			if (loggers != null)
 			{
-				foreach (var logger in loggers)
+				foreach (var pair in loggers)
 				{
-					TestLogger.SetLevel(logger, Level.Info);
+					TestLogger.SetLevel(pair.Type, pair.Level);
 				}
 			}
 		}
@@ -26,7 +26,7 @@ namespace SharpRemote.Test
 		/// <summary>
 		/// The loggers that shall be enabled for this test and write to the console.
 		/// </summary>
-		public virtual Type[] Loggers { get { return null; } }
+		public virtual LogItem[] Loggers { get { return null; } }
 
 		[SetUp]
 		public void SetUp()

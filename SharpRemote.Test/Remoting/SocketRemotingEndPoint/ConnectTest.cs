@@ -15,14 +15,14 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 	public sealed class ConnectTest
 		: AbstractTest
 	{
-		public override Type[] Loggers
+		public override LogItem[] Loggers
 		{
 			get
 			{
 				return new[]
 					{
-						typeof (SocketRemotingEndPointClient),
-						typeof (SocketRemotingEndPointServer)
+						new LogItem(typeof (SocketRemotingEndPointClient)),
+						new LogItem(typeof (SocketRemotingEndPointServer))
 					};
 			}
 		}

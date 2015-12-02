@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Attributes\AsyncRemoteAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
+    <Compile Include="BlockingQueue.cs" />
     <Compile Include="Diagnostics\Debugger.cs" />
     <Compile Include="Diagnostics\IDebugger.cs" />
     <Compile Include="ConnectionId.cs" />

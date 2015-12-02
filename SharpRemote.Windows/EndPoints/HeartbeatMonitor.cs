@@ -27,6 +27,8 @@ namespace SharpRemote
 		private readonly TimeSpan _interval;
 		private readonly object _syncRoot;
 		private readonly Task _task;
+		private readonly ConnectionId _connectionId;
+
 		private bool _failureDetected;
 		private volatile bool _isDisposed;
 		private bool _isStarted;
@@ -40,16 +42,19 @@ namespace SharpRemote
 		/// <param name="heartbeat"></param>
 		/// <param name="debugger"></param>
 		/// <param name="settings"></param>
+		/// <param name="connectionId"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        IDebugger debugger,
-		                        HeartbeatSettings settings)
+		                        HeartbeatSettings settings,
+		                        ConnectionId connectionId)
 			: this(
 				heartbeat,
 				debugger,
 				settings.Interval,
 				settings.SkippedHeartbeatThreshold,
 				settings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached,
-				settings.UseHeartbeatFailureDetection)
+				settings.UseHeartbeatFailureDetection,
+			connectionId)
 		{
 		}
 
@@ -63,17 +68,20 @@ namespace SharpRemote
 		/// <param name="failureThreshold"></param>
 		/// <param name="enabledWithAttachedDebugger"></param>
 		/// <param name="useHeartbeatFailureDetection"></param>
+		/// <param name="connectionId"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        IDebugger debugger,
 		                        TimeSpan heartBeatInterval,
 		                        int failureThreshold,
 		                        bool enabledWithAttachedDebugger,
-		                        bool useHeartbeatFailureDetection)
+		                        bool useHeartbeatFailureDetection,
+		                        ConnectionId connectionId)
 		{
 			if (heartbeat == null) throw new ArgumentNullException("heartbeat");
 			if (debugger == null) throw new ArgumentNullException("debugger");
 			if (heartBeatInterval < TimeSpan.Zero) throw new ArgumentOutOfRangeException("heartBeatInterval");
 			if (failureThreshold < 1) throw new ArgumentOutOfRangeException("failureThreshold");
+			if (connectionId == ConnectionId.None) throw new ArgumentException("connectionId");
 
 			_syncRoot = new object();
 			_heartbeat = heartbeat;
@@ -81,6 +89,7 @@ namespace SharpRemote
 			_interval = heartBeatInterval;
 			_enabledWithAttachedDebugger = enabledWithAttachedDebugger;
 			_useHeartbeatFailureDetection = useHeartbeatFailureDetection;
+			_connectionId = connectionId;
 			_failureInterval = heartBeatInterval +
 			                   TimeSpan.FromMilliseconds(failureThreshold*heartBeatInterval.TotalMilliseconds);
 			_task = new Task(MeasureHeartbeats, TaskCreationOptions.LongRunning);
@@ -292,15 +301,15 @@ namespace SharpRemote
 			}
 
 			_failureDetected = true;
-			Action fn = OnFailure;
+			var fn = OnFailure;
 			if (fn != null)
-				fn();
+				fn(_connectionId);
 		}
 
 		/// <summary>
 		///     This event is fired when and if this monitor detects a failure of the heartbeat
 		///     interface because too many heartbeats passed
 		/// </summary>
-		public event Action OnFailure;
+		public event Action<ConnectionId> OnFailure;
 	}
 }

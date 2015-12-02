@@ -44,9 +44,9 @@ namespace SharpRemote
 			return !left.Equals(right);
 		}
 
-		private readonly long _value;
+		private readonly int _value;
 
-		internal ConnectionId(long value)
+		internal ConnectionId(int value)
 		{
 			_value = value;
 		}

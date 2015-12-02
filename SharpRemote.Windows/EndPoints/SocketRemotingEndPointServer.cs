@@ -171,9 +171,16 @@ namespace SharpRemote
 				{
 					if (socket != null)
 					{
-						socket.Shutdown(SocketShutdown.Both);
-						socket.Disconnect(false);
-						socket.TryDispose();
+						try
+						{
+							socket.Shutdown(SocketShutdown.Both);
+							socket.Disconnect(false);
+							socket.Dispose();
+						}
+						catch (Exception e)
+						{
+							Log.WarnFormat("Ignoring exception caught while disconnecting & disposing of socket: {0}", e);
+						}
 					}
 				}
 

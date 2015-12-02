@@ -21,7 +21,7 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private long _previousConnectionId;
+		private int _previousConnectionId;
 		private Thread _readThread;
 		private Thread _writeThread;
 		private IPEndPoint _remoteEndPoint;
@@ -113,7 +113,7 @@ namespace SharpRemote
 				CurrentConnectionId = new ConnectionId(Interlocked.Increment(ref _previousConnectionId));
 				CancellationTokenSource = new CancellationTokenSource();
 
-				var args = new ThreadArgs(socket, CancellationTokenSource.Token);
+				var args = new ThreadArgs(socket, CancellationTokenSource.Token, CurrentConnectionId);
 
 				_readThread = new Thread(ReadLoop)
 					{

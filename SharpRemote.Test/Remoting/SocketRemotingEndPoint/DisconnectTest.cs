@@ -16,6 +16,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		: AbstractTest
 	{
 		[Test]
+		[Repeat(50)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
@@ -44,6 +45,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[Repeat(50)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
@@ -71,12 +73,13 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[Repeat(50)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
 		public void TestDisconnect3()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var server = CreateServer("server"))
+			using (var client = CreateClient("client"))
 			{
 				server.Bind(IPAddress.Loopback);
 				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
@@ -88,14 +91,15 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(2))
 					.Should().BeTrue();
 
-				new Action(() => client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(1)))
-					.ShouldNotThrow();
+				client.TryConnect(server.LocalEndPoint, TimeSpan.FromSeconds(5))
+				      .Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
-				server.IsConnected.Should().BeTrue();
+				WaitFor(() => server.IsConnected, TimeSpan.FromMilliseconds(500)).Should().BeTrue();
 			}
 		}
 
 		[Test]
+		[Repeat(50)]
 		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description(
 			"Verifies that the OnDisconnected event is fired when the connection is disconnected for both the client and the server"
@@ -233,6 +237,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
+		[Repeat(50)]
 		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that OnDisconnected sends the correct connection id")]
 		public void TestDisconnect7()
@@ -252,6 +257,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					{
 						new ConnectionId(1)
 					});
+
+				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(1)).Should().BeTrue();
 
 				client.Connect(server.LocalEndPoint);
 				client.Disconnect();

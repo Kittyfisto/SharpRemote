@@ -837,5 +837,38 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				TaskScheduler.UnobservedTaskException -= fn;
 			}
 		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that when a method is invoked on a proxy where no corresponding servant is registered with the other EndPoint, then an appropriate exception is thrown")]
+		public void TestNoSuchServant()
+		{
+			const ulong servantId = 34;
+			var proxy = _client.CreateProxy<IInt32Method>(servantId);
+			new Action(() => proxy.Do())
+				.ShouldThrow<NoSuchServantException>();
+
+			const string reason =
+				"Because a method invocation on a non-existant servant should not be a reason to tear down the connection";
+			_client.IsConnected.Should().BeTrue(reason);
+			_server.IsConnected.Should().BeTrue(reason);
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that when a method is invoked on a proxy where the corresponding servant is registered under a different type throws an appropriate exception")]
+		public void TestTypeMismatch()
+		{
+			const ulong servantId = 35;
+			var proxy = _client.CreateProxy<IInt32Method>(servantId);
+			var subject = new DoesNothing();
+			var servant = _server.CreateServant(servantId, (IVoidMethod)subject);
+
+			new Action(() => proxy.Do())
+				.ShouldThrow<TypeMismatchException>();
+
+			const string reason =
+				"Because a method invocation on a mismatched servant-type should not be a reason to tear down the connection";
+			_client.IsConnected.Should().BeTrue(reason);
+			_server.IsConnected.Should().BeTrue(reason);
+		}
 	}
 }

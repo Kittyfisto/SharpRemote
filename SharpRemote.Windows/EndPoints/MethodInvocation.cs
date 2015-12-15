@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -9,6 +10,11 @@ namespace SharpRemote
 	/// </summary>
 	internal struct MethodInvocation
 	{
+		/// <summary>
+		/// The time the method invocation request was initially processed (but not yet executed).
+		/// </summary>
+		public readonly DateTime RequestTime;
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -31,6 +37,7 @@ namespace SharpRemote
 
 		public MethodInvocation(long rpcId, IGrain grain, string methodName, Task task)
 		{
+			RequestTime = DateTime.Now;
 			RpcId = rpcId;
 			Grain = grain;
 			MethodName = methodName;

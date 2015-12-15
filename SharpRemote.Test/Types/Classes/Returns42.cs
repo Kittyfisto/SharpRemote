@@ -2,12 +2,18 @@
 
 namespace SharpRemote.Test.Types.Classes
 {
-	internal sealed class Returns42
+	public sealed class Returns42
 		: IGetInt32Property
+		, IInt32Method
 	{
 		public int Value
 		{
 			get { return 42; }
+		}
+
+		public int Do()
+		{
+			return 42;
 		}
 	}
 }

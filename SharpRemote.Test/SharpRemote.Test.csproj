@@ -170,6 +170,7 @@
     <Compile Include="Types\Interfaces\PrimitiveTypes\IGetUInt8Property.cs" />
     <Compile Include="Types\Interfaces\IVoidMethodBaseClassParameter.cs" />
     <Compile Include="Types\Interfaces\IVoidMethodSealedClassParameter.cs" />
+    <Compile Include="Types\Interfaces\PrimitiveTypes\IInt32Method.cs" />
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethod.cs" />
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethodDoubleParameter.cs" />
     <Compile Include="Types\Interfaces\PrimitiveTypes\IVoidMethodFloatParameter.cs" />

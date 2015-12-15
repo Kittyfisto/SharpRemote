@@ -28,6 +28,12 @@ namespace SharpRemote
 		WriteFailure,
 
 		/// <summary>
+		/// The connection was dropped because a request with the same RPC id than an alrady
+		/// pending request was made.
+		/// </summary>
+		RpcDuplicateRequest,
+
+		/// <summary>
 		/// The connection was dropped because a response to a non-existant pending RPC was received.
 		/// </summary>
 		RpcInvalidResponse,

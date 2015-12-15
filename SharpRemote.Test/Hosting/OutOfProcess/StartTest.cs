@@ -10,6 +10,7 @@ using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
+using log4net.Core;
 
 namespace SharpRemote.Test.Hosting.OutOfProcess
 {
@@ -17,6 +18,17 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 	public sealed class StartTest
 		: AbstractTest
 	{
+		public override LogItem[] Loggers
+		{
+			get
+			{
+				return new[]
+					{
+						new LogItem(typeof (OutOfProcessSilo), Level.Warn)
+					};
+			}
+		}
+
 		[Test]
 		[NUnit.Framework.Description("Verifies that starting the default host process succeeds")]
 		public void TestStart1()

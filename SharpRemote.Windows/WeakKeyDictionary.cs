@@ -57,6 +57,11 @@ namespace SharpRemote
 			Clear();
 		}
 
+		public override string ToString()
+		{
+			return string.Format("Count: {0}", Count);
+		}
+
 		private void Initialize(int capacity)
 		{
 			int size = HashHelpers.GetPrime(capacity);

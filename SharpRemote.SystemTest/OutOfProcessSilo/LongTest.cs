@@ -4,7 +4,6 @@ using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.Attributes;
 using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test;
 

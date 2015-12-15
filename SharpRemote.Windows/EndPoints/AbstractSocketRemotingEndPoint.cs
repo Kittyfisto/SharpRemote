@@ -322,8 +322,6 @@ namespace SharpRemote
 			}
 			else if (disconnecting)
 			{
-				Log.ErrorFormat("Heartbeat monitor detected a failure with the connection to '{0}': Disconnecting the endpoint",
-				                InternalRemoteEndPoint);
 				Disconnect(currentConnectionId, EndPointDisconnectReason.HeartbeatFailure);
 			}
 			else
@@ -342,6 +340,7 @@ namespace SharpRemote
 			Socket socket = args.Socket;
 			CancellationToken token = args.Token;
 			ConnectionId currentConnectionId = args.ConnectionId;
+			SocketError? error = null;
 
 			EndPointDisconnectReason reason;
 			try
@@ -363,9 +362,10 @@ namespace SharpRemote
 						break;
 					}
 
-					SocketError error;
-					if (!SynchronizedWrite(socket, message, messageLength, out error))
+					SocketError err;
+					if (!SynchronizedWrite(socket, message, messageLength, out err))
 					{
+						error = err;
 						reason = EndPointDisconnectReason.WriteFailure;
 						break;
 					}
@@ -381,7 +381,7 @@ namespace SharpRemote
 				Log.ErrorFormat("Caught exception while writing/handling messages: {0}", e);
 			}
 
-			Disconnect(currentConnectionId, reason);
+			Disconnect(currentConnectionId, reason, error);
 		}
 
 		protected void ReadLoop(object sock)
@@ -391,6 +391,7 @@ namespace SharpRemote
 			var connectionId = args.ConnectionId;
 
 			EndPointDisconnectReason reason;
+			SocketError? error = null;
 
 			try
 			{
@@ -400,6 +401,7 @@ namespace SharpRemote
 					SocketError err;
 					if (!SynchronizedRead(socket, size, out err))
 					{
+						error = err;
 						reason = EndPointDisconnectReason.ReadFailure;
 						break;
 					}
@@ -410,6 +412,7 @@ namespace SharpRemote
 						var buffer = new byte[length];
 						if (!SynchronizedRead(socket, buffer, out err))
 						{
+							error = err;
 							reason = EndPointDisconnectReason.ReadFailure;
 							break;
 						}
@@ -427,16 +430,15 @@ namespace SharpRemote
 						{
 // ReSharper disable PossibleInvalidOperationException
 							reason = (EndPointDisconnectReason) r;
-
-							if (_name == "client" && reason == EndPointDisconnectReason.RequestedByRemotEndPoint)
-							{
-								int n = 0;
-							}
-
 // ReSharper restore PossibleInvalidOperationException
 
 							break;
 						}
+					}
+					else
+					{
+						reason = EndPointDisconnectReason.ReadFailure;
+						break;
 					}
 				}
 			}
@@ -455,7 +457,7 @@ namespace SharpRemote
 				Log.ErrorFormat("Caught exception while reading/handling messages: {0}", e);
 			}
 
-			Disconnect(connectionId, reason);
+			Disconnect(connectionId, reason, error);
 		}
 
 		private bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
@@ -471,7 +473,7 @@ namespace SharpRemote
 				int written = socket.Send(data, 0, length, SocketFlags.None, out err);
 				if (written != length || err != SocketError.Success || !socket.Connected)
 				{
-					Log.ErrorFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
+					Log.DebugFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
 					                data.Length, err, socket.Connected);
 					return false;
 				}
@@ -526,7 +528,7 @@ namespace SharpRemote
 				int read = socket.Receive(buffer, index, toRead, SocketFlags.None, out err);
 				index += read;
 
-				if (err != SocketError.Success || read == 0 || !socket.Connected)
+				if (err != SocketError.Success || read <= 0 || !socket.Connected)
 				{
 					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read,
 					                buffer.Length, err, socket.Connected);
@@ -1009,7 +1011,7 @@ namespace SharpRemote
 			Disconnect(CurrentConnectionId, EndPointDisconnectReason.ReadFailure);
 		}
 
-		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason)
+		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason, SocketError? error = null)
 		{
 			EndPoint remoteEndPoint;
 			Socket socket;
@@ -1023,6 +1025,24 @@ namespace SharpRemote
 				// than the current connection.
 				if (currentConnectionId != CurrentConnectionId)
 					return;
+
+				// We DON'T want to emit an error message when we are already disconnected. This is
+				// because Disconnect() doesn't wait for the read/Write thread to stop and therefore
+				// those threads are almost always reporting a "failure" afterwards.
+				if (IsFailure(reason))
+				{
+					var builder = new StringBuilder();
+					builder.AppendFormat("Disconnecting EndPoint '{0}' from '{1}' due to: {2}",
+					                     _name,
+					                     InternalRemoteEndPoint,
+					                     reason);
+					if (error != null)
+					{
+						builder.AppendFormat(" (socket returned {0})", error);
+					}
+
+					Log.Error(builder);
+				}
 
 				remoteEndPoint = InternalRemoteEndPoint;
 				socket = _socket;
@@ -1219,9 +1239,9 @@ namespace SharpRemote
 			if (type == MessageType.Call)
 			{
 				Interlocked.Increment(ref _numCallsAnswered);
-				HandleRequest(currentConnectionId, rpcId, reader);
+				return HandleRequest(currentConnectionId, rpcId, reader, out reason);
 			}
-			else if ((type & MessageType.Return) != 0)
+			if ((type & MessageType.Return) != 0)
 			{
 				if (!HandleResponse(rpcId, type, reader))
 				{
@@ -1257,136 +1277,162 @@ namespace SharpRemote
 			return true;
 		}
 
-		private void DispatchMethodInvocation(
+		private bool DispatchMethodInvocation(
 			ConnectionId connectionId,
 			long rpcId,
 			IGrain grain,
 			string typeName,
 			string methodName,
-			BinaryReader reader)
+			BinaryReader reader,
+			out EndPointDisconnectReason? reason)
 		{
 			if (!IsTypeSafe(grain.InterfaceType, typeName))
 			{
 				// If the call violated type-safety then we will immediately "throw" a TypeMismatchException.
 				HandleTypeMismatch(rpcId, grain, typeName, methodName);
-			}
-			else
-			{
-				SerialTaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
 
-				Action executeMethod = () =>
+				// We can continue on and don't need to disconnect the endpoint as we've
+				// handled the method invocation by throwing an exception on the caller.
+				reason = null;
+				return true;
+			}
+
+			SerialTaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
+
+			Action executeMethod = () =>
+			{
+				if (Log.IsDebugEnabled)
 				{
-					if (Log.IsDebugEnabled)
+					Log.DebugFormat("Starting RPC #{0}", rpcId);
+				}
+
+				try
+				{
+					Socket socket = _socket;
+					if (socket == null)
 					{
-						Log.DebugFormat("Starting RPC #{0}", rpcId);
+						if (Log.IsDebugEnabled)
+							Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
+
+						return;
 					}
 
+					var response = new MemoryStream();
+					var writer = new BinaryWriter(response, Encoding.UTF8);
 					try
 					{
-						Socket socket = _socket;
-						if (socket == null)
-						{
-							if (Log.IsDebugEnabled)
-								Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
-
-							return;
-						}
-
-						var response = new MemoryStream();
-						var writer = new BinaryWriter(response, Encoding.UTF8);
-						try
-						{
-							WriteResponseHeader(rpcId, writer, MessageType.Return);
-							grain.Invoke(methodName, reader, writer);
-							PatchResponseMessageLength(response, writer);
-						}
-						catch (Exception e)
-						{
-							if (Log.IsErrorEnabled)
-							{
-								Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
-								                rpcId,
-								                typeName,
-								                methodName,
-								                grain.ObjectId,
-								                e);
-							}
-
-							response.Position = 0;
-							WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-							WriteException(writer, e);
-							PatchResponseMessageLength(response, writer);
-						}
-
-						var responseLength = (int) response.Length;
-						byte[] data = response.GetBuffer();
-
-						SocketError err;
-						
-						if (!SynchronizedWrite(socket, data, responseLength, out err))
-						{
-							Log.ErrorFormat("Disconnecting socket due to error while writing response!");
-							Disconnect(connectionId, EndPointDisconnectReason.WriteFailure);
-						}
+						WriteResponseHeader(rpcId, writer, MessageType.Return);
+						grain.Invoke(methodName, reader, writer);
+						PatchResponseMessageLength(response, writer);
 					}
 					catch (Exception e)
 					{
-						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
-						Disconnect(connectionId, EndPointDisconnectReason.UnhandledException);
+						if (Log.IsErrorEnabled)
+						{
+							Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
+											rpcId,
+											typeName,
+											methodName,
+											grain.ObjectId,
+											e);
+						}
+
+						response.Position = 0;
+						WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+						WriteException(writer, e);
+						PatchResponseMessageLength(response, writer);
 					}
-					finally
+
+					var responseLength = (int)response.Length;
+					byte[] data = response.GetBuffer();
+
+					SocketError err;
+
+					if (!SynchronizedWrite(socket, data, responseLength, out err))
 					{
-						if (Log.IsDebugEnabled)
-						{
-							Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
-						}
-
-						// Once we've created the task, we remember that there's a method invocation
-						// that's yet to be executed (which tremendously helps debugging problems)
-						lock (_pendingMethodInvocations)
-						{
-							_pendingMethodInvocations.Remove(rpcId);
-						}
+						Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
 					}
-				};
+				}
+				catch (Exception e)
+				{
+					Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
+					Disconnect(connectionId, EndPointDisconnectReason.UnhandledException);
+				}
+				finally
+				{
+					if (Log.IsDebugEnabled)
+					{
+						Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
+					}
 
-				// However if those 2 things don't throw, then we dispatch the rest of the method invocation
-				// on the task dispatcher and be done with it here...
-				Task task;
-				TaskCompletionSource<int> completionSource;
-				if (taskScheduler != null)
-				{
-					completionSource = new TaskCompletionSource<int>();
-					task = completionSource.Task;
+					// Once we've created the task, we remember that there's a method invocation
+					// that's yet to be executed (which tremendously helps debugging problems)
+					lock (_pendingMethodInvocations)
+					{
+						_pendingMethodInvocations.Remove(rpcId);
+					}
 				}
-				else
-				{
-					completionSource = null;
-					task = new Task(executeMethod);
-				}
+			};
 
-				if (Log.IsDebugEnabled)
-				{
-					Log.DebugFormat("Queueing RPC #{0}", rpcId);
-				}
-
-				var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
-				lock (_pendingMethodInvocations)
-				{
-					_pendingMethodInvocations.Add(rpcId, methodInvocation);
-				}
-
-				// And then finally start the task to deserialize all method parameters, invoke the mehtod
-				// and then seralize either the return value of the thrown exception...
-				if (taskScheduler != null)
-				{
-					taskScheduler.QueueTask(executeMethod, completionSource);
-				}
-				else
-				{
-					task.Start(TaskScheduler.Default);
-				}
+			// However if those 2 things don't throw, then we dispatch the rest of the method invocation
+			// on the task dispatcher and be done with it here...
+			Task task;
+			TaskCompletionSource<int> completionSource;
+			if (taskScheduler != null)
+			{
+				completionSource = new TaskCompletionSource<int>();
+				task = completionSource.Task;
 			}
+			else
+			{
+				completionSource = null;
+				task = new Task(executeMethod);
+			}
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Queueing RPC #{0}", rpcId);
+			}
+
+			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
+			lock (_pendingMethodInvocations)
+			{
+				MethodInvocation existingMethodInvocation;
+				if (_pendingMethodInvocations.TryGetValue(rpcId, out existingMethodInvocation))
+				{
+					var tmp = existingMethodInvocation.Grain;
+					var grainId = tmp != null ? (ulong?)tmp.ObjectId : null;
+
+					var builder = new StringBuilder();
+					builder.AppendFormat("Received RPC invocation request #{0}, but one with the same id is already pending!",
+					                     rpcId);
+					builder.AppendFormat("The original request was made '{0}' on '{1}.{2}",
+					                     existingMethodInvocation.RequestTime,
+					                     grainId,
+					                     existingMethodInvocation.MethodName);
+					builder.AppendFormat(" (Total pending requests: {0})", _pendingMethodInvocations.Count);
+					Log.Error(builder.ToString());
+
+					reason = EndPointDisconnectReason.RpcDuplicateRequest;
+					return false;
+				}
+
+				_pendingMethodInvocations.Add(rpcId, methodInvocation);
+			}
+
+			// And then finally start the task to deserialize all method parameters, invoke the mehtod
+			// and then seralize either the return value of the thrown exception...
+			if (taskScheduler != null)
+			{
+				taskScheduler.QueueTask(executeMethod, completionSource);
+			}
+			else
+			{
+				task.Start(TaskScheduler.Default);
+			}
+
+			reason = null;
+			return true;
 		}
 
 		private void HandleTypeMismatch(long rpcId, IGrain grain, string typeName, string methodName)
@@ -1420,7 +1466,10 @@ namespace SharpRemote
 			}
 		}
 
-		private void HandleRequest(ConnectionId connectionId, long rpcId, BinaryReader reader)
+		private bool HandleRequest(ConnectionId connectionId,
+			long rpcId,
+			BinaryReader reader,
+			out EndPointDisconnectReason? reason)
 		{
 			ulong servantId = reader.ReadUInt64();
 			string typeName = reader.ReadString();
@@ -1434,33 +1483,41 @@ namespace SharpRemote
 
 			if (servant != null)
 			{
-				DispatchMethodInvocation(connectionId, rpcId, servant, typeName, methodName, reader);
+				return DispatchMethodInvocation(connectionId,
+				                                rpcId,
+				                                servant,
+				                                typeName,
+				                                methodName,
+				                                reader,
+				                                out reason);
 			}
-			else
-			{
-				IProxy proxy;
-				lock (_proxiesById)
-				{
-					WeakReference<IProxy> grain;
-					if (_proxiesById.TryGetValue(servantId, out grain))
-					{
-						grain.TryGetTarget(out proxy);
-					}
-					else
-					{
-						proxy = null;
-					}
-				}
 
-				if (proxy != null)
+			IProxy proxy;
+			lock (_proxiesById)
+			{
+				WeakReference<IProxy> grain;
+				if (_proxiesById.TryGetValue(servantId, out grain))
 				{
-					DispatchMethodInvocation(connectionId, rpcId, proxy, typeName, methodName, reader);
+					grain.TryGetTarget(out proxy);
 				}
 				else
 				{
-					throw new NoSuchServantException(servantId, typeName, methodName);
+					proxy = null;
 				}
 			}
+
+			if (proxy != null)
+			{
+				return DispatchMethodInvocation(connectionId,
+				                                rpcId,
+				                                proxy,
+				                                typeName,
+				                                methodName,
+				                                reader,
+				                                out reason);
+			}
+
+			throw new NoSuchServantException(servantId, typeName, methodName);
 		}
 
 		private static bool IsTypeSafe(Type getType, string typeName)

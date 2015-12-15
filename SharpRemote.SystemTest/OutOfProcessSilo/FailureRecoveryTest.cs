@@ -20,13 +20,13 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		private ManualResetEvent _startHandle;
 		private FailureSettings _settings;
 
-		public override Type[] Loggers
+		public override LogItem[] Loggers
 		{
 			get
 			{
 				return new[]
 					{
-						typeof (Hosting.OutOfProcessSilo)
+						new LogItem(typeof (Hosting.OutOfProcessSilo))
 					};
 			}
 		}

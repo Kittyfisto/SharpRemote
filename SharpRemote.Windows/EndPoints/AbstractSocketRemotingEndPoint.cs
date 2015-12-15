@@ -15,8 +15,10 @@ using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Tasks;
 using log4net;
+using Debugger = SharpRemote.Diagnostics.Debugger;
 
 // ReSharper disable CheckNamespace
+
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
@@ -134,10 +136,10 @@ namespace SharpRemote
 
 		#region Garbage Collection
 
-		private long _numProxiesCollected;
-		private long _numServantsCollected;
 		private readonly Stopwatch _garbageCollectionTime;
 		private readonly Timer _garbageCollectionTimer;
+		private long _numProxiesCollected;
+		private long _numServantsCollected;
 
 		#region Latency Measurements
 
@@ -149,10 +151,10 @@ namespace SharpRemote
 
 		#region Heartbeat
 
-		private readonly Heartbeat _localHeartbeat;
-		private readonly IHeartbeat _remoteHeartbeat;
 		private readonly HeartbeatSettings _heartbeatSettings;
 		private readonly LatencySettings _latencySettings;
+		private readonly Heartbeat _localHeartbeat;
+		private readonly IHeartbeat _remoteHeartbeat;
 		private HeartbeatMonitor _heartbeatMonitor;
 		private bool _isDisposing;
 		private DateTime _lastRead;
@@ -160,32 +162,6 @@ namespace SharpRemote
 		#endregion
 
 		#endregion
-
-		/// <summary>
-		/// The total number of <see cref="IProxy"/>s that have been removed from this endpoint because
-		/// they're no longer used.
-		/// </summary>
-		public long NumProxiesCollected
-		{
-			get { return _numProxiesCollected; }
-		}
-
-		/// <summary>
-		/// The total number of <see cref="IServant"/>s that have been removed from this endpoint because
-		/// their subjects have been collected by the GC.
-		/// </summary>
-		public long NumServantsCollected
-		{
-			get { return _numServantsCollected; }
-		}
-
-		/// <summary>
-		/// The total amount of time this endpoint spent collecting garbage.
-		/// </summary>
-		public TimeSpan GarbageCollectionTime
-		{
-			get { return _garbageCollectionTime.Elapsed; }
-		}
 
 		internal AbstractSocketRemotingEndPoint(GrainIdGenerator idGenerator,
 		                                        string name,
@@ -202,9 +178,11 @@ namespace SharpRemote
 			if (heartbeatSettings != null)
 			{
 				if (heartbeatSettings.Interval <= TimeSpan.Zero)
-					throw new ArgumentOutOfRangeException("heartbeatSettings.Interval", "The heartbeat interval must be greater than zero");
+					throw new ArgumentOutOfRangeException("heartbeatSettings.Interval",
+					                                      "The heartbeat interval must be greater than zero");
 				if (heartbeatSettings.SkippedHeartbeatThreshold <= 0)
-					throw new ArgumentOutOfRangeException("heartbeatSettings.SkippedHeartbeatThreshold", "The skipped heartbeat threshold must be greater than zero");
+					throw new ArgumentOutOfRangeException("heartbeatSettings.SkippedHeartbeatThreshold",
+					                                      "The skipped heartbeat threshold must be greater than zero");
 			}
 
 			_idGenerator = idGenerator;
@@ -242,7 +220,8 @@ namespace SharpRemote
 			_serverAuthenticator = serverAuthenticator;
 
 			_garbageCollectionTime = new Stopwatch();
-			_garbageCollectionTimer = new Timer(CollectGarbage, null, TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
+			_garbageCollectionTimer = new Timer(CollectGarbage, null, TimeSpan.FromMilliseconds(100),
+			                                    TimeSpan.FromMilliseconds(100));
 
 			_localHeartbeat = new Heartbeat();
 			_localLatency = new Latency();
@@ -270,7 +249,33 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The settings used for latency measurements.
+		///     The total number of <see cref="IProxy" />s that have been removed from this endpoint because
+		///     they're no longer used.
+		/// </summary>
+		public long NumProxiesCollected
+		{
+			get { return _numProxiesCollected; }
+		}
+
+		/// <summary>
+		///     The total number of <see cref="IServant" />s that have been removed from this endpoint because
+		///     their subjects have been collected by the GC.
+		/// </summary>
+		public long NumServantsCollected
+		{
+			get { return _numServantsCollected; }
+		}
+
+		/// <summary>
+		///     The total amount of time this endpoint spent collecting garbage.
+		/// </summary>
+		public TimeSpan GarbageCollectionTime
+		{
+			get { return _garbageCollectionTime.Elapsed; }
+		}
+
+		/// <summary>
+		///     The settings used for latency measurements.
 		/// </summary>
 		public LatencySettings LatencySettings
 		{
@@ -278,7 +283,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The settings used for the heartbeat mechanism.
+		///     The settings used for the heartbeat mechanism.
 		/// </summary>
 		public HeartbeatSettings HeartbeatSettings
 		{
@@ -286,12 +291,306 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// The settings used for the endpoint itself (max. number of concurrent calls, etc...).
+		///     The settings used for the endpoint itself (max. number of concurrent calls, etc...).
 		/// </summary>
 		public EndPointSettings EndPointSettings
 		{
 			get { return _endpointSettings; }
 		}
+
+		protected abstract EndPoint InternalLocalEndPoint { get; }
+		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
+
+		protected object SyncRoot
+		{
+			get { return _syncRoot; }
+		}
+
+		protected Socket Socket
+		{
+			set { _socket = value; }
+		}
+
+		/// <summary>
+		///     Tests if this object has been disposed of or not.
+		/// </summary>
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
+		}
+
+		/// <summary>
+		///     Contains the reason why the socket was disconnected, or null if it wasn't disconnected / never established
+		///     a connection.
+		/// </summary>
+		public EndPointDisconnectReason? DisconnectReason
+		{
+			get { return _disconnectReason; }
+		}
+
+		/// <summary>
+		///     Returns all the proxies of this endpoint.
+		///     Used for testing.
+		/// </summary>
+		internal IEnumerable<IProxy> Proxies
+		{
+			get
+			{
+				lock (_proxiesById)
+				{
+					var aliveProxies = new List<IProxy>();
+
+					foreach (var pair in _proxiesById)
+					{
+						IProxy proxy;
+						if (pair.Value.TryGetTarget(out proxy))
+						{
+							aliveProxies.Add(proxy);
+						}
+					}
+
+					return aliveProxies;
+				}
+			}
+		}
+
+		/// <summary>
+		///     Returns all the servnats of this endpoint.
+		///     Used for testing.
+		/// </summary>
+		internal IEnumerable<IServant> Servants
+		{
+			get
+			{
+				lock (_servantsById)
+				{
+					return _servantsById.Values.ToList();
+				}
+			}
+		}
+
+		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId,
+		                                                string interfaceType,
+		                                                string methodName,
+		                                                MemoryStream arguments)
+		{
+			long rpcId = Interlocked.Increment(ref _nextRpcId);
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
+				                InternalLocalEndPoint,
+				                InternalRemoteEndPoint,
+				                rpcId,
+				                servantId,
+				                methodName);
+			}
+
+			return CallRemoteMethodAsync(rpcId, servantId, interfaceType, methodName, arguments);
+		}
+
+		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
+		{
+			long rpcId = Interlocked.Increment(ref _nextRpcId);
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
+				                InternalLocalEndPoint,
+				                InternalRemoteEndPoint,
+				                rpcId,
+				                servantId,
+				                methodName);
+			}
+
+			return CallRemoteMethod(rpcId, servantId, interfaceType, methodName, arguments);
+		}
+
+		public void Dispose()
+		{
+			lock (_syncRoot)
+			{
+				_isDisposing = true;
+				try
+				{
+					//_pendingWrites.Dispose();
+
+					Disconnect();
+					DisposeAdditional();
+					_garbageCollectionTimer.Dispose();
+
+					// Another thread could still be accessing this dictionary.
+					// Therefore we need to guard this one against concurrent access...
+					lock (_servantsById)
+					{
+						_servantsBySubject.Dispose();
+						_servantsById.Clear();
+					}
+
+					_isDisposed = true;
+				}
+				finally
+				{
+					_isDisposing = false;
+				}
+			}
+		}
+
+		public string Name
+		{
+			get { return _name; }
+		}
+
+		public bool IsConnected
+		{
+			get { return InternalRemoteEndPoint != null; }
+		}
+
+		public ConnectionId CurrentConnectionId { get; protected set; }
+
+		public TimeSpan RoundtripTime
+		{
+			get
+			{
+				LatencyMonitor monitor = _latencyMonitor;
+				if (monitor != null)
+					return monitor.RoundtripTime;
+
+				return TimeSpan.Zero;
+			}
+		}
+
+		public EndPoint LocalEndPoint
+		{
+			get { return InternalLocalEndPoint; }
+		}
+
+		public EndPoint RemoteEndPoint
+		{
+			get { return InternalRemoteEndPoint; }
+		}
+
+		public void Disconnect()
+		{
+			Disconnect(CurrentConnectionId, EndPointDisconnectReason.RequestedByEndPoint);
+		}
+
+		public T CreateProxy<T>(ulong objectId) where T : class
+		{
+			lock (_proxiesById)
+			{
+				var proxy = _proxyCreator.CreateProxy<T>(objectId);
+				var grain = new WeakReference<IProxy>((IProxy) proxy);
+				_proxiesById.Add(objectId, grain);
+				return proxy;
+			}
+		}
+
+		public T GetProxy<T>(ulong objectId) where T : class
+		{
+			IProxy proxy;
+			lock (_proxiesById)
+			{
+				WeakReference<IProxy> grain;
+				if (!_proxiesById.TryGetValue(objectId, out grain) || !grain.TryGetTarget(out proxy))
+					throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
+			}
+
+			if (!(proxy is T))
+				throw new ArgumentException(string.Format("The proxy '{0}', {1} is not related to interface: {2}",
+				                                          objectId,
+				                                          proxy.GetType().Name,
+				                                          typeof (T).Name));
+
+			return (T) proxy;
+		}
+
+		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
+		{
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
+				                subject.GetType().FullName,
+				                typeof (T).FullName,
+				                objectId
+					);
+			}
+
+			IServant servant = _servantCreator.CreateServant(objectId, subject);
+			lock (_servantsById)
+			{
+				_servantsById.Add(objectId, servant);
+				_servantsBySubject.Add(subject, servant);
+			}
+			return servant;
+		}
+
+		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
+		{
+			lock (_proxiesById)
+			{
+				IProxy proxy;
+				WeakReference<IProxy> grain;
+				if (!_proxiesById.TryGetValue(objectId, out grain))
+				{
+					// If the proxy doesn't exist, then we can simply create a new one...
+					var value = _proxyCreator.CreateProxy<T>(objectId);
+					grain = new WeakReference<IProxy>((IProxy) value);
+					_proxiesById.Add(objectId, grain);
+					return value;
+				}
+				if (!grain.TryGetTarget(out proxy))
+				{
+					// It's possible that the proxy did exist at one point, then was collected by the GC, but
+					// our internal GC didn't have the time to remove that proxy from the dictionary yet, which
+					// means that we have to *replace* the existing weak-reference with a new, living one
+					var value = _proxyCreator.CreateProxy<T>(objectId);
+					grain = new WeakReference<IProxy>(proxy);
+					_proxiesById[objectId] = grain;
+					return value;
+				}
+
+				return (T) proxy;
+			}
+		}
+
+		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
+		{
+			lock (_servantsById)
+			{
+				IServant servant;
+				if (!_servantsBySubject.TryGetValue(subject, out servant))
+				{
+					ulong nextId = _idGenerator.GetGrainId();
+					servant = CreateServant(nextId, subject);
+				}
+
+				return servant;
+			}
+		}
+
+		/// <summary>
+		///     Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint" />
+		///     is created.
+		/// </summary>
+		/// <remarks>
+		///     The event is fired with the endpoint of the *other* <see cref="AbstractSocketRemotingEndPoint" />.
+		/// </remarks>
+		public event Action<EndPoint, ConnectionId> OnConnected;
+
+		/// <summary>
+		///     Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint" /> is disconnected.
+		/// </summary>
+		public event Action<EndPoint, ConnectionId> OnDisconnected;
+
+		/// <summary>
+		///     This event is invoked right before a socket is to be closed due to failure of:
+		///     - the connection between endpoints
+		///     - a failure of the remote process
+		///     - a failure of SharpRemote
+		///     - something else ;)
+		/// </summary>
+		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 
 		private void HeartbeatMonitorOnOnFailure(ConnectionId currentConnectionId)
 		{
@@ -310,9 +609,9 @@ namespace SharpRemote
 			}
 
 			bool disconnecting = _heartbeatSettings.UseHeartbeatFailureDetection;
-			var now = DateTime.Now;
-			var difference = now - _lastRead;
-			var heartbeatMonitor = _heartbeatMonitor;
+			DateTime now = DateTime.Now;
+			TimeSpan difference = now - _lastRead;
+			HeartbeatMonitor heartbeatMonitor = _heartbeatMonitor;
 			if (heartbeatMonitor != null && difference < _heartbeatMonitor.FailureInterval)
 			{
 				Log.WarnFormat(
@@ -330,6 +629,1122 @@ namespace SharpRemote
 					"Heartbeat monitor reported a failure with the connection to '{0}': Ignoring as per heartbeat-settings...",
 					InternalRemoteEndPoint);
 			}
+		}
+
+		private void CollectGarbage(object unused)
+		{
+			_garbageCollectionTime.Start();
+			try
+			{
+				RemoveUnusedServants();
+				RemoveUnusedProxies();
+			}
+			catch (Exception e)
+			{
+				Log.ErrorFormat("Caught exception during garbage collection: {0}", e);
+			}
+			finally
+			{
+				_garbageCollectionTime.Stop();
+			}
+		}
+
+		private void RemoveUnusedServants()
+		{
+			lock (_servantsById)
+			{
+				List<IServant> collectedServants = _servantsBySubject.Collect(true);
+				if (collectedServants != null)
+				{
+					foreach (IServant servant in collectedServants)
+					{
+						_servantsById.Remove(servant.ObjectId);
+					}
+
+					_numServantsCollected += collectedServants.Count;
+				}
+			}
+		}
+
+		private void RemoveUnusedProxies()
+		{
+			lock (_proxiesById)
+			{
+				List<ulong> toRemove = null;
+
+				foreach (var pair in _proxiesById)
+				{
+					IProxy proxy;
+					if (!pair.Value.TryGetTarget(out proxy))
+					{
+						if (toRemove == null)
+							toRemove = new List<ulong>();
+
+						toRemove.Add(pair.Key);
+					}
+				}
+
+				if (toRemove != null)
+				{
+					_numProxiesCollected += toRemove.Count;
+
+					foreach (ulong key in toRemove)
+					{
+						_proxiesById.Remove(key);
+					}
+				}
+			}
+		}
+
+		protected static bool IsFailure(EndPointDisconnectReason reason)
+		{
+			switch (reason)
+			{
+				case EndPointDisconnectReason.RequestedByEndPoint:
+				case EndPointDisconnectReason.RequestedByRemotEndPoint:
+					return false;
+
+				default:
+					return true;
+			}
+		}
+
+		private Task<MemoryStream> CallRemoteMethodAsync(long rpcId,
+		                                                 ulong servantId,
+		                                                 string interfaceType,
+		                                                 string methodName,
+		                                                 MemoryStream arguments)
+		{
+			var taskSource = new TaskCompletionSource<MemoryStream>();
+			Action<PendingMethodCall> onCallFinished = finishedCall =>
+				{
+					// TODO: We might want execute this portion in yet another task in order to not block the read-thread
+					try
+					{
+						if (finishedCall.MessageType == MessageType.Return)
+						{
+							var stream = (MemoryStream) finishedCall.Reader.BaseStream;
+							taskSource.SetResult(stream);
+						}
+						else if ((finishedCall.MessageType & MessageType.Exception) != 0)
+						{
+							Exception e = ReadException(finishedCall.Reader);
+							LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
+							taskSource.SetException(e);
+						}
+						else
+						{
+							taskSource.SetException(new NotImplementedException());
+						}
+					}
+					finally
+					{
+						_pendingMethodCalls.Recycle(finishedCall);
+					}
+				};
+
+			PendingMethodCall call = _pendingMethodCalls.Enqueue(servantId,
+			                                                     interfaceType,
+			                                                     methodName,
+			                                                     arguments,
+			                                                     rpcId,
+			                                                     onCallFinished);
+
+			Interlocked.Add(ref _numBytesSent, call.MessageLength);
+			Interlocked.Increment(ref _numCallsInvoked);
+
+			return taskSource.Task;
+		}
+
+		private MemoryStream CallRemoteMethod(long rpcId, ulong servantId, string interfaceType, string methodName,
+		                                      MemoryStream arguments)
+		{
+			PendingMethodCall call = null;
+			try
+			{
+				call = _pendingMethodCalls.Enqueue(servantId,
+				                                   interfaceType,
+				                                   methodName,
+				                                   arguments,
+				                                   rpcId);
+
+				Interlocked.Add(ref _numBytesSent, call.MessageLength);
+				Interlocked.Increment(ref _numCallsInvoked);
+
+				call.Wait();
+
+				if (call.MessageType == MessageType.Return)
+				{
+					return (MemoryStream) call.Reader.BaseStream;
+				}
+				else if ((call.MessageType & MessageType.Exception) != 0)
+				{
+					Exception e = ReadException(call.Reader);
+					LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
+					throw e;
+				}
+				else
+				{
+					throw new NotImplementedException();
+				}
+			}
+			finally
+			{
+				if (call != null)
+				{
+					_pendingMethodCalls.Recycle(call);
+				}
+			}
+		}
+
+		private void LogRemoteMethodCallException(long rpcId, ulong servantId, string interfaceType, string methodName,
+		                                          Exception exception)
+		{
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("RPC invocation #{0} on {1}.{2} (#{3}) threw: {4}",
+				                rpcId,
+				                interfaceType,
+				                methodName,
+				                servantId,
+				                exception);
+			}
+		}
+
+		protected abstract void DisposeAdditional();
+
+		/// <summary>
+		///     Performs a "hard" disconnect as if a failure occured.
+		///     Is used to implement certain unit-tests where the connection
+		///     failed (cable disconnected, etc...).
+		/// </summary>
+		internal void DisconnectByFailure()
+		{
+			Disconnect(CurrentConnectionId, EndPointDisconnectReason.ReadFailure);
+		}
+
+		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason, SocketError? error = null)
+		{
+			EndPoint remoteEndPoint;
+			Socket socket;
+			bool hasDisconnected = false;
+			bool emitOnFailure = false;
+			ConnectionId connectionId;
+
+			lock (_syncRoot)
+			{
+				// We can safely ignore failures reported by the heartbeat monitor that are from any other
+				// than the current connection.
+				if (currentConnectionId != CurrentConnectionId)
+					return;
+
+				// We DON'T want to emit an error message when we are already disconnected. This is
+				// because Disconnect() doesn't wait for the read/Write thread to stop and therefore
+				// those threads are almost always reporting a "failure" afterwards.
+				if (IsFailure(reason))
+				{
+					var builder = new StringBuilder();
+					builder.AppendFormat("Disconnecting EndPoint '{0}' from '{1}' due to: {2}",
+					                     _name,
+					                     InternalRemoteEndPoint,
+					                     reason);
+					if (error != null)
+					{
+						builder.AppendFormat(" (socket returned {0})", error);
+					}
+
+					Log.Error(builder);
+				}
+
+				remoteEndPoint = InternalRemoteEndPoint;
+				socket = _socket;
+
+				InternalRemoteEndPoint = null;
+				_pendingMethodCalls.IsConnected = false;
+				_socket = null;
+
+				connectionId = CurrentConnectionId;
+
+				if (socket != null)
+				{
+					HeartbeatMonitor heartbeatMonitor = _heartbeatMonitor;
+					if (heartbeatMonitor != null)
+					{
+						heartbeatMonitor.OnFailure -= HeartbeatMonitorOnOnFailure;
+						heartbeatMonitor.Stop();
+						heartbeatMonitor.TryDispose();
+						_heartbeatMonitor = null;
+					}
+
+					LatencyMonitor latencyMonitor = _latencyMonitor;
+					if (latencyMonitor != null)
+					{
+						latencyMonitor.Stop();
+						latencyMonitor.TryDispose();
+						_latencyMonitor = null;
+					}
+
+					hasDisconnected = true;
+					_disconnectReason = reason;
+
+					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
+
+					CancellationTokenSource.Cancel();
+					_pendingMethodCalls.CancelAllCalls();
+
+					// If we are disconnecting because of a failure, then we don't notify the other end
+					// and drop the connection immediately. Also there's no need to notify the other
+					// end when it requested the disconnect
+					if (!IsFailure(reason))
+					{
+						if (reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
+						{
+							SendGoodbye(socket);
+						}
+					}
+					else
+					{
+						emitOnFailure = true;
+					}
+
+					try
+					{
+						socket.Disconnect(false);
+					}
+					catch (SocketException)
+					{
+					}
+					catch (NullReferenceException)
+					{
+						// I suspect that either I forgot to lock one method call on _socket
+						// or there's a bug in its implementation - either way this method may
+						// throw a NullReferenceException from inside Disconnect.
+					}
+					socket.TryDispose();
+				}
+
+				CurrentConnectionId = ConnectionId.None;
+			}
+
+			if (emitOnFailure)
+			{
+				EmitOnFailure(reason, connectionId);
+			}
+
+			EmitOnDisconnected(hasDisconnected, remoteEndPoint, connectionId);
+		}
+
+		private void EmitOnFailure(EndPointDisconnectReason reason, ConnectionId connectionId)
+		{
+			Action<EndPointDisconnectReason, ConnectionId> fn = OnFailure;
+			if (fn != null)
+			{
+				try
+				{
+					fn(reason, connectionId);
+				}
+				catch (Exception e)
+				{
+					Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
+				}
+			}
+		}
+
+		private void SendGoodbye(Socket socket)
+		{
+			try
+			{
+				long rpcId = _nextRpcId++;
+				const int messageSize = 9;
+
+				using (var stream = new MemoryStream())
+				using (var writer = new BinaryWriter(stream, Encoding.UTF8))
+				{
+					writer.Write(messageSize);
+					writer.Write(rpcId);
+					writer.Write((byte) MessageType.Goodbye);
+
+					writer.Flush();
+					stream.Position = 0;
+
+					socket.Send(stream.GetBuffer(), 0, messageSize + 4, SocketFlags.None);
+				}
+			}
+			catch (SocketException)
+			{
+			}
+		}
+
+		protected void FireOnConnected(EndPoint endPoint, ConnectionId connectionId)
+		{
+			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
+			                                         Debugger.Instance,
+			                                         _heartbeatSettings,
+			                                         connectionId);
+
+			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
+			_heartbeatMonitor.Start();
+
+			_latencyMonitor = new LatencyMonitor(_remoteLatency, _latencySettings);
+			_latencyMonitor.Start();
+
+			Action<EndPoint, ConnectionId> fn = OnConnected;
+			if (fn != null)
+			{
+				try
+				{
+					fn(endPoint, connectionId);
+				}
+				catch (Exception e)
+				{
+					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
+				}
+			}
+		}
+
+		private void EmitOnDisconnected(bool hasDisconnected, EndPoint remoteEndPoint, ConnectionId connectionId)
+		{
+			Action<EndPoint, ConnectionId> fn2 = OnDisconnected;
+			if (hasDisconnected && fn2 != null)
+			{
+				try
+				{
+					fn2(remoteEndPoint, connectionId);
+				}
+				catch (Exception e)
+				{
+					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
+				}
+			}
+		}
+
+		private bool HandleMessage(
+			ConnectionId currentConnectionId,
+			long rpcId,
+			MessageType type,
+			BinaryReader reader,
+			out EndPointDisconnectReason? reason)
+		{
+			if (type == MessageType.Call)
+			{
+				Interlocked.Increment(ref _numCallsAnswered);
+				return HandleRequest(currentConnectionId, rpcId, reader, out reason);
+			}
+			if ((type & MessageType.Return) != 0)
+			{
+				if (!HandleResponse(rpcId, type, reader))
+				{
+					// We only log a true error when we're neither disconnecting, nor disconnected - 
+					// because if either is true then this is quite expected because we've already cleared
+					// the list of pending messages, thus not finding a certain pending call is...
+					// expected.
+					lock (_syncRoot)
+					{
+						if (InternalRemoteEndPoint != null)
+						{
+							Log.ErrorFormat("There is no pending RPC #{0}, disconnecting...", rpcId);
+						}
+					}
+
+					reason = EndPointDisconnectReason.RpcInvalidResponse;
+					return false;
+				}
+			}
+			else if ((type & MessageType.Goodbye) != 0)
+			{
+				Log.InfoFormat("Connection about to be closed by the other side - disconnecting...");
+
+				reason = EndPointDisconnectReason.RequestedByRemotEndPoint;
+				return false;
+			}
+			else
+			{
+				throw new SystemException(string.Format("Unexpected message-type: {0}", type));
+			}
+
+			reason = null;
+			return true;
+		}
+
+		private bool DispatchMethodInvocation(
+			ConnectionId connectionId,
+			long rpcId,
+			IGrain grain,
+			string typeName,
+			string methodName,
+			BinaryReader reader,
+			out EndPointDisconnectReason? reason)
+		{
+			if (!IsTypeSafe(grain.InterfaceType, typeName))
+			{
+				// If the call violated type-safety then we will immediately "throw" a TypeMismatchException.
+				HandleTypeMismatch(connectionId, rpcId, grain, typeName, methodName);
+
+				// We can continue on and don't need to disconnect the endpoint as we've
+				// handled the method invocation by throwing an exception on the caller.
+				reason = null;
+				return true;
+			}
+
+			SerialTaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
+
+			Action executeMethod = () =>
+				{
+					if (Log.IsDebugEnabled)
+					{
+						Log.DebugFormat("Starting RPC #{0}", rpcId);
+					}
+
+					try
+					{
+						Socket socket = _socket;
+						if (socket == null)
+						{
+							if (Log.IsDebugEnabled)
+								Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
+
+							return;
+						}
+
+						var response = new MemoryStream();
+						var writer = new BinaryWriter(response, Encoding.UTF8);
+						try
+						{
+							WriteResponseHeader(rpcId, writer, MessageType.Return);
+							grain.Invoke(methodName, reader, writer);
+							PatchResponseMessageLength(response, writer);
+						}
+						catch (Exception e)
+						{
+							if (Log.IsErrorEnabled)
+							{
+								Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
+								                rpcId,
+								                typeName,
+								                methodName,
+								                grain.ObjectId,
+								                e);
+							}
+
+							response.Position = 0;
+							WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+							WriteException(writer, e);
+							PatchResponseMessageLength(response, writer);
+						}
+
+						var responseLength = (int) response.Length;
+						byte[] data = response.GetBuffer();
+
+						SocketError err;
+
+						if (!SynchronizedWrite(socket, data, responseLength, out err))
+						{
+							Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
+						}
+					}
+					catch (Exception e)
+					{
+						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
+						Disconnect(connectionId, EndPointDisconnectReason.UnhandledException);
+					}
+					finally
+					{
+						if (Log.IsDebugEnabled)
+						{
+							Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
+						}
+
+						// Once we've created the task, we remember that there's a method invocation
+						// that's yet to be executed (which tremendously helps debugging problems)
+						lock (_pendingMethodInvocations)
+						{
+							_pendingMethodInvocations.Remove(rpcId);
+						}
+					}
+				};
+
+			// However if those 2 things don't throw, then we dispatch the rest of the method invocation
+			// on the task dispatcher and be done with it here...
+			Task task;
+			TaskCompletionSource<int> completionSource;
+			if (taskScheduler != null)
+			{
+				completionSource = new TaskCompletionSource<int>();
+				task = completionSource.Task;
+			}
+			else
+			{
+				completionSource = null;
+				task = new Task(executeMethod);
+			}
+
+			if (Log.IsDebugEnabled)
+			{
+				Log.DebugFormat("Queueing RPC #{0}", rpcId);
+			}
+
+			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
+			lock (_pendingMethodInvocations)
+			{
+				MethodInvocation existingMethodInvocation;
+				if (_pendingMethodInvocations.TryGetValue(rpcId, out existingMethodInvocation))
+				{
+					IGrain tmp = existingMethodInvocation.Grain;
+					ulong? grainId = tmp != null ? (ulong?) tmp.ObjectId : null;
+
+					var builder = new StringBuilder();
+					builder.AppendFormat("Received RPC invocation request #{0}, but one with the same id is already pending!",
+					                     rpcId);
+					builder.AppendFormat("The original request was made '{0}' on '{1}.{2}",
+					                     existingMethodInvocation.RequestTime,
+					                     grainId,
+					                     existingMethodInvocation.MethodName);
+					builder.AppendFormat(" (Total pending requests: {0})", _pendingMethodInvocations.Count);
+					Log.Error(builder.ToString());
+
+					reason = EndPointDisconnectReason.RpcDuplicateRequest;
+					return false;
+				}
+
+				_pendingMethodInvocations.Add(rpcId, methodInvocation);
+			}
+
+			// And then finally start the task to deserialize all method parameters, invoke the mehtod
+			// and then seralize either the return value of the thrown exception...
+			if (taskScheduler != null)
+			{
+				taskScheduler.QueueTask(executeMethod, completionSource);
+			}
+			else
+			{
+				task.Start(TaskScheduler.Default);
+			}
+
+			reason = null;
+			return true;
+		}
+
+		private void HandleNoSuchServant(ConnectionId connectionId,
+												long rpcId,
+												ulong servantId,
+												string typeName,
+												string methodName,
+												int numServants,
+												int numProxies)
+		{
+			Socket socket = _socket;
+			if (socket == null)
+			{
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
+				return;
+			}
+
+			var response = new MemoryStream();
+			var writer = new BinaryWriter(response, Encoding.UTF8);
+			var exception = new NoSuchServantException(_name, servantId, typeName, methodName, numServants, numProxies);
+
+			response.Position = 0;
+			WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+			WriteException(writer, exception);
+			PatchResponseMessageLength(response, writer);
+
+			var responseLength = (int)response.Length;
+			byte[] data = response.GetBuffer();
+
+			SocketError err;
+
+			if (!SynchronizedWrite(socket, data, responseLength, out err))
+			{
+				Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
+			}
+		}
+
+		private void HandleTypeMismatch(ConnectionId connectionId,
+			long rpcId,
+			IGrain grain,
+			string typeName,
+			string methodName)
+		{
+			var response = new MemoryStream();
+			var writer = new BinaryWriter(response, Encoding.UTF8);
+			response.Position = 0;
+			WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
+
+			var e = new TypeMismatchException(
+				string.Format(
+					"There was a type mismatch when invoking RPC #{0} '{1}' on grain #{2}: Expected '{3}' but found '{4}",
+					rpcId,
+					methodName,
+					grain.ObjectId,
+					typeName,
+					grain.InterfaceType.FullName));
+
+			WriteException(writer, e);
+			PatchResponseMessageLength(response, writer);
+
+			var responseLength = (int) response.Length;
+			byte[] data = response.GetBuffer();
+
+			SocketError err;
+			Socket socket = _socket;
+			if (!SynchronizedWrite(socket, data, responseLength, out err))
+			{
+				Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
+			}
+		}
+
+		private bool HandleRequest(ConnectionId connectionId,
+		                           long rpcId,
+		                           BinaryReader reader,
+		                           out EndPointDisconnectReason? reason)
+		{
+			ulong servantId = reader.ReadUInt64();
+			string typeName = reader.ReadString();
+			string methodName = reader.ReadString();
+
+			IServant servant;
+			int numServants;
+			lock (_servantsById)
+			{
+				numServants = _servantsById.Count;
+				_servantsById.TryGetValue(servantId, out servant);
+			}
+
+			if (servant != null)
+			{
+				return DispatchMethodInvocation(connectionId,
+				                                rpcId,
+				                                servant,
+				                                typeName,
+				                                methodName,
+				                                reader,
+				                                out reason);
+			}
+
+			IProxy proxy;
+			int numProxies;
+			lock (_proxiesById)
+			{
+				numProxies = _proxiesById.Count;
+				WeakReference<IProxy> grain;
+				if (_proxiesById.TryGetValue(servantId, out grain))
+				{
+					grain.TryGetTarget(out proxy);
+				}
+				else
+				{
+					proxy = null;
+				}
+			}
+
+			if (proxy != null)
+			{
+				return DispatchMethodInvocation(connectionId,
+				                                rpcId,
+				                                proxy,
+				                                typeName,
+				                                methodName,
+				                                reader,
+				                                out reason);
+			}
+
+			//
+			// When we couldn't find server nor proxy under the given id, then the user
+			// supplied us with a wrong id, already unregistered the servant (or let it be collected
+			// by the GC) OR there's a bug somewhere in this project ;)
+			// Anyways, we simply serialize the exception so the method call is cancelled on the
+			// other end and then go on.
+			//
+
+			HandleNoSuchServant(connectionId, rpcId, servantId, typeName, methodName, numServants, numProxies);
+
+			reason = null;
+			return true;
+		}
+
+		private static bool IsTypeSafe(Type getType, string typeName)
+		{
+			string actualTypeName = getType.FullName;
+			return actualTypeName == typeName;
+		}
+
+		private static void PatchResponseMessageLength(MemoryStream response, BinaryWriter writer)
+		{
+			var bufferSize = (int) response.Length;
+			int messageSize = bufferSize - 4;
+			response.Position = 0;
+			writer.Write(messageSize);
+		}
+
+		private static void WriteResponseHeader(long rpcId, BinaryWriter writer, MessageType type)
+		{
+			const int responseSizeStub = 0;
+			writer.Write(responseSizeStub);
+			writer.Write(rpcId);
+			writer.Write((byte) type);
+		}
+
+		private bool HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
+		{
+			return _pendingMethodCalls.HandleResponse(rpcId, messageType, reader);
+		}
+
+		private bool TryReadMessage(Socket socket,
+		                            TimeSpan timeout,
+		                            string messageStep,
+		                            out string messageType,
+		                            out string message,
+		                            out string error)
+		{
+			EndPoint remoteEndPoint = socket.RemoteEndPoint;
+			var size = new byte[4];
+			SocketError err;
+			if (!SynchronizedRead(socket, size, timeout, out err))
+			{
+				messageType = null;
+				message = null;
+				error =
+					string.Format(
+						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
+						Name,
+						messageStep,
+						remoteEndPoint,
+						timeout.TotalSeconds,
+						err);
+				return false;
+			}
+
+			int length = BitConverter.ToInt32(size, 0);
+			if (length < 0)
+			{
+				messageType = null;
+				message = null;
+				error = string.Format("The message received from remote endpoint '{0}' is malformatted",
+				                      remoteEndPoint);
+				return false;
+			}
+
+			var buffer = new byte[length];
+			if (!SynchronizedRead(socket, buffer, timeout, out err))
+			{
+				messageType = null;
+				message = null;
+				error =
+					string.Format(
+						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
+						Name,
+						messageStep,
+						remoteEndPoint,
+						timeout.TotalSeconds,
+						err);
+				return false;
+			}
+
+			using (var reader = new BinaryReader(new MemoryStream(buffer)))
+			{
+				messageType = reader.ReadString();
+				message = reader.ReadString();
+			}
+
+			error = null;
+			return true;
+		}
+
+		protected void ReadMessage(Socket socket,
+		                           TimeSpan timeout,
+		                           string messageStep,
+		                           out string messageType,
+		                           out string message)
+		{
+			string error;
+			if (!TryReadMessage(socket, timeout, messageStep, out messageType, out message, out error))
+			{
+				throw new HandshakeException(error);
+			}
+		}
+
+		protected void WriteMessage(Socket socket,
+		                            string messageType,
+		                            string message = "")
+		{
+			string error;
+			if (!TryWriteMessage(socket, messageType, message, out error))
+			{
+				throw new HandshakeException(error);
+			}
+		}
+
+		private bool TryWriteMessage(Socket socket,
+		                             string messageType,
+		                             string message,
+		                             out string error)
+		{
+			EndPoint remoteEndPoint = socket.RemoteEndPoint;
+			using (var stream = new MemoryStream())
+			using (var writer = new BinaryWriter(stream))
+			{
+				stream.Position = 4;
+				writer.Write(messageType);
+				writer.Write(message);
+				writer.Flush();
+				PatchResponseMessageLength(stream, writer);
+				stream.Position = 0;
+
+				SocketError err;
+				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
+				{
+					error = string.Format("EndPoint '{0}' failed to send {1} to remote endpoint '{2}': {3}",
+					                      Name,
+					                      messageType,
+					                      remoteEndPoint,
+					                      err);
+					return false;
+				}
+			}
+
+			error = null;
+			return true;
+		}
+
+		/// <summary>
+		///     Performs the authentication between client & server (if necessary) from the server-side.
+		/// </summary>
+		/// <param name="socket"></param>
+		protected ConnectionId PerformIncomingHandshake(Socket socket)
+		{
+			EndPoint remoteEndPoint = socket.RemoteEndPoint;
+			TimeSpan timeout = TimeSpan.FromMinutes(1);
+			string messageType;
+			string message;
+
+			if (_clientAuthenticator != null)
+			{
+				// Upon accepting an incoming connection, we try to authenticate the client
+				// by posing a challenge
+				string challenge = _clientAuthenticator.CreateChallenge();
+				Log.DebugFormat("Creating challenge '{0}' for endpoint '{1}'", challenge, remoteEndPoint);
+				WriteMessage(socket, AuthenticationRequiredMessage, challenge);
+
+				ReadMessage(socket, timeout, AuthenticationResponse, out messageType, out message);
+				Log.DebugFormat("Received response '{0}' for challenge '{1}' from endpoint '{2}'",
+				                message,
+				                challenge,
+				                remoteEndPoint);
+
+				if (!_clientAuthenticator.Authenticate(challenge, message))
+				{
+					// Should the client fail the challenge, we tell him that,
+					// but drop the connection immediately afterwards.
+					WriteMessage(socket, AuthenticationFailedMessage);
+					throw new AuthenticationException(string.Format("Endpoint '{0}' failed the authentication challenge",
+					                                                remoteEndPoint));
+				}
+
+				WriteMessage(socket, AuthenticationSucceedMessage);
+				Log.InfoFormat("Endpoint '{0}' successfully authenticated", remoteEndPoint);
+			}
+			else
+			{
+				WriteMessage(socket, NoAuthenticationRequiredMessage);
+			}
+
+			ReadMessage(socket, timeout, AuthenticationChallenge, out messageType, out message);
+			if (messageType == AuthenticationRequiredMessage)
+			{
+				if (_serverAuthenticator == null)
+					throw new AuthenticationRequiredException(string.Format("Endpoint '{0}' requires authentication", remoteEndPoint));
+
+				string challenge = message;
+				string response = _serverAuthenticator.CreateResponse(challenge);
+				WriteMessage(socket, AuthenticationResponseMessage, response);
+
+				// After having answered the challenge we wait for a successful response from the client.
+				// If we failed the authentication, then 
+				ReadMessage(socket, timeout, AuthenticationVerification, out messageType, out message);
+				if (messageType != AuthenticationSucceedMessage)
+					throw new AuthenticationException(string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint));
+			}
+			else if (messageType != NoAuthenticationRequiredMessage)
+			{
+				throw new HandshakeException();
+			}
+
+			_pendingMethodCalls.IsConnected = true;
+			ConnectionId connectionId = OnHandshakeSucceeded(socket);
+			WriteMessage(socket, HandshakeSucceedMessage);
+			return connectionId;
+		}
+
+		/// <summary>
+		///     Performs the authentication between client & server (if necessary) from the client-side.
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="timeout"></param>
+		/// <param name="errorType"></param>
+		/// <param name="error"></param>
+		/// <param name="currentConnectionId"></param>
+		protected bool TryPerformOutgoingHandshake(Socket socket,
+		                                           TimeSpan timeout,
+		                                           out ErrorType errorType,
+		                                           out string error,
+		                                           out ConnectionId currentConnectionId)
+		{
+			string messageType;
+			string message;
+			EndPoint remoteEndPoint = socket.RemoteEndPoint;
+
+			if (!TryReadMessage(socket, timeout, AuthenticationChallenge,
+			                    out messageType,
+			                    out message,
+			                    out error))
+			{
+				errorType = ErrorType.Handshake;
+				currentConnectionId = ConnectionId.None;
+				return false;
+			}
+
+			if (messageType == AuthenticationRequiredMessage)
+			{
+				if (_clientAuthenticator == null)
+				{
+					errorType = ErrorType.AuthenticationRequired;
+					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+
+				string challenge = message;
+				// Upon establishing a connection, we try to authenticate the ourselves
+				// against the server by answering his response.
+				string response = _clientAuthenticator.CreateResponse(challenge);
+				if (!TryWriteMessage(socket, AuthenticationResponseMessage, response, out error))
+				{
+					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+
+				// If we failed the authentication, a proper server will tell us so we can
+				// forward this information to the caller.
+				if (!TryReadMessage(socket, timeout, AuthenticationVerification,
+				                    out messageType,
+				                    out message,
+				                    out error))
+				{
+					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+
+				if (messageType != AuthenticationSucceedMessage)
+				{
+					errorType = ErrorType.Authentication;
+					error = string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint);
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+			}
+			else if (messageType != NoAuthenticationRequiredMessage)
+			{
+				errorType = ErrorType.Handshake;
+				error =
+					string.Format("EndPoint '{0}' sent unknown message '{1}: {2}', expected either {3} or {4}",
+					              remoteEndPoint,
+					              messageType,
+					              message,
+					              AuthenticationRequiredMessage,
+					              NoAuthenticationRequiredMessage
+						);
+				currentConnectionId = ConnectionId.None;
+				return false;
+			}
+
+			if (_serverAuthenticator != null)
+			{
+				// After we've authenticated ourselves, it's time for the server to authenticate himself.
+				// Let's send the challenge
+				string challenge = _serverAuthenticator.CreateChallenge();
+				if (!TryWriteMessage(socket, AuthenticationRequiredMessage, challenge, out error))
+				{
+					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+
+				if (!TryReadMessage(socket, timeout, AuthenticationResponse,
+				                    out messageType,
+				                    out message,
+				                    out error))
+				{
+					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+
+				if (!_serverAuthenticator.Authenticate(challenge, message))
+				{
+					// Should the server fail to authenticate himself, then we tell him that end then abort
+					// the connection...
+					WriteMessage(socket, AuthenticationResponseMessage, AuthenticationFailedMessage);
+					errorType = ErrorType.Authentication;
+					error = string.Format("Remote endpoint '{0}' failed the authentication challenge",
+					                      remoteEndPoint);
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+
+				if (!TryWriteMessage(socket, AuthenticationSucceedMessage, "", out error))
+				{
+					errorType = ErrorType.Handshake;
+					currentConnectionId = ConnectionId.None;
+					return false;
+				}
+
+				Log.InfoFormat("Remote endpoint '{0}' successfully authenticated", remoteEndPoint);
+			}
+			else
+			{
+				WriteMessage(socket, NoAuthenticationRequiredMessage);
+			}
+
+			if (!TryReadMessage(socket, timeout, AuthenticationFinished, out messageType, out message, out error))
+			{
+				errorType = ErrorType.Handshake;
+				currentConnectionId = ConnectionId.None;
+				return false;
+			}
+
+			if (messageType != HandshakeSucceedMessage)
+			{
+				errorType = ErrorType.Handshake;
+				error =
+					string.Format(
+						"EndPoint '{0}' did not receive the correct response from remote endpoint '{1}': Expected '{2}' but received '{3}'",
+						Name,
+						remoteEndPoint,
+						HandshakeSucceedMessage,
+						messageType);
+				currentConnectionId = ConnectionId.None;
+				return false;
+			}
+
+			_pendingMethodCalls.IsConnected = true;
+			currentConnectionId = OnHandshakeSucceeded(socket);
+			errorType = ErrorType.Handshake;
+			error = null;
+			return true;
+		}
+
+		/// <summary>
+		///     Is called when the handshake for the newly incoming message succeeds.
+		/// </summary>
+		/// <param name="socket"></param>
+		protected abstract ConnectionId OnHandshakeSucceeded(Socket socket);
+
+		public override string ToString()
+		{
+			return _name;
 		}
 
 		#region Reading from / Writing to socket
@@ -388,7 +1803,7 @@ namespace SharpRemote
 		{
 			var args = (ThreadArgs) sock;
 			Socket socket = args.Socket;
-			var connectionId = args.ConnectionId;
+			ConnectionId connectionId = args.ConnectionId;
 
 			EndPointDisconnectReason reason;
 			SocketError? error = null;
@@ -547,1192 +1962,6 @@ namespace SharpRemote
 
 		#endregion
 
-		protected abstract EndPoint InternalLocalEndPoint { get; }
-		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
-
-		protected object SyncRoot
-		{
-			get { return _syncRoot; }
-		}
-
-		protected Socket Socket
-		{
-			set { _socket = value; }
-		}
-
-		/// <summary>
-		///     Tests if this object has been disposed of or not.
-		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
-
-		/// <summary>
-		///     Contains the reason why the socket was disconnected, or null if it wasn't disconnected / never established
-		///     a connection.
-		/// </summary>
-		public EndPointDisconnectReason? DisconnectReason
-		{
-			get { return _disconnectReason; }
-		}
-
-		private void CollectGarbage(object unused)
-		{
-			_garbageCollectionTime.Start();
-			try
-			{
-				RemoveUnusedServants();
-				RemoveUnusedProxies();
-			}
-			catch (Exception e)
-			{
-				Log.ErrorFormat("Caught exception during garbage collection: {0}", e);
-			}
-			finally
-			{
-				_garbageCollectionTime.Stop();
-			}
-		}
-
-		private void RemoveUnusedServants()
-		{
-			lock (_servantsById)
-			{
-				var collectedServants = _servantsBySubject.Collect(true);
-				if (collectedServants != null)
-				{
-					foreach (var servant in collectedServants)
-					{
-						_servantsById.Remove(servant.ObjectId);
-					}
-
-					_numServantsCollected += collectedServants.Count;
-				}
-			}
-		}
-
-		private void RemoveUnusedProxies()
-		{
-			lock (_proxiesById)
-			{
-				List<ulong> toRemove = null;
-
-				foreach (var pair in _proxiesById)
-				{
-					IProxy proxy;
-					if (!pair.Value.TryGetTarget(out proxy))
-					{
-						if (toRemove == null)
-							toRemove = new List<ulong>();
-
-						toRemove.Add(pair.Key);
-					}
-				}
-
-				if (toRemove != null)
-				{
-					_numProxiesCollected += toRemove.Count;
-
-					foreach (var key in toRemove)
-					{
-						_proxiesById.Remove(key);
-					}
-				}
-			}
-		}
-
-		/// <summary>
-		///     Returns all the proxies of this endpoint.
-		///     Used for testing.
-		/// </summary>
-		internal IEnumerable<IProxy> Proxies
-		{
-			get
-			{
-				lock (_proxiesById)
-				{
-					var aliveProxies = new List<IProxy>();
-
-					foreach (var pair in _proxiesById)
-					{
-						IProxy proxy;
-						if (pair.Value.TryGetTarget(out proxy))
-						{
-							aliveProxies.Add(proxy);
-						}
-					}
-
-					return aliveProxies;
-				}
-			}
-		}
-
-		/// <summary>
-		///     Returns all the servnats of this endpoint.
-		///     Used for testing.
-		/// </summary>
-		internal IEnumerable<IServant> Servants
-		{
-			get
-			{
-				lock (_servantsById)
-				{
-					return _servantsById.Values.ToList();
-				}
-			}
-		}
-
-		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId,
-		                                                string interfaceType,
-		                                                string methodName,
-		                                                MemoryStream arguments)
-		{
-			long rpcId = Interlocked.Increment(ref _nextRpcId);
-
-			if (Log.IsDebugEnabled)
-			{
-				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
-				                InternalLocalEndPoint,
-				                InternalRemoteEndPoint,
-				                rpcId,
-				                servantId,
-				                methodName);
-			}
-
-			return CallRemoteMethodAsync(rpcId, servantId, interfaceType, methodName, arguments);
-		}
-
-		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
-		{
-			long rpcId = Interlocked.Increment(ref _nextRpcId);
-
-			if (Log.IsDebugEnabled)
-			{
-				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
-				                InternalLocalEndPoint,
-				                InternalRemoteEndPoint,
-				                rpcId,
-				                servantId,
-				                methodName);
-			}
-
-			return CallRemoteMethod(rpcId, servantId, interfaceType, methodName, arguments);
-		}
-
-		public void Dispose()
-		{
-			lock (_syncRoot)
-			{
-				_isDisposing = true;
-				try
-				{
-					//_pendingWrites.Dispose();
-
-					Disconnect();
-					DisposeAdditional();
-					_garbageCollectionTimer.Dispose();
-
-					// Another thread could still be accessing this dictionary.
-					// Therefore we need to guard this one against concurrent access...
-					lock (_servantsById)
-					{
-						_servantsBySubject.Dispose();
-						_servantsById.Clear();
-					}
-
-					_isDisposed = true;
-				}
-				finally
-				{
-					_isDisposing = false;
-				}
-			}
-		}
-
-		public string Name
-		{
-			get { return _name; }
-		}
-
-		public bool IsConnected
-		{
-			get { return InternalRemoteEndPoint != null; }
-		}
-
-		public ConnectionId CurrentConnectionId
-		{
-			get; protected set; }
-
-		public TimeSpan RoundtripTime
-		{
-			get
-			{
-				var monitor = _latencyMonitor;
-				if (monitor != null)
-					return monitor.RoundtripTime;
-
-				return TimeSpan.Zero;
-			}
-		}
-
-		public EndPoint LocalEndPoint
-		{
-			get { return InternalLocalEndPoint; }
-		}
-
-		public EndPoint RemoteEndPoint
-		{
-			get { return InternalRemoteEndPoint; }
-		}
-
-		public void Disconnect()
-		{
-			Disconnect(CurrentConnectionId, EndPointDisconnectReason.RequestedByEndPoint);
-		}
-
-		public T CreateProxy<T>(ulong objectId) where T : class
-		{
-			lock (_proxiesById)
-			{
-				var proxy = _proxyCreator.CreateProxy<T>(objectId);
-				var grain = new WeakReference<IProxy>((IProxy) proxy);
-				_proxiesById.Add(objectId, grain);
-				return proxy;
-			}
-		}
-
-		public T GetProxy<T>(ulong objectId) where T : class
-		{
-			IProxy proxy;
-			lock (_proxiesById)
-			{
-				WeakReference<IProxy> grain;
-				if (!_proxiesById.TryGetValue(objectId, out grain) || !grain.TryGetTarget(out proxy))
-					throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
-			}
-
-			if (!(proxy is T))
-				throw new ArgumentException(string.Format("The proxy '{0}', {1} is not related to interface: {2}",
-				                                          objectId,
-				                                          proxy.GetType().Name,
-				                                          typeof (T).Name));
-
-			return (T) proxy;
-		}
-
-		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
-		{
-			if (Log.IsDebugEnabled)
-			{
-				Log.DebugFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
-				                subject.GetType().FullName,
-				                typeof (T).FullName,
-				                objectId
-					);
-			}
-
-			IServant servant = _servantCreator.CreateServant(objectId, subject);
-			lock (_servantsById)
-			{
-				_servantsById.Add(objectId, servant);
-				_servantsBySubject.Add(subject, servant);
-			}
-			return servant;
-		}
-
-		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
-		{
-			lock (_proxiesById)
-			{
-				IProxy proxy;
-				WeakReference<IProxy> grain;
-				if (!_proxiesById.TryGetValue(objectId, out grain))
-				{
-					// If the proxy doesn't exist, then we can simply create a new one...
-					var value = _proxyCreator.CreateProxy<T>(objectId);
-					grain = new WeakReference<IProxy>((IProxy)value);
-					_proxiesById.Add(objectId, grain);
-					return value;
-				}
-				if (!grain.TryGetTarget(out proxy))
-				{
-					// It's possible that the proxy did exist at one point, then was collected by the GC, but
-					// our internal GC didn't have the time to remove that proxy from the dictionary yet, which
-					// means that we have to *replace* the existing weak-reference with a new, living one
-					var value = _proxyCreator.CreateProxy<T>(objectId);
-					grain = new WeakReference<IProxy>(proxy);
-					_proxiesById[objectId] = grain;
-					return value;
-				}
-
-				return (T) proxy;
-			}
-		}
-
-		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
-		{
-			lock (_servantsById)
-			{
-				IServant servant;
-				if (!_servantsBySubject.TryGetValue(subject, out servant))
-				{
-					ulong nextId = _idGenerator.GetGrainId();
-					servant = CreateServant(nextId, subject);
-				}
-
-				return servant;
-			}
-		}
-
-		protected static bool IsFailure(EndPointDisconnectReason reason)
-		{
-			switch (reason)
-			{
-				case EndPointDisconnectReason.RequestedByEndPoint:
-				case EndPointDisconnectReason.RequestedByRemotEndPoint:
-					return false;
-
-				default:
-					return true;
-			}
-		}
-
-		private Task<MemoryStream> CallRemoteMethodAsync(long rpcId,
-		                                                 ulong servantId,
-		                                                 string interfaceType,
-		                                                 string methodName,
-		                                                 MemoryStream arguments)
-		{
-			var taskSource = new TaskCompletionSource<MemoryStream>();
-			Action<PendingMethodCall> onCallFinished = finishedCall =>
-				{
-					// TODO: We might want execute this portion in yet another task in order to not block the read-thread
-					try
-					{
-						if (finishedCall.MessageType == MessageType.Return)
-						{
-							var stream = (MemoryStream) finishedCall.Reader.BaseStream;
-							taskSource.SetResult(stream);
-						}
-						else if ((finishedCall.MessageType & MessageType.Exception) != 0)
-						{
-							var e = ReadException(finishedCall.Reader);
-							LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
-							taskSource.SetException(e);
-						}
-						else
-						{
-							taskSource.SetException(new NotImplementedException());
-						}
-					}
-					finally
-					{
-						_pendingMethodCalls.Recycle(finishedCall);
-					}
-				};
-
-			var call = _pendingMethodCalls.Enqueue(servantId,
-			                                       interfaceType,
-			                                       methodName,
-			                                       arguments,
-			                                       rpcId,
-			                                       onCallFinished);
-
-			Interlocked.Add(ref _numBytesSent, call.MessageLength);
-			Interlocked.Increment(ref _numCallsInvoked);
-
-			return taskSource.Task;
-		}
-
-		private MemoryStream CallRemoteMethod(long rpcId, ulong servantId, string interfaceType, string methodName,
-		                                      MemoryStream arguments)
-		{
-			PendingMethodCall call = null;
-			try
-			{
-				call = _pendingMethodCalls.Enqueue(servantId,
-													  interfaceType,
-													  methodName,
-													  arguments,
-													  rpcId);
-
-				Interlocked.Add(ref _numBytesSent, call.MessageLength);
-				Interlocked.Increment(ref _numCallsInvoked);
-
-				call.Wait();
-
-				if (call.MessageType == MessageType.Return)
-				{
-					return (MemoryStream) call.Reader.BaseStream;
-				}
-				else if ((call.MessageType & MessageType.Exception) != 0)
-				{
-					var e = ReadException(call.Reader);
-					LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
-					throw e;
-				}
-				else
-				{
-					throw new NotImplementedException();
-				}
-			}
-			finally
-			{
-				if (call != null)
-				{
-					_pendingMethodCalls.Recycle(call);
-				}
-			}
-		}
-
-		private void LogRemoteMethodCallException(long rpcId, ulong servantId, string interfaceType, string methodName, Exception exception)
-		{
-			if (Log.IsDebugEnabled)
-			{
-				Log.DebugFormat("RPC invocation #{0} on {1}.{2} (#{3}) threw: {4}",
-												rpcId,
-												interfaceType,
-												methodName,
-												servantId,
-												exception);
-			}
-		}
-
-		protected abstract void DisposeAdditional();
-
-		/// <summary>
-		/// Performs a "hard" disconnect as if a failure occured.
-		/// Is used to implement certain unit-tests where the connection
-		/// failed (cable disconnected, etc...).
-		/// </summary>
-		internal void DisconnectByFailure()
-		{
-			Disconnect(CurrentConnectionId, EndPointDisconnectReason.ReadFailure);
-		}
-
-		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason, SocketError? error = null)
-		{
-			EndPoint remoteEndPoint;
-			Socket socket;
-			bool hasDisconnected = false;
-			bool emitOnFailure = false;
-			ConnectionId connectionId;
-
-			lock (_syncRoot)
-			{
-				// We can safely ignore failures reported by the heartbeat monitor that are from any other
-				// than the current connection.
-				if (currentConnectionId != CurrentConnectionId)
-					return;
-
-				// We DON'T want to emit an error message when we are already disconnected. This is
-				// because Disconnect() doesn't wait for the read/Write thread to stop and therefore
-				// those threads are almost always reporting a "failure" afterwards.
-				if (IsFailure(reason))
-				{
-					var builder = new StringBuilder();
-					builder.AppendFormat("Disconnecting EndPoint '{0}' from '{1}' due to: {2}",
-					                     _name,
-					                     InternalRemoteEndPoint,
-					                     reason);
-					if (error != null)
-					{
-						builder.AppendFormat(" (socket returned {0})", error);
-					}
-
-					Log.Error(builder);
-				}
-
-				remoteEndPoint = InternalRemoteEndPoint;
-				socket = _socket;
-
-				InternalRemoteEndPoint = null;
-				_pendingMethodCalls.IsConnected = false;
-				_socket = null;
-
-				connectionId = CurrentConnectionId;
-
-				if (socket != null)
-				{
-					var heartbeatMonitor = _heartbeatMonitor;
-					if (heartbeatMonitor != null)
-					{
-						heartbeatMonitor.OnFailure -= HeartbeatMonitorOnOnFailure;
-						heartbeatMonitor.Stop();
-						heartbeatMonitor.TryDispose();
-						_heartbeatMonitor = null;
-					}
-
-					var latencyMonitor = _latencyMonitor;
-					if (latencyMonitor != null)
-					{
-						latencyMonitor.Stop();
-						latencyMonitor.TryDispose();
-						_latencyMonitor = null;
-					}
-
-					hasDisconnected = true;
-					_disconnectReason = reason;
-
-					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
-
-					CancellationTokenSource.Cancel();
-					_pendingMethodCalls.CancelAllCalls();
-
-					// If we are disconnecting because of a failure, then we don't notify the other end
-					// and drop the connection immediately. Also there's no need to notify the other
-					// end when it requested the disconnect
-					if (!IsFailure(reason))
-					{
-						if (reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
-						{
-							SendGoodbye(socket);
-						}
-					}
-					else
-					{
-						emitOnFailure = true;
-					}
-
-					try
-					{
-						socket.Disconnect(false);
-					}
-					catch (SocketException)
-					{
-					}
-					catch (NullReferenceException)
-					{
-						// I suspect that either I forgot to lock one method call on _socket
-						// or there's a bug in its implementation - either way this method may
-						// throw a NullReferenceException from inside Disconnect.
-					}
-					socket.TryDispose();
-				}
-
-				CurrentConnectionId = ConnectionId.None;
-			}
-
-			if (emitOnFailure)
-			{
-				EmitOnFailure(reason, connectionId);
-			}
-
-			EmitOnDisconnected(hasDisconnected, remoteEndPoint, connectionId);
-		}
-
-		private void EmitOnFailure(EndPointDisconnectReason reason, ConnectionId connectionId)
-		{
-			var fn = OnFailure;
-			if (fn != null)
-			{
-				try
-				{
-					fn(reason, connectionId);
-				}
-				catch (Exception e)
-				{
-					Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
-				}
-			}
-		}
-
-		private void SendGoodbye(Socket socket)
-		{
-			try
-			{
-				long rpcId = _nextRpcId++;
-				const int messageSize = 9;
-
-				using (var stream = new MemoryStream())
-				using (var writer = new BinaryWriter(stream, Encoding.UTF8))
-				{
-					writer.Write(messageSize);
-					writer.Write(rpcId);
-					writer.Write((byte) MessageType.Goodbye);
-
-					writer.Flush();
-					stream.Position = 0;
-
-					socket.Send(stream.GetBuffer(), 0, messageSize + 4, SocketFlags.None);
-				}
-			}
-			catch (SocketException)
-			{
-			}
-		}
-
-		protected void FireOnConnected(EndPoint endPoint, ConnectionId connectionId)
-		{
-			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
-			                                         Diagnostics.Debugger.Instance,
-			                                         _heartbeatSettings,
-													 connectionId);
-
-			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
-			_heartbeatMonitor.Start();
-
-			_latencyMonitor = new LatencyMonitor(_remoteLatency, _latencySettings);
-			_latencyMonitor.Start();
-
-			var fn = OnConnected;
-			if (fn != null)
-			{
-				try
-				{
-					fn(endPoint, connectionId);
-				}
-				catch (Exception e)
-				{
-					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
-				}
-			}
-		}
-
-		private void EmitOnDisconnected(bool hasDisconnected, EndPoint remoteEndPoint, ConnectionId connectionId)
-		{
-			var fn2 = OnDisconnected;
-			if (hasDisconnected && fn2 != null)
-			{
-				try
-				{
-					fn2(remoteEndPoint, connectionId);
-				}
-				catch (Exception e)
-				{
-					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
-				}
-			}
-		}
-
-		/// <summary>
-		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/>
-		/// is created.
-		/// </summary>
-		/// <remarks>
-		/// The event is fired with the endpoint of the *other* <see cref="AbstractSocketRemotingEndPoint"/>.
-		/// </remarks>
-		public event Action<EndPoint, ConnectionId> OnConnected;
-
-		/// <summary>
-		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/> is disconnected.
-		/// </summary>
-		public event Action<EndPoint, ConnectionId> OnDisconnected;
-
-		/// <summary>
-		///     This event is invoked right before a socket is to be closed due to failure of:
-		///     - the connection between endpoints
-		///     - a failure of the remote process
-		///     - a failure of SharpRemote
-		///     - something else ;)
-		/// </summary>
-		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
-
-		private bool HandleMessage(
-			ConnectionId currentConnectionId,
-			long rpcId,
-			MessageType type,
-			BinaryReader reader,
-			out EndPointDisconnectReason? reason)
-		{
-			if (type == MessageType.Call)
-			{
-				Interlocked.Increment(ref _numCallsAnswered);
-				return HandleRequest(currentConnectionId, rpcId, reader, out reason);
-			}
-			if ((type & MessageType.Return) != 0)
-			{
-				if (!HandleResponse(rpcId, type, reader))
-				{
-					// We only log a true error when we're neither disconnecting, nor disconnected - 
-					// because if either is true then this is quite expected because we've already cleared
-					// the list of pending messages, thus not finding a certain pending call is...
-					// expected.
-					lock (_syncRoot)
-					{
-						if (InternalRemoteEndPoint != null)
-						{
-							Log.ErrorFormat("There is no pending RPC #{0}, disconnecting...", rpcId);
-						}
-					}
-
-					reason = EndPointDisconnectReason.RpcInvalidResponse;
-					return false;
-				}
-			}
-			else if ((type & MessageType.Goodbye) != 0)
-			{
-				Log.InfoFormat("Connection about to be closed by the other side - disconnecting...");
-
-				reason = EndPointDisconnectReason.RequestedByRemotEndPoint;
-				return false;
-			}
-			else
-			{
-				throw new SystemException(string.Format("Unexpected message-type: {0}", type));
-			}
-
-			reason = null;
-			return true;
-		}
-
-		private bool DispatchMethodInvocation(
-			ConnectionId connectionId,
-			long rpcId,
-			IGrain grain,
-			string typeName,
-			string methodName,
-			BinaryReader reader,
-			out EndPointDisconnectReason? reason)
-		{
-			if (!IsTypeSafe(grain.InterfaceType, typeName))
-			{
-				// If the call violated type-safety then we will immediately "throw" a TypeMismatchException.
-				HandleTypeMismatch(rpcId, grain, typeName, methodName);
-
-				// We can continue on and don't need to disconnect the endpoint as we've
-				// handled the method invocation by throwing an exception on the caller.
-				reason = null;
-				return true;
-			}
-
-			SerialTaskScheduler taskScheduler = grain.GetTaskScheduler(methodName);
-
-			Action executeMethod = () =>
-			{
-				if (Log.IsDebugEnabled)
-				{
-					Log.DebugFormat("Starting RPC #{0}", rpcId);
-				}
-
-				try
-				{
-					Socket socket = _socket;
-					if (socket == null)
-					{
-						if (Log.IsDebugEnabled)
-							Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
-
-						return;
-					}
-
-					var response = new MemoryStream();
-					var writer = new BinaryWriter(response, Encoding.UTF8);
-					try
-					{
-						WriteResponseHeader(rpcId, writer, MessageType.Return);
-						grain.Invoke(methodName, reader, writer);
-						PatchResponseMessageLength(response, writer);
-					}
-					catch (Exception e)
-					{
-						if (Log.IsErrorEnabled)
-						{
-							Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
-											rpcId,
-											typeName,
-											methodName,
-											grain.ObjectId,
-											e);
-						}
-
-						response.Position = 0;
-						WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-						WriteException(writer, e);
-						PatchResponseMessageLength(response, writer);
-					}
-
-					var responseLength = (int)response.Length;
-					byte[] data = response.GetBuffer();
-
-					SocketError err;
-
-					if (!SynchronizedWrite(socket, data, responseLength, out err))
-					{
-						Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
-					}
-				}
-				catch (Exception e)
-				{
-					Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
-					Disconnect(connectionId, EndPointDisconnectReason.UnhandledException);
-				}
-				finally
-				{
-					if (Log.IsDebugEnabled)
-					{
-						Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
-					}
-
-					// Once we've created the task, we remember that there's a method invocation
-					// that's yet to be executed (which tremendously helps debugging problems)
-					lock (_pendingMethodInvocations)
-					{
-						_pendingMethodInvocations.Remove(rpcId);
-					}
-				}
-			};
-
-			// However if those 2 things don't throw, then we dispatch the rest of the method invocation
-			// on the task dispatcher and be done with it here...
-			Task task;
-			TaskCompletionSource<int> completionSource;
-			if (taskScheduler != null)
-			{
-				completionSource = new TaskCompletionSource<int>();
-				task = completionSource.Task;
-			}
-			else
-			{
-				completionSource = null;
-				task = new Task(executeMethod);
-			}
-
-			if (Log.IsDebugEnabled)
-			{
-				Log.DebugFormat("Queueing RPC #{0}", rpcId);
-			}
-
-			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
-			lock (_pendingMethodInvocations)
-			{
-				MethodInvocation existingMethodInvocation;
-				if (_pendingMethodInvocations.TryGetValue(rpcId, out existingMethodInvocation))
-				{
-					var tmp = existingMethodInvocation.Grain;
-					var grainId = tmp != null ? (ulong?)tmp.ObjectId : null;
-
-					var builder = new StringBuilder();
-					builder.AppendFormat("Received RPC invocation request #{0}, but one with the same id is already pending!",
-					                     rpcId);
-					builder.AppendFormat("The original request was made '{0}' on '{1}.{2}",
-					                     existingMethodInvocation.RequestTime,
-					                     grainId,
-					                     existingMethodInvocation.MethodName);
-					builder.AppendFormat(" (Total pending requests: {0})", _pendingMethodInvocations.Count);
-					Log.Error(builder.ToString());
-
-					reason = EndPointDisconnectReason.RpcDuplicateRequest;
-					return false;
-				}
-
-				_pendingMethodInvocations.Add(rpcId, methodInvocation);
-			}
-
-			// And then finally start the task to deserialize all method parameters, invoke the mehtod
-			// and then seralize either the return value of the thrown exception...
-			if (taskScheduler != null)
-			{
-				taskScheduler.QueueTask(executeMethod, completionSource);
-			}
-			else
-			{
-				task.Start(TaskScheduler.Default);
-			}
-
-			reason = null;
-			return true;
-		}
-
-		private void HandleTypeMismatch(long rpcId, IGrain grain, string typeName, string methodName)
-		{
-			var response = new MemoryStream();
-			var writer = new BinaryWriter(response, Encoding.UTF8);
-			response.Position = 0;
-			WriteResponseHeader(rpcId, writer, MessageType.Return | MessageType.Exception);
-
-			var e = new TypeMismatchException(
-				string.Format(
-					"There was a type mismatch when invoking RPC #{0} '{1}' on grain #{2}: Expected '{3}' but found '{4}",
-					rpcId,
-					methodName,
-					grain.ObjectId,
-					typeName,
-					grain.InterfaceType.FullName));
-
-			WriteException(writer, e);
-			PatchResponseMessageLength(response, writer);
-
-			var responseLength = (int) response.Length;
-			byte[] data = response.GetBuffer();
-
-			SocketError err;
-			Socket socket = _socket;
-			if (!SynchronizedWrite(socket, data, responseLength, out err))
-			{
-				Log.ErrorFormat("Disconnecting socket due to error while writing response!");
-				Disconnect();
-			}
-		}
-
-		private bool HandleRequest(ConnectionId connectionId,
-			long rpcId,
-			BinaryReader reader,
-			out EndPointDisconnectReason? reason)
-		{
-			ulong servantId = reader.ReadUInt64();
-			string typeName = reader.ReadString();
-			string methodName = reader.ReadString();
-
-			IServant servant;
-			lock (_servantsById)
-			{
-				_servantsById.TryGetValue(servantId, out servant);
-			}
-
-			if (servant != null)
-			{
-				return DispatchMethodInvocation(connectionId,
-				                                rpcId,
-				                                servant,
-				                                typeName,
-				                                methodName,
-				                                reader,
-				                                out reason);
-			}
-
-			IProxy proxy;
-			lock (_proxiesById)
-			{
-				WeakReference<IProxy> grain;
-				if (_proxiesById.TryGetValue(servantId, out grain))
-				{
-					grain.TryGetTarget(out proxy);
-				}
-				else
-				{
-					proxy = null;
-				}
-			}
-
-			if (proxy != null)
-			{
-				return DispatchMethodInvocation(connectionId,
-				                                rpcId,
-				                                proxy,
-				                                typeName,
-				                                methodName,
-				                                reader,
-				                                out reason);
-			}
-
-			throw new NoSuchServantException(servantId, typeName, methodName);
-		}
-
-		private static bool IsTypeSafe(Type getType, string typeName)
-		{
-			string actualTypeName = getType.FullName;
-			return actualTypeName == typeName;
-		}
-
-		private static void PatchResponseMessageLength(MemoryStream response, BinaryWriter writer)
-		{
-			var bufferSize = (int) response.Length;
-			int messageSize = bufferSize - 4;
-			response.Position = 0;
-			writer.Write(messageSize);
-		}
-
-		private static void WriteResponseHeader(long rpcId, BinaryWriter writer, MessageType type)
-		{
-			const int responseSizeStub = 0;
-			writer.Write(responseSizeStub);
-			writer.Write(rpcId);
-			writer.Write((byte) type);
-		}
-
-		private bool HandleResponse(long rpcId, MessageType messageType, BinaryReader reader)
-		{
-			return _pendingMethodCalls.HandleResponse(rpcId, messageType, reader);
-		}
-
-		private bool TryReadMessage(Socket socket,
-		                            TimeSpan timeout,
-		                            string messageStep,
-		                            out string messageType,
-		                            out string message,
-		                            out string error)
-		{
-			EndPoint remoteEndPoint = socket.RemoteEndPoint;
-			var size = new byte[4];
-			SocketError err;
-			if (!SynchronizedRead(socket, size, timeout, out err))
-			{
-				messageType = null;
-				message = null;
-				error =
-					string.Format(
-						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
-						Name,
-						messageStep,
-						remoteEndPoint,
-						timeout.TotalSeconds,
-						err);
-				return false;
-			}
-
-			int length = BitConverter.ToInt32(size, 0);
-			if (length < 0)
-			{
-				messageType = null;
-				message = null;
-				error = string.Format("The message received from remote endpoint '{0}' is malformatted",
-				                      remoteEndPoint);
-				return false;
-			}
-
-			var buffer = new byte[length];
-			if (!SynchronizedRead(socket, buffer, timeout, out err))
-			{
-				messageType = null;
-				message = null;
-				error =
-					string.Format(
-						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
-						Name,
-						messageStep,
-						remoteEndPoint,
-						timeout.TotalSeconds,
-						err);
-				return false;
-			}
-
-			using (var reader = new BinaryReader(new MemoryStream(buffer)))
-			{
-				messageType = reader.ReadString();
-				message = reader.ReadString();
-			}
-
-			error = null;
-			return true;
-		}
-
-		protected void ReadMessage(Socket socket,
-			TimeSpan timeout,
-			string messageStep,
-			out string messageType,
-			out string message)
-		{
-			string error;
-			if (!TryReadMessage(socket, timeout, messageStep, out messageType, out message, out error))
-			{
-				throw new HandshakeException(error);
-			}
-		}
-
-		protected void WriteMessage(Socket socket,
-		                            string messageType,
-		                            string message = "")
-		{
-			string error;
-			if (!TryWriteMessage(socket, messageType, message, out error))
-			{
-				throw new HandshakeException(error);
-			}
-		}
-
-		private bool TryWriteMessage(Socket socket,
-		                            string messageType,
-		                            string message,
-			out string error)
-		{
-			EndPoint remoteEndPoint = socket.RemoteEndPoint;
-			using (var stream = new MemoryStream())
-			using (var writer = new BinaryWriter(stream))
-			{
-				stream.Position = 4;
-				writer.Write(messageType);
-				writer.Write(message);
-				writer.Flush();
-				PatchResponseMessageLength(stream, writer);
-				stream.Position = 0;
-
-				SocketError err;
-				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
-				{
-					error = string.Format("EndPoint '{0}' failed to send {1} to remote endpoint '{2}': {3}",
-					                      Name,
-					                      messageType,
-					                      remoteEndPoint,
-					                      err);
-					return false;
-				}
-			}
-
-			error = null;
-			return true;
-		}
-
-		/// <summary>
-		///     Performs the authentication between client & server (if necessary) from the server-side.
-		/// </summary>
-		/// <param name="socket"></param>
-		protected ConnectionId PerformIncomingHandshake(Socket socket)
-		{
-			EndPoint remoteEndPoint = socket.RemoteEndPoint;
-			TimeSpan timeout = TimeSpan.FromMinutes(1);
-			string messageType;
-			string message;
-
-			if (_clientAuthenticator != null)
-			{
-				// Upon accepting an incoming connection, we try to authenticate the client
-				// by posing a challenge
-				string challenge = _clientAuthenticator.CreateChallenge();
-				Log.DebugFormat("Creating challenge '{0}' for endpoint '{1}'", challenge, remoteEndPoint);
-				WriteMessage(socket, AuthenticationRequiredMessage, challenge);
-
-				ReadMessage(socket, timeout, AuthenticationResponse, out messageType, out message);
-				Log.DebugFormat("Received response '{0}' for challenge '{1}' from endpoint '{2}'",
-				                message,
-				                challenge,
-				                remoteEndPoint);
-
-				if (!_clientAuthenticator.Authenticate(challenge, message))
-				{
-					// Should the client fail the challenge, we tell him that,
-					// but drop the connection immediately afterwards.
-					WriteMessage(socket, AuthenticationFailedMessage);
-					throw new AuthenticationException(string.Format("Endpoint '{0}' failed the authentication challenge",
-					                                                remoteEndPoint));
-				}
-
-				WriteMessage(socket, AuthenticationSucceedMessage);
-				Log.InfoFormat("Endpoint '{0}' successfully authenticated", remoteEndPoint);
-			}
-			else
-			{
-				WriteMessage(socket, NoAuthenticationRequiredMessage);
-			}
-
-			ReadMessage(socket, timeout, AuthenticationChallenge, out messageType, out message);
-			if (messageType == AuthenticationRequiredMessage)
-			{
-				if (_serverAuthenticator == null)
-					throw new AuthenticationRequiredException(string.Format("Endpoint '{0}' requires authentication", remoteEndPoint));
-
-				string challenge = message;
-				string response = _serverAuthenticator.CreateResponse(challenge);
-				WriteMessage(socket, AuthenticationResponseMessage, response);
-
-				// After having answered the challenge we wait for a successful response from the client.
-				// If we failed the authentication, then 
-				ReadMessage(socket, timeout, AuthenticationVerification, out messageType, out message);
-				if (messageType != AuthenticationSucceedMessage)
-					throw new AuthenticationException(string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint));
-			}
-			else if (messageType != NoAuthenticationRequiredMessage)
-			{
-				throw new HandshakeException();
-			}
-
-			_pendingMethodCalls.IsConnected = true;
-			var connectionId = OnHandshakeSucceeded(socket);
-			WriteMessage(socket, HandshakeSucceedMessage);
-			return connectionId;
-		}
-
 		protected enum ErrorType
 		{
 			None,
@@ -1742,182 +1971,11 @@ namespace SharpRemote
 			AuthenticationRequired,
 		}
 
-		/// <summary>
-		///     Performs the authentication between client & server (if necessary) from the client-side.
-		/// </summary>
-		/// <param name="socket"></param>
-		/// <param name="timeout"></param>
-		/// <param name="errorType"></param>
-		/// <param name="error"></param>
-		/// <param name="currentConnectionId"></param>
-		protected bool TryPerformOutgoingHandshake(Socket socket,
-			TimeSpan timeout,
-			out ErrorType errorType,
-			out string error,
-			out ConnectionId currentConnectionId)
-		{
-			string messageType;
-			string message;
-			EndPoint remoteEndPoint = socket.RemoteEndPoint;
-
-			if (!TryReadMessage(socket, timeout, AuthenticationChallenge,
-				out messageType,
-				out message,
-				out error))
-			{
-				errorType =  ErrorType.Handshake;
-				currentConnectionId = ConnectionId.None;
-				return false;
-			}
-
-			if (messageType == AuthenticationRequiredMessage)
-			{
-				if (_clientAuthenticator == null)
-				{
-					errorType = ErrorType.AuthenticationRequired;
-					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-
-				string challenge = message;
-				// Upon establishing a connection, we try to authenticate the ourselves
-				// against the server by answering his response.
-				string response = _clientAuthenticator.CreateResponse(challenge);
-				if (!TryWriteMessage(socket, AuthenticationResponseMessage, response, out error))
-				{
-					errorType = ErrorType.Handshake;
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-
-				// If we failed the authentication, a proper server will tell us so we can
-				// forward this information to the caller.
-				if (!TryReadMessage(socket, timeout, AuthenticationVerification,
-					out messageType,
-					out message,
-					out error))
-				{
-					errorType = ErrorType.Handshake;
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-
-				if (messageType != AuthenticationSucceedMessage)
-				{
-					errorType = ErrorType.Authentication;
-					error = string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint);
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-			}
-			else if (messageType != NoAuthenticationRequiredMessage)
-			{
-				errorType = ErrorType.Handshake;
-				error =
-					string.Format("EndPoint '{0}' sent unknown message '{1}: {2}', expected either {3} or {4}",
-					              remoteEndPoint,
-					              messageType,
-					              message,
-					              AuthenticationRequiredMessage,
-					              NoAuthenticationRequiredMessage
-						);
-				currentConnectionId = ConnectionId.None;
-				return false;
-			}
-
-			if (_serverAuthenticator != null)
-			{
-				// After we've authenticated ourselves, it's time for the server to authenticate himself.
-				// Let's send the challenge
-				string challenge = _serverAuthenticator.CreateChallenge();
-				if (!TryWriteMessage(socket, AuthenticationRequiredMessage, challenge, out error))
-				{
-					errorType = ErrorType.Handshake;
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-
-				if (!TryReadMessage(socket, timeout, AuthenticationResponse,
-					out messageType,
-					out message,
-					out error))
-				{
-					errorType = ErrorType.Handshake;
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-
-				if (!_serverAuthenticator.Authenticate(challenge, message))
-				{
-					// Should the server fail to authenticate himself, then we tell him that end then abort
-					// the connection...
-					WriteMessage(socket, AuthenticationResponseMessage, AuthenticationFailedMessage);
-					errorType = ErrorType.Authentication;
-					error = string.Format("Remote endpoint '{0}' failed the authentication challenge",
-										  remoteEndPoint);
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-
-				if (!TryWriteMessage(socket, AuthenticationSucceedMessage, "", out error))
-				{
-					errorType = ErrorType.Handshake;
-					currentConnectionId = ConnectionId.None;
-					return false;
-				}
-
-				Log.InfoFormat("Remote endpoint '{0}' successfully authenticated", remoteEndPoint);
-			}
-			else
-			{
-				WriteMessage(socket, NoAuthenticationRequiredMessage);
-			}
-
-			if (!TryReadMessage(socket, timeout, AuthenticationFinished, out messageType, out message, out error))
-			{
-				errorType = ErrorType.Handshake;
-				currentConnectionId = ConnectionId.None;
-				return false;
-			}
-
-			if (messageType != HandshakeSucceedMessage)
-			{
-				errorType = ErrorType.Handshake;
-				error =
-					string.Format(
-						"EndPoint '{0}' did not receive the correct response from remote endpoint '{1}': Expected '{2}' but received '{3}'",
-						Name,
-						remoteEndPoint,
-						HandshakeSucceedMessage,
-						messageType);
-				currentConnectionId = ConnectionId.None;
-				return false;
-			}
-
-			_pendingMethodCalls.IsConnected = true;
-			currentConnectionId = OnHandshakeSucceeded(socket);
-			errorType = ErrorType.Handshake;
-			error = null;
-			return true;
-		}
-
-		/// <summary>
-		///     Is called when the handshake for the newly incoming message succeeds.
-		/// </summary>
-		/// <param name="socket"></param>
-		protected abstract ConnectionId OnHandshakeSucceeded(Socket socket);
-
-		public override string ToString()
-		{
-			return _name;
-		}
-
 		protected sealed class ThreadArgs
 		{
+			public readonly ConnectionId ConnectionId;
 			public readonly Socket Socket;
 			public readonly CancellationToken Token;
-			public readonly ConnectionId ConnectionId;
 
 			public ThreadArgs(Socket socket, CancellationToken token, ConnectionId connectionId)
 			{

@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
@@ -189,7 +191,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		{
 			const int numTasks = 64;
 			const int numMethodCalls = 1000;
-			var timeout = TimeSpan.FromSeconds(5);
+			var timeout = TimeSpan.FromSeconds(15);
 
 			using (var client = CreateClient("Rep#1"))
 			using (var server = CreateServer("Rep#2"))
@@ -267,6 +269,92 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 						new ConnectionId(1),
 						new ConnectionId(2)
 					});
+			}
+		}
+
+		[Test]
+		[Repeat(50)]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
+		[Description("Verifies that after two endpoints are disconnected, neither one has any more pending RPCs waiting to be executed (which would be never)")]
+		public void TestDisconnect8()
+		{
+			using (var client = CreateClient())
+			using (var server = CreateServer())
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint);
+
+				var proxy = client.CreateProxy<IVoidMethodAsyncInvokeSerialAttribute>(1);
+				var subject = new BlocksABit();
+				server.CreateServant(1, (IVoidMethodAsyncInvokeSerialAttribute)subject);
+
+				var handle = new ManualResetEvent(false);
+				const int count = 100000;
+				var tasks = Enumerable.Range(0, 50).Select(unused => Task.Factory.StartNew(() =>
+				{
+					for (int i = 0; i < count; ++i)
+					{
+						proxy.Do("");
+
+						if (i == 100)
+							handle.Set();
+					}
+				}, TaskCreationOptions.LongRunning)).ToArray();
+
+				handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue("Because the tasks should've been started by now");
+				client.Disconnect();
+
+				new Action(() => Task.WaitAll(tasks))
+					.ShouldThrow<AggregateException>("Because the tasks ineviatably fail because we disconnect the ");
+
+				WaitFor(() => !client.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();
+				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();
+
+				client.NumPendingMethodInvocations.Should().Be(0);
+				server.NumPendingMethodInvocations.Should().Be(0);
+			}
+		}
+
+		[Test]
+		[Repeat(50)]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
+		[Description("Verifies that after two endpoints are disconnected, neither one has any more pending RPCs waiting to be executed (which would be never)")]
+		public void TestDisconnect9()
+		{
+			using (var client = CreateClient())
+			using (var server = CreateServer())
+			{
+				server.Bind(IPAddress.Loopback);
+				client.Connect(server.LocalEndPoint);
+
+				var proxy = server.CreateProxy<IVoidMethodAsyncInvokeSerialAttribute>(1);
+				var subject = new BlocksABit();
+				client.CreateServant(1, (IVoidMethodAsyncInvokeSerialAttribute)subject);
+
+				var handle = new ManualResetEvent(false);
+				const int count = 100000;
+				var tasks = Enumerable.Range(0, 50).Select(unused => Task.Factory.StartNew(() =>
+				{
+					for (int i = 0; i < count; ++i)
+					{
+						proxy.Do("");
+
+						if (i == 100)
+							handle.Set();
+					}
+				}, TaskCreationOptions.LongRunning)).ToArray();
+
+				handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue("Because the tasks should've been started by now");
+				server.Disconnect();
+
+				new Action(() => Task.WaitAll(tasks))
+					.ShouldThrow<AggregateException>("Because the tasks ineviatably fail because we disconnect the ");
+
+				WaitFor(() => !client.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();
+				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();
+
+				client.NumPendingMethodInvocations.Should().Be(0);
+				server.NumPendingMethodInvocations.Should().Be(0);
 			}
 		}
 	}

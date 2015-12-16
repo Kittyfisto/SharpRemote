@@ -495,7 +495,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				server.Bind(IPAddress.Loopback);
 				client.Connect(server.LocalEndPoint);
 
-				WaitFor(() => server.IsConnected, TimeSpan.FromSeconds(1));
+				WaitFor(() => servers.Count == 1, TimeSpan.FromSeconds(1)).Should().BeTrue();
+				server.IsConnected.Should().BeTrue();
 
 				clients.Should().Equal(client.RemoteEndPoint);
 				servers.Should().Equal(server.RemoteEndPoint);

@@ -108,6 +108,12 @@ namespace SharpRemote
 		{
 			lock (SyncRoot)
 			{
+				// There is possibly still a possibility that the _pendingMethodInvocations dictionary
+				// contains some entries, EVEN though it's cleared upon being disconnected.
+				// For the sake of stability, we'll clear it here again, BEFORE starting
+				// the read/write threads, so we most certainly start with a clean slate (once again).
+				ClearPendingMethodInvocations();
+
 				Socket = socket;
 				_remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
 				CurrentConnectionId = new ConnectionId(Interlocked.Increment(ref _previousConnectionId));

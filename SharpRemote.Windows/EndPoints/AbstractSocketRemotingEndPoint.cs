@@ -163,6 +163,21 @@ namespace SharpRemote
 
 		#endregion
 
+		/// <summary>
+		/// The total number of method invocations that have been retrieved from the underlying stream,
+		/// but not yet invoked or not yet finished.
+		/// </summary>
+		public int NumPendingMethodInvocations
+		{
+			get
+			{
+				lock (_pendingMethodInvocations)
+				{
+					return _pendingMethodInvocations.Count;
+				}
+			}
+		}
+
 		internal AbstractSocketRemotingEndPoint(GrainIdGenerator idGenerator,
 		                                        string name,
 		                                        EndPointType type,
@@ -892,6 +907,11 @@ namespace SharpRemote
 					CancellationTokenSource.Cancel();
 					_pendingMethodCalls.CancelAllCalls();
 
+					lock (_pendingMethodInvocations)
+					{
+						_pendingMethodInvocations.Clear();
+					}
+
 					// If we are disconnecting because of a failure, then we don't notify the other end
 					// and drop the connection immediately. Also there's no need to notify the other
 					// end when it requested the disconnect
@@ -899,7 +919,9 @@ namespace SharpRemote
 					{
 						if (reason != EndPointDisconnectReason.RequestedByRemotEndPoint)
 						{
-							SendGoodbye(socket);
+							// We don't want to wait anymore than 5 seconds to send the goodbye message.
+							// If it didn't work then screw it, we'll disconnect anyways...
+							SendGoodbye(socket, TimeSpan.FromSeconds(5));
 						}
 					}
 					else
@@ -950,29 +972,58 @@ namespace SharpRemote
 			}
 		}
 
-		private void SendGoodbye(Socket socket)
+		/// <summary>
+		/// Sends a goodbye message over the socket.
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="waitTime"></param>
+		/// <returns>True when the goodbye message could be sent, false otherwise</returns>
+		private bool SendGoodbye(Socket socket, TimeSpan waitTime)
 		{
-			try
-			{
-				long rpcId = _nextRpcId++;
-				const int messageSize = 9;
-
-				using (var stream = new MemoryStream())
-				using (var writer = new BinaryWriter(stream, Encoding.UTF8))
+			var task = new Task(() =>
 				{
-					writer.Write(messageSize);
-					writer.Write(rpcId);
-					writer.Write((byte) MessageType.Goodbye);
+					try
+					{
+						long rpcId = _nextRpcId++;
+						const int messageSize = 9;
 
-					writer.Flush();
-					stream.Position = 0;
+						using (var stream = new MemoryStream())
+						using (var writer = new BinaryWriter(stream, Encoding.UTF8))
+						{
+							writer.Write(messageSize);
+							writer.Write(rpcId);
+							writer.Write((byte) MessageType.Goodbye);
 
-					socket.Send(stream.GetBuffer(), 0, messageSize + 4, SocketFlags.None);
-				}
-			}
-			catch (SocketException)
+							writer.Flush();
+							stream.Position = 0;
+
+							socket.Send(stream.GetBuffer(), 0, messageSize + 4, SocketFlags.None);
+						}
+					}
+					catch (SocketException)
+					{
+					}
+					catch (ObjectDisposedException)
+					{
+					}
+				});
+			task.ContinueWith(t =>
 			{
+				if (t.IsFaulted)
+				{
+					Log.ErrorFormat("Caught unhandled exception while sending goodbye: {0}", t.Exception);
+				}
+			});
+			task.Start();
+
+			if (!task.Wait(waitTime))
+			{
+				Log.WarnFormat("Could not send goodbye message in {0}s, performing hard disconnect",
+				               waitTime.TotalSeconds);
+				return false;
 			}
+
+			return true;
 		}
 
 		protected void FireOnConnected(EndPoint endPoint, ConnectionId connectionId)
@@ -1184,8 +1235,30 @@ namespace SharpRemote
 			}
 
 			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
+			lock (_syncRoot)
 			lock (_pendingMethodInvocations)
 			{
+				if (connectionId != CurrentConnectionId)
+				{
+					// When this is the case then we're about to queue AND execute
+					// a method invocation of a connection that is no longer the current
+					// connection, most likely because this endpoint was disconnected
+					// between retrieving the message from the socket, and this point.
+					// Now that we're disconnected, we can simply ignore this method invocation,
+					// NEITHER queueing it NOR executing it.
+
+					if (Log.IsDebugEnabled)
+					{
+						Log.DebugFormat("Ignoring RPC invocation request #{0} because it was retrieved from connection '{1}' but now we're in connection '{2}'",
+							rpcId,
+							connectionId,
+							CurrentConnectionId);
+					}
+
+					reason = null;
+					return true;
+				}
+
 				MethodInvocation existingMethodInvocation;
 				if (_pendingMethodInvocations.TryGetValue(rpcId, out existingMethodInvocation))
 				{
@@ -1877,24 +1950,21 @@ namespace SharpRemote
 
 		private bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
 		{
-			lock (_syncRoot)
+			if (!socket.Connected)
 			{
-				if (!socket.Connected)
-				{
-					err = SocketError.NotConnected;
-					return false;
-				}
-
-				int written = socket.Send(data, 0, length, SocketFlags.None, out err);
-				if (written != length || err != SocketError.Success || !socket.Connected)
-				{
-					Log.DebugFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
-					                data.Length, err, socket.Connected);
-					return false;
-				}
-
-				return true;
+				err = SocketError.NotConnected;
+				return false;
 			}
+
+			int written = socket.Send(data, 0, length, SocketFlags.None, out err);
+			if (written != length || err != SocketError.Success || !socket.Connected)
+			{
+				Log.DebugFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
+								data.Length, err, socket.Connected);
+				return false;
+			}
+
+			return true;
 		}
 
 		private bool SynchronizedRead(Socket socket, byte[] buffer, TimeSpan timeout, out SocketError err)

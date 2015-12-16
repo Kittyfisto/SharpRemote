@@ -907,10 +907,7 @@ namespace SharpRemote
 					CancellationTokenSource.Cancel();
 					_pendingMethodCalls.CancelAllCalls();
 
-					lock (_pendingMethodInvocations)
-					{
-						_pendingMethodInvocations.Clear();
-					}
+					ClearPendingMethodInvocations();
 
 					// If we are disconnecting because of a failure, then we don't notify the other end
 					// and drop the connection immediately. Also there's no need to notify the other
@@ -954,6 +951,14 @@ namespace SharpRemote
 			}
 
 			EmitOnDisconnected(hasDisconnected, remoteEndPoint, connectionId);
+		}
+
+		protected void ClearPendingMethodInvocations()
+		{
+			lock (_pendingMethodInvocations)
+			{
+				_pendingMethodInvocations.Clear();
+			}
 		}
 
 		private void EmitOnFailure(EndPointDisconnectReason reason, ConnectionId connectionId)

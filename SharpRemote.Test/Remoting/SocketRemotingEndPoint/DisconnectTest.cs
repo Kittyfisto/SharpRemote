@@ -323,6 +323,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				client.NumPendingMethodInvocations.Should().Be(0);
 				server.NumPendingMethodInvocations.Should().Be(0);
+
+				// This line exists to FORCE the GC to NOT collect the subject, which
+				// in turn would unregister the servant from the server, thus making the test
+				// fail.
+				subject.Should().NotBeNull();
 			}
 		}
 
@@ -366,6 +371,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				client.NumPendingMethodInvocations.Should().Be(0);
 				server.NumPendingMethodInvocations.Should().Be(0);
+
+				// This line exists to FORCE the GC to NOT collect the subject, which
+				// in turn would unregister the servant from the server, thus making the test
+				// fail.
+				subject.Should().NotBeNull();
 			}
 		}
 	}

@@ -1,17 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using log4net;
 
 namespace SharpRemote
 {
+	internal abstract class WeakKeyDictionary
+	{
+		protected static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+	}
+
 	/// <summary>
 	/// A dictionary that maps keys to values. Contrary to <see cref="Dictionary{TKey, TValue}"/>
 	/// keys are stored in a <see cref="WeakReference"/> and thus entries in this dictionary
 	/// will automatically be removed (No longer visible)
 	/// </summary>
 	internal sealed class WeakKeyDictionary<TKey, TValue>
-		: IDisposable
+		: WeakKeyDictionary
+		, IDisposable
 		where TKey : class
 	{
 		private const int HashCodeMask = 0x7FFFFFFF;
@@ -359,6 +367,11 @@ namespace SharpRemote
 									collectedValues = new List<TValue>();
 
 								collectedValues.Add(_entries[i].Value);
+							}
+
+							if (Log.IsDebugEnabled)
+							{
+								Log.DebugFormat("Removing '{0}' from dictionary because its key was collected", _entries[i]);
 							}
 
 							// This entry can be reclaimed because it's key is no longer alive

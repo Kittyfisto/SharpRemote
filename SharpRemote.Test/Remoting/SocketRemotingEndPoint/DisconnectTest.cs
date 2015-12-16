@@ -10,6 +10,7 @@ using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
+using log4net.Core;
 
 namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 {
@@ -181,6 +182,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 					thrown.Should().BeTrue("Because all tasks should've either thrown a connection lost or a not connected exception");
 				}
+
+				// This line exists to FORCE the GC to NOT collect the subject, which
+				// in turn would unregister the servant from the server, thus making the test
+				// fail.
+				subject.Should().NotBeNull();
 			}
 		}
 
@@ -235,6 +241,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 					thrown.Should().BeTrue("Because all tasks should've either thrown a connection lost or a not connected exception");
 				}
+
+				// This line exists to FORCE the GC to NOT collect the subject, which
+				// in turn would unregister the servant from the server, thus making the test
+				// fail.
+				subject.Should().NotBeNull();
 			}
 		}
 

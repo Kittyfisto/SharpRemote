@@ -31,6 +31,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 	{
 		private SocketRemotingEndPointServer _server;
 		private SocketRemotingEndPointClient _client;
+		private object _subject;
 
 		[TestFixtureSetUp]
 		public new void SetUp()
@@ -182,6 +183,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			proxy.TypeOrdered(42);
 			thread.Should().NotBeNull();
 			thread.Name.Should().Be("SharpRemote.Test.Types.Interfaces.IOrderInterface");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -204,6 +210,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			proxy.InstanceOrdered(42);
 			thread.Should().NotBeNull();
 			thread.Name.Should().Be("SharpRemote.Test.Types.Interfaces.IOrderInterface (#22)");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -226,6 +237,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			proxy.MethodOrdered(42);
 			thread.Should().NotBeNull();
 			thread.Name.Should().Be("SharpRemote.Test.Types.Interfaces.IOrderInterface.MethodOrdered() (#23)");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -267,6 +283,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			new Action(() => proxy.DoStuff().Wait())
 				.ShouldThrow<NotSupportedException>()
 				.WithMessage("IReturnsTask.DoStuff of servant #14 returned a non-started task - this is not supported");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -281,6 +302,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			new Action(() => proxy.DoStuff().Wait())
 				.ShouldThrow<NotSupportedException>()
 				.WithMessage("IReturnsIntTask.DoStuff of servant #15 returned a non-started task - this is not supported");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -293,6 +319,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			proxy.Value.Should().Be(42);
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -308,6 +339,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			new Action(() => { double unused = proxy.Value; })
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Foobar");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -324,6 +360,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			new Action(() => { double unused = proxy.Value; })
 				.ShouldThrow<UnserializableException>();
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -338,6 +379,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			Task task = proxy.DoStuff().ContinueWith(unused => { result = unused.Result; });
 			task.Wait();
 			result.Should().Be(42);
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -355,6 +401,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			Task task = proxy.DoStuff();
 			new Action(task.Wait)
 				.ShouldThrow<AggregateException>();
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -369,6 +420,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			Task<int> task = proxy.DoStuff();
 			new Action(task.Wait)
 				.ShouldThrow<AggregateException>();
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -380,6 +436,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			_server.CreateServant(objectId, subject.Object);
 			new Action(() => _client.CreateProxy<IReturnsTask>(objectId))
 				.ShouldNotThrow("Because creating proxy & servant of different type is not wrong, until a method is invoked");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -392,6 +453,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			var proxy = _client.CreateProxy<IReturnsTask>(objectId);
 			new Action(() => proxy.DoStuff().Wait())
 				.ShouldThrow<TypeMismatchException>();
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -414,6 +480,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			proxy.IsDisposed.Should().BeFalse();
 			proxy.Dispose();
 			proxy.IsDisposed.Should().BeTrue();
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -432,6 +503,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 			servant.ObjectId.Should().Be(servantId);
 			proxy.ObjectId.Should().Be(servantId);
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -453,6 +529,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
 
 			actualValue.Should().Be(value);
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -477,6 +558,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 			actualValue1.Should().Be(value);
 			actualValue2.Should().NotHaveValue();
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -502,6 +588,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			new Action(() => subject.Raise(x => x.Foobar += null, value2))
 				.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
 			actualValue.Should().Be(value1);
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -520,6 +611,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -549,6 +645,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 			proxy.Report("Foobar");
 			listener1.Messages.Should().Equal(new[] {"Foobar"}, "Because Processor.Report() method should have invoked the Report() method on the proxy which in turn would've called the real listener implementation");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			processor.Should().NotBeNull();
 		}
 
 		[Test]
@@ -683,7 +784,12 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			var actualReference = ((FieldObjectStruct) actualValue).Value;
 
 			proxy.AddListener(value);
-			((FieldObjectStruct) actualValue).Value.Should().BeSameAs(actualReference, "Because [ByReference] types should adhere to referential equality after deserialization");
+			((FieldObjectStruct)actualValue).Value.Should().BeSameAs(actualReference, "Because [ByReference] types should adhere to referential equality after deserialization");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -704,6 +810,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			actualFoo1.Value.Should().Be(foo.Value);
 
 			proxy.GetFoo().Should().BeSameAs(actualFoo1, "because [ByReference] types must be marshalled with referential equality in mind - GetFoo() always returns the same instance and thus the proxy should as well");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -724,6 +835,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			actualFoo1.Value.Should().Be(foo.Value);
 
 			proxy.GetListener().Should().BeSameAs(actualFoo1, "because [ByReference] types must be marshalled with referential equality in mind - GetFoo() always returns the same instance and thus the proxy should as well");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -761,6 +877,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			objects[2].Should().BeSameAs(objects[0]);
 			objects[3].Should().Be(42);
 			objects[4].Should().Be("Hello World!");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -798,6 +919,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			WaitFor(() => called, TimeSpan.FromSeconds(1))
 				.Should().BeTrue("Because the remote method should've been invoked well within one second");
 			actualMessage.Should().Be("Test");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 
 		[Test]
@@ -831,6 +957,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				GC.Collect(2, GCCollectionMode.Forced);
 
 				exceptions.Should().BeEmpty();
+
+				// This line exists to FORCE the GC to NOT collect the subject, which
+				// in turn would unregister the servant from the server, thus making the test
+				// fail.
+				subject.Should().NotBeNull();
 			}
 			finally
 			{
@@ -860,7 +991,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			const ulong servantId = 35;
 			var proxy = _client.CreateProxy<IInt32Method>(servantId);
 			var subject = new DoesNothing();
-			var servant = _server.CreateServant(servantId, (IVoidMethod)subject);
+			_server.CreateServant(servantId, (IVoidMethod)subject);
 
 			new Action(() => proxy.Do())
 				.ShouldThrow<TypeMismatchException>();
@@ -869,6 +1000,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				"Because a method invocation on a mismatched servant-type should not be a reason to tear down the connection";
 			_client.IsConnected.Should().BeTrue(reason);
 			_server.IsConnected.Should().BeTrue(reason);
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
 		}
 	}
 }

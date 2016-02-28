@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using SharpRemote.ETW;
 
 namespace SharpRemote
 {
@@ -96,6 +97,9 @@ namespace SharpRemote
 				throw new OperationCanceledException(_endPointName);
 
 			PendingMethodCall message = pendingWrites.Dequeue();
+
+			PendingMethodsEventSource.Instance.Dequeued(message.RpcId, pendingWrites.Count);
+
 			return message.GetMessage(out length);
 		}
 
@@ -143,6 +147,8 @@ namespace SharpRemote
 						var stream = new MemoryStream(exceptionMessage, 0, exceptionLength);
 						var reader = new BinaryReader(stream, Encoding.UTF8);
 						call.HandleResponse(MessageType.Return | MessageType.Exception, reader);
+
+						PendingMethodsEventSource.Instance.Dequeued(call.RpcId, _pendingCalls.Count);
 					}
 					_pendingCalls.Clear();
 				}
@@ -173,6 +179,7 @@ namespace SharpRemote
 		{
 			PendingMethodCall message;
 
+			int numPendingRpcs;
 			lock (_syncRoot)
 			{
 				if (!IsConnected)
@@ -182,7 +189,10 @@ namespace SharpRemote
 					          ? _recycledMessages.Dequeue()
 					          : new PendingMethodCall();
 				_pendingCalls.Add(rpcId, message);
+				numPendingRpcs = _pendingCalls.Count;
 			}
+
+			PendingMethodsEventSource.Instance.Enqueued(rpcId, numPendingRpcs);
 
 			message.Reset(servantId, interfaceType, methodName, arguments, rpcId, callback);
 

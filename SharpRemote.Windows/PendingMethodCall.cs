@@ -5,25 +5,32 @@ using System.Threading;
 namespace SharpRemote
 {
 	/// <summary>
-	/// Represents a method call that has yet to be completed.
+	///     Represents a method call that has yet to be completed.
 	/// </summary>
 	/// <remarks>
-	/// Helps to reduce the amount of resources (handles, streams) that are created and destroyed over and
-	/// over in order to reduce the amount of pressure on the GC as well as to reduce the amount of native
-	/// resources that are created & destroyed.
+	///     Helps to reduce the amount of resources (handles, streams) that are created and destroyed over and
+	///     over in order to reduce the amount of pressure on the GC as well as to reduce the amount of native
+	///     resources that are created & destroyed.
 	/// </remarks>
 	internal sealed class PendingMethodCall
 		: IDisposable
 	{
-		private readonly ManualResetEvent _waitHandle;
 		private readonly MemoryStream _message;
+		private readonly ManualResetEvent _waitHandle;
 		private readonly BinaryWriter _writer;
+		private Action<PendingMethodCall> _callback;
+		private int _messageLength;
 
 		private MessageType _messageType;
 		private BinaryReader _reader;
 		private long _rpcId;
-		private int _messageLength;
-		private Action<PendingMethodCall> _callback;
+
+		public PendingMethodCall()
+		{
+			_waitHandle = new ManualResetEvent(false);
+			_message = new MemoryStream();
+			_writer = new BinaryWriter(_message);
+		}
 
 		public long RpcId
 		{
@@ -45,11 +52,17 @@ namespace SharpRemote
 			get { return _messageLength; }
 		}
 
-		public PendingMethodCall()
+		public void Dispose()
 		{
-			_waitHandle = new ManualResetEvent(false);
-			_message = new MemoryStream();
-			_writer = new BinaryWriter(_message);
+			_waitHandle.Dispose();
+			_writer.Dispose();
+			_message.Dispose();
+		}
+
+		public override string ToString()
+		{
+			return string.Format("RPC #{0}, {1} bytes",
+			                     _rpcId, _messageLength);
 		}
 
 		public byte[] GetMessage(out int length)
@@ -64,7 +77,7 @@ namespace SharpRemote
 			_reader = reader;
 			_waitHandle.Set();
 
-			var fn = Interlocked.Exchange(ref _callback, null);
+			Action<PendingMethodCall> fn = Interlocked.Exchange(ref _callback, null);
 			if (fn != null)
 				fn(this);
 		}
@@ -105,13 +118,6 @@ namespace SharpRemote
 			_messageType = MessageType.None;
 			_callback = callback;
 			_reader = null;
-		}
-
-		public void Dispose()
-		{
-			_waitHandle.Dispose();
-			_writer.Dispose();
-			_message.Dispose();
 		}
 
 		public void Wait()

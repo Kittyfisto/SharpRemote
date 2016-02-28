@@ -60,6 +60,7 @@
     <Compile Include="EndPoints\ILatency.cs" />
     <Compile Include="EndPoints\Latency.cs" />
     <Compile Include="Buffer.cs" />
+    <Compile Include="ETW\PendingMethodsEventSource.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />
     <Compile Include="FileInfoExtensions.cs" />

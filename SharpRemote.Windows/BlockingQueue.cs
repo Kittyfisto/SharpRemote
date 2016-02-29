@@ -32,6 +32,11 @@ namespace SharpRemote
 			_dequeueSemaphore = new SemaphoreSlim(0, maximumCapacity);
 		}
 
+		public T this[int index]
+		{
+			get { return _values[index]; }
+		}
+
 		public int Count
 		{
 			get { return _count; }
@@ -74,6 +79,7 @@ namespace SharpRemote
 			lock (_syncRoot)
 			{
 				T value = _values[_dequeueIndex];
+				_values[_dequeueIndex] = default(T);
 				_dequeueIndex = (_dequeueIndex + 1)%_values.Length;
 				_enqueueSemaphore.Release();
 				--_count;

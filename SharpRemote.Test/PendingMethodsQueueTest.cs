@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
@@ -150,6 +151,67 @@ namespace SharpRemote.Test
 				}
 
 				queue.NumPendingCalls.Should().Be(0);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that dequeued messages are most definately removed from the queue of pending writes")]
+		public void TestQueueDequeue1()
+		{
+			using (var queue = new PendingMethodsQueue())
+			{
+				queue.IsConnected = true;
+
+				queue.Enqueue(1, "foo", "bar", null, 42);
+				queue.PendingWrites.Count.Should().Be(1);
+				var method = queue.PendingWrites[0];
+				method.Should().NotBeNull();
+				method.RpcId.Should().Be(42);
+				method.MessageLength.Should().Be(29);
+
+				int length;
+				var data = queue.TakePendingWrite(out length);
+				data.Should().NotBeNull();
+				length.Should().Be((int) method.MessageLength);
+
+				queue.PendingWrites[0].Should().BeNull("Because the queue should no longer hold a reference to the message");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that only up to 20 messages are kept in a recycled queue, no more")]
+		public void TestRecycle1()
+		{
+			using (var queue = new PendingMethodsQueue())
+			{
+				queue.IsConnected = true;
+
+				const int num = 20;
+				var calls = new PendingMethodCall[num];
+				for (int i = 0; i < 20; ++i)
+				{
+					calls[i] = queue.Enqueue(1, "foo", "bar", null, i);
+				}
+
+				var extraCall = queue.Enqueue(1, "foo", "bar", null, 20);
+
+				int unused;
+				for (int i = 0; i < 20; ++i)
+				{
+					queue.TakePendingWrite(out unused);
+
+					var call = calls[i];
+					queue.Recycle(call);
+					queue.RecycledMessages.Should().BeEquivalentTo(calls.Take(i+1));
+				}
+
+				// Recycling the 21st message shall NOT put it into the queue
+				// of recycled messages. We've kept enough messages around - there's
+				// no need for more.
+				queue.TakePendingWrite(out unused);
+				queue.Recycle(extraCall);
+				queue.RecycledMessages.Should().NotContain(extraCall);
+				queue.RecycledMessages.Should().BeEquivalentTo(calls);
 			}
 		}
 	}

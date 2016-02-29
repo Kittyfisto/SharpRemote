@@ -14,6 +14,8 @@ namespace SharpRemote
 	internal sealed class PendingMethodsQueue
 		: IDisposable
 	{
+		internal const int MaxNumRecycledCalls = 20;
+
 		private readonly string _endPointName;
 		private readonly int _maxConcurrentCalls;
 		private readonly Dictionary<long, PendingMethodCall> _pendingCalls;
@@ -39,6 +41,16 @@ namespace SharpRemote
 			_syncRoot = new object();
 			_recycledMessages = new Queue<PendingMethodCall>();
 			_pendingCalls = new Dictionary<long, PendingMethodCall>();
+		}
+
+		internal Queue<PendingMethodCall> RecycledMessages
+		{
+			get { return _recycledMessages; }
+		}
+
+		internal BlockingQueue<PendingMethodCall> PendingWrites
+		{
+			get { return _pendingWrites; }
 		}
 
 		/// <summary>
@@ -92,13 +104,13 @@ namespace SharpRemote
 		/// <returns></returns>
 		public byte[] TakePendingWrite(out int length)
 		{
-			var pendingWrites = _pendingWrites;
+			BlockingQueue<PendingMethodCall> pendingWrites = _pendingWrites;
 			if (pendingWrites == null)
 				throw new OperationCanceledException(_endPointName);
 
 			PendingMethodCall message = pendingWrites.Dequeue();
-
-			PendingMethodsEventSource.Instance.Dequeued(message.RpcId, pendingWrites.Count);
+			PendingMethodsEventSource.Instance.Dequeued(message.RpcId);
+			PendingMethodsEventSource.Instance.QueueCountChanged(pendingWrites.Count);
 
 			return message.GetMessage(out length);
 		}
@@ -148,7 +160,8 @@ namespace SharpRemote
 						var reader = new BinaryReader(stream, Encoding.UTF8);
 						call.HandleResponse(MessageType.Return | MessageType.Exception, reader);
 
-						PendingMethodsEventSource.Instance.Dequeued(call.RpcId, _pendingCalls.Count);
+						PendingMethodsEventSource.Instance.Dequeued(call.RpcId);
+						PendingMethodsEventSource.Instance.QueueCountChanged(_pendingCalls.Count);
 					}
 					_pendingCalls.Clear();
 				}
@@ -166,7 +179,15 @@ namespace SharpRemote
 			lock (_syncRoot)
 			{
 				_pendingCalls.Remove(methodCall.RpcId);
-				_recycledMessages.Enqueue(methodCall);
+
+				// We do not want to recycle thousands of messages because that can require
+				// lots of memory ("big" messages may take 1Mb of memory or even more).
+				// Therefore we limit the amount to a constant value (for now).
+				// In the future, we might want to limit the amount of used memory instead?
+				if (_recycledMessages.Count < MaxNumRecycledCalls)
+				{
+					_recycledMessages.Enqueue(methodCall);
+				}
 			}
 		}
 
@@ -179,7 +200,6 @@ namespace SharpRemote
 		{
 			PendingMethodCall message;
 
-			int numPendingRpcs;
 			lock (_syncRoot)
 			{
 				if (!IsConnected)
@@ -189,10 +209,12 @@ namespace SharpRemote
 					          ? _recycledMessages.Dequeue()
 					          : new PendingMethodCall();
 				_pendingCalls.Add(rpcId, message);
-				numPendingRpcs = _pendingCalls.Count;
-			}
 
-			PendingMethodsEventSource.Instance.Enqueued(rpcId, numPendingRpcs);
+				int numPendingRpcs = _pendingCalls.Count;
+				PendingMethodsEventSource.Instance.Enqueued(rpcId, interfaceType, methodName,
+				                                            arguments != null ? arguments.Length : 0);
+				PendingMethodsEventSource.Instance.QueueCountChanged(numPendingRpcs);
+			}
 
 			message.Reset(servantId, interfaceType, methodName, arguments, rpcId, callback);
 

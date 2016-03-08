@@ -63,6 +63,7 @@
     <Compile Include="CodeGeneration\TypeResolverTest.cs" />
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="HeartbeatSettingsTest.cs" />
+    <Compile Include="HeartbeatTest.cs" />
     <Compile Include="Hosting\LatencyMonitorTest.cs" />
     <Compile Include="Hosting\OutOfProcess\CtorTest.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessQueueTest.cs" />

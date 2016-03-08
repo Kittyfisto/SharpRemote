@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Threading;
 using SharpRemote.Hosting;
+using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using log4net.Config;
@@ -13,7 +14,13 @@ namespace ConsoleApplication1
 		{
 			XmlConfigurator.Configure(new FileInfo("ConsoleApplication1.exe.config"));
 
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new OutOfProcessSilo(failureSettings: new FailureSettings
+				{
+					HeartbeatSettings =
+						{
+							AllowRemoteHeartbeatDisable = true
+						}
+				}))
 			{
 				silo.Start();
 				var id = silo.HostProcessId;
@@ -38,6 +45,7 @@ namespace ConsoleApplication1
 			while (true)
 			{
 				something.Do();
+				Thread.Sleep(100);
 			}
 		}
 	}

@@ -238,7 +238,7 @@ namespace SharpRemote
 			_garbageCollectionTimer = new Timer(CollectGarbage, null, TimeSpan.FromMilliseconds(100),
 			                                    TimeSpan.FromMilliseconds(100));
 
-			_localHeartbeat = new Heartbeat();
+			_localHeartbeat = new Heartbeat(Debugger.Instance);
 			_localLatency = new Latency();
 			switch (type)
 			{
@@ -1036,7 +1036,8 @@ namespace SharpRemote
 			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
 			                                         Debugger.Instance,
 			                                         _heartbeatSettings,
-			                                         connectionId);
+			                                         connectionId,
+			                                         endPoint);
 
 			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
 			_heartbeatMonitor.Start();

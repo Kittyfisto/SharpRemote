@@ -20,15 +20,19 @@ namespace SharpRemote
 
 		private readonly Timer _timer;
 		private readonly IDebugger _debugger;
+		private readonly IRemotingEndPoint _endPoint;
 
 		private bool? _isDebuggerAttached;
 
-		public Heartbeat(IDebugger debugger)
+		public Heartbeat(IDebugger debugger, IRemotingEndPoint endPoint)
 		{
 			if (debugger == null)
 				throw new ArgumentNullException("debugger");
+			if (endPoint == null)
+				throw new ArgumentNullException("endPoint");
 
 			_debugger = debugger;
+			_endPoint = endPoint;
 			_timer = new Timer
 				{
 					Interval = 100
@@ -52,8 +56,6 @@ namespace SharpRemote
 					{
 						EmitRemoteDebuggerDetached();
 					}
-
-					_isDebuggerAttached = now;
 				}
 			}
 			catch (Exception e)
@@ -74,11 +76,12 @@ namespace SharpRemote
 		private void EmitRemoteDebuggerAttached()
 		{
 			Action handler = RemoteDebuggerAttached;
-			if (handler != null)
+			if (handler != null && _endPoint.IsConnected)
 			{
 				try
 				{
 					handler();
+					_isDebuggerAttached = true;
 				}
 				catch (NotConnectedException)
 				{
@@ -92,11 +95,12 @@ namespace SharpRemote
 		private void EmitRemoteDebuggerDetached()
 		{
 			Action handler = RemoteDebuggerDetached;
-			if (handler != null)
+			if (handler != null && _endPoint.IsConnected)
 			{
 				try
 				{
 					handler();
+					_isDebuggerAttached = false;
 				}
 				catch (NotConnectedException)
 				{

@@ -238,7 +238,7 @@ namespace SharpRemote
 			_garbageCollectionTimer = new Timer(CollectGarbage, null, TimeSpan.FromMilliseconds(100),
 			                                    TimeSpan.FromMilliseconds(100));
 
-			_localHeartbeat = new Heartbeat(Debugger.Instance);
+			_localHeartbeat = new Heartbeat(Debugger.Instance, this);
 			_localLatency = new Latency();
 			switch (type)
 			{

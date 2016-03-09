@@ -31,13 +31,12 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 	{
 		private SocketRemotingEndPointServer _server;
 		private SocketRemotingEndPointClient _client;
-		private object _subject;
 
 		[TestFixtureSetUp]
 		public new void SetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
-			TestLogger.SetLevel<AbstractSocketRemotingEndPoint>(Level.Info);
+			TestLogger.SetLevel<AbstractEndPoint>(Level.Info);
 			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
 			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
 			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);

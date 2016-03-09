@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -17,7 +18,7 @@ namespace SharpRemote
 	///     <see cref="SocketRemotingEndPointClient.Connect(string)" />.
 	/// </summary>
 	public abstract class AbstractIPSocketRemotingEndPoint
-		: AbstractSocketRemotingEndPoint
+		: AbstractBinaryStreamEndPoint<Socket>
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -104,6 +105,98 @@ namespace SharpRemote
 			}
 		}
 
+		protected override void Send(Socket socket, byte[] data, int offset, int size)
+		{
+			socket.Send(data, offset, size, SocketFlags.None);
+		}
+
+		protected override bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
+		{
+			if (!socket.Connected)
+			{
+				err = SocketError.NotConnected;
+				return false;
+			}
+
+			int written = socket.Send(data, 0, length, SocketFlags.None, out err);
+			if (written != length || err != SocketError.Success || !socket.Connected)
+			{
+				Log.DebugFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
+								data.Length, err, socket.Connected);
+				return false;
+			}
+
+			return true;
+		}
+
+		protected override bool SynchronizedRead(Socket socket, byte[] buffer, System.TimeSpan timeout, out SocketError err)
+		{
+			DateTime start = DateTime.Now;
+			while (socket.Available < buffer.Length)
+			{
+				if (!socket.Connected)
+				{
+					err = SocketError.NotConnected;
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
+									buffer.Length, err, socket.Connected);
+					return false;
+				}
+
+				TimeSpan remaining = timeout - (DateTime.Now - start);
+				if (remaining <= TimeSpan.Zero)
+				{
+					err = SocketError.TimedOut;
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
+									buffer.Length, err, socket.Connected);
+					return false;
+				}
+
+				var t = (int)(remaining.TotalMilliseconds * 1000);
+				if (!socket.Poll(t, SelectMode.SelectRead))
+				{
+					err = SocketError.TimedOut;
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
+									buffer.Length, err, socket.Connected);
+					return false;
+				}
+			}
+
+			return SynchronizedRead(socket, buffer, out err);
+		}
+
+		protected override bool SynchronizedRead(Socket socket, byte[] buffer, out SocketError err)
+		{
+			err = SocketError.Success;
+
+			int index = 0;
+			int toRead;
+			while ((toRead = buffer.Length - index) > 0)
+			{
+				int read = socket.Receive(buffer, index, toRead, SocketFlags.None, out err);
+				index += read;
+
+				if (err != SocketError.Success || read <= 0 || !socket.Connected)
+				{
+					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read,
+									buffer.Length, err, socket.Connected);
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		protected override EndPoint GetRemoteEndPointOf(Socket socket)
+		{
+			EndPoint remoteEndPoint = socket.RemoteEndPoint;
+			return remoteEndPoint;
+		}
+
+		protected override void DisconnectTransport(Socket socket, bool reuseSocket)
+		{
+			socket.Disconnect(false);
+		}
+
 		protected override ConnectionId OnHandshakeSucceeded(Socket socket)
 		{
 			lock (SyncRoot)
@@ -140,6 +233,5 @@ namespace SharpRemote
 				return CurrentConnectionId;
 			}
 		}
-
 	}
 }

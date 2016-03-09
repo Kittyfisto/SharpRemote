@@ -56,6 +56,7 @@
     <Compile Include="Diagnostics\IDebugger.cs" />
     <Compile Include="ConnectionId.cs" />
     <Compile Include="DirectoryInfoExtensions.cs" />
+    <Compile Include="EndPoints\AbstractEndPoint.cs" />
     <Compile Include="EndPoints\EndPointSettings.cs" />
     <Compile Include="EndPoints\ILatency.cs" />
     <Compile Include="EndPoints\Latency.cs" />
@@ -106,7 +107,6 @@
     <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
     <Compile Include="CodeGeneration\TypeResolver.cs" />
     <Compile Include="Dispatch.cs" />
-    <Compile Include="EndPoints\AbstractSocketRemotingEndPoint.cs" />
     <Compile Include="EndPoints\BluetoothRemotingEndPoint.cs" />
     <Compile Include="EndPoints\EndPointDisconnectReason.cs" />
     <Compile Include="EndPoints\MessageType.cs" />
@@ -168,7 +168,7 @@
     <Compile Include="Clock\ITimer.cs" />
     <Compile Include="TypeInformation.cs" />
     <Compile Include="Extensions\DisposableExtensions.cs" />
-    <Compile Include="EndPoints\AbstractEndPoint.cs" />
+    <Compile Include="EndPoints\AbstractBinaryStreamEndPoint.cs" />
     <Compile Include="EndPoints\AbstractIPSocketRemotingEndPoint.cs" />
     <Compile Include="Hosting\InProcess\InProcessRemotingSilo.cs" />
     <Compile Include="Hosting\InProcess\InProcessSilo.cs" />

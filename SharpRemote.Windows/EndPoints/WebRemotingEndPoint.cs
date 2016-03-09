@@ -1,92 +1,70 @@
 ﻿using System;
-using System.IO;
 using System.Net;
-using System.Threading.Tasks;
+using System.Net.Sockets;
 
 namespace SharpRemote.EndPoints
 {
 	internal sealed class WebRemotingEndPoint
-		: AbstractEndPoint
-		  , IRemotingEndPoint
-		  , IEndPointChannel
+		: AbstractBinaryStreamEndPoint<IDisposable>
 	{
-		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
+		public WebRemotingEndPoint(GrainIdGenerator idGenerator, string name, EndPointType type,
+		                           IAuthenticator clientAuthenticator, IAuthenticator serverAuthenticator,
+		                           ITypeResolver customTypeResolver, Serializer serializer,
+		                           HeartbeatSettings heartbeatSettings, LatencySettings latencySettings,
+		                           EndPointSettings endPointSettings)
+			: base(
+				idGenerator, name, type, clientAuthenticator, serverAuthenticator, customTypeResolver, serializer, heartbeatSettings,
+				latencySettings, endPointSettings)
 		{
-			throw new NotImplementedException();
 		}
 
-		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void Dispose()
-		{
-			throw new NotImplementedException();
-		}
-
-		public string Name
+		protected override EndPoint InternalLocalEndPoint
 		{
 			get { throw new NotImplementedException(); }
 		}
 
-		public bool IsConnected
+		protected override EndPoint InternalRemoteEndPoint
 		{
 			get { throw new NotImplementedException(); }
+			set { throw new NotImplementedException(); }
 		}
 
-		public ConnectionId CurrentConnectionId
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public TimeSpan RoundtripTime
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public EndPoint LocalEndPoint
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public EndPoint RemoteEndPoint
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-#pragma warning disable 67
-		public event Action<EndPoint, ConnectionId> OnConnected;
-		public event Action<EndPoint, ConnectionId> OnDisconnected;
-		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
-#pragma warning restore 67
-
-		public void Disconnect()
+		protected override void DisposeAdditional()
 		{
 			throw new NotImplementedException();
 		}
 
-		public T CreateProxy<T>(ulong objectId) where T : class
+		protected override void DisconnectTransport(IDisposable socket, bool reuseSocket)
 		{
 			throw new NotImplementedException();
 		}
 
-		public T GetProxy<T>(ulong objectId) where T : class
+		protected override void Send(IDisposable socket, byte[] data, int offset, int size)
 		{
 			throw new NotImplementedException();
 		}
 
-		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
+		protected override EndPoint GetRemoteEndPointOf(IDisposable socket)
 		{
 			throw new NotImplementedException();
 		}
 
-		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
+		protected override ConnectionId OnHandshakeSucceeded(IDisposable socket)
 		{
 			throw new NotImplementedException();
 		}
 
-		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
+		protected override bool SynchronizedWrite(IDisposable socket, byte[] data, int length, out SocketError err)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, TimeSpan timeout, out SocketError err)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, out SocketError err)
 		{
 			throw new NotImplementedException();
 		}

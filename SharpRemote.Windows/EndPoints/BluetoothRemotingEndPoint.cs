@@ -1,8 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
@@ -13,9 +12,7 @@ namespace SharpRemote.EndPoints
 	/// NOT FINISHED.
 	/// </summary>
 	public sealed class BluetoothRemotingEndPoint
-		: AbstractEndPoint
-		  , IRemotingEndPoint
-		  , IEndPointChannel
+		: AbstractBinaryStreamEndPoint<IDisposable>
 	{
 		private BluetoothEndPoint _localEndPoint;
 
@@ -23,6 +20,7 @@ namespace SharpRemote.EndPoints
 		/// NOT FINISHED
 		/// </summary>
 		public BluetoothRemotingEndPoint()
+			: base(null, null, EndPointType.Client, null, null, null, null, null, null, null)
 		{
 			
 		}
@@ -34,16 +32,6 @@ namespace SharpRemote.EndPoints
 		public void Bind(Guid serviceGuid)
 		{
 			_localEndPoint = new BluetoothEndPoint(new BluetoothAddress(1234), serviceGuid);
-		}
-
-		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
-		{
-			throw new NotImplementedException();
-		}
-
-		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
-		{
-			throw new NotImplementedException();
 		}
 
 		/// <summary>
@@ -95,73 +83,54 @@ namespace SharpRemote.EndPoints
 			return devices;
 		}
 
-		public void Dispose()
-		{
-			throw new NotImplementedException();
-		}
 
-		public string Name
+		protected override EndPoint InternalLocalEndPoint
 		{
 			get { throw new NotImplementedException(); }
 		}
 
-		public bool IsConnected
+		protected override EndPoint InternalRemoteEndPoint
 		{
 			get { throw new NotImplementedException(); }
+			set { throw new NotImplementedException(); }
 		}
 
-		public ConnectionId CurrentConnectionId
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public TimeSpan RoundtripTime
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public EndPoint LocalEndPoint
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public EndPoint RemoteEndPoint
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-#pragma warning disable 67
-		public event Action<EndPoint, ConnectionId> OnConnected;
-		public event Action<EndPoint, ConnectionId> OnDisconnected;
-		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
-#pragma warning restore 67
-
-		public void Disconnect()
+		protected override void DisposeAdditional()
 		{
 			throw new NotImplementedException();
 		}
 
-		public T CreateProxy<T>(ulong objectId) where T : class
+		protected override void DisconnectTransport(IDisposable socket, bool reuseSocket)
 		{
 			throw new NotImplementedException();
 		}
 
-		public T GetProxy<T>(ulong objectId) where T : class
+		protected override void Send(IDisposable socket, byte[] data, int offset, int size)
 		{
 			throw new NotImplementedException();
 		}
 
-		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
+		protected override EndPoint GetRemoteEndPointOf(IDisposable socket)
 		{
 			throw new NotImplementedException();
 		}
 
-		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
+		protected override ConnectionId OnHandshakeSucceeded(IDisposable socket)
 		{
 			throw new NotImplementedException();
 		}
 
-		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
+		protected override bool SynchronizedWrite(IDisposable socket, byte[] data, int length, out SocketError err)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, TimeSpan timeout, out SocketError err)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, out SocketError err)
 		{
 			throw new NotImplementedException();
 		}

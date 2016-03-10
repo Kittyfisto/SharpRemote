@@ -84,27 +84,6 @@ namespace SharpRemote
 			get { return _localEndPoint; }
 		}
 
-		/// <summary>
-		///     Whether or not the P2P name publishing service is available on this machine or not.
-		///     Is required to <see cref="SocketRemotingEndPointServer.Bind(IPAddress)" /> a socket to a particular name (as well as a particular port)
-		///     and to <see cref="SocketRemotingEndPointClient.Connect(string)" /> to that socket.
-		/// </summary>
-		public static bool IsP2PAvailable
-		{
-			get
-			{
-				ServiceController sc = ServiceController.GetServices().FirstOrDefault(x => x.ServiceName == "PNRPsvc");
-
-				if (sc == null)
-					return false;
-
-				if (sc.Status == ServiceControllerStatus.Running)
-					return true;
-
-				return false;
-			}
-		}
-
 		protected override void Send(Socket socket, byte[] data, int offset, int size)
 		{
 			socket.Send(data, offset, size, SocketFlags.None);

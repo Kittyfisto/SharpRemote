@@ -18,17 +18,13 @@ namespace SharpRemote
 		: AbstractIPSocketRemotingEndPoint
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private readonly NetworkServiceDiscoverer _networkServiceDiscoverer;
 
 		/// <summary>
 		///     Creates a new socket end point that (optionally) is bound to the given
 		///     P2P name, if PNRP is available, otherwise the name is only used for debugging.
 		/// </summary>
-		/// <remarks>
-		///     Currently, no exception is thrown when the required P2P service "PNRPsvc" is
-		///     not installed or not running. Check the <see cref="AbstractIPSocketRemotingEndPoint.IsP2PAvailable" /> flag to
-		///     find out if it is.
-		/// </remarks>
 		/// <param name="name">The name of this socket, used to publish it via PNRP as well as to refer to this endpoint in diagnostic output</param>
 		/// <param name="clientAuthenticator">The authenticator, if any, to authenticate a client against a server (both need to use the same authenticator)</param>
 		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>

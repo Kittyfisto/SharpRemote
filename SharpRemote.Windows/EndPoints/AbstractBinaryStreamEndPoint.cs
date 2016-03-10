@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.CodeGeneration.Remoting;
+using SharpRemote.EndPoints;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Tasks;
@@ -32,7 +33,7 @@ namespace SharpRemote
 	/// </summary>
 	public abstract class AbstractBinaryStreamEndPoint<TTransport>
 		: AbstractEndPoint
-		  , IRemotingEndPoint
+		  , IInternalRemotingEndPoint
 		  , IEndPointChannel
 		where TTransport : class, IDisposable
 	{
@@ -259,60 +260,36 @@ namespace SharpRemote
 		protected abstract EndPoint InternalLocalEndPoint { get; }
 		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
 
-		/// <summary>
-		///     The total number of <see cref="IProxy" />s that have been removed from this endpoint because
-		///     they're no longer used.
-		/// </summary>
 		public long NumProxiesCollected
 		{
 			get { return _numProxiesCollected; }
 		}
 
-		/// <summary>
-		///     The total number of <see cref="IServant" />s that have been removed from this endpoint because
-		///     their subjects have been collected by the GC.
-		/// </summary>
 		public long NumServantsCollected
 		{
 			get { return _numServantsCollected; }
 		}
 
-		/// <summary>
-		///     The total amount of time this endpoint spent collecting garbage.
-		/// </summary>
 		public TimeSpan GarbageCollectionTime
 		{
 			get { return _garbageCollectionTime.Elapsed; }
 		}
 
-		/// <summary>
-		///     The settings used for latency measurements.
-		/// </summary>
 		public LatencySettings LatencySettings
 		{
 			get { return _latencySettings; }
 		}
 
-		/// <summary>
-		///     The settings used for the heartbeat mechanism.
-		/// </summary>
 		public HeartbeatSettings HeartbeatSettings
 		{
 			get { return _heartbeatSettings; }
 		}
 
-		/// <summary>
-		///     The settings used for the endpoint itself (max. number of concurrent calls, etc...).
-		/// </summary>
 		public EndPointSettings EndPointSettings
 		{
 			get { return _endpointSettings; }
 		}
 
-		/// <summary>
-		///     The total number of method invocations that have been retrieved from the underlying stream,
-		///     but not yet invoked or not yet finished.
-		/// </summary>
 		public int NumPendingMethodInvocations
 		{
 			get
@@ -350,7 +327,7 @@ namespace SharpRemote
 		///     Returns all the proxies of this endpoint.
 		///     Used for testing.
 		/// </summary>
-		internal IEnumerable<IProxy> Proxies
+		public IEnumerable<IProxy> Proxies
 		{
 			get
 			{

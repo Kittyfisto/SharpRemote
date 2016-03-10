@@ -4,9 +4,23 @@ using System.IO.Pipes;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	public sealed class NamedPipeRemotingEndPointClient
 		: AbstractNamedPipeEndPoint<NamedPipeClientStream>
 	{
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="clientAuthenticator"></param>
+		/// <param name="serverAuthenticator"></param>
+		/// <param name="customTypeResolver"></param>
+		/// <param name="serializer"></param>
+		/// <param name="heartbeatSettings"></param>
+		/// <param name="latencySettings"></param>
+		/// <param name="endPointSettings"></param>
 		public NamedPipeRemotingEndPointClient(string name,
 		                                       IAuthenticator clientAuthenticator,
 		                                       IAuthenticator serverAuthenticator,

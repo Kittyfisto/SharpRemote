@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 
 namespace SharpRemote
@@ -24,6 +25,27 @@ namespace SharpRemote
 		bool IsConnected { get; }
 
 		/// <summary>
+		///     The total number of method invocations that have been retrieved from the underlying stream,
+		///     but not yet invoked or not yet finished.
+		/// </summary>
+		int NumPendingMethodInvocations { get; }
+
+		/// <summary>
+		///     The settings used for the endpoint itself (max. number of concurrent calls, etc...).
+		/// </summary>
+		EndPointSettings EndPointSettings { get; }
+
+		/// <summary>
+		///     The settings used for latency measurements.
+		/// </summary>
+		LatencySettings LatencySettings { get; }
+
+		/// <summary>
+		///     The settings used for the heartbeat mechanism.
+		/// </summary>
+		HeartbeatSettings HeartbeatSettings { get; }
+
+		/// <summary>
 		/// The id of the current connection or <see cref="ConnectionId.None"/> if no connection
 		/// is currently established.
 		/// </summary>
@@ -44,6 +66,11 @@ namespace SharpRemote
 		/// 
 		/// </summary>
 		EndPoint RemoteEndPoint { get; }
+
+		/// <summary>
+		///     Returns all the proxies of this endpoint.
+		/// </summary>
+		IEnumerable<IProxy> Proxies { get; }
 
 		/// <summary>
 		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/>

@@ -1,3 +1,4 @@
+using System;
 using System.IO.Pipes;
 
 // ReSharper disable CheckNamespace
@@ -7,6 +8,8 @@ namespace SharpRemote
 	public sealed class NamedPipeRemotingEndPointServer
 		: AbstractNamedPipeEndPoint<NamedPipeServerStream>
 	{
+		private NamedPipeServerStream _socket;
+
 		public NamedPipeRemotingEndPointServer(string name,
 		                                       IAuthenticator clientAuthenticator,
 		                                       IAuthenticator serverAuthenticator,
@@ -24,6 +27,21 @@ namespace SharpRemote
 			       latencySettings,
 			       endPointSettings)
 		{
+		}
+
+		/// <summary>
+		/// Binds this endpoint to the given name.
+		/// Once bound, incoming connections may be accepted.
+		/// </summary>
+		/// <param name="name"></param>
+		public void Bind(string name)
+		{
+			if (string.IsNullOrEmpty(name))
+				throw new ArgumentException("name");
+			if (LocalEndPoint != null)
+				throw new InvalidOperationException("This endpoint is already bound");
+
+			_socket = new NamedPipeServerStream(name);
 		}
 
 		protected override void DisposeAdditional()

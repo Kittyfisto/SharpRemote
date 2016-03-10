@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Threading;
 using NUnit.Framework;
-using SharpRemote.ServiceDiscovery;
 using log4net.Core;
 
 namespace SharpRemote.Test
@@ -39,35 +38,6 @@ namespace SharpRemote.Test
 		public void TestFixtureTearDown()
 		{
 			TestLogger.DisableConsoleLogging();
-		}
-
-		protected SocketRemotingEndPointClient CreateClient(string name = null, IAuthenticator clientAuthenticator = null,
-		                                                    IAuthenticator serverAuthenticator = null,
-		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                                    LatencySettings latencySettings = null,
-		                                                    HeartbeatSettings heartbeatSettings = null)
-		{
-			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
-			                                        networkServiceDiscoverer,
-			                                        latencySettings: latencySettings,
-			                                        heartbeatSettings: heartbeatSettings);
-		}
-
-		protected SocketRemotingEndPointServer CreateServer(string name = null,
-		                                                    IAuthenticator clientAuthenticator = null,
-		                                                    IAuthenticator serverAuthenticator = null,
-		                                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                                    LatencySettings latencySettings = null,
-		                                                    EndPointSettings endPointSettings = null,
-		                                                    HeartbeatSettings heartbeatSettings = null)
-		{
-			return new SocketRemotingEndPointServer(name,
-			                                        clientAuthenticator,
-			                                        serverAuthenticator, null,
-			                                        networkServiceDiscoverer,
-			                                        latencySettings: latencySettings,
-			                                        endPointSettings: endPointSettings,
-			                                        heartbeatSettings: heartbeatSettings);
 		}
 
 		public static bool WaitFor(Func<bool> fn, TimeSpan timeout)

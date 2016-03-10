@@ -28,8 +28,8 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestDisconnect1()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
@@ -56,8 +56,8 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestDisconnect2()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
@@ -82,8 +82,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
 		public void TestDisconnect3()
 		{
-			using (var server = CreateServer("server"))
-			using (var client = CreateClient("client"))
+			using (var server = CreateServer(name: "server"))
+			using (var client = CreateClient(name: "client"))
 			{
 				Bind(server);
 				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
@@ -110,8 +110,8 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestDisconnect4()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
@@ -143,8 +143,8 @@ namespace SharpRemote.Test.Remoting
 			const int numMethodCalls = 1000;
 			var timeout = TimeSpan.FromSeconds(5);
 
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
@@ -200,8 +200,8 @@ namespace SharpRemote.Test.Remoting
 			const int numMethodCalls = 1000;
 			var timeout = TimeSpan.FromSeconds(15);
 
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));

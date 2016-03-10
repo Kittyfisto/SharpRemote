@@ -1,13 +1,21 @@
 ﻿using System.IO.Pipes;
+using System.Net;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <typeparam name="TTransport"></typeparam>
 	public abstract class AbstractNamedPipeEndPoint<TTransport>
 		: AbstractBinaryStreamEndPoint<TTransport>
 		where TTransport : PipeStream
 	{
+		private NamedPipeEndPoint _localEndPoint;
+		private NamedPipeEndPoint _remoteEndPoint;
+
 		internal AbstractNamedPipeEndPoint(string name,
 			EndPointType type,
 		                                   IAuthenticator clientAuthenticator,
@@ -28,21 +36,32 @@ namespace SharpRemote
 			throw new System.NotImplementedException();
 		}
 
-		protected override System.Net.EndPoint InternalLocalEndPoint
+		/// <summary>
+		/// 
+		/// </summary>
+		public new NamedPipeEndPoint LocalEndPoint
 		{
-			get { throw new System.NotImplementedException(); }
+			get { return _localEndPoint; }
+			protected set { _localEndPoint = value; }
 		}
 
-		protected override System.Net.EndPoint InternalRemoteEndPoint
+		/// <summary>
+		/// 
+		/// </summary>
+		public new NamedPipeEndPoint RemoteEndPoint
 		{
-			get
-			{
-				throw new System.NotImplementedException();
-			}
-			set
-			{
-				throw new System.NotImplementedException();
-			}
+			get { return _remoteEndPoint; }
+		}
+
+		protected override EndPoint InternalLocalEndPoint
+		{
+			get { return _localEndPoint; }
+		}
+
+		protected override EndPoint InternalRemoteEndPoint
+		{
+			get { return _remoteEndPoint; }
+			set { _remoteEndPoint = (NamedPipeEndPoint)value; }
 		}
 
 		protected override ConnectionId OnHandshakeSucceeded(TTransport socket)

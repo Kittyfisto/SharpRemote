@@ -67,6 +67,8 @@
     <Compile Include="EndPoints\NamedPipes\NamedPipeRemotingEndPointClient.cs" />
     <Compile Include="EndPoints\NamedPipes\NamedPipeRemotingEndPointServer.cs" />
     <Compile Include="ETW\PendingMethodsEventSource.cs" />
+    <Compile Include="Exceptions\NoSuchEndPointException.cs" />
+    <Compile Include="Exceptions\NoSuchNamedPipeEndPointException.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />
     <Compile Include="FileInfoExtensions.cs" />

@@ -10,6 +10,7 @@ using SharpRemote.Exceptions;
 
 namespace SharpRemote.Test.Remoting
 {
+	[TestFixture]
 	public abstract class AbstractConnectTest
 		: AbstractEndPointTest
 	{
@@ -27,8 +28,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() can establish a connection with an endpoint in the same process")]
 		public void TestConnect1()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 
@@ -76,9 +77,9 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
 		public void TestConnect4()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server1 = CreateServer("Rep#2"))
-			using (var server2 = CreateServer("Rep#3"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server1 = CreateServer(name: "Rep#2"))
+			using (var server2 = CreateServer(name: "Rep#3"))
 			{
 				Bind(server1);
 				Bind(server2);
@@ -158,8 +159,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestConnect9()
 		{
 			var authenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", authenticator))
-			using (var server = CreateServer("Rep2", authenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: authenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: authenticator))
 			{
 				Bind(server, EndPoint4);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
@@ -174,8 +175,8 @@ namespace SharpRemote.Test.Remoting
 		{
 			var wrongAuthenticator = new Test2Authenticator();
 			var actualAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", wrongAuthenticator))
-			using (var server = CreateServer("Rep2", actualAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: wrongAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: actualAuthenticator))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
@@ -190,8 +191,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestConnect11()
 		{
 			var authenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", null, authenticator))
-			using (var server = CreateServer("Rep2", null, authenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: null, serverAuthenticator: authenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: null, serverAuthenticator: authenticator))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
@@ -206,8 +207,8 @@ namespace SharpRemote.Test.Remoting
 		{
 			var wrongAuthenticator = new Test2Authenticator();
 			var actualAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", null, actualAuthenticator))
-			using (var server = CreateServer("Rep2", null, wrongAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: null, serverAuthenticator: actualAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: null, serverAuthenticator: wrongAuthenticator))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
@@ -223,8 +224,8 @@ namespace SharpRemote.Test.Remoting
 		{
 			var clientAuthenticator = new Test2Authenticator();
 			var serverAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", clientAuthenticator, serverAuthenticator))
-			using (var server = CreateServer("Rep2", clientAuthenticator, serverAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: clientAuthenticator, serverAuthenticator: serverAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: clientAuthenticator, serverAuthenticator: serverAuthenticator))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
@@ -238,8 +239,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestConnect14()
 		{
 			var serverAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", new TestAuthenticator(), serverAuthenticator))
-			using (var server = CreateServer("Rep2", new Test2Authenticator(), serverAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: new TestAuthenticator(), serverAuthenticator: serverAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: new Test2Authenticator(), serverAuthenticator: serverAuthenticator))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
@@ -254,8 +255,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestConnect15()
 		{
 			var clientAuthenticator = new Test2Authenticator();
-			using (var client = CreateClient("Rep1", clientAuthenticator, new TestAuthenticator()))
-			using (var server = CreateServer("Rep2", clientAuthenticator, new Test2Authenticator()))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: clientAuthenticator, serverAuthenticator: new TestAuthenticator()))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: clientAuthenticator, serverAuthenticator: new Test2Authenticator()))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
@@ -269,8 +270,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() fails when client side authentication is enabled but the client doesn't provide any")]
 		public void TestConnect16()
 		{
-			using (var client = CreateClient("Rep1"))
-			using (var server = CreateServer("Rep2", new TestAuthenticator()))
+			using (var client = CreateClient(name: "Rep1"))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: new TestAuthenticator()))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
@@ -284,8 +285,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that Connect() fails when server side authentication is enabled but the server doesn't provide any")]
 		public void TestConnect17()
 		{
-			using (var client = CreateClient("Rep1", null, new TestAuthenticator()))
-			using (var server = CreateServer("Rep2"))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: null, serverAuthenticator: new TestAuthenticator()))
+			using (var server = CreateServer(name: "Rep2"))
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint))
@@ -299,7 +300,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that when Connect throws before the timeout is reached, the exception is handled gracefully (and not thrown on the finalizer thread)")]
 		public void TestConnect18()
 		{
-			using (var client = CreateClient("Rep1"))
+			using (var client = CreateClient(name: "Rep1"))
 			{
 				var exceptions = new List<Exception>();
 				TaskScheduler.UnobservedTaskException += (sender, args) =>
@@ -444,74 +445,16 @@ namespace SharpRemote.Test.Remoting
 			for (int i = 0; i < 100; ++i)
 			{
 				using (
-					var client = CreateClient("perf_client", latencySettings: latencySettings,
+					var client = CreateClient(name: "perf_client", latencySettings: latencySettings,
 																	   heartbeatSettings: heartbeatSettings))
 				{
 					using (
-						var server = CreateServer("perf_server", latencySettings: latencySettings,
+						var server = CreateServer(name: "perf_server", latencySettings: latencySettings,
 																		   heartbeatSettings: heartbeatSettings))
 					{
 						Bind(server);
 						Connect(client, server.LocalEndPoint);
 						client.Disconnect();
-					}
-				}
-			}
-		}
-
-		[Test]
-		[Ignore("Why doesn't this work on AppVeyor - I Just don't get it...")]
-		public void TestConnect28()
-		{
-			for (int i = 0; i < 1000; ++i)
-			{
-				const AddressFamily family = AddressFamily.InterNetwork;
-				const SocketType socket = SocketType.Stream;
-				const ProtocolType protocol = ProtocolType.Tcp;
-				using (var client = new Socket(family, socket, protocol))
-				using (var server = new Socket(family, socket, protocol))
-				{
-					client.ReceiveTimeout = 10000;
-
-					server.ExclusiveAddressUse = true;
-					server.Bind(new IPEndPoint(IPAddress.Loopback, 60310));
-
-					bool isConnected = false;
-					server.Listen(1);
-					server.BeginAccept(ar =>
-					{
-						Console.WriteLine("BeginAccept handler");
-						var serverCon = server.EndAccept(ar);
-						Console.WriteLine("EndAccept called");
-
-						isConnected = true;
-						serverCon.Send(new byte[256]);
-					}, null);
-
-					try
-					{
-						client.Connect(server.LocalEndPoint);
-						Console.WriteLine("socket.Connected: {0} to {1}", client.Connected, client.RemoteEndPoint);
-					}
-					catch (Exception e)
-					{
-						throw new Exception(string.Format("Connect failed: {0}", e.Message), e);
-					}
-
-					client.Send(new byte[256]);
-
-					try
-					{
-						int length = client.Receive(new byte[256]);
-						length.Should().Be(256);
-					}
-					catch (Exception e)
-					{
-						throw new Exception(string.Format("Receive #{0} failed (Connected: {1}): {2}",
-														  i,
-														  isConnected,
-														  e.Message),
-											e);
 					}
 				}
 			}

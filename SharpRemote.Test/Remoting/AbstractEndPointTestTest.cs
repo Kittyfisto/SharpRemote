@@ -28,8 +28,8 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestCallMethod1()
 		{
-			using (var rep1 = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var rep1 = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 				Connect(rep1, server.LocalEndPoint, TimeSpan.FromSeconds(1));
@@ -59,8 +59,8 @@ namespace SharpRemote.Test.Remoting
 			)]
 		public void TestCallMethod2()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
 				Bind(server);
 				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(1));

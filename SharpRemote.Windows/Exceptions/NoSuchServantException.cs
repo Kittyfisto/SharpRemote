@@ -1,8 +1,12 @@
 ﻿using System;
+
+#if !WINDOWS_PHONE_APP
+#if !SILVERLIGHT
 using System.Runtime.Serialization;
+#endif
+#endif
 
 // ReSharper disable CheckNamespace
-
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {

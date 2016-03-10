@@ -3,13 +3,31 @@ using System.Net;
 using System.Net.Sockets;
 using FluentAssertions;
 using NUnit.Framework;
+using SharpRemote.EndPoints;
 
-namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
+namespace SharpRemote.Test.Remoting.Sockets
 {
 	[TestFixture]
 	public class Test
 		: AbstractEndPointTestTest
 	{
+		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null)
+		{
+			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
+													latencySettings: latencySettings,
+													heartbeatSettings: heartbeatSettings);
+		}
+
+		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null)
+		{
+			return new SocketRemotingEndPointServer(name,
+													clientAuthenticator,
+													serverAuthenticator, null,
+													latencySettings: latencySettings,
+													endPointSettings: endPointSettings,
+													heartbeatSettings: heartbeatSettings);
+		}
+
 		[Test]
 		[Description("Verifies that creating a peer-endpoint without specifying a port works and assigns a free port")]
 		public void TestCtor1()
@@ -33,7 +51,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		public void TestDispose1()
 		{
 			EndPoint endpoint;
-			using (var ep = CreateServer("Foo"))
+			using (var ep = CreateServer(name: "Foo"))
 			{
 				Bind(ep);
 				endpoint = ep.LocalEndPoint;
@@ -41,7 +59,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 			// If the SocketRemotingEndPoint correctly disposed the listening socket, then
 			// we should be able to create a new socket on the same address/port.
-			using (var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
+			using (var socket = new System.Net.Sockets.Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
 			{
 				new Action(() => socket.Bind(endpoint))
 					.ShouldNotThrow("Because the corresponding endpoint should no longer be in use");

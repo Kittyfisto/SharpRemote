@@ -3,22 +3,40 @@ using System.Net;
 using System.Net.Sockets;
 using FluentAssertions;
 using NUnit.Framework;
+using SharpRemote.EndPoints;
 using SharpRemote.ServiceDiscovery;
 
-namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
+namespace SharpRemote.Test.Remoting.Sockets
 {
 	[TestFixture]
 	public sealed class TryConnectTest
 		: AbstractTryConnectTest
 	{
+		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null)
+		{
+			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
+													latencySettings: latencySettings,
+													heartbeatSettings: heartbeatSettings);
+		}
+
+		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null)
+		{
+			return new SocketRemotingEndPointServer(name,
+													clientAuthenticator,
+													serverAuthenticator, null,
+													latencySettings: latencySettings,
+													endPointSettings: endPointSettings,
+													heartbeatSettings: heartbeatSettings);
+		}
+
 		[Test]
 		[LocalTest("I swear to god, you cannot run any fucking test on this CI server")]
 		[Description("Verifies that TryConnect() can establish a connection with an endpoint by specifying its name")]
 		public void TestTryConnect23()
 		{
 			using (var discoverer = new NetworkServiceDiscoverer())
-			using (var client = CreateClient("Rep1", networkServiceDiscoverer: discoverer))
-			using (var server = CreateServer("Rep2", networkServiceDiscoverer: discoverer))
+			using (var client = CreateClient(name: "Rep1"))
+			using (var server = CreateServer(name: "Rep2"))
 			{
 				Bind(server);
 
@@ -70,7 +88,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		public void TestConnect8()
 		{
 			using (var rep = CreateClient())
-			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+			using (var socket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
 			{
 				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
 				socket.Listen(1);

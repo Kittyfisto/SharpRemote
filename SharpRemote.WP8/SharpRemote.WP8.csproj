@@ -122,6 +122,9 @@
     <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchApplicationException.cs">
       <Link>Exceptions\NoSuchApplicationException.cs</Link>
     </Compile>
+    <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchEndPointException.cs">
+      <Link>Exceptions\NoSuchEndPointException.cs</Link>
+    </Compile>
     <Compile Include="..\SharpRemote.Windows\Exceptions\NoSuchIPEndPointException.cs">
       <Link>Exceptions\NoSuchIPEndPointException.cs</Link>
     </Compile>

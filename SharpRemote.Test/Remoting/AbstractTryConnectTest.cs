@@ -48,8 +48,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that TryConnect() can establish a connection with an endpoint in the same process")]
 		public void TestTryConnect1()
 		{
-			using (var client = CreateClient("Rep1"))
-			using (var server = CreateServer("Rep2"))
+			using (var client = CreateClient(name: "Rep1"))
+			using (var server = CreateServer(name: "Rep2"))
 			{
 				Bind(server, EndPoint1);
 				bool success = false;
@@ -64,7 +64,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that when TryConnect fails before the timeout is reached, the exception is handled gracefully (and not thrown on the finalizer thread)")]
 		public void TestTryConnect19()
 		{
-			using (var client = CreateClient("Rep1"))
+			using (var client = CreateClient(name: "Rep1"))
 			{
 				var exceptions = new List<Exception>();
 				TaskScheduler.UnobservedTaskException += (sender, args) =>
@@ -134,9 +134,9 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that TryConnect() cannot be called on an already connected endpoint")]
 		public void TestTryConnect4()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server1 = CreateServer("Rep#2"))
-			using (var server2 = CreateServer("Rep#3"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server1 = CreateServer(name: "Rep#2"))
+			using (var server2 = CreateServer(name: "Rep#3"))
 			{
 				Bind(server1);
 				Bind(server2);
@@ -175,8 +175,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestTryConnect9()
 		{
 			var authenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", authenticator))
-			using (var server = CreateServer("Rep2", authenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: authenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: authenticator))
 			{
 				Bind(server, EndPoint1);
 				new Action(() => TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
@@ -191,8 +191,8 @@ namespace SharpRemote.Test.Remoting
 		{
 			var wrongAuthenticator = new Test2Authenticator();
 			var actualAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", wrongAuthenticator))
-			using (var server = CreateServer("Rep2", actualAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: wrongAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: actualAuthenticator))
 			{
 				Bind(server);
 				bool success = true;
@@ -210,8 +210,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestTryConnect11()
 		{
 			var authenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", null, authenticator))
-			using (var server = CreateServer("Rep2", null, authenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: null, serverAuthenticator: authenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: null, serverAuthenticator: authenticator))
 			{
 				Bind(server);
 				bool success = false;
@@ -228,8 +228,8 @@ namespace SharpRemote.Test.Remoting
 		{
 			var wrongAuthenticator = new Test2Authenticator();
 			var actualAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", null, actualAuthenticator))
-			using (var server = CreateServer("Rep2", null, wrongAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: null, serverAuthenticator: actualAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: null, serverAuthenticator: wrongAuthenticator))
 			{
 				Bind(server);
 				bool success = false;
@@ -247,8 +247,8 @@ namespace SharpRemote.Test.Remoting
 		{
 			var clientAuthenticator = new Test2Authenticator();
 			var serverAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", clientAuthenticator, serverAuthenticator))
-			using (var server = CreateServer("Rep2", clientAuthenticator, serverAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: clientAuthenticator, serverAuthenticator: serverAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: clientAuthenticator, serverAuthenticator: serverAuthenticator))
 			{
 				Bind(server);
 				bool success = false;
@@ -263,8 +263,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestTryConnect14()
 		{
 			var serverAuthenticator = new TestAuthenticator();
-			using (var client = CreateClient("Rep1", new TestAuthenticator(), serverAuthenticator))
-			using (var server = CreateServer("Rep2", new Test2Authenticator(), serverAuthenticator))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: new TestAuthenticator(), serverAuthenticator: serverAuthenticator))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: new Test2Authenticator(), serverAuthenticator: serverAuthenticator))
 			{
 				Bind(server);
 				bool success = true;
@@ -281,8 +281,8 @@ namespace SharpRemote.Test.Remoting
 		public void TestTryConnect15()
 		{
 			var clientAuthenticator = new Test2Authenticator();
-			using (var client = CreateClient("Rep1", clientAuthenticator, new TestAuthenticator()))
-			using (var server = CreateServer("Rep2", clientAuthenticator, new Test2Authenticator()))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: clientAuthenticator, serverAuthenticator: new TestAuthenticator()))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: clientAuthenticator, serverAuthenticator: new Test2Authenticator()))
 			{
 				Bind(server);
 				bool success = false;
@@ -298,8 +298,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that TryConnect() fails when client side authentication is enabled but the client doesn't provide any")]
 		public void TestTryConnect16()
 		{
-			using (var client = CreateClient("Rep1"))
-			using (var server = CreateServer("Rep2", new TestAuthenticator()))
+			using (var client = CreateClient(name: "Rep1"))
+			using (var server = CreateServer(name: "Rep2", clientAuthenticator: new TestAuthenticator()))
 			{
 				Bind(server);
 				bool success = true;
@@ -315,8 +315,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that TryConnect() fails when server side authentication is enabled but the server doesn't provide any")]
 		public void TestConnect17()
 		{
-			using (var client = CreateClient("Rep1", null, new TestAuthenticator()))
-			using (var server = CreateServer("Rep2"))
+			using (var client = CreateClient(name: "Rep1", clientAuthenticator: null, serverAuthenticator: new TestAuthenticator()))
+			using (var server = CreateServer(name: "Rep2"))
 			{
 				Bind(server);
 				bool success = true;

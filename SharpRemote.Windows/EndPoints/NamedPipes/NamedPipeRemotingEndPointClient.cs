@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.IO.Pipes;
 
 // ReSharper disable CheckNamespace
@@ -21,14 +23,14 @@ namespace SharpRemote
 		/// <param name="heartbeatSettings"></param>
 		/// <param name="latencySettings"></param>
 		/// <param name="endPointSettings"></param>
-		public NamedPipeRemotingEndPointClient(string name,
-		                                       IAuthenticator clientAuthenticator,
-		                                       IAuthenticator serverAuthenticator,
-		                                       ITypeResolver customTypeResolver,
-		                                       Serializer serializer,
-		                                       HeartbeatSettings heartbeatSettings,
-		                                       LatencySettings latencySettings,
-		                                       EndPointSettings endPointSettings)
+		public NamedPipeRemotingEndPointClient(string name = null,
+		                                       IAuthenticator clientAuthenticator = null,
+											   IAuthenticator serverAuthenticator = null,
+											   ITypeResolver customTypeResolver = null,
+											   Serializer serializer = null,
+											   HeartbeatSettings heartbeatSettings = null,
+											   LatencySettings latencySettings = null,
+											   EndPointSettings endPointSettings = null)
 			: base(name, EndPointType.Client,
 			       clientAuthenticator,
 			       serverAuthenticator,
@@ -42,12 +44,39 @@ namespace SharpRemote
 
 		protected override void DisposeAdditional()
 		{
-			throw new System.NotImplementedException();
+			
 		}
 
 		protected override void DisconnectTransport(NamedPipeClientStream socket, bool reuseSocket)
 		{
 			socket.Dispose();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="endPoint"></param>
+		/// <param name="timeout"></param>
+		/// <exception cref="NotImplementedException"></exception>
+		public void Connect(NamedPipeEndPoint endPoint, TimeSpan timeout)
+		{
+			if (endPoint == null) throw new ArgumentNullException("endPoint");
+			if (timeout <= TimeSpan.Zero)
+				throw new ArgumentOutOfRangeException("timeout");
+
+			var pipe = new NamedPipeClientStream(endPoint.PipeName, Name);
+			try
+			{
+				pipe.Connect(timeout.Milliseconds);
+			}
+			catch (TimeoutException e)
+			{
+				throw new NoSuchNamedPipeEndPointException(endPoint, timeout, e);
+			}
+			catch (IOException e)
+			{
+				throw new NoSuchNamedPipeEndPointException(endPoint, timeout, e);
+			}
 		}
 	}
 }

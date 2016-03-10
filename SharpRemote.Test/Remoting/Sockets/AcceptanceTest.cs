@@ -20,7 +20,7 @@ using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using SharpRemote.Test.Types.Structs;
 using log4net.Core;
 
-namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
+namespace SharpRemote.Test.Remoting.Sockets
 {
 	[TestFixture]
 	[NUnit.Framework.Description(

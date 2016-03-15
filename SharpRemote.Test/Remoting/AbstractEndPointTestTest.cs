@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -12,12 +11,16 @@ using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
-namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
+namespace SharpRemote.Test.Remoting
 {
-	[TestFixture]
-	public class Test
-		: AbstractTest
+	public abstract class AbstractEndPointTestTest
+		: AbstractEndPointTest
 	{
+		protected abstract void Connect(IRemotingEndPoint rep1, EndPoint localEndPoint);
+		protected abstract void Connect(IRemotingEndPoint rep1, EndPoint localEndPoint, TimeSpan timeout);
+
+		protected abstract EndPoint EndPoint1 { get; }
+
 		[Test]
 		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description(
@@ -25,19 +28,19 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			)]
 		public void TestCallMethod1()
 		{
-			using (var rep1 = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var rep1 = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
-				server.Bind(IPAddress.Loopback);
-				rep1.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(1));
+				Bind(server);
+				Connect(rep1, server.LocalEndPoint, TimeSpan.FromSeconds(1));
 
 				var subject = new Mock<IGetDoubleProperty>();
 				subject.Setup(x => x.Value).Returns(() =>
-					{
-						// We interrupt the connection from the calling endpoint itself
-						rep1.Disconnect();
-						return 42;
-					});
+				{
+					// We interrupt the connection from the calling endpoint itself
+					rep1.Disconnect();
+					return 42;
+				});
 
 				const int id = 1;
 				server.CreateServant(id, subject.Object);
@@ -56,19 +59,19 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			)]
 		public void TestCallMethod2()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(1));
+				Bind(server);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(1));
 
 				var subject = new Mock<IGetDoubleProperty>();
 				subject.Setup(x => x.Value).Returns(() =>
-					{
-						// We interrupt the connection from the called endpoint
-						server.Disconnect();
-						return 42;
-					});
+				{
+					// We interrupt the connection from the called endpoint
+					server.Disconnect();
+					return 42;
+				});
 
 				const int id = 1;
 				server.CreateServant(id, subject.Object);
@@ -163,28 +166,10 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		}
 
 		[Test]
-		[Description("Verifies that creating a peer-endpoint without specifying a port works and assigns a free port")]
-		public void TestCtor1()
-		{
-			using (var server = CreateServer())
-			{
-				server.Bind(IPAddress.Loopback);
-
-				server.LocalEndPoint.Should().NotBeNull();
-				server.LocalEndPoint.Address.Should().Be(IPAddress.Loopback);
-				server.LocalEndPoint.Port.Should()
-				   .BeInRange(49152, 65535,
-				              "because an automatically chosen port should be in the range of private/dynamic port numbers");
-				server.RemoteEndPoint.Should().BeNull();
-				server.IsConnected.Should().BeFalse();
-			}
-		}
-
-		[Test]
 		[Description("Verifies that the endpoint settings are properly forwarded")]
 		public void TestCtor2()
 		{
-			var endPointSettings = new EndPointSettings {MaxConcurrentCalls = 42};
+			var endPointSettings = new EndPointSettings { MaxConcurrentCalls = 42 };
 			using (var server = CreateServer(endPointSettings: endPointSettings))
 			{
 				server.EndPointSettings.Should().NotBeNull();
@@ -201,26 +186,6 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			{
 				client.CurrentConnectionId.Should().Be(ConnectionId.None);
 				server.CurrentConnectionId.Should().Be(ConnectionId.None);
-			}
-		}
-
-		[Test]
-		[Description("Verifies that disposing the endpoint actually closes the listening socket")]
-		public void TestDispose1()
-		{
-			IPEndPoint endpoint;
-			using (var ep = CreateServer("Foo"))
-			{
-				ep.Bind(IPAddress.Loopback);
-				endpoint = ep.LocalEndPoint;
-			}
-
-			// If the SocketRemotingEndPoint correctly disposed the listening socket, then
-			// we should be able to create a new socket on the same address/port.
-			using (var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
-			{
-				new Action(() => socket.Bind(endpoint))
-					.ShouldNotThrow("Because the corresponding endpoint should no longer be in use");
 			}
 		}
 
@@ -248,27 +213,27 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				client.CreateServant(1, foo2.Object);
 				var proxy2 = server.CreateProxy<IVoidMethodObjectParameter>(1);
 
-				server.Bind(new IPEndPoint(IPAddress.Loopback, 56783));
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(10));
+				Bind(server, EndPoint1);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10));
 
 				const int numListeners = 1000;
 				var task1 = new Task(() =>
+				{
+					for (int i = 0; i < numListeners; ++i)
 					{
-						for (int i = 0; i < numListeners; ++i)
-						{
-							var listener1 = new Mock<IByReferenceType>();
-							proxy1.AddListener(listener1.Object);
-						}
-					});
+						var listener1 = new Mock<IByReferenceType>();
+						proxy1.AddListener(listener1.Object);
+					}
+				});
 
 				var task2 = new Task(() =>
+				{
+					for (int i = 0; i < numListeners; ++i)
 					{
-						for (int i = 0; i < numListeners; ++i)
-						{
-							var listener2 = new Mock<IVoidMethodStringParameter>();
-							proxy2.AddListener(listener2.Object);
-						}
-					});
+						var listener2 = new Mock<IVoidMethodStringParameter>();
+						proxy2.AddListener(listener2.Object);
+					}
+				});
 
 				task1.Start();
 				task2.Start();
@@ -291,8 +256,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			using (var server = CreateServer())
 			using (var client = CreateClient())
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint);
+				Bind(server);
+				Connect(client, server.LocalEndPoint);
 
 				var subject = new Mock<IInvokeAttributeMethods>();
 				subject.Setup(x => x.SerializePerObject1()).Callback(() =>
@@ -440,11 +405,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				bool failed = false;
 				client.OnFailure += (r, unused) =>
-					{
-						new Action(proxy.DoStuff)
-							.ShouldThrow<NotConnectedException>();
-						failed = true;
-					};
+				{
+					new Action(proxy.DoStuff)
+						.ShouldThrow<NotConnectedException>();
+					failed = true;
+				};
 
 				server.DisconnectByFailure();
 				WaitFor(() => failed, TimeSpan.FromSeconds(2))

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Tasks;
-using SharpRemote.Test.Remoting.SocketRemotingEndPoint;
 
 namespace SharpRemote.Test.Tasks
 {

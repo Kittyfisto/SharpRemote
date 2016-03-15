@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.Diagnostics;
@@ -18,22 +20,25 @@ namespace SharpRemote
 		: IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly ConnectionId _connectionId;
 
 		private readonly IDebugger _debugger;
 		private readonly bool _enabledWithAttachedDebugger;
-		private readonly bool _useHeartbeatFailureDetection;
 		private readonly TimeSpan _failureInterval;
 		private readonly IHeartbeat _heartbeat;
 		private readonly TimeSpan _interval;
+		private readonly EndPoint _remoteEndPoint;
 		private readonly object _syncRoot;
 		private readonly Task _task;
-		private readonly ConnectionId _connectionId;
+		private readonly bool _useHeartbeatFailureDetection;
+		private readonly bool _allowRemoteHeartbeatDisable;
 
 		private bool _failureDetected;
 		private volatile bool _isDisposed;
 		private bool _isStarted;
 		private DateTime? _lastHeartbeat;
 		private long _numHeartbeats;
+		private volatile bool _remoteIsDebuggerAttached;
 
 		/// <summary>
 		///     Initializes this heartbeat monitor with the given heartbeat interface and
@@ -43,10 +48,12 @@ namespace SharpRemote
 		/// <param name="debugger"></param>
 		/// <param name="settings"></param>
 		/// <param name="connectionId"></param>
+		/// <param name="remoteEndPoint"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        IDebugger debugger,
 		                        HeartbeatSettings settings,
-		                        ConnectionId connectionId)
+		                        ConnectionId connectionId,
+		                        EndPoint remoteEndPoint)
 			: this(
 				heartbeat,
 				debugger,
@@ -54,7 +61,9 @@ namespace SharpRemote
 				settings.SkippedHeartbeatThreshold,
 				settings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached,
 				settings.UseHeartbeatFailureDetection,
-			connectionId)
+				settings.AllowRemoteHeartbeatDisable,
+				connectionId,
+				remoteEndPoint)
 		{
 		}
 
@@ -68,28 +77,38 @@ namespace SharpRemote
 		/// <param name="failureThreshold"></param>
 		/// <param name="enabledWithAttachedDebugger"></param>
 		/// <param name="useHeartbeatFailureDetection"></param>
+		/// <param name="allowRemoteHeartbeatDisable"></param>
 		/// <param name="connectionId"></param>
+		/// <param name="remoteEndPoint"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        IDebugger debugger,
 		                        TimeSpan heartBeatInterval,
 		                        int failureThreshold,
 		                        bool enabledWithAttachedDebugger,
 		                        bool useHeartbeatFailureDetection,
-		                        ConnectionId connectionId)
+		                        bool allowRemoteHeartbeatDisable,
+		                        ConnectionId connectionId,
+		                        EndPoint remoteEndPoint)
 		{
 			if (heartbeat == null) throw new ArgumentNullException("heartbeat");
 			if (debugger == null) throw new ArgumentNullException("debugger");
 			if (heartBeatInterval < TimeSpan.Zero) throw new ArgumentOutOfRangeException("heartBeatInterval");
 			if (failureThreshold < 1) throw new ArgumentOutOfRangeException("failureThreshold");
 			if (connectionId == ConnectionId.None) throw new ArgumentException("connectionId");
+			if (remoteEndPoint == null) throw new ArgumentNullException("remoteEndPoint");
 
 			_syncRoot = new object();
 			_heartbeat = heartbeat;
+			_heartbeat.RemoteDebuggerAttached += OnRemoteDebuggerAttached;
+			_heartbeat.RemoteDebuggerDetached += OnRemoteDebuggerDetached;
+
 			_debugger = debugger;
 			_interval = heartBeatInterval;
 			_enabledWithAttachedDebugger = enabledWithAttachedDebugger;
 			_useHeartbeatFailureDetection = useHeartbeatFailureDetection;
+			_allowRemoteHeartbeatDisable = allowRemoteHeartbeatDisable;
 			_connectionId = connectionId;
+			_remoteEndPoint = remoteEndPoint;
 			_failureInterval = heartBeatInterval +
 			                   TimeSpan.FromMilliseconds(failureThreshold*heartBeatInterval.TotalMilliseconds);
 			_task = new Task(MeasureHeartbeats, TaskCreationOptions.LongRunning);
@@ -159,6 +178,32 @@ namespace SharpRemote
 			get { return _failureDetected; }
 		}
 
+		/// <summary>
+		///     Whether or not a failure shall currently be reported - or ignored
+		/// </summary>
+		/// <returns>True when a failure shall be reported, false when it shall be ignored</returns>
+		public bool ReportFailures
+		{
+			get
+			{
+				if (!_useHeartbeatFailureDetection)
+					return false;
+
+				if (!_enabledWithAttachedDebugger)
+				{
+					//< Failures shall be ignored when a debugger is attached
+					if (_debugger.IsDebuggerAttached)
+						return false; //< A debugger is attached to THIS process
+
+					if (_remoteIsDebuggerAttached && _allowRemoteHeartbeatDisable)
+						return false; //< A debugger is attached to the process of the remote endpoint
+				}
+
+				//< Failures shall always be reported, even when the debugger is attached
+				return true;
+			}
+		}
+
 		public void Dispose()
 		{
 			lock (_syncRoot)
@@ -166,6 +211,46 @@ namespace SharpRemote
 				_isStarted = false;
 				_isDisposed = true;
 			}
+		}
+
+		private void OnRemoteDebuggerAttached()
+		{
+			var before = ReportFailures;
+			_remoteIsDebuggerAttached = true;
+
+			var message = new StringBuilder();
+			message.AppendFormat("A debugger has been attached to the remote endpoint's process: {0}", _remoteEndPoint);
+			message.Append(", heartbeat failures will ");
+			if (!ReportFailures)
+			{
+				message.Append(before != ReportFailures ? "now be ignored" : "still be ignored");
+			}
+			else
+			{
+				message.Append(before != ReportFailures ? "be reportd again" : "still be reported");
+			}
+
+			Log.Info(message);
+		}
+
+		private void OnRemoteDebuggerDetached()
+		{
+			var before = ReportFailures;
+			_remoteIsDebuggerAttached = false;
+
+			var message = new StringBuilder();
+			message.AppendFormat("A debugger has been detached from the remote endpoint's process: {0}", _remoteEndPoint);
+			message.Append(", heartbeat failures will ");
+			if (!ReportFailures)
+			{
+				message.Append(before != ReportFailures ? "now be ignored" : "still be ignored");
+			}
+			else
+			{
+				message.Append(before != ReportFailures ? "be reported again" : "still be reported");
+			}
+
+			Log.Info(message);
 		}
 
 		/// <summary>
@@ -260,7 +345,7 @@ namespace SharpRemote
 
 		private void ObserverException(Task task, object unused)
 		{
-			var exception = task.Exception;
+			AggregateException exception = task.Exception;
 			if (Log.IsDebugEnabled)
 			{
 				Log.DebugFormat("Task (finally) threw exception - ignoring it: {0}", exception);
@@ -281,10 +366,17 @@ namespace SharpRemote
 
 			try
 			{
-				if (!task.Wait(_failureInterval) &&
-				    (!_debugger.IsDebuggerAttached || _enabledWithAttachedDebugger))
+				if (!task.Wait(_failureInterval))
 				{
-					return false;
+					if (ReportFailures)
+					{
+						return false;
+					}
+
+					if (Log.IsInfoEnabled)
+					{
+						Log.InfoFormat("Ignoring heartbeat failure of remote endpoint '{0}'", _remoteEndPoint);
+					}
 				}
 			}
 			catch (AggregateException)
@@ -311,7 +403,7 @@ namespace SharpRemote
 			}
 
 			_failureDetected = true;
-			var fn = OnFailure;
+			Action<ConnectionId> fn = OnFailure;
 			if (fn != null)
 				fn(_connectionId);
 		}

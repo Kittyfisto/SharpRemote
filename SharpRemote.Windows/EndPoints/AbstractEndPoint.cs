@@ -1,25 +1,21 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.Serialization;
-
-
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Security;
-
-#endif
-#endif
+using log4net;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// Base class for any remoting end point.
+	/// 
 	/// </summary>
 	public abstract class AbstractEndPoint
 	{
+		protected static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		#region Static Methods
 
 #if !WINDOWS_PHONE_APP

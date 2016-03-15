@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -245,6 +246,26 @@ namespace SharpRemote.Hosting
 			get { return _endPoint.IsConnected; }
 		}
 
+		public int NumPendingMethodInvocations
+		{
+			get { return _endPoint.NumPendingMethodInvocations; }
+		}
+
+		public EndPointSettings EndPointSettings
+		{
+			get { return _endPoint.EndPointSettings; }
+		}
+
+		public LatencySettings LatencySettings
+		{
+			get { return _endPoint.LatencySettings; }
+		}
+
+		public HeartbeatSettings HeartbeatSettings
+		{
+			get { return _endPoint.HeartbeatSettings; }
+		}
+
 		public ConnectionId CurrentConnectionId
 		{
 			get { return _endPoint.CurrentConnectionId; }
@@ -263,6 +284,11 @@ namespace SharpRemote.Hosting
 		public EndPoint RemoteEndPoint
 		{
 			get { return _endPoint.RemoteEndPoint; }
+		}
+
+		public IEnumerable<IProxy> Proxies
+		{
+			get { return _endPoint.Proxies; }
 		}
 
 		/// <summary>

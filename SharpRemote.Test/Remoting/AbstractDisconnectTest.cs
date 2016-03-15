@@ -1,23 +1,25 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
-using log4net.Core;
 
-namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
+namespace SharpRemote.Test.Remoting
 {
-	[TestFixture]
-	public sealed class DisconnectTest
-		: AbstractTest
+	public abstract class AbstractDisconnectTest
+		: AbstractEndPointTest
 	{
+		protected abstract void Connect(IRemotingEndPoint client, EndPoint localEndPoint);
+		protected abstract void Connect(IRemotingEndPoint client, EndPoint localEndPoint, TimeSpan timeout);
+		protected abstract bool TryConnect(IRemotingEndPoint client, EndPoint localEndPoint, TimeSpan timeout);
+
 		[Test]
 		[Repeat(50)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
@@ -26,12 +28,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			)]
 		public void TestDisconnect1()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
-				server.Bind(IPAddress.Loopback);
-
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+				Bind(server);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
 
 				client.IsConnected.Should().BeTrue();
 				client.RemoteEndPoint.Should().Be(server.LocalEndPoint);
@@ -55,11 +56,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			)]
 		public void TestDisconnect2()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+				Bind(server);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
 
 				client.IsConnected.Should().BeTrue();
 				client.RemoteEndPoint.Should().Be(server.LocalEndPoint);
@@ -81,11 +82,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
 		public void TestDisconnect3()
 		{
-			using (var server = CreateServer("server"))
-			using (var client = CreateClient("client"))
+			using (var server = CreateServer(name: "server"))
+			using (var client = CreateClient(name: "client"))
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+				Bind(server);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
 				client.IsConnected.Should().BeTrue();
 				server.IsConnected.Should().BeTrue();
 
@@ -94,8 +95,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(2))
 					.Should().BeTrue();
 
-				client.TryConnect(server.LocalEndPoint, TimeSpan.FromSeconds(5))
-				      .Should().BeTrue();
+				TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5))
+					  .Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 				WaitFor(() => server.IsConnected, TimeSpan.FromMilliseconds(500)).Should().BeTrue();
 			}
@@ -109,11 +110,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			)]
 		public void TestDisconnect4()
 		{
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+				Bind(server);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
 
 				var clients = new List<EndPoint>();
 				var servers = new List<EndPoint>();
@@ -142,27 +143,27 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			const int numMethodCalls = 1000;
 			var timeout = TimeSpan.FromSeconds(5);
 
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+				Bind(server);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
 
 				var subject = new Mock<IVoidMethod>();
 				server.CreateServant(1, subject.Object);
 				var proxy = client.CreateProxy<IVoidMethod>(1);
 
 				var tasks = Enumerable.Range(0, numTasks)
-				                      .Select(x => Task.Factory.StartNew(() =>
-					                      {
-						                      for (int n = 0; n < numMethodCalls; ++n)
-						                      {
-							                      proxy.DoStuff();
+									  .Select(x => Task.Factory.StartNew(() =>
+									  {
+										  for (int n = 0; n < numMethodCalls; ++n)
+										  {
+											  proxy.DoStuff();
 
-							                      if (n == numMethodCalls/2)
-								                      server.Disconnect();
-						                      }
-					                      }, TaskCreationOptions.LongRunning)).ToArray();
+											  if (n == numMethodCalls / 2)
+												  server.Disconnect();
+										  }
+									  }, TaskCreationOptions.LongRunning)).ToArray();
 
 				foreach (var task in tasks)
 				{
@@ -170,12 +171,12 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					try
 					{
 						task.Wait(timeout)
-						    .Should().BeTrue("Because the task certainly shouldn't have deadlocked");
+							.Should().BeTrue("Because the task certainly shouldn't have deadlocked");
 					}
 					catch (AggregateException e)
 					{
 						thrown = (e.InnerException is NotConnectedException ||
-						          e.InnerException is ConnectionLostException);
+								  e.InnerException is ConnectionLostException);
 						if (!thrown)
 							throw;
 					}
@@ -199,11 +200,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			const int numMethodCalls = 1000;
 			var timeout = TimeSpan.FromSeconds(15);
 
-			using (var client = CreateClient("Rep#1"))
-			using (var server = CreateServer("Rep#2"))
+			using (var client = CreateClient(name: "Rep#1"))
+			using (var server = CreateServer(name: "Rep#2"))
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint, TimeSpan.FromSeconds(5));
+				Bind(server);
+				Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(5));
 				var subject = new Mock<IReturnsTask>();
 				subject.Setup(x => x.DoStuff()).Returns(() => Task.FromResult(1));
 
@@ -211,17 +212,17 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 				var proxy = client.CreateProxy<IReturnsTask>(1);
 
 				var tasks = Enumerable.Range(0, numTasks)
-				                      .Select(x => Task.Factory.StartNew(() =>
-					                      {
-						                      for (int n = 0; n < numMethodCalls; ++n)
-						                      {
-							                      proxy.DoStuff()
-							                           .Wait();
+									  .Select(x => Task.Factory.StartNew(() =>
+									  {
+										  for (int n = 0; n < numMethodCalls; ++n)
+										  {
+											  proxy.DoStuff()
+												   .Wait();
 
-							                      if (n == numMethodCalls/2)
-								                      server.Disconnect();
-						                      }
-					                      }, TaskCreationOptions.LongRunning)).ToArray();
+											  if (n == numMethodCalls / 2)
+												  server.Disconnect();
+										  }
+									  }, TaskCreationOptions.LongRunning)).ToArray();
 
 				foreach (var task in tasks)
 				{
@@ -229,13 +230,13 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 					try
 					{
 						task.Wait(timeout)
-						    .Should().BeTrue("Because the task certainly shouldn't have deadlocked");
+							.Should().BeTrue("Because the task certainly shouldn't have deadlocked");
 					}
 					catch (AggregateException e)
 					{
 						e = e.Flatten();
 						e.InnerExceptions.Any(x => x is ConnectionLostException ||
-						                           x is NotConnectedException).Should().BeTrue();
+												   x is NotConnectedException).Should().BeTrue();
 						thrown = true;
 					}
 
@@ -258,11 +259,11 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			using (var client = CreateClient())
 			using (var server = CreateServer())
 			{
-				server.Bind(IPAddress.Loopback);
+				Bind(server);
 
 				var ids = new List<ConnectionId>();
 				client.OnDisconnected += (unused, id) => ids.Add(id);
-				client.Connect(server.LocalEndPoint);
+				Connect(client, server.LocalEndPoint);
 				ids.Should().BeEmpty();
 
 				client.Disconnect();
@@ -273,7 +274,7 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 
 				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(1)).Should().BeTrue();
 
-				client.Connect(server.LocalEndPoint);
+				Connect(client, server.LocalEndPoint);
 				client.Disconnect();
 				ids.Should().Equal(new[]
 					{
@@ -292,8 +293,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			using (var client = CreateClient())
 			using (var server = CreateServer())
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint);
+				Bind(server);
+				Connect(client, server.LocalEndPoint);
 
 				var proxy = client.CreateProxy<IVoidMethodAsyncInvokeSerialAttribute>(1);
 				var subject = new BlocksABit();
@@ -340,8 +341,8 @@ namespace SharpRemote.Test.Remoting.SocketRemotingEndPoint
 			using (var client = CreateClient())
 			using (var server = CreateServer())
 			{
-				server.Bind(IPAddress.Loopback);
-				client.Connect(server.LocalEndPoint);
+				Bind(server);
+				Connect(client, server.LocalEndPoint);
 
 				var proxy = server.CreateProxy<IVoidMethodAsyncInvokeSerialAttribute>(1);
 				var subject = new BlocksABit();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -19,11 +20,13 @@ namespace SharpRemote.Test.Hosting
 			_heartbeat = new Mock<IHeartbeat>();
 			_debugger = new Mock<IDebugger>();
 			_connectionId = new ConnectionId(2);
+			_remoteEndPoint = new IPEndPoint(IPAddress.Loopback, 42);
 		}
 
 		private Mock<IHeartbeat> _heartbeat;
 		private Mock<IDebugger> _debugger;
 		private ConnectionId _connectionId;
+		private EndPoint _remoteEndPoint;
 
 		private void TestFailure(IDebugger debugger, bool enabledWithAttachedDebugger)
 		{
@@ -47,7 +50,7 @@ namespace SharpRemote.Test.Hosting
 					debugger,
 					TimeSpan.FromSeconds(0.01),
 					1,
-					enabledWithAttachedDebugger, true, _connectionId))
+					enabledWithAttachedDebugger, true, true, _connectionId, _remoteEndPoint))
 			{
 				bool failureDetected = false;
 				ConnectionId actualId = ConnectionId.None;
@@ -78,7 +81,9 @@ namespace SharpRemote.Test.Hosting
 			                                   4,
 			                                   true,
 			                                   true,
-			                                   _connectionId);
+			                                   true,
+			                                   _connectionId,
+			                                   _remoteEndPoint);
 			monitor.Interval.Should().Be(TimeSpan.FromSeconds(2));
 			monitor.FailureInterval.Should()
 			       .Be(TimeSpan.FromSeconds(10),
@@ -91,7 +96,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying a null heartbeat interface is not allowed")]
 		public void TestCtor2()
 		{
-			new Action(() => new HeartbeatMonitor(null, Debugger.Instance, TimeSpan.FromSeconds(1), 2, true, true, _connectionId))
+			new Action(() => new HeartbeatMonitor(null, Debugger.Instance, TimeSpan.FromSeconds(1), 2, true, true, true, _connectionId, _remoteEndPoint))
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Value cannot be null.\r\nParameter name: heartbeat");
 		}
@@ -100,7 +105,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying a null debugger interface is not allowed")]
 		public void TestCtor3()
 		{
-			new Action(() => new HeartbeatMonitor(_heartbeat.Object, null, TimeSpan.FromSeconds(1), 2, true, true, _connectionId))
+			new Action(() => new HeartbeatMonitor(_heartbeat.Object, null, TimeSpan.FromSeconds(1), 2, true, true, true, _connectionId, _remoteEndPoint))
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Value cannot be null.\r\nParameter name: debugger");
 		}
@@ -109,7 +114,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying a negative heartbeat interval is not allowed")]
 		public void TestCtor4()
 		{
-			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(-1), 2, true, true, _connectionId))
+			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(-1), 2, true, true, true, _connectionId, _remoteEndPoint))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: heartBeatInterval");
 		}
@@ -118,7 +123,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that specifying less than 1 skipped heartbeat as a failure threshold is not allowed")]
 		public void TestCtor5()
 		{
-			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(2), 0, true, true, _connectionId))
+			new Action(() => new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(2), 0, true, true, true, _connectionId, _remoteEndPoint))
 				.ShouldThrow<ArgumentException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureThreshold");
 		}
@@ -182,7 +187,7 @@ namespace SharpRemote.Test.Hosting
 			HeartbeatMonitor monitor;
 			using (
 				monitor =
-				new HeartbeatMonitor(_heartbeat.Object, _debugger.Object, TimeSpan.FromSeconds(0.01), 1, enabledWithAttachedDebugger, true, _connectionId))
+				new HeartbeatMonitor(_heartbeat.Object, _debugger.Object, TimeSpan.FromSeconds(0.01), 1, enabledWithAttachedDebugger, true, true, _connectionId, _remoteEndPoint))
 			{
 				bool failureDetected = false;
 				ConnectionId actualId = ConnectionId.None;
@@ -219,7 +224,7 @@ namespace SharpRemote.Test.Hosting
 
 			using (var heartbeatFailure = new ManualResetEvent(false))
 			using (
-				var monitor = new HeartbeatMonitor(_heartbeat.Object, _debugger.Object, settings, _connectionId))
+				var monitor = new HeartbeatMonitor(_heartbeat.Object, _debugger.Object, settings, _connectionId, _remoteEndPoint))
 			{
 				_heartbeat.Setup(x => x.Beat())
 							.Returns(() =>
@@ -251,7 +256,7 @@ namespace SharpRemote.Test.Hosting
 		public void TestDispose()
 		{
 			HeartbeatMonitor monitor;
-			using (monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, new HeartbeatSettings(), _connectionId))
+			using (monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, new HeartbeatSettings(), _connectionId, _remoteEndPoint))
 			{
 				monitor.IsDisposed.Should().BeFalse();
 
@@ -266,7 +271,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that Start() sets the IsStarted property to true")]
 		public void TestStart()
 		{
-			using (var monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, new HeartbeatSettings(), _connectionId))
+			using (var monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, new HeartbeatSettings(), _connectionId, _remoteEndPoint))
 			{
 				monitor.IsStarted.Should().BeFalse();
 				monitor.Start();
@@ -278,7 +283,7 @@ namespace SharpRemote.Test.Hosting
 		[Description("Verifies that Stop() sets the IsStarted property to false")]
 		public void TestStop()
 		{
-			using (var monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, new HeartbeatSettings(), _connectionId))
+			using (var monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, new HeartbeatSettings(), _connectionId, _remoteEndPoint))
 			{
 				monitor.Start();
 				monitor.IsStarted.Should().BeTrue();
@@ -299,7 +304,7 @@ namespace SharpRemote.Test.Hosting
 			          .Returns(() => Task.Factory.StartNew(() => { Interlocked.Increment(ref actualNumHeartbeats); }));
 
 			HeartbeatMonitor monitor;
-			using (monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(0.1), 1, true, true, _connectionId))
+			using (monitor = new HeartbeatMonitor(_heartbeat.Object, Debugger.Instance, TimeSpan.FromSeconds(0.1), 1, true, true, true, _connectionId, _remoteEndPoint))
 			{
 				bool failureDetected = false;
 				monitor.OnFailure += unuse => failureDetected = true;

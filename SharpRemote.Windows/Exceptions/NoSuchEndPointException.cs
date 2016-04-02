@@ -26,7 +26,7 @@ namespace SharpRemote
 #endif
 
 		/// <summary>
-		/// 
+		/// Initializes a new instance of this exception.
 		/// </summary>
 		/// <param name="message"></param>
 		/// <param name="innerException"></param>
@@ -35,7 +35,7 @@ namespace SharpRemote
 		{}
 
 		/// <summary>
-		/// Ctor for deserialization.
+		/// Initializes a new instance of this exception.
 		/// </summary>
 		public NoSuchEndPointException()
 		{}

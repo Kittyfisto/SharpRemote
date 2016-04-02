@@ -80,6 +80,13 @@ namespace SharpRemote
 		}
 #endif
 #endif
+
+		/// <summary>
+		/// Initializes a new instance of this exception.
+		/// </summary>
+		public UnserializableException()
+		{}
+
 		/// <summary>
 		/// The <see cref="Exception.Message"/> of the
 		/// original exception that could not be serialized.

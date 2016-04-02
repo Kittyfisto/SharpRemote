@@ -30,6 +30,13 @@ namespace SharpRemote.Exceptions
 		}
 #endif
 #endif
+		/// <summary>
+		/// Initializes a new instance of this exception.
+		/// </summary>
+		public NoSuchApplicationException()
+		{
+			
+		}
 
 		/// <summary>
 		/// Initializes a new instance of this exception with the application name in question and the

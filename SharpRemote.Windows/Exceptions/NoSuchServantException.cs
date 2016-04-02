@@ -79,5 +79,13 @@ namespace SharpRemote
 					numProxies))
 		{
 		}
+
+		/// <summary>
+		/// Initializes a new instance of this exception.
+		/// </summary>
+		public NoSuchServantException()
+		{
+
+		}
 	}
 }

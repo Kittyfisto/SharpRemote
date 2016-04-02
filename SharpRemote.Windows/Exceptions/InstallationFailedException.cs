@@ -26,7 +26,7 @@ namespace SharpRemote
 #endif
 #endif
 		/// <summary>
-		/// 
+		/// Initializes a new instance of this exception.
 		/// </summary>
 		public InstallationFailedException()
 		{

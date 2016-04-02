@@ -25,7 +25,7 @@ namespace SharpRemote.Exceptions
 #endif
 
 		/// <summary>
-		/// 
+		/// Initializes a new instance of this exception.
 		/// </summary>
 		public GrainIdRangeExhaustedException()
 			: base("The range of available grain ids has been exhausted - no more can be generated")

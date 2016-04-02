@@ -34,7 +34,7 @@ namespace SharpRemote.Exceptions
 		{}
 
 		/// <summary>
-		/// 
+		/// Initializes a new instance of this exception.
 		/// </summary>
 		public SerializationException()
 		{}

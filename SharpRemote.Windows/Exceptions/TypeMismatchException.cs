@@ -38,7 +38,7 @@ namespace SharpRemote
 		{}
 
 		/// <summary>
-		/// 
+		/// Initializes a new instance of this exception.
 		/// </summary>
 		public TypeMismatchException()
 		{}

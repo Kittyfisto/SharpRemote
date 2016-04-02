@@ -24,21 +24,23 @@ namespace SharpRemote.Test.Remoting.Sockets
 			}
 		}
 
-		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null)
+		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
 													latencySettings: latencySettings,
-													heartbeatSettings: heartbeatSettings);
+													heartbeatSettings: heartbeatSettings,
+													networkServiceDiscoverer: networkServiceDiscoverer);
 		}
 
-		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null)
+		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new SocketRemotingEndPointServer(name,
 													clientAuthenticator,
 													serverAuthenticator, null,
 													latencySettings: latencySettings,
 													endPointSettings: endPointSettings,
-													heartbeatSettings: heartbeatSettings);
+													heartbeatSettings: heartbeatSettings,
+													networkServiceDiscoverer: networkServiceDiscoverer);
 		}
 
 		[Test]
@@ -105,8 +107,8 @@ namespace SharpRemote.Test.Remoting.Sockets
 		public void TestConnect2()
 		{
 			using (var discoverer = new NetworkServiceDiscoverer())
-			using (var client = CreateClient(name: "Rep1"))
-			using (var server = CreateServer(name: "Rep2"))
+			using (var client = CreateClient(name: "Rep1", networkServiceDiscoverer: discoverer))
+			using (var server = CreateServer(name: "Rep2", networkServiceDiscoverer: discoverer))
 			{
 				Bind(server);
 

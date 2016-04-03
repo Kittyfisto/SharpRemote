@@ -17,7 +17,7 @@ namespace SharpRemote
 	public sealed class SocketRemotingEndPointClient
 		: AbstractIPSocketRemotingEndPoint
 	{
-		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly NetworkServiceDiscoverer _networkServiceDiscoverer;
 

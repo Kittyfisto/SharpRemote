@@ -52,27 +52,6 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Description(
-			"Verifies that Connect() cannot establish a connection with a non-existant endpoint and returns in the specified timeout"
-			)]
-		public void TestConnect3()
-		{
-			using (var rep = CreateClient())
-			{
-				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
-				new Action(
-					() => new Action(() => Connect(rep, EndPoint1, timeout))
-							  .ShouldThrow<NoSuchIPEndPointException>()
-							  .WithMessage("Unable to establish a connection with the given endpoint after 100 ms: 127.0.0.1:50012"))
-					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(2));
-
-				const string reason = "because no successfull connection could be established";
-				rep.IsConnected.Should().BeFalse(reason);
-				rep.RemoteEndPoint.Should().BeNull(reason);
-			}
-		}
-
-		[Test]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that Connect() cannot be called on an already connected endpoint")]
 		public void TestConnect4()
@@ -134,22 +113,6 @@ namespace SharpRemote.Test.Remoting
 					() => Connect(rep, EndPoint2, TimeSpan.FromSeconds(-1)))
 					.ShouldThrow<ArgumentOutOfRangeException>()
 					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
-			}
-		}
-
-		[Test]
-		[Description(
-			"Verifies that Connect() throws when the other socket doesn't respond with the proper greeting message in time")]
-		public void TestConnect8()
-		{
-			using (var rep = CreateClient())
-			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
-			{
-				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
-				socket.Listen(1);
-				socket.BeginAccept(ar => socket.EndAccept(ar), null);
-				new Action(() => Connect(rep, EndPoint3))
-					.ShouldThrow<AuthenticationException>();
 			}
 		}
 
@@ -293,31 +256,6 @@ namespace SharpRemote.Test.Remoting
 					.ShouldThrow<HandshakeException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
-			}
-		}
-
-		[Test]
-		[Description("Verifies that when Connect throws before the timeout is reached, the exception is handled gracefully (and not thrown on the finalizer thread)")]
-		public void TestConnect18()
-		{
-			using (var client = CreateClient(name: "Rep1"))
-			{
-				var exceptions = new List<Exception>();
-				TaskScheduler.UnobservedTaskException += (sender, args) =>
-				{
-					exceptions.Add(args.Exception);
-					args.SetObserved();
-				};
-
-				new Action(() => Connect(client, EndPoint5, TimeSpan.FromMilliseconds(1)))
-					.ShouldThrow<NoSuchIPEndPointException>();
-
-				Thread.Sleep(2000);
-
-				GC.Collect();
-				GC.WaitForPendingFinalizers();
-
-				exceptions.Should().BeEmpty();
 			}
 		}
 

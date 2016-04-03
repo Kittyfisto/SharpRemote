@@ -1,8 +1,11 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Threading;
+using System.Text;
+using System.Threading.Tasks;
+using SharpRemote.Extensions;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -18,11 +21,8 @@ namespace SharpRemote
 	public abstract class AbstractIPSocketRemotingEndPoint
 		: AbstractBinaryStreamEndPoint<Socket>
 	{
-		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private int _previousConnectionId;
-		private Thread _readThread;
-		private Thread _writeThread;
 		private IPEndPoint _remoteEndPoint;
 		private IPEndPoint _localEndPoint;
 
@@ -46,7 +46,6 @@ namespace SharpRemote
 			       latencySettings,
 			       endPointSettings)
 		{
-			_previousConnectionId = 0;
 		}
 
 		/// <summary>
@@ -106,7 +105,7 @@ namespace SharpRemote
 			return true;
 		}
 
-		protected override bool SynchronizedRead(Socket socket, byte[] buffer, System.TimeSpan timeout, out SocketError err)
+		protected override bool SynchronizedRead(Socket socket, byte[] buffer, TimeSpan timeout, out SocketError err)
 		{
 			DateTime start = DateTime.Now;
 			while (socket.Available < buffer.Length)
@@ -174,41 +173,68 @@ namespace SharpRemote
 			socket.Disconnect(false);
 		}
 
-		protected override ConnectionId OnHandshakeSucceeded(Socket socket)
+		protected override void DisposeAfterDisconnect(Socket socket)
 		{
-			lock (SyncRoot)
-			{
-				// There is possibly still a possibility that the _pendingMethodInvocations dictionary
-				// contains some entries, EVEN though it's cleared upon being disconnected.
-				// For the sake of stability, we'll clear it here again, BEFORE starting
-				// the read/write threads, so we most certainly start with a clean slate (once again).
-				ClearPendingMethodInvocations();
-
-				Socket = socket;
-				_remoteEndPoint = (IPEndPoint)socket.RemoteEndPoint;
-				CurrentConnectionId = new ConnectionId(Interlocked.Increment(ref _previousConnectionId));
-				CancellationTokenSource = new CancellationTokenSource();
-
-				var args = new ThreadArgs(socket, CancellationTokenSource.Token, CurrentConnectionId);
-
-				_readThread = new Thread(ReadLoop)
-					{
-						Name = string.Format("EndPoint '{0}' Socket Reading", Name),
-						IsBackground = true,
-					};
-				_readThread.Start(args);
-
-				_writeThread = new Thread(WriteLoop)
-					{
-						Name = string.Format("EndPoint '{0}' Socket Writing", Name),
-						IsBackground = true,
-					};
-				_writeThread.Start(args);
-
-				Log.InfoFormat("{0}: Connected to {1}", Name, _remoteEndPoint);
-
-				return CurrentConnectionId;
-			}
+			socket.TryDispose();
 		}
+
+		/// <summary>
+		///     Sends a goodbye message over the socket.
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="rpcId"></param>
+		/// <param name="waitTime"></param>
+		/// <returns>True when the goodbye message could be sent, false otherwise</returns>
+		protected override bool SendGoodbye(Socket socket, long rpcId, TimeSpan waitTime)
+		{
+			var task = new Task(() =>
+			{
+				try
+				{
+					const int messageSize = 9;
+
+					using (var stream = new MemoryStream())
+					using (var writer = new BinaryWriter(stream, Encoding.UTF8))
+					{
+						writer.Write(messageSize);
+						writer.Write(rpcId);
+						writer.Write((byte)MessageType.Goodbye);
+
+						writer.Flush();
+						stream.Position = 0;
+
+						Send(socket, stream.GetBuffer(), 0, messageSize + 4);
+					}
+				}
+				catch (SocketException)
+				{
+				}
+				catch (IOException)
+				{
+
+				}
+				catch (ObjectDisposedException)
+				{
+				}
+			});
+			task.ContinueWith(t =>
+			{
+				if (t.IsFaulted)
+				{
+					Log.ErrorFormat("Caught unhandled exception while sending goodbye: {0}", t.Exception);
+				}
+			});
+			task.Start();
+
+			if (!task.Wait(waitTime))
+			{
+				Log.WarnFormat("Could not send goodbye message in {0}s, performing hard disconnect",
+							   waitTime.TotalSeconds);
+				return false;
+			}
+
+			return true;
+		}
+
 	}
 }

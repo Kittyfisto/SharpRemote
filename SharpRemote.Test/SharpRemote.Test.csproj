@@ -76,11 +76,13 @@
     <Compile Include="LogItem.cs" />
     <Compile Include="PendingMethodsQueueTest.cs" />
     <Compile Include="AbstractTest.cs" />
+    <Compile Include="Remoting\AbstractAcceptanceTest.cs" />
     <Compile Include="Remoting\AbstractConnectTest.cs" />
     <Compile Include="Remoting\AbstractDisconnectTest.cs" />
     <Compile Include="Remoting\AbstractEndPointTest.cs" />
     <Compile Include="Remoting\AbstractEndPointTestTest.cs" />
     <Compile Include="Remoting\AbstractTryConnectTest.cs" />
+    <Compile Include="Remoting\NamePipe\AcceptanceTest.cs" />
     <Compile Include="Remoting\NamePipe\ConnectTest.cs" />
     <Compile Include="Remoting\Sockets\ConnectTest.cs" />
     <Compile Include="Remoting\Sockets\DisconnectTest.cs" />

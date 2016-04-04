@@ -6,12 +6,14 @@ using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
 
-namespace SharpRemote.EndPoints
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// NOT FINISHED.
 	/// </summary>
-	public sealed class BluetoothRemotingEndPoint
+	internal sealed class BluetoothRemotingEndPoint
 		: AbstractBinaryStreamEndPoint<IDisposable>
 	{
 		private BluetoothEndPoint _localEndPoint;
@@ -105,17 +107,22 @@ namespace SharpRemote.EndPoints
 			throw new NotImplementedException();
 		}
 
+		protected override void DisposeAfterDisconnect(IDisposable socket)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override bool SendGoodbye(IDisposable socket, long waitTime, TimeSpan timeSpan)
+		{
+			throw new NotImplementedException();
+		}
+
 		protected override void Send(IDisposable socket, byte[] data, int offset, int size)
 		{
 			throw new NotImplementedException();
 		}
 
 		protected override EndPoint GetRemoteEndPointOf(IDisposable socket)
-		{
-			throw new NotImplementedException();
-		}
-
-		protected override ConnectionId OnHandshakeSucceeded(IDisposable socket)
 		{
 			throw new NotImplementedException();
 		}

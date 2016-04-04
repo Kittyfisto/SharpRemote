@@ -158,6 +158,14 @@ namespace SharpRemote
 
 		#endregion
 
+		#region Reading / Writing
+
+		private Thread _readThread;
+		private Thread _writeThread;
+
+		#endregion
+
+		private int _previousConnectionId;
 		private readonly string _name;
 		private readonly Serializer _serializer;
 		private readonly object _syncRoot;
@@ -189,8 +197,9 @@ namespace SharpRemote
 					                                      "The skipped heartbeat threshold must be greater than zero");
 			}
 
+			_previousConnectionId = 0;
 			_idGenerator = idGenerator;
-			_name = name ?? "<Unnamed>";
+			_name = name ?? "Unnamed";
 			_syncRoot = new object();
 
 			_servantsById = new Dictionary<ulong, IServant>();
@@ -919,7 +928,7 @@ namespace SharpRemote
 						// or there's a bug in its implementation - either way this method may
 						// throw a NullReferenceException from inside Disconnect.
 					}
-					socket.TryDispose();
+					DisposeAfterDisconnect(socket);
 				}
 
 				CurrentConnectionId = ConnectionId.None;
@@ -934,6 +943,7 @@ namespace SharpRemote
 		}
 
 		protected abstract void DisconnectTransport(TTransport socket, bool reuseSocket);
+		protected abstract void DisposeAfterDisconnect(TTransport socket);
 
 		protected void ClearPendingMethodInvocations()
 		{
@@ -1467,51 +1477,11 @@ namespace SharpRemote
 		/// <returns>True when the goodbye message could be sent, false otherwise</returns>
 		private bool SendGoodbye(TTransport socket, TimeSpan waitTime)
 		{
-			var task = new Task(() =>
-				{
-					try
-					{
-						long rpcId = _nextRpcId++;
-						const int messageSize = 9;
-
-						using (var stream = new MemoryStream())
-						using (var writer = new BinaryWriter(stream, Encoding.UTF8))
-						{
-							writer.Write(messageSize);
-							writer.Write(rpcId);
-							writer.Write((byte) MessageType.Goodbye);
-
-							writer.Flush();
-							stream.Position = 0;
-
-							Send(socket, stream.GetBuffer(), 0, messageSize + 4);
-						}
-					}
-					catch (SocketException)
-					{
-					}
-					catch (ObjectDisposedException)
-					{
-					}
-				});
-			task.ContinueWith(t =>
-				{
-					if (t.IsFaulted)
-					{
-						Log.ErrorFormat("Caught unhandled exception while sending goodbye: {0}", t.Exception);
-					}
-				});
-			task.Start();
-
-			if (!task.Wait(waitTime))
-			{
-				Log.WarnFormat("Could not send goodbye message in {0}s, performing hard disconnect",
-				               waitTime.TotalSeconds);
-				return false;
-			}
-
-			return true;
+			long rpcId = _nextRpcId++;
+			return SendGoodbye(socket, rpcId, waitTime);
 		}
+
+		protected abstract bool SendGoodbye(TTransport socket, long waitTime, TimeSpan timeSpan);
 
 		protected abstract void Send(TTransport socket, byte[] data, int offset, int size);
 
@@ -1577,9 +1547,9 @@ namespace SharpRemote
 		///     Performs the authentication between client & server (if necessary) from the server-side.
 		/// </summary>
 		/// <param name="socket"></param>
-		protected ConnectionId PerformIncomingHandshake(TTransport socket)
+		/// <param name="remoteEndPoint"></param>
+		protected ConnectionId PerformIncomingHandshake(TTransport socket, EndPoint remoteEndPoint)
 		{
-			EndPoint remoteEndPoint = GetRemoteEndPointOf(socket);
 			TimeSpan timeout = TimeSpan.FromMinutes(1);
 			string messageType;
 			string message;
@@ -1637,7 +1607,7 @@ namespace SharpRemote
 			}
 
 			_pendingMethodCalls.IsConnected = true;
-			ConnectionId connectionId = OnHandshakeSucceeded(socket);
+			ConnectionId connectionId = OnHandshakeSucceeded(socket, remoteEndPoint);
 			WriteMessage(socket, HandshakeSucceedMessage);
 			return connectionId;
 		}
@@ -1674,6 +1644,8 @@ namespace SharpRemote
 			{
 				if (_clientAuthenticator == null)
 				{
+					Log.ErrorFormat("Server requires client to authorize itself, but not authenticator was provided");
+
 					errorType = ErrorType.AuthenticationRequired;
 					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
 					currentConnectionId = ConnectionId.None;
@@ -1681,6 +1653,8 @@ namespace SharpRemote
 				}
 
 				string challenge = message;
+				Log.DebugFormat("Server requires client to authorize itself, trying to meet challenge '{0}'", challenge);
+
 				// Upon establishing a connection, we try to authenticate the ourselves
 				// against the server by answering his response.
 				string response = _clientAuthenticator.CreateResponse(challenge);
@@ -1724,6 +1698,10 @@ namespace SharpRemote
 						);
 				currentConnectionId = ConnectionId.None;
 				return false;
+			}
+			else
+			{
+				Log.Debug("Server requires no client-side authentication");
 			}
 
 			if (_serverAuthenticator != null)
@@ -1796,7 +1774,7 @@ namespace SharpRemote
 			}
 
 			_pendingMethodCalls.IsConnected = true;
-			currentConnectionId = OnHandshakeSucceeded(socket);
+			currentConnectionId = OnHandshakeSucceeded(socket, remoteEndPoint);
 			errorType = ErrorType.Handshake;
 			error = null;
 			return true;
@@ -1806,7 +1784,43 @@ namespace SharpRemote
 		///     Is called when the handshake for the newly incoming message succeeds.
 		/// </summary>
 		/// <param name="socket"></param>
-		protected abstract ConnectionId OnHandshakeSucceeded(TTransport socket);
+		/// <param name="remoteEndPoint"></param>
+		protected ConnectionId OnHandshakeSucceeded(TTransport socket, EndPoint remoteEndPoint)
+		{
+			lock (SyncRoot)
+			{
+				// There is possibly still a possibility that the _pendingMethodInvocations dictionary
+				// contains some entries, EVEN though it's cleared upon being disconnected.
+				// For the sake of stability, we'll clear it here again, BEFORE starting
+				// the read/write threads, so we most certainly start with a clean slate (once again).
+				ClearPendingMethodInvocations();
+
+				Socket = socket;
+				InternalRemoteEndPoint = remoteEndPoint;
+				CurrentConnectionId = new ConnectionId(Interlocked.Increment(ref _previousConnectionId));
+				CancellationTokenSource = new CancellationTokenSource();
+
+				var args = new ThreadArgs(socket, CancellationTokenSource.Token, CurrentConnectionId);
+
+				_readThread = new Thread(ReadLoop)
+				{
+					Name = string.Format("EndPoint '{0}' Socket Reading", Name),
+					IsBackground = true,
+				};
+				_readThread.Start(args);
+
+				_writeThread = new Thread(WriteLoop)
+				{
+					Name = string.Format("EndPoint '{0}' Socket Writing", Name),
+					IsBackground = true,
+				};
+				_writeThread.Start(args);
+
+				Log.InfoFormat("{0}: Connected to {1}", Name, remoteEndPoint);
+
+				return CurrentConnectionId;
+			}
+		}
 
 		public override string ToString()
 		{

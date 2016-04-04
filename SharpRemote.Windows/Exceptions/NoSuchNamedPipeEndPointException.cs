@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// This exception is thrown when a connection to a non-existing / unreachable endpoint is established.
 	/// </summary>
 	[Serializable]
-	public sealed class NoSuchNamedPipeEndPointException
+	internal sealed class NoSuchNamedPipeEndPointException
 		: SharpRemoteException
 	{
 #if !WINDOWS_PHONE_APP
@@ -22,7 +22,11 @@ namespace SharpRemote
 		public NoSuchNamedPipeEndPointException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
-			EndPoint = new NamedPipeEndPoint(info.GetString("EndPoint"));
+			var type = (NamedPipeEndPoint.PipeType) info.GetByte("Type");
+			if (type != NamedPipeEndPoint.PipeType.None)
+			{
+				EndPoint = new NamedPipeEndPoint(info.GetString("EndPoint"), type);
+			}
 			EndPointName = info.GetString("EndPointName");
 		}
 
@@ -30,6 +34,7 @@ namespace SharpRemote
 		{
 			base.GetObjectData(info, context);
 			info.AddValue("EndPoint", EndPoint != null ? EndPoint.PipeName : null);
+			info.AddValue("Type", EndPoint != null ? (byte) EndPoint.Type : (byte)NamedPipeEndPoint.PipeType.None);
 			info.AddValue("EndPointName", EndPointName);
 		}
 #endif

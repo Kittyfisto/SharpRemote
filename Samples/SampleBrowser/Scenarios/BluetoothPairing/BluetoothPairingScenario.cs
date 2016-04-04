@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using System.Windows;
-using SharpRemote.EndPoints;
+using SharpRemote;
 
 namespace SampleBrowser.Scenarios.BluetoothPairing
 {

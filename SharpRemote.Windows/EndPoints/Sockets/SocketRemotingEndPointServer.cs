@@ -17,7 +17,7 @@ namespace SharpRemote
 	public sealed class SocketRemotingEndPointServer
 		: AbstractIPSocketRemotingEndPoint
 	{
-		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly NetworkServiceDiscoverer _networkServiceDiscoverer;
 
@@ -147,7 +147,7 @@ namespace SharpRemote
 				{
 					Log.DebugFormat("Incoming connection from '{0}', starting handshake...", socket.RemoteEndPoint);
 
-					var connectionId = PerformIncomingHandshake(socket);
+					var connectionId = PerformIncomingHandshake(socket, socket.RemoteEndPoint);
 					FireOnConnected(socket.RemoteEndPoint, connectionId);
 
 					success = true;

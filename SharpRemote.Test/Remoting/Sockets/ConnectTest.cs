@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.EndPoints;
+using SharpRemote.Exceptions;
 using SharpRemote.ServiceDiscovery;
 
 namespace SharpRemote.Test.Remoting.Sockets
@@ -127,6 +131,68 @@ namespace SharpRemote.Test.Remoting.Sockets
 				client.RemoteEndPoint.Should().Be(server.LocalEndPoint);
 
 				server.IsConnected.Should().BeTrue();
+			}
+		}
+
+		[Test]
+		[Description(
+			"Verifies that Connect() cannot establish a connection with a non-existant endpoint and returns in the specified timeout"
+			)]
+		public void TestConnect3()
+		{
+			using (var rep = CreateClient())
+			{
+				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
+				new Action(
+					() => new Action(() => Connect(rep, EndPoint1, timeout))
+							  .ShouldThrow<NoSuchIPEndPointException>()
+							  .WithMessage("Unable to establish a connection with the given endpoint after 100 ms: 127.0.0.1:50012"))
+					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(2));
+
+				const string reason = "because no successfull connection could be established";
+				rep.IsConnected.Should().BeFalse(reason);
+				rep.RemoteEndPoint.Should().BeNull(reason);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that when Connect throws before the timeout is reached, the exception is handled gracefully (and not thrown on the finalizer thread)")]
+		public void TestConnect18()
+		{
+			using (var client = CreateClient(name: "Rep1"))
+			{
+				var exceptions = new List<Exception>();
+				TaskScheduler.UnobservedTaskException += (sender, args) =>
+				{
+					exceptions.Add(args.Exception);
+					args.SetObserved();
+				};
+
+				new Action(() => Connect(client, EndPoint5, TimeSpan.FromMilliseconds(1)))
+					.ShouldThrow<NoSuchIPEndPointException>();
+
+				Thread.Sleep(2000);
+
+				GC.Collect();
+				GC.WaitForPendingFinalizers();
+
+				exceptions.Should().BeEmpty();
+			}
+		}
+
+		[Test]
+		[Description(
+			"Verifies that Connect() throws when the other socket doesn't respond with the proper greeting message in time")]
+		public void TestConnect8()
+		{
+			using (var rep = CreateClient())
+			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+			{
+				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
+				socket.Listen(1);
+				socket.BeginAccept(ar => socket.EndAccept(ar), null);
+				new Action(() => Connect(rep, EndPoint3))
+					.ShouldThrow<AuthenticationException>();
 			}
 		}
 

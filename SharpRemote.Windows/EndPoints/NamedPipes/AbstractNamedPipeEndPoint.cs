@@ -1,5 +1,7 @@
-﻿using System.IO.Pipes;
+﻿using System;
+using System.IO.Pipes;
 using System.Net;
+using System.Net.Sockets;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -9,10 +11,12 @@ namespace SharpRemote
 	/// 
 	/// </summary>
 	/// <typeparam name="TTransport"></typeparam>
-	public abstract class AbstractNamedPipeEndPoint<TTransport>
+	internal abstract class AbstractNamedPipeEndPoint<TTransport>
 		: AbstractBinaryStreamEndPoint<TTransport>
 		where TTransport : PipeStream
 	{
+		protected const string Localhost = ".";
+
 		private NamedPipeEndPoint _localEndPoint;
 		private NamedPipeEndPoint _remoteEndPoint;
 
@@ -31,9 +35,9 @@ namespace SharpRemote
 		{
 		}
 
-		protected override System.Net.EndPoint GetRemoteEndPointOf(TTransport socket)
+		protected override EndPoint GetRemoteEndPointOf(TTransport socket)
 		{
-			throw new System.NotImplementedException();
+			return _remoteEndPoint;
 		}
 
 		/// <summary>
@@ -64,29 +68,47 @@ namespace SharpRemote
 			set { _remoteEndPoint = (NamedPipeEndPoint)value; }
 		}
 
-		protected override ConnectionId OnHandshakeSucceeded(TTransport socket)
-		{
-			throw new System.NotImplementedException();
-		}
-
 		protected override void Send(TTransport socket, byte[] data, int offset, int size)
 		{
-			throw new System.NotImplementedException();
+			socket.Write(data, offset, size);
 		}
 
-		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, out System.Net.Sockets.SocketError err)
+		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, out SocketError err)
 		{
-			throw new System.NotImplementedException();
+			return SynchronizedRead(socket, buffer, TimeSpan.MaxValue, out err);
 		}
 
-		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, System.TimeSpan timeout, out System.Net.Sockets.SocketError err)
+		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, TimeSpan timeout, out SocketError err)
 		{
-			throw new System.NotImplementedException();
+			int read = socket.Read(buffer, 0, buffer.Length);
+			if (read != buffer.Length)
+			{
+				err = SocketError.ConnectionAborted;
+				return false;
+			}
+
+			err = SocketError.Success;
+			return true;
 		}
 
-		protected override bool SynchronizedWrite(TTransport socket, byte[] data, int length, out System.Net.Sockets.SocketError err)
+		protected override bool SynchronizedWrite(TTransport socket, byte[] data, int length, out SocketError err)
 		{
-			throw new System.NotImplementedException();
+			try
+			{
+				socket.Write(data, 0, length);
+				err = SocketError.Success;
+				return true;
+			}
+			catch (Exception e)
+			{
+				err = SocketError.Fault;
+				return false;
+			}
+		}
+
+		protected override bool SendGoodbye(TTransport socket, long waitTime, TimeSpan timeSpan)
+		{
+			return false;
 		}
 	}
 }

@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// <summary>
 	/// 
 	/// </summary>
-	public sealed class NamedPipeRemotingEndPointServer
+	internal sealed class NamedPipeRemotingEndPointServer
 		: AbstractNamedPipeEndPoint<NamedPipeServerStream>
 	{
 		private NamedPipeServerStream _pipe;
@@ -50,7 +50,7 @@ namespace SharpRemote
 		/// </summary>
 		public void Bind()
 		{
-			Bind(new NamedPipeEndPoint(Name));
+			Bind(new NamedPipeEndPoint(Name, NamedPipeEndPoint.PipeType.Server));
 		}
 
 		/// <summary>
@@ -100,8 +100,9 @@ namespace SharpRemote
 				{
 					Log.DebugFormat("Incoming connection from '', starting handshake...");
 
-					var connectionId = PerformIncomingHandshake(_pipe);
-					FireOnConnected(null, connectionId);
+					var remoteEndPoint = NamedPipeEndPoint.FromClient(Name);
+					var connectionId = PerformIncomingHandshake(_pipe, remoteEndPoint);
+					FireOnConnected(remoteEndPoint, connectionId);
 
 					success = true;
 				}
@@ -136,13 +137,13 @@ namespace SharpRemote
 
 					lock (SyncRoot)
 					{
-						_isConnecting = false;
 						if (!IsDisposed)
 						{
 							_pipe.BeginWaitForConnection(OnIncomingConnection, null);
 						}
 					}
 				}
+				_isConnecting = false;
 			}
 		}
 
@@ -159,6 +160,22 @@ namespace SharpRemote
 		protected override void DisconnectTransport(NamedPipeServerStream socket, bool reuseSocket)
 		{
 			socket.Disconnect();
+		}
+
+		protected override void DisposeAfterDisconnect(NamedPipeServerStream socket)
+		{
+			// We don't do anything because we want to re-use this exact pipe for the next connection.
+			// Contrary to Sockets, we don't have a separate object for every incoming connection.
+			// Hence we don't have anything to dispose of.
+
+			// We do however want to start accepting new incoming connections...
+			lock (SyncRoot)
+			{
+				if (!IsDisposed)
+				{
+					_pipe.BeginWaitForConnection(OnIncomingConnection, null);
+				}
+			}
 		}
 	}
 }

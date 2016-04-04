@@ -11,7 +11,7 @@ namespace SharpRemote
 	/// <summary>
 	/// 
 	/// </summary>
-	public sealed class NamedPipeRemotingEndPointClient
+	internal sealed class NamedPipeRemotingEndPointClient
 		: AbstractNamedPipeEndPoint<NamedPipeClientStream>
 	{
 		/// <summary>
@@ -66,10 +66,6 @@ namespace SharpRemote
 		/// <param name="timeout"></param>
 		public ConnectionId Connect(NamedPipeEndPoint endPoint, TimeSpan timeout)
 		{
-			if (endPoint == null) throw new ArgumentNullException("endPoint");
-			if (timeout <= TimeSpan.Zero)
-				throw new ArgumentOutOfRangeException("timeout");
-
 			Exception exception;
 			ConnectionId connectionId;
 			if (!TryConnect(endPoint, timeout, out exception, out connectionId))
@@ -95,6 +91,8 @@ namespace SharpRemote
 			if (endPoint == null) throw new ArgumentNullException("endPoint");
 			if (Equals(endPoint, LocalEndPoint))
 				throw new ArgumentException("An endPoint cannot be connected to itself", "endPoint");
+			if (endPoint.Type != NamedPipeEndPoint.PipeType.Server)
+				throw new ArgumentException("An endpoint can only establish a connection with a server-side enpoint", "endPoint");
 			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
 			if (IsConnected)
 				throw new InvalidOperationException(

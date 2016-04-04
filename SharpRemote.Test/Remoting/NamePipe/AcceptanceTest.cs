@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using NUnit.Framework;
 
-namespace SharpRemote.Test.Remoting.Sockets
+namespace SharpRemote.Test.Remoting.NamePipe
 {
 	[TestFixture]
 	public class AcceptanceTest
@@ -11,29 +10,29 @@ namespace SharpRemote.Test.Remoting.Sockets
 	{
 		protected override void Connect(IRemotingEndPoint client, IRemotingEndPoint server)
 		{
-			((SocketRemotingEndPointClient)client).Connect(
-				((SocketRemotingEndPointServer)server).LocalEndPoint,
+			((NamedPipeRemotingEndPointClient)client).Connect(
+				((NamedPipeRemotingEndPointServer)server).LocalEndPoint,
 				TimeSpan.FromMinutes(1));
 		}
 
 		protected override IEnumerable<IServant> Servants(IRemotingEndPoint client)
 		{
-			return ((SocketRemotingEndPointClient) client).Servants;
+			return ((NamedPipeRemotingEndPointClient)client).Servants;
 		}
 
 		protected override IRemotingEndPoint CreateClient()
 		{
-			return new SocketRemotingEndPointClient("Client");
+			return new NamedPipeRemotingEndPointClient("Client");
 		}
 
 		protected override IRemotingEndPoint CreateServer()
 		{
-			return new SocketRemotingEndPointServer("Server");
+			return new NamedPipeRemotingEndPointServer("Server");
 		}
 
 		protected override void Bind(IRemotingEndPoint server)
 		{
-			((SocketRemotingEndPointServer)server).Bind(IPAddress.Loopback);
+			((NamedPipeRemotingEndPointServer)server).Bind();
 		}
 	}
 }

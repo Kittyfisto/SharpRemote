@@ -11,7 +11,7 @@ namespace SharpRemote
 	/// 
 	/// </summary>
 	/// <typeparam name="TTransport"></typeparam>
-	public abstract class AbstractNamedPipeEndPoint<TTransport>
+	internal abstract class AbstractNamedPipeEndPoint<TTransport>
 		: AbstractBinaryStreamEndPoint<TTransport>
 		where TTransport : PipeStream
 	{

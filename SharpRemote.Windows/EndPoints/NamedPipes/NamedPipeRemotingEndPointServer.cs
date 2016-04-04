@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// <summary>
 	/// 
 	/// </summary>
-	public sealed class NamedPipeRemotingEndPointServer
+	internal sealed class NamedPipeRemotingEndPointServer
 		: AbstractNamedPipeEndPoint<NamedPipeServerStream>
 	{
 		private NamedPipeServerStream _pipe;

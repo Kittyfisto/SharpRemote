@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// This exception is thrown when a connection to a non-existing / unreachable endpoint is established.
 	/// </summary>
 	[Serializable]
-	public sealed class NoSuchNamedPipeEndPointException
+	internal sealed class NoSuchNamedPipeEndPointException
 		: SharpRemoteException
 	{
 #if !WINDOWS_PHONE_APP

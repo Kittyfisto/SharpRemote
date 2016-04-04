@@ -7,7 +7,7 @@ namespace SharpRemote
 {
 	/// <summary>
 	/// </summary>
-	public sealed class NamedPipeEndPoint
+	internal sealed class NamedPipeEndPoint
 		: EndPoint
 	{
 		/// <summary>

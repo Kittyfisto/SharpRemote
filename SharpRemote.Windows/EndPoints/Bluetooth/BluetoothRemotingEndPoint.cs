@@ -13,7 +13,7 @@ namespace SharpRemote
 	/// <summary>
 	/// NOT FINISHED.
 	/// </summary>
-	public sealed class BluetoothRemotingEndPoint
+	internal sealed class BluetoothRemotingEndPoint
 		: AbstractBinaryStreamEndPoint<IDisposable>
 	{
 		private BluetoothEndPoint _localEndPoint;

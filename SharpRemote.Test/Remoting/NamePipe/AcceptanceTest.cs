@@ -5,6 +5,7 @@ using NUnit.Framework;
 namespace SharpRemote.Test.Remoting.NamePipe
 {
 	[TestFixture]
+	[Ignore("Not yet working")]
 	public class AcceptanceTest
 		: AbstractAcceptanceTest
 	{

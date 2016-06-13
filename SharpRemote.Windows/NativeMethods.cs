@@ -111,11 +111,18 @@ namespace SharpRemote
 		{
 			try
 			{
-				return _initDumpCollection(numRetainedMinidumps, dumpFolder, dumpName);
+				if (!_initDumpCollection(numRetainedMinidumps, dumpFolder, dumpName))
+				{
+					int err = Marshal.GetLastWin32Error();
+					Log.ErrorFormat("Unable to initialize the post-mortem debugger: {0}", err);
+					return false;
+				}
+
+				return true;
 			}
 			catch (Exception e)
 			{
-				Log.ErrorFormat("Caught unexpected exception: {0}", e);
+				Log.ErrorFormat("Unable to initialize the post-mortem debugger: {0}", e);
 				return false;
 			}
 		}
@@ -139,15 +146,24 @@ namespace SharpRemote
 		{
 			try
 			{
-				return _installPostmortemDebugger(suppressErrorWindows,
-				                                  interceptUnhandledExceptions,
-				                                  handleCrtAsserts,
-				                                  handleCrtPurecalls,
-				                                  crtVersions);
+				if (!_installPostmortemDebugger(suppressErrorWindows,
+				                                interceptUnhandledExceptions,
+				                                handleCrtAsserts,
+				                                handleCrtPurecalls,
+				                                crtVersions))
+				{
+					int err = Marshal.GetLastWin32Error();
+					Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
+									err);
+					return false;
+				}
+
+				return true;
 			}
 			catch (Exception e)
 			{
-				Log.ErrorFormat("Caught unexpected exception: {0}", e);
+				Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
+									e);
 				return false;
 			}
 		}

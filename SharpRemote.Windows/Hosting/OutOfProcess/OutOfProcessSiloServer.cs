@@ -150,15 +150,9 @@ namespace SharpRemote.Hosting
 
 				if (_postMortemSettings.CollectMinidumps)
 				{
-					if (!NativeMethods.InitDumpCollection(_postMortemSettings.NumMinidumpsRetained,
+					if (NativeMethods.InitDumpCollection(_postMortemSettings.NumMinidumpsRetained,
 					                        _postMortemSettings.MinidumpFolder,
 					                        _postMortemSettings.MinidumpName))
-					{
-						int err = Marshal.GetLastWin32Error();
-						Log.ErrorFormat("Unable to initialize the post-mortem debugger: {0}",
-						                err);
-					}
-					else
 					{
 						Log.InfoFormat("Installed post-mortem debugger; up to {0} mini dumps will automatically be saved to: {1}",
 									   _postMortemSettings.NumMinidumpsRetained,
@@ -167,16 +161,11 @@ namespace SharpRemote.Hosting
 					}
 				}
 
-				if (!NativeMethods.InstallPostmortemDebugger(_postMortemSettings.HandleAccessViolations,
-				                                             _postMortemSettings.SuppressErrorWindows,
-				                                             _postMortemSettings.HandleCrtAsserts,
-				                                             _postMortemSettings.HandleCrtPureVirtualFunctionCalls,
-				                                             _postMortemSettings.RuntimeVersions))
-				{
-					int err = Marshal.GetLastWin32Error();
-					Log.ErrorFormat("Unable to install the post-mortem debugger for unhandled exceptions: {0}",
-					                err);
-				}
+				NativeMethods.InstallPostmortemDebugger(_postMortemSettings.HandleAccessViolations,
+				                                        _postMortemSettings.SuppressErrorWindows,
+				                                        _postMortemSettings.HandleCrtAsserts,
+				                                        _postMortemSettings.HandleCrtPureVirtualFunctionCalls,
+				                                        _postMortemSettings.RuntimeVersions);
 			}
 
 			_endPoint = new SocketRemotingEndPointServer(

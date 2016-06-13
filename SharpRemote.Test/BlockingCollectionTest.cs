@@ -61,12 +61,12 @@ namespace SharpRemote.Test
 				task = Task.Factory.StartNew(() => queue.Enqueue(9001));
 
 				var item1 = Task.Factory.StartNew(() => queue.Dequeue());
-				item1.Wait(100).Should().BeTrue();
+				item1.Wait(TimeSpan.FromSeconds(1)).Should().BeTrue("Because dequeuing an item should succeed within 1 second");
 
 				var item2 = Task.Factory.StartNew(() => queue.Dequeue());
 
-				task.Wait(100).Should().BeTrue();
-				item2.Wait(100).Should().BeTrue();
+				task.Wait(TimeSpan.FromSeconds(1)).Should().BeTrue("Because enqueueing an item should succeed within 1 second");
+				item2.Wait(TimeSpan.FromSeconds(1)).Should().BeTrue("Because the queue has an item again and thus dequeueing should succeed again");
 
 				item1.Result.Should().Be(42);
 				item2.Result.Should().Be(9001);

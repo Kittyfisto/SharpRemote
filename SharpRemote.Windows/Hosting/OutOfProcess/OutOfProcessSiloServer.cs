@@ -150,7 +150,6 @@ namespace SharpRemote.Hosting
 
 				if (_postMortemSettings.CollectMinidumps)
 				{
-					
 					if (!NativeMethods.InitDumpCollection(_postMortemSettings.NumMinidumpsRetained,
 					                        _postMortemSettings.MinidumpFolder,
 					                        _postMortemSettings.MinidumpName))

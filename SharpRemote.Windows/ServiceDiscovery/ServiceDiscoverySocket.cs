@@ -51,28 +51,33 @@ namespace SharpRemote.ServiceDiscovery
 			                        SocketOptionName.ReuseAddress, true);
 			_socket.Bind(new IPEndPoint(localAddress, port));
 
-			if (_localAddress.AddressFamily == AddressFamily.InterNetwork)
+			var addressFamily = _localAddress.AddressFamily;
+			if (addressFamily == AddressFamily.InterNetwork)
 			{
 				try
 				{
 					_socket.SetSocketOption(SocketOptionLevel.IP,
-										   SocketOptionName.AddMembership,
-										   new MulticastOption(_multicastAddress,
-															   _localAddress));
+					                        SocketOptionName.AddMembership,
+					                        new MulticastOption(_multicastAddress,
+					                                            _localAddress));
 
 					Log.DebugFormat("Joined multicast group {0} for {1}@{2}",
-									_multicastAddress,
-									_localAddress,
-									iface.Name);
+					                _multicastAddress,
+					                _localAddress,
+					                iface.Name);
 				}
 				catch (SocketException e)
 				{
 					Log.DebugFormat("Unable to join multicast group {0} for {1}@{2}: {3}",
-									_multicastAddress,
-									_localAddress,
-									iface.Name,
-									e);
+					                _multicastAddress,
+					                _localAddress,
+					                iface.Name,
+					                e);
 				}
+			}
+			else
+			{
+				throw new ArgumentOutOfRangeException(string.Format("Service discovery is not implemented for '{0}'", addressFamily));
 			}
 
 			BeginReceive();
@@ -123,7 +128,7 @@ namespace SharpRemote.ServiceDiscovery
 						case Message.P2PResponseToken:
 							Action<Service> fn = OnResponseReceived;
 							if (fn != null)
-								fn(new Service(name, endPoint));
+								fn(new Service(name, endPoint, _localAddress));
 							break;
 					}
 				}

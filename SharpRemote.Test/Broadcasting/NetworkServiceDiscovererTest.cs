@@ -45,10 +45,7 @@ namespace SharpRemote.Test.Broadcasting
 			{
 				var services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
-				services.Should().Equal(new[]
-					{
-						new Service(name, ep)
-					});
+				services.Should().Contain(new Service(name, ep, IPAddress.Loopback));
 			}
 		}
 
@@ -64,10 +61,7 @@ namespace SharpRemote.Test.Broadcasting
 			{
 				var services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
-				services.Should().Equal(new[]
-					{
-						new Service(name, ep)
-					});
+				services.Should().Contain(new Service(name, ep, IPAddress.Loopback));
 			}
 		}
 
@@ -87,8 +81,9 @@ namespace SharpRemote.Test.Broadcasting
 				{
 					services = _discoverer.FindServices(name);
 					services.Should().NotBeNull();
-					services.Count.Should().Be(2);
-					services.Should().Contain(new Service(name, ep1));
+					services.Select(x => x.EndPoint).Distinct().Count().Should().Be(2,
+						"Because we should've received responses for 2 different services, but over all possible adapters");
+					services.Should().Contain(new Service(name, ep1, IPAddress.Loopback));
 
 					var service = services.First(x => !Equals(x.EndPoint, ep1));
 					service.EndPoint.Should().NotBeNull();
@@ -98,10 +93,7 @@ namespace SharpRemote.Test.Broadcasting
 
 				services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
-				services.Should().BeEquivalentTo(new[]
-						{
-							new Service(name, ep1)
-						});
+				services.Should().Contain(new Service(name, ep1, IPAddress.Loopback));
 			}
 		}
 

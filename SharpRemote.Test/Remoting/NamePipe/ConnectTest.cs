@@ -8,6 +8,7 @@ using SharpRemote.ServiceDiscovery;
 namespace SharpRemote.Test.Remoting.NamePipe
 {
 	[TestFixture]
+	[Ignore("Not yet finished")]
 	public sealed class ConnectTest
 		: AbstractConnectTest
 	{

@@ -101,6 +101,7 @@
     <Compile Include="Types\Classes\ReturnsTree.cs" />
     <Compile Include="Types\Classes\VoidMethodStringParameter.cs" />
     <Compile Include="Types\Classes\BlocksABit.cs" />
+    <Compile Include="Types\Interfaces\IActionEventStringArray.cs" />
     <Compile Include="Types\Interfaces\IByReferenceReturnMethodInterface.cs" />
     <Compile Include="Types\Interfaces\IByReferenceType.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />
@@ -162,6 +163,7 @@
     <Compile Include="Types\Classes\Listener.cs" />
     <Compile Include="Types\Interfaces\IVoidMethodAsyncAttribute.cs" />
     <Compile Include="Types\Interfaces\IVoidMethodAsyncInvokeSerialAttribute.cs" />
+    <Compile Include="Types\Interfaces\IVoidMethodStringArrayParameter.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IReturnsObjectMethod.cs" />
     <Compile Include="Types\Interfaces\NativeTypes\IReturnsType.cs" />
     <Compile Include="Types\Interfaces\IVoidMethodObjectParameter.cs" />

@@ -904,6 +904,50 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[NUnit.Framework.Description("Verifies that transfering a string array is possible")]
+		public void TestEventActionStringArray()
+		{
+			const ulong servantId = 36;
+
+			var values = new List<string>();
+			var subject = new Mock<IActionEventStringArray>();
+
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IActionEventStringArray>(servantId);
+			proxy.Do += values.AddRange;
+
+			subject.Raise(x => x.Do += null, new object[] {new[]{"COM11", "COM13"}});
+
+			values.Should().Equal(new object[]
+				{
+					"COM11",
+					"COM13"
+				});
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies that transfering a string array is possible")]
+		public void TestVoidMethodStringArray()
+		{
+			const ulong servantId = 36;
+
+			var values = new List<string>();
+			var subject = new Mock<IVoidMethodStringArrayParameter>();
+			subject.Setup(x => x.Do(It.IsAny<string[]>()))
+			       .Callback((string[] data) => values.AddRange(data));
+
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IVoidMethodStringArrayParameter>(servantId);
+			proxy.Do(new[]{"COM11", "COM13"});
+
+			values.Should().Equal(new object[]
+				{
+					"COM11",
+					"COM13"
+				});
+		}
+
+		[Test]
 		[NUnit.Framework.Description("Verifies that a method applied with the Async attribute is truly invoked async")]
 		public void TestAsyncAttribute1()
 		{

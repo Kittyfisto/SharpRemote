@@ -24,6 +24,7 @@ Thumbs.db
 obj/
 [Rr]elease*/
 _ReSharper*/
+*.idea*/
 [Tt]est[Rr]esult*
 *.vssscc
 $tf*/

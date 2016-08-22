@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using SharpRemote.Exceptions;
 using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration.Remoting
@@ -217,11 +218,27 @@ namespace SharpRemote.CodeGeneration.Remoting
 
 		private void GenerateMethods()
 		{
-			var allMethods = InterfaceType
+			var methodNames = new HashSet<string>();
+			var allMethods = new List<MethodInfo>();
+
+			foreach (MethodInfo method in InterfaceType
 				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
-				.Concat(InterfaceType.GetInterfaces().SelectMany(x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
-				.OrderBy(x => x.Name)
-				.ToArray();
+				.Concat(
+					InterfaceType.GetInterfaces()
+					             .SelectMany(
+						             x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
+				.OrderBy(x => x.Name))
+			{
+				if (!methodNames.Add(method.Name))
+				{
+					throw new ArgumentException(
+						string.Format("The type contains at least two methods with the same name '{0}': This is not supported",
+						              method.Name));
+				}
+
+				allMethods.Add(method);
+			}
+
 			foreach (var method in allMethods)
 			{
 				if (method.IsSpecialName)

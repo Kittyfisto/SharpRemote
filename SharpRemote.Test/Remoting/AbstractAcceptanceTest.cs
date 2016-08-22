@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Types;
@@ -56,6 +57,20 @@ namespace SharpRemote.Test.Remoting
 
 			_server.TryDispose();
 			_client.TryDispose();
+		}
+
+		[Test]
+		[NUnit.Framework.Description("Verifies (since overloaded methods are not yet supported) that types which contains two or more methods of the same name are not supported and an appropriate exception is thrown")]
+		public void TestTypeWithOverloadedMethods()
+		{
+			const int servantId = 50;
+			new Action(() => _server.CreateProxy<IOverloadedMethods>(servantId))
+				.ShouldThrow<ArgumentException>()
+				.WithMessage("Unable to create proxy for type 'IOverloadedMethods': The type contains at least two methods with the same name 'Print': This is not supported");
+
+			new Action(() => _server.CreateServant(servantId, new Mock<IOverloadedMethods>().Object))
+				.ShouldThrow<ArgumentException>()
+				.WithMessage("Unable to create servant for type 'IOverloadedMethods': The type contains at least two methods with the same name 'Print': This is not supported");
 		}
 
 		[Test]
@@ -929,7 +944,7 @@ namespace SharpRemote.Test.Remoting
 		[NUnit.Framework.Description("Verifies that transfering a string array is possible")]
 		public void TestVoidMethodStringArray()
 		{
-			const ulong servantId = 36;
+			const ulong servantId = 37;
 
 			var values = new List<string>();
 			var subject = new Mock<IVoidMethodStringArrayParameter>();

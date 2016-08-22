@@ -21,6 +21,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 		private readonly MethodInfo _subjectTryGetTarget;
 		private FieldBuilder _perTypeScheduler;
 		private FieldBuilder _perObjectScheduler;
+		private readonly MethodInfo[] _allMethods;
 
 		public ServantCompiler(Serializer serializer,
 		                       ModuleBuilder module,
@@ -42,6 +43,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 
 			_subjectType = typeof(WeakReference<>).MakeGenericType(interfaceType);
 			_subjectTryGetTarget = _subjectType.GetMethod("TryGetTarget");
+			_allMethods = FindMethods(InterfaceType);
 
 			_subject = _typeBuilder.DefineField("_subject", _subjectType, FieldAttributes.Private | FieldAttributes.InitOnly);
 			ObjectId = _typeBuilder.DefineField("_objectId", typeof (ulong), FieldAttributes.Private | FieldAttributes.InitOnly);
@@ -53,25 +55,40 @@ namespace SharpRemote.CodeGeneration.Remoting
 			                                      FieldAttributes.Private | FieldAttributes.InitOnly);
 		}
 
+		private static MethodInfo[] FindMethods(Type interfaceType)
+		{
+			MethodInfo[] allEventMethods =
+					interfaceType.GetEvents(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+								 .SelectMany(x => new[] { x.AddMethod, x.RemoveMethod })
+								 .ToArray();
+
+			var methodNames = new HashSet<string>();
+			var allMethods = new List<MethodInfo>();
+			foreach (var method in interfaceType
+				.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
+				.Concat(
+					interfaceType.GetInterfaces()
+								 .SelectMany(
+									 x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
+				.Where(x => !allEventMethods.Contains(x))
+				.OrderBy(x => x.Name))
+			{
+				if (!methodNames.Add(method.Name))
+				{
+					throw new ArgumentException(
+						string.Format("The type contains at least two methods with the same name '{0}': This is not supported",
+									  method.Name));
+				}
+
+				allMethods.Add(method);
+			}
+
+			return allMethods.ToArray();
+		}
+
 		private MethodInfo[] AllMethods
 		{
-			get
-			{
-				MethodInfo[] allEventMethods =
-					InterfaceType.GetEvents(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
-					             .SelectMany(x => new[] {x.AddMethod, x.RemoveMethod})
-					             .ToArray();
-
-				return InterfaceType
-					.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)
-					.Concat(
-						InterfaceType.GetInterfaces()
-						             .SelectMany(
-							             x => x.GetMethods(BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.Public)))
-					.Where(x => !allEventMethods.Contains(x))
-					.OrderBy(x => x.Name)
-					.ToArray();
-			}
+			get { return _allMethods; }
 		}
 
 		private void GenerateGetSerializer()

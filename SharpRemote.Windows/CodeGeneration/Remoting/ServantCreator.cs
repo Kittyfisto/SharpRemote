@@ -65,15 +65,22 @@ namespace SharpRemote.CodeGeneration.Remoting
 				Type proxyType;
 				if (!_interfaceToSubject.TryGetValue(interfaceType, out proxyType))
 				{
-					var proxyTypeName = GetSubjectTypeName(interfaceType);
+					try
+					{
+						var proxyTypeName = GetSubjectTypeName(interfaceType);
 
-					var generator = new ServantCompiler(_serializer, _module, proxyTypeName, interfaceType);
-					proxyType = generator.Generate();
+						var generator = new ServantCompiler(_serializer, _module, proxyTypeName, interfaceType);
+						proxyType = generator.Generate();
 
-					//generator.Save();
-					//_assembly.Save(_moduleName);
-
-					_interfaceToSubject.Add(interfaceType, proxyType);
+						_interfaceToSubject.Add(interfaceType, proxyType);
+					}
+					catch (Exception e)
+					{
+						var message = string.Format("Unable to create servant for type '{0}': {1}",
+													interfaceType.Name,
+													e.Message);
+						throw new ArgumentException(message, e);
+					}
 				}
 				return proxyType;
 			}

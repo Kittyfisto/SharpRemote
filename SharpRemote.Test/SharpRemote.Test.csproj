@@ -154,6 +154,7 @@
     <Compile Include="Types\Interfaces\IInvokeAttributeMethods.cs" />
     <Compile Include="Types\Interfaces\IListener.cs" />
     <Compile Include="Types\Interfaces\IOrderInterface.cs" />
+    <Compile Include="Types\Interfaces\IOverloadedMethods.cs" />
     <Compile Include="Types\Interfaces\IProcessor.cs" />
     <Compile Include="Types\Interfaces\IReturnComplexType.cs" />
     <Compile Include="Types\Interfaces\IReturnsByReferenceType.cs" />

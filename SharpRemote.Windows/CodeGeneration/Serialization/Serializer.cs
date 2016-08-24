@@ -59,6 +59,7 @@ namespace SharpRemote
 				new DateTimeOffsetSerializer(),
 				new VersionSerializer(),
 				new ApplicationIdSerializer(),
+				new DecimalSerializer(),
 				new UriSerializer(),
 				new GuidSerializer(),
 

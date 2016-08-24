@@ -963,6 +963,22 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[NUnit.Framework.Description("Verifies that transfering a decimal value is possible")]
+		public void TestGetDecimalProperty()
+		{
+			const ulong servantId = 38;
+
+			var value = decimal.Parse("3.1415926535897932384626433832");
+			var subject = new Mock<IGetDecimalProperty>();
+			subject.Setup(x => x.Value).Returns(value);
+
+			_server.CreateServant(servantId, subject.Object);
+			var proxy = _client.CreateProxy<IGetDecimalProperty>(servantId);
+			var actualValue = proxy.Value;
+			actualValue.Should().Be(value);
+		}
+
+		[Test]
 		[NUnit.Framework.Description("Verifies that a method applied with the Async attribute is truly invoked async")]
 		public void TestAsyncAttribute1()
 		{

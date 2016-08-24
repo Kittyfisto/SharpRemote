@@ -23,6 +23,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo WriteString;
 		public static readonly MethodInfo BinaryWriterFlush;
 		public static readonly ConstructorInfo BinaryReaderCtor;
+		public static readonly MethodInfo WriteDecimal;
 		public static readonly MethodInfo WriteDouble;
 		public static readonly MethodInfo WriteSingle;
 		public static readonly MethodInfo WriteUInt;
@@ -44,6 +45,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo StringEquality;
 		public static readonly MethodInfo ReadBytes;
 		public static readonly MethodInfo ReadString;
+		public static readonly MethodInfo ReadDecimal;
 		public static readonly MethodInfo ReadSingle;
 		public static readonly MethodInfo ReadLong;
 		public static readonly MethodInfo ReadULong;
@@ -110,6 +112,7 @@ namespace SharpRemote.CodeGeneration
 
 			ReadBytes = typeof (BinaryReader).GetMethod("ReadBytes");
 			ReadString = typeof(BinaryReader).GetMethod("ReadString");
+			ReadDecimal = typeof(BinaryReader).GetMethod("ReadDecimal");
 			ReadDouble = typeof(BinaryReader).GetMethod("ReadDouble");
 			ReadSingle = typeof(BinaryReader).GetMethod("ReadSingle");
 			ReadLong = typeof(BinaryReader).GetMethod("ReadInt64");
@@ -124,6 +127,7 @@ namespace SharpRemote.CodeGeneration
 
 			WriteBytes = typeof (BinaryWriter).GetMethod("Write", new[] {typeof (byte[])});
 			WriteString = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(string)});
+			WriteDecimal = typeof(BinaryWriter).GetMethod("Write", new[] { typeof(decimal) });
 			WriteDouble = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(double)});
 			WriteSingle = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(Single)});
 			WriteLong = typeof(BinaryWriter).GetMethod("Write", new[]{typeof(long)});

@@ -17,12 +17,24 @@ namespace ConsoleApplication1
 	{
 		private static unsafe void Main(string[] args)
 		{
+			var writer = new BinaryWriter(new MemoryStream());
+			var value = new decimal(0);
+
+			var data = decimal.GetBits(value);
+			writer.Write(data[0]);
+			writer.Write(data[1]);
+			writer.Write(data[2]);
+			writer.Write(data[3]);
+
+
 			XmlConfigurator.Configure(new FileInfo("ConsoleApplication1.exe.config"));
 
 			StartServer();
 			Task.Delay(1000).Wait();
 
 
+			return;
+			/*
 			//Client
 			var client = new NamedPipeClientStream("PipesOfPiece");
 			client.Connect();
@@ -53,7 +65,7 @@ namespace ConsoleApplication1
 					var roundtripTime = sw.Elapsed.Ticks/roundtrips;
 					Console.WriteLine("{0}μs rtt", (int)roundtripTime / 10);
 				}
-			}
+			}*/
 		}
 
 		static void StartServer()

@@ -159,10 +159,11 @@ namespace SharpRemote.CodeGeneration.Remoting
 		}
 
 		protected void GenerateMethodInvocation(MethodBuilder method,
-			string interfaceType,
-			string remoteMethodName,
-			ParameterInfo[] parameters,
-			MethodInfo remoteMethod)
+		                                        string interfaceType,
+		                                        string remoteMethodName,
+		                                        ParameterInfo[] parameters,
+		                                        MethodInfo remoteMethod,
+		                                        AsyncRemoteAttribute async = null)
 		{
 			ILGenerator gen = method.GetILGenerator();
 
@@ -233,7 +234,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 
 			Type returnType = method.ReturnType;
 			ICustomAttributeProvider returnAttributes = remoteMethod.ReturnTypeCustomAttributes;
-			bool hasAsyncAttribute = remoteMethod.GetCustomAttribute<AsyncRemoteAttribute>() != null;
+			bool hasAsyncAttribute = (async ?? remoteMethod.GetCustomAttribute<AsyncRemoteAttribute>()) != null;
 			bool isAsync = returnType == typeof (Task) ||
 			               (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof (Task<>)) ||
 			               hasAsyncAttribute;

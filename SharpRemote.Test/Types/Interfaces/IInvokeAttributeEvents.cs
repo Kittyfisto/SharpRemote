@@ -1,4 +1,5 @@
 ﻿using System;
+using SharpRemote.Attributes;
 
 namespace SharpRemote.Test.Types.Interfaces
 {
@@ -23,5 +24,8 @@ namespace SharpRemote.Test.Types.Interfaces
 
 		[Invoke(Dispatch.SerializePerMethod)]
 		event Action SerializePerMethod2;
+
+		[AsyncRemote]
+		event Action<string> Async1;
 	}
 }

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using SharpRemote.Attributes;
 using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration.Remoting
@@ -160,6 +161,14 @@ namespace SharpRemote.CodeGeneration.Remoting
 			}
 		}
 
+		/// <summary>
+		///     Responsible for generating a method to remote-invoke an event on this servant's proxy.
+		///     The generated method serializes the event's parameters and then either calls
+		///     <see cref="IEndPointChannel.CallRemoteMethod" /> or <see cref="IEndPointChannel.CallRemoteMethodAsync" />
+		///     depending on whether or not the <see cref="AsyncRemoteAttribute" /> was applied to
+		///     the event.
+		/// </summary>
+		/// <param name="event"></param>
 		private void GenerateEvent(EventInfo @event)
 		{
 			Type delegateType = @event.EventHandlerType;
@@ -173,7 +182,13 @@ namespace SharpRemote.CodeGeneration.Remoting
 			                                                 returnType,
 			                                                 parameters.Select(x => x.ParameterType).ToArray());
 
-			GenerateMethodInvocation(method, InterfaceType.FullName, @event.Name, parameters, methodInfo);
+			var async = @event.GetCustomAttribute<AsyncRemoteAttribute>();
+			GenerateMethodInvocation(method,
+			                         InterfaceType.FullName,
+			                         @event.Name,
+			                         parameters,
+			                         methodInfo,
+			                         async);
 
 			_eventInvocationMethods.Add(new KeyValuePair<EventInfo, MethodInfo>(@event, method));
 		}

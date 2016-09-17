@@ -1066,6 +1066,46 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[NUnit.Framework.Description("Verifies that an event applied with the Async attribute is truly invoked async")]
+		public void TestAsyncAttribute3()
+		{
+			const ulong servantId = 36;
+			var syncRoot = new object();
+
+			string actualMessage = null;
+			bool called = false;
+			var proxy = _client.CreateProxy<IInvokeAttributeEvents>(servantId);
+			proxy.Async1 += message =>
+			{
+				lock (syncRoot)
+				{
+					actualMessage = message;
+					called = true;
+				}
+			};
+			var subject = new Mock<IInvokeAttributeEvents>();
+			_server.CreateServant(servantId, subject.Object);
+			Task t = Task.Factory.StartNew(() =>
+			{
+				lock (syncRoot)
+				{
+					subject.Raise(x => x.Async1 += null, "Foobar");
+				}
+			});
+			t.Wait(TimeSpan.FromSeconds(2))
+			 .Should().BeTrue("Because the event invocation shouldn't deadlock when executed asynchronously");
+
+			WaitFor(() => called, TimeSpan.FromSeconds(1))
+				.Should().BeTrue("Because the event handler should've been invoked well within one second");
+			actualMessage.Should().Be("Foobar");
+
+			// This line exists to FORCE the GC to NOT collect the subject, which
+			// in turn would unregister the servant from the server, thus making the test
+			// fail.
+			subject.Should().NotBeNull();
+		}
+
+		[Test]
 		[NUnit.Framework.Description(
 			"Verifies that when a method is invoked on a proxy where no corresponding servant is registered with the other EndPoint, then an appropriate exception is thrown"
 			)]

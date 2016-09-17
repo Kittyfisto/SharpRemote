@@ -1092,10 +1092,10 @@ namespace SharpRemote.Test.Remoting
 					subject.Raise(x => x.Async1 += null, "Foobar");
 				}
 			});
-			t.Wait(TimeSpan.FromSeconds(2))
+			t.Wait(TimeSpan.FromSeconds(20))
 			 .Should().BeTrue("Because the event invocation shouldn't deadlock when executed asynchronously");
 
-			WaitFor(() => called, TimeSpan.FromSeconds(1))
+			WaitFor(() => called, TimeSpan.FromSeconds(10))
 				.Should().BeTrue("Because the event handler should've been invoked well within one second");
 			actualMessage.Should().Be("Foobar");
 

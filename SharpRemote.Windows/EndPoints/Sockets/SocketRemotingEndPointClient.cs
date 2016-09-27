@@ -150,7 +150,10 @@ namespace SharpRemote
 				throw new InvalidOperationException(
 					"This endPoint is already connected to another endPoint and cannot establish any more connections");
 
-			Log.DebugFormat("Trying to connect to '{0}', timeout: {1}ms", endPoint, timeout.TotalMilliseconds);
+			Log.DebugFormat("{0}: Trying to connect to '{1}', timeout: {2}ms",
+			                Name,
+			                endPoint,
+			                timeout.TotalMilliseconds);
 
 			bool success = false;
 			Socket socket = null;
@@ -169,11 +172,11 @@ namespace SharpRemote
 							Blocking = true,
 						};
 
-						Log.DebugFormat("EndPoint '{0}' connecting to remote endpoint '{1}'", Name, endPoint);
+						Log.DebugFormat("{0}: EndPoint connecting to remote endpoint '{1}'", Name, endPoint);
 
 						socket.Connect(endPoint);
 
-						Log.DebugFormat("EndPoint '{0}' successfully connected to remote endpoint '{1}'", Name, endPoint);
+						Log.DebugFormat("{0}: EndPoint successfully connected to remote endpoint '{1}'", Name, endPoint);
 
 						return null;
 					}
@@ -183,7 +186,9 @@ namespace SharpRemote
 					}
 					catch (Exception e)
 					{
-						Log.WarnFormat("Caught unexpected exception while trying to connect to socket: {0}", e);
+						Log.WarnFormat("{0}: Caught unexpected exception while trying to connect to socket: {1}",
+						               Name,
+						               e);
 						return e;
 					}
 				}, TaskCreationOptions.LongRunning);
@@ -228,7 +233,7 @@ namespace SharpRemote
 				RemoteEndPoint = endPoint;
 				LocalEndPoint = (IPEndPoint)socket.LocalEndPoint;
 
-				Log.InfoFormat("EndPoint '{0}' successfully connected to '{1}'", Name, endPoint);
+				Log.InfoFormat("{0}: EndPoint successfully connected to '{1}'", Name, endPoint);
 
 				FireOnConnected(endPoint, CurrentConnectionId);
 

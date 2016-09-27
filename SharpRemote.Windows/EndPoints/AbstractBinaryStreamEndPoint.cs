@@ -382,7 +382,8 @@ namespace SharpRemote
 
 			if (Log.IsDebugEnabled)
 			{
-				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
+				Log.DebugFormat("{0}: {1} to {2}, sending RPC #{3} to {4}.{5}",
+				                Name,
 				                InternalLocalEndPoint,
 				                InternalRemoteEndPoint,
 				                rpcId,
@@ -399,7 +400,8 @@ namespace SharpRemote
 
 			if (Log.IsDebugEnabled)
 			{
-				Log.DebugFormat("{0} to {1}: sending RPC #{2} to {3}.{4}",
+				Log.DebugFormat("{0}: {1} to {2}, sending RPC #{3} to {4}.{5}",
+				                Name,
 				                InternalLocalEndPoint,
 				                InternalRemoteEndPoint,
 				                rpcId,
@@ -513,7 +515,8 @@ namespace SharpRemote
 		{
 			if (Log.IsDebugEnabled)
 			{
-				Log.DebugFormat("Creating new servant (#{2}) '{0}' implementing '{1}'",
+				Log.DebugFormat("{0}: Creating new servant (#{3}) '{1}' implementing '{2}'",
+				                Name,
 				                subject.GetType().FullName,
 				                typeof (T).FullName,
 				                objectId
@@ -619,7 +622,8 @@ namespace SharpRemote
 			if (heartbeatMonitor != null && difference < _heartbeatMonitor.FailureInterval)
 			{
 				Log.WarnFormat(
-					"Heartbeat monitor reported {0} missed heartbeats on the connection to '{1}', but the connection is merely heavily used",
+					"{0}: Heartbeat monitor reported {1} missed heartbeats on the connection to '{2}', but the connection is merely heavily used",
+					Name,
 					_heartbeatSettings.SkippedHeartbeatThreshold,
 					InternalRemoteEndPoint);
 			}
@@ -630,7 +634,8 @@ namespace SharpRemote
 			else
 			{
 				Log.WarnFormat(
-					"Heartbeat monitor reported a failure with the connection to '{0}': Ignoring as per heartbeat-settings...",
+					"{0}: Heartbeat monitor reported a failure with the connection to '{1}': Ignoring as per heartbeat-settings...",
+					Name,
 					InternalRemoteEndPoint);
 			}
 		}
@@ -645,7 +650,9 @@ namespace SharpRemote
 			}
 			catch (Exception e)
 			{
-				Log.ErrorFormat("Caught exception during garbage collection: {0}", e);
+				Log.ErrorFormat("{0}: Caught exception during garbage collection: {1}",
+				                Name,
+				                e);
 			}
 			finally
 			{
@@ -806,7 +813,8 @@ namespace SharpRemote
 		{
 			if (Log.IsDebugEnabled)
 			{
-				Log.DebugFormat("RPC invocation #{0} on {1}.{2} (#{3}) threw: {4}",
+				Log.DebugFormat("{0}: RPC invocation #{1} on {2}.{3} (#{4}) threw: {5}",
+				                Name,
 				                rpcId,
 				                interfaceType,
 				                methodName,
@@ -848,8 +856,9 @@ namespace SharpRemote
 				if (IsFailure(reason))
 				{
 					var builder = new StringBuilder();
-					builder.AppendFormat("Disconnecting EndPoint '{0}' from '{1}' due to: {2}",
-					                     _name,
+					builder.AppendFormat("{0}: Disconnecting EndPoint '{1}' from '{2}' due to: {3}",
+					                     Name,
+					                     InternalLocalEndPoint,
 					                     InternalRemoteEndPoint,
 					                     reason);
 					if (error != null)
@@ -891,7 +900,11 @@ namespace SharpRemote
 					hasDisconnected = true;
 					_disconnectReason = reason;
 
-					Log.InfoFormat("Disconnecting socket '{0}' from {1}: {2}", _name, InternalRemoteEndPoint, reason);
+					Log.InfoFormat("{0}: Disconnecting socket '{1}' from {2}: {3}",
+					               Name,
+					               InternalLocalEndPoint,
+					               InternalRemoteEndPoint,
+					               reason);
 
 					CancellationTokenSource.Cancel();
 					_pendingMethodCalls.CancelAllCalls();
@@ -964,7 +977,9 @@ namespace SharpRemote
 				}
 				catch (Exception e)
 				{
-					Log.WarnFormat("The OnFailure event threw an exception, please don't do that: {0}", e);
+					Log.WarnFormat("{0}: The OnFailure event threw an exception, please don't do that: {1}",
+					               Name,
+					               e);
 				}
 			}
 		}
@@ -992,7 +1007,9 @@ namespace SharpRemote
 				}
 				catch (Exception e)
 				{
-					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
+					Log.WarnFormat("{0}: The OnConnected event threw an exception, please don't do that: {1}",
+					               Name,
+					               e);
 				}
 			}
 		}
@@ -1008,7 +1025,9 @@ namespace SharpRemote
 				}
 				catch (Exception e)
 				{
-					Log.WarnFormat("The OnConnected event threw an exception, please don't do that: {0}", e);
+					Log.WarnFormat("{0}: The OnConnected event threw an exception, please don't do that: {1}",
+					               Name,
+					               e);
 				}
 			}
 		}
@@ -1037,7 +1056,9 @@ namespace SharpRemote
 					{
 						if (InternalRemoteEndPoint != null)
 						{
-							Log.ErrorFormat("There is no pending RPC #{0}, disconnecting...", rpcId);
+							Log.ErrorFormat("{0}: There is no pending RPC #{1}, disconnecting...",
+							                Name,
+							                rpcId);
 						}
 					}
 
@@ -1047,7 +1068,7 @@ namespace SharpRemote
 			}
 			else if ((type & MessageType.Goodbye) != 0)
 			{
-				Log.InfoFormat("Connection about to be closed by the other side - disconnecting...");
+				Log.InfoFormat("{0}: Connection about to be closed by the other side - disconnecting...", Name);
 
 				reason = EndPointDisconnectReason.RequestedByRemotEndPoint;
 				return false;
@@ -1087,7 +1108,9 @@ namespace SharpRemote
 				{
 					if (Log.IsDebugEnabled)
 					{
-						Log.DebugFormat("Starting RPC #{0}", rpcId);
+						Log.DebugFormat("{0}: Starting RPC #{1}",
+						                Name,
+						                rpcId);
 					}
 
 					try
@@ -1096,7 +1119,9 @@ namespace SharpRemote
 						if (socket == null)
 						{
 							if (Log.IsDebugEnabled)
-								Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
+								Log.DebugFormat("{0}: RPC #{1} interrupted because the socket was disconnected",
+								                Name,
+								                rpcId);
 
 							return;
 						}
@@ -1113,7 +1138,8 @@ namespace SharpRemote
 						{
 							if (Log.IsErrorEnabled)
 							{
-								Log.ErrorFormat("Caught exception while executing RPC #{0} on {1}.{2} (#{3}): {4}",
+								Log.ErrorFormat("{0}: Caught exception while executing RPC #{1} on {2}.{3} (#{4}): {5}",
+								                Name,
 								                rpcId,
 								                typeName,
 								                methodName,
@@ -1139,14 +1165,16 @@ namespace SharpRemote
 					}
 					catch (Exception e)
 					{
-						Log.FatalFormat("Caught exception while dispatching method invocation, disconnecting: {0}", e);
+						Log.FatalFormat("{0}: Caught exception while dispatching method invocation, disconnecting: {1}", Name, e);
 						Disconnect(connectionId, EndPointDisconnectReason.UnhandledException);
 					}
 					finally
 					{
 						if (Log.IsDebugEnabled)
 						{
-							Log.DebugFormat("Invocation of RPC #{0} finished", rpcId);
+							Log.DebugFormat("{0}: Invocation of RPC #{1} finished",
+							                Name,
+							                rpcId);
 						}
 
 						// Once we've created the task, we remember that there's a method invocation
@@ -1175,7 +1203,9 @@ namespace SharpRemote
 
 			if (Log.IsDebugEnabled)
 			{
-				Log.DebugFormat("Queueing RPC #{0}", rpcId);
+				Log.DebugFormat("{0}: Queueing RPC #{1}",
+				                Name,
+				                rpcId);
 			}
 
 			var methodInvocation = new MethodInvocation(rpcId, grain, methodName, task);
@@ -1194,7 +1224,8 @@ namespace SharpRemote
 						if (Log.IsDebugEnabled)
 						{
 							Log.DebugFormat(
-								"Ignoring RPC invocation request #{0} because it was retrieved from connection '{1}' but now we're in connection '{2}'",
+								"{0}: Ignoring RPC invocation request #{1} because it was retrieved from connection '{2}' but now we're in connection '{3}'",
+								Name,
 								rpcId,
 								connectionId,
 								CurrentConnectionId);
@@ -1211,7 +1242,8 @@ namespace SharpRemote
 						ulong? grainId = tmp != null ? (ulong?) tmp.ObjectId : null;
 
 						var builder = new StringBuilder();
-						builder.AppendFormat("Received RPC invocation request #{0}, but one with the same id is already pending!",
+						builder.AppendFormat("{0}: Received RPC invocation request #{1}, but one with the same id is already pending!",
+						                     Name,
 						                     rpcId);
 						builder.AppendFormat("The original request was made '{0}' on '{1}.{2}",
 						                     existingMethodInvocation.RequestTime,
@@ -1254,7 +1286,7 @@ namespace SharpRemote
 			if (socket == null)
 			{
 				if (Log.IsDebugEnabled)
-					Log.DebugFormat("RPC #{0} interrupted because the socket was disconnected", rpcId);
+					Log.DebugFormat("{0}: RPC #{1} interrupted because the socket was disconnected", Name, rpcId);
 				return;
 			}
 
@@ -1291,7 +1323,8 @@ namespace SharpRemote
 
 			var e = new TypeMismatchException(
 				string.Format(
-					"There was a type mismatch when invoking RPC #{0} '{1}' on grain #{2}: Expected '{3}' but found '{4}",
+					"{0}: There was a type mismatch when invoking RPC #{1} '{2}' on grain #{3}: Expected '{4}' but found '{5}",
+					Name,
 					rpcId,
 					methodName,
 					grain.ObjectId,
@@ -1424,8 +1457,9 @@ namespace SharpRemote
 				message = null;
 				error =
 					string.Format(
-						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
+						"{0}: EndPoint '{1}' did not receive '{2}' message from remote endpoint '{3}' in time: {4}s (error: {5})",
 						Name,
+						InternalLocalEndPoint,
 						messageStep,
 						remoteEndPoint,
 						timeout.TotalSeconds,
@@ -1450,8 +1484,9 @@ namespace SharpRemote
 				message = null;
 				error =
 					string.Format(
-						"EndPoint '{0}' did not receive '{1}' message from remote endpoint '{2}' in time: {3}s (error: {4})",
+						"{0}: EndPoint '{1}' did not receive '{2}' message from remote endpoint '{3}' in time: {4}s (error: {5})",
 						Name,
+						InternalLocalEndPoint,
 						messageStep,
 						remoteEndPoint,
 						timeout.TotalSeconds,
@@ -1528,8 +1563,9 @@ namespace SharpRemote
 				SocketError err;
 				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
 				{
-					error = string.Format("EndPoint '{0}' failed to send {1} to remote endpoint '{2}': {3}",
+					error = string.Format("{0}: EndPoint '{1}' failed to send {2} to remote endpoint '{3}': {4}",
 					                      Name,
+					                      InternalLocalEndPoint,
 					                      messageType,
 					                      remoteEndPoint,
 					                      err);
@@ -1559,11 +1595,12 @@ namespace SharpRemote
 				// Upon accepting an incoming connection, we try to authenticate the client
 				// by posing a challenge
 				string challenge = _clientAuthenticator.CreateChallenge();
-				Log.DebugFormat("Creating challenge '{0}' for endpoint '{1}'", challenge, remoteEndPoint);
+				Log.DebugFormat("{0}: Creating challenge '{1}' for endpoint '{2}'", Name, challenge, remoteEndPoint);
 				WriteMessage(socket, AuthenticationRequiredMessage, challenge);
 
 				ReadMessage(socket, timeout, AuthenticationResponse, out messageType, out message);
-				Log.DebugFormat("Received response '{0}' for challenge '{1}' from endpoint '{2}'",
+				Log.DebugFormat("{0}: Received response '{1}' for challenge '{2}' from endpoint '{3}'",
+				                Name,
 				                message,
 				                challenge,
 				                remoteEndPoint);
@@ -1578,7 +1615,9 @@ namespace SharpRemote
 				}
 
 				WriteMessage(socket, AuthenticationSucceedMessage);
-				Log.InfoFormat("Endpoint '{0}' successfully authenticated", remoteEndPoint);
+				Log.InfoFormat("{0}: Endpoint '{1}' successfully authenticated",
+				               Name,
+				               remoteEndPoint);
 			}
 			else
 			{
@@ -1644,7 +1683,9 @@ namespace SharpRemote
 			{
 				if (_clientAuthenticator == null)
 				{
-					Log.ErrorFormat("Server requires client to authorize itself, but not authenticator was provided");
+					Log.ErrorFormat("{0}: Server requires client '{1}' to authorize itself, but not authenticator was provided",
+					                Name,
+					                remoteEndPoint);
 
 					errorType = ErrorType.AuthenticationRequired;
 					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
@@ -1653,7 +1694,10 @@ namespace SharpRemote
 				}
 
 				string challenge = message;
-				Log.DebugFormat("Server requires client to authorize itself, trying to meet challenge '{0}'", challenge);
+				Log.DebugFormat("{0}: Server requires client '{1}' to authorize itself, trying to meet challenge '{2}'",
+				                Name,
+				                remoteEndPoint,
+				                challenge);
 
 				// Upon establishing a connection, we try to authenticate the ourselves
 				// against the server by answering his response.
@@ -1689,7 +1733,8 @@ namespace SharpRemote
 			{
 				errorType = ErrorType.Handshake;
 				error =
-					string.Format("EndPoint '{0}' sent unknown message '{1}: {2}', expected either {3} or {4}",
+					string.Format("{0}: EndPoint '{1}' sent unknown message '{2}: {3}', expected either {4} or {5}",
+					              Name,
 					              remoteEndPoint,
 					              messageType,
 					              message,
@@ -1745,7 +1790,9 @@ namespace SharpRemote
 					return false;
 				}
 
-				Log.InfoFormat("Remote endpoint '{0}' successfully authenticated", remoteEndPoint);
+				Log.InfoFormat("{0}: Remote endpoint '{1}' successfully authenticated",
+				               Name,
+				               remoteEndPoint);
 			}
 			else
 			{
@@ -1873,7 +1920,9 @@ namespace SharpRemote
 			catch (Exception e)
 			{
 				reason = EndPointDisconnectReason.UnhandledException;
-				Log.ErrorFormat("Caught exception while writing/handling messages: {0}", e);
+				Log.ErrorFormat("{0}: Caught exception while writing/handling messages: {1}",
+				                Name,
+				                e);
 			}
 
 			Disconnect(currentConnectionId, reason, error);
@@ -1949,7 +1998,9 @@ namespace SharpRemote
 			catch (Exception e)
 			{
 				reason = EndPointDisconnectReason.UnhandledException;
-				Log.ErrorFormat("Caught exception while reading/handling messages: {0}", e);
+				Log.ErrorFormat("{0}: Caught exception while reading/handling messages: {1}",
+				                Name,
+				                e);
 			}
 
 			Disconnect(connectionId, reason, error);

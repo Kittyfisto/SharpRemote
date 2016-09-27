@@ -68,12 +68,14 @@ namespace SharpRemote.Hosting
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
+		/// <param name="endPointName">The name of this silo, used for debugging (and logging)</param>
 		public OutOfProcessSiloServer(string[] args,
 		                              ITypeResolver customTypeResolver = null,
 		                              PostMortemSettings postMortemSettings = null,
 		                              HeartbeatSettings heartbeatSettings = null,
 		                              LatencySettings latencySettings = null,
-		                              EndPointSettings endPointSettings = null)
+		                              EndPointSettings endPointSettings = null,
+		                              string endPointName = null)
 		{
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 			{
@@ -169,6 +171,7 @@ namespace SharpRemote.Hosting
 			}
 
 			_endPoint = new SocketRemotingEndPointServer(
+				endPointName,
 				customTypeResolver: customTypeResolver,
 				heartbeatSettings: heartbeatSettings,
 				latencySettings: latencySettings,

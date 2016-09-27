@@ -97,8 +97,10 @@ namespace SharpRemote
 			int written = socket.Send(data, 0, length, SocketFlags.None, out err);
 			if (written != length || err != SocketError.Success || !socket.Connected)
 			{
-				Log.DebugFormat("Error while writing to socket: {0} out of {1} written, method {2}, IsConnected: {3}", written,
-								data.Length, err, socket.Connected);
+				Log.DebugFormat("{0}: Error while writing to socket, {1} out of {2} written, method {3}, IsConnected: {4}",
+				                Name,
+				                written,
+				                data.Length, err, socket.Connected);
 				return false;
 			}
 
@@ -113,8 +115,10 @@ namespace SharpRemote
 				if (!socket.Connected)
 				{
 					err = SocketError.NotConnected;
-					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
-									buffer.Length, err, socket.Connected);
+					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}",
+					                Name,
+					                0,
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 
@@ -122,8 +126,10 @@ namespace SharpRemote
 				if (remaining <= TimeSpan.Zero)
 				{
 					err = SocketError.TimedOut;
-					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
-									buffer.Length, err, socket.Connected);
+					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}",
+					                Name,
+					                0,
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 
@@ -131,8 +137,10 @@ namespace SharpRemote
 				if (!socket.Poll(t, SelectMode.SelectRead))
 				{
 					err = SocketError.TimedOut;
-					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", 0,
-									buffer.Length, err, socket.Connected);
+					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}",
+					                Name,
+					                0,
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 			}
@@ -153,8 +161,8 @@ namespace SharpRemote
 
 				if (err != SocketError.Success || read <= 0 || !socket.Connected)
 				{
-					Log.DebugFormat("Error while reading from socket: {0} out of {1} read, method {2}, IsConnected: {3}", read,
-									buffer.Length, err, socket.Connected);
+					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}", read,
+					                buffer.Length, err, socket.Connected);
 					return false;
 				}
 			}

@@ -265,5 +265,20 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 				endPoint.HeartbeatSettings.SkippedHeartbeatThreshold.Should().Be(11);
 			}
 		}
+
+		[Test]
+		[Description("Verifies that it's possible to specify the name of the silo")]
+		public void TestCtor8()
+		{
+			var args = new[]
+				{
+					Process.GetCurrentProcess().Id.ToString(CultureInfo.InvariantCulture),
+				};
+			using (var server = new OutOfProcessSiloServer(args,
+				endPointName: "Foobar"))
+			{
+				server.Name.Should().Be("Foobar", "because we specified this name in the ctor");
+			}
+		}
 	}
 }

@@ -98,12 +98,12 @@ namespace SharpRemote
 		{
 			_serverSocket.Listen(1);
 			_serverSocket.BeginAccept(OnIncomingConnection, null);
-			Log.InfoFormat("EndPoint '{0}' listening on {1}", Name, LocalEndPoint);
+			Log.InfoFormat("{0}: EndPoint listening on {1}", Name, LocalEndPoint);
 
 			if (Name != null && _networkServiceDiscoverer != null)
 			{
 				_peerNameRegistration = _networkServiceDiscoverer.RegisterService(Name, LocalEndPoint);
-				Log.InfoFormat("Endpoint '{0}@{1}' published to local cloud", Name, LocalEndPoint);
+				Log.InfoFormat("{0}: Endpoint '{1}' published to local cloud", Name, LocalEndPoint);
 			}
 		}
 
@@ -140,12 +140,15 @@ namespace SharpRemote
 
 				if (isAlreadyConnected)
 				{
-					Log.InfoFormat("Blocking incoming connection from '{0}', we're already connected to another endpoint",
+					Log.InfoFormat("{0}: Blocking incoming connection from '{1}', we're already connected to another endpoint",
+					               Name,
 					               socket.RemoteEndPoint);
 				}
 				else
 				{
-					Log.DebugFormat("Incoming connection from '{0}', starting handshake...", socket.RemoteEndPoint);
+					Log.DebugFormat("{0}: Incoming connection from '{1}', starting handshake...",
+					                Name,
+					                socket.RemoteEndPoint);
 
 					var connectionId = PerformIncomingHandshake(socket, socket.RemoteEndPoint);
 					FireOnConnected(socket.RemoteEndPoint, connectionId);
@@ -155,13 +158,17 @@ namespace SharpRemote
 			}
 			catch (AuthenticationException e)
 			{
-				Log.WarnFormat("Closing connection: {0}", e);
+				Log.WarnFormat("{0}: Closing connection: {1}",
+				               Name,
+				               e);
 
 				Disconnect();
 			}
 			catch (Exception e)
 			{
-				Log.ErrorFormat("Caught exception while accepting incoming connection - disconnecting again: {0}", e);
+				Log.ErrorFormat("{0}: Caught exception while accepting incoming connection - disconnecting again: {1}",
+				                Name,
+				                e);
 
 				Disconnect();
 			}
@@ -179,7 +186,9 @@ namespace SharpRemote
 						}
 						catch (Exception e)
 						{
-							Log.WarnFormat("Ignoring exception caught while disconnecting & disposing of socket: {0}", e);
+							Log.WarnFormat("{0}: Ignoring exception caught while disconnecting & disposing of socket: {1}",
+							               Name,
+							               e);
 						}
 					}
 				}

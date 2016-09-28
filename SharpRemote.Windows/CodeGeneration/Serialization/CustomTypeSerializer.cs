@@ -41,7 +41,7 @@ namespace SharpRemote
 
 				var proxyInterface = FindProxyInterface(type);
 
-				var method = typeof(IRemotingEndPoint).GetMethod("GetExistingOrCreateNewServant").MakeGenericMethod(proxyInterface);
+				var method = Methods.RemotingEndPointGetOrCreateServant.MakeGenericMethod(proxyInterface);
 
 				// writer.Write(_remotingEndPoint.GetExistingOrCreateNewServant<T>(value).ObjectId);
 				loadWriter();

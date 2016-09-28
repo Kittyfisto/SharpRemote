@@ -922,7 +922,7 @@ namespace SharpRemote.Test.Remoting
 		[NUnit.Framework.Description("Verifies that transfering a string array is possible")]
 		public void TestEventActionStringArray()
 		{
-			const ulong servantId = 36;
+			const ulong servantId = 39;
 
 			var values = new List<string>();
 			var subject = new Mock<IActionEventStringArray>();

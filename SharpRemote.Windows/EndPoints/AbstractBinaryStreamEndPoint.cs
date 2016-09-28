@@ -645,8 +645,28 @@ namespace SharpRemote
 			_garbageCollectionTime.Start();
 			try
 			{
-				RemoveUnusedServants();
-				RemoveUnusedProxies();
+				int numServantsRemoved = RemoveUnusedServants();
+				int numProxiesRemoved = RemoveUnusedProxies();
+
+				if (numProxiesRemoved > 0)
+				{
+					if (Log.IsDebugEnabled)
+					{
+						Log.DebugFormat("{0}: Removed {1} proxies because they are no longer reachable",
+						                Name,
+						                numProxiesRemoved);
+					}
+				}
+
+				if (numServantsRemoved > 0)
+				{
+					if (Log.IsDebugEnabled)
+					{
+						Log.DebugFormat("{0}: Removed {1} servants because they are no longer reachable",
+						                Name,
+						                numServantsRemoved);
+					}
+				}
 			}
 			catch (Exception e)
 			{
@@ -660,7 +680,7 @@ namespace SharpRemote
 			}
 		}
 
-		private void RemoveUnusedServants()
+		private int RemoveUnusedServants()
 		{
 			lock (_servantsById)
 			{
@@ -681,11 +701,14 @@ namespace SharpRemote
 					}
 
 					_numServantsCollected += collectedServants.Count;
+					return collectedServants.Count;
 				}
+
+				return 0;
 			}
 		}
 
-		private void RemoveUnusedProxies()
+		private int RemoveUnusedProxies()
 		{
 			lock (_proxiesById)
 			{
@@ -705,13 +728,15 @@ namespace SharpRemote
 
 				if (toRemove != null)
 				{
-					_numProxiesCollected += toRemove.Count;
-
 					foreach (ulong key in toRemove)
 					{
 						_proxiesById.Remove(key);
 					}
+					_numProxiesCollected += toRemove.Count;
+					return toRemove.Count;
 				}
+
+				return 0;
 			}
 		}
 

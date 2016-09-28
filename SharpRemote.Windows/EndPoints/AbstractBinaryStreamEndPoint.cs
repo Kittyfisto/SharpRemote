@@ -669,6 +669,14 @@ namespace SharpRemote
 				{
 					foreach (IServant servant in collectedServants)
 					{
+						if (Log.IsDebugEnabled)
+						{
+							Log.DebugFormat(
+								"{0}: Removing servant '#{1}' from list of available servants because it's subject is no longer reachable (it has been garbage collected)",
+								Name,
+								servant.ObjectId);
+						}
+
 						_servantsById.Remove(servant.ObjectId);
 					}
 

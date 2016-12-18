@@ -73,16 +73,16 @@ namespace SharpRemote
 		IEnumerable<IProxy> Proxies { get; }
 
 		/// <summary>
-		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/>
+		/// Is called when a connection with another <see cref="IRemotingEndPoint"/>
 		/// is created.
 		/// </summary>
 		/// <remarks>
-		/// The event is fired with the endpoint of the *other* <see cref="AbstractSocketRemotingEndPoint"/>.
+		/// The event is fired with the endpoint of the *other* <see cref="IRemotingEndPoint"/>.
 		/// </remarks>
 		event Action<EndPoint, ConnectionId> OnConnected;
 
 		/// <summary>
-		/// Is called when a connection with another <see cref="AbstractSocketRemotingEndPoint"/> is disconnected.
+		/// Is called when a connection with another <see cref="IRemotingEndPoint"/> is disconnected.
 		/// </summary>
 		event Action<EndPoint, ConnectionId> OnDisconnected;
 

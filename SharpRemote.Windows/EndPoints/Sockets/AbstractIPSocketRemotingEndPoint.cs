@@ -20,6 +20,7 @@ namespace SharpRemote
 	/// </summary>
 	public abstract class AbstractIPSocketRemotingEndPoint
 		: AbstractBinaryStreamEndPoint<Socket>
+		, ISocketRemotingEndPoint
 	{
 		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 

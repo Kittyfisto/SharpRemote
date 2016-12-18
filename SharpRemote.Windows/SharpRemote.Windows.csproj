@@ -67,6 +67,9 @@
     <Compile Include="EndPoints\NamedPipes\NamedPipeEndPoint.cs" />
     <Compile Include="EndPoints\NamedPipes\NamedPipeRemotingEndPointClient.cs" />
     <Compile Include="EndPoints\NamedPipes\NamedPipeRemotingEndPointServer.cs" />
+    <Compile Include="EndPoints\Sockets\ISocketRemotingEndPoint.cs" />
+    <Compile Include="EndPoints\Sockets\ISocketRemotingEndPointClient.cs" />
+    <Compile Include="EndPoints\Sockets\ISocketRemotingEndPointServer.cs" />
     <Compile Include="ETW\PendingMethodsEventSource.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchNamedPipeEndPointException.cs" />

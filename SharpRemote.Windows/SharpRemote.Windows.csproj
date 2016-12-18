@@ -82,6 +82,7 @@
     <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
     <Compile Include="Hosting\OutOfProcess\IFailureHandler.cs" />
     <Compile Include="Hosting\OutOfProcess\ZeroFailureToleranceStrategy.cs" />
+    <Compile Include="ServiceDiscovery\INetworkServiceDiscoverer.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
     <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />
     <Compile Include="ServiceDiscovery\INetworkServiceRegisty.cs" />

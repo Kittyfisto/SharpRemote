@@ -13,7 +13,8 @@ namespace SharpRemote.ServiceDiscovery
 	/// those queries.
 	/// </summary>
 	public sealed class NetworkServiceDiscoverer
-		: IDisposable
+		: INetworkServiceDiscoverer
+		, IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 

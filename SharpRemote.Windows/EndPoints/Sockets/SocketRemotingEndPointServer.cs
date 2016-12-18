@@ -19,7 +19,7 @@ namespace SharpRemote
 	{
 		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly NetworkServiceDiscoverer _networkServiceDiscoverer;
+		private readonly INetworkServiceDiscoverer _networkServiceDiscoverer;
 
 		private RegisteredService _peerNameRegistration;
 		private Socket _serverSocket;
@@ -42,7 +42,7 @@ namespace SharpRemote
 		                                    IAuthenticator clientAuthenticator = null,
 		                                    IAuthenticator serverAuthenticator = null,
 		                                    ITypeResolver customTypeResolver = null,
-		                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
+		                                    INetworkServiceDiscoverer networkServiceDiscoverer = null,
 		                                    Serializer serializer = null,
 		                                    HeartbeatSettings heartbeatSettings = null,
 		                                    LatencySettings latencySettings = null,

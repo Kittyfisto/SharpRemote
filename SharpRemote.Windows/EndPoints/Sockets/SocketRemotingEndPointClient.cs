@@ -20,7 +20,7 @@ namespace SharpRemote
 	{
 		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly NetworkServiceDiscoverer _networkServiceDiscoverer;
+		private readonly INetworkServiceDiscoverer _networkServiceDiscoverer;
 
 		/// <summary>
 		///     Creates a new socket end point that (optionally) is bound to the given
@@ -39,7 +39,7 @@ namespace SharpRemote
 		                                    IAuthenticator clientAuthenticator = null,
 		                                    IAuthenticator serverAuthenticator = null,
 		                                    ITypeResolver customTypeResolver = null,
-		                                    NetworkServiceDiscoverer networkServiceDiscoverer = null,
+		                                    INetworkServiceDiscoverer networkServiceDiscoverer = null,
 		                                    Serializer serializer = null,
 		                                    HeartbeatSettings heartbeatSettings = null,
 		                                    LatencySettings latencySettings = null,

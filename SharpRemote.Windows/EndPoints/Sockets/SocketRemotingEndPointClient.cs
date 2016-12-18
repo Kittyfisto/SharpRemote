@@ -320,7 +320,7 @@ namespace SharpRemote
 
 			var results = _networkServiceDiscoverer.FindServices(endPointName);
 
-			if (results.Count == 0)
+			if (results == null || results.Count == 0)
 			{
 				throw new NoSuchIPEndPointException(endPointName);
 			}

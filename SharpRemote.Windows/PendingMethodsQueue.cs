@@ -109,8 +109,8 @@ namespace SharpRemote
 				throw new OperationCanceledException(_endPointName);
 
 			PendingMethodCall message = pendingWrites.Dequeue();
-			PendingMethodsEventSource.Instance.Dequeued(message.RpcId);
-			PendingMethodsEventSource.Instance.QueueCountChanged(pendingWrites.Count);
+			PendingMethodsEventSource.Instance.Dequeued(_endPointName, message.RpcId);
+			PendingMethodsEventSource.Instance.QueueCountChanged(_endPointName, pendingWrites.Count);
 
 			return message.GetMessage(out length);
 		}
@@ -160,8 +160,8 @@ namespace SharpRemote
 						var reader = new BinaryReader(stream, Encoding.UTF8);
 						call.HandleResponse(MessageType.Return | MessageType.Exception, reader);
 
-						PendingMethodsEventSource.Instance.Dequeued(call.RpcId);
-						PendingMethodsEventSource.Instance.QueueCountChanged(_pendingCalls.Count);
+						PendingMethodsEventSource.Instance.Dequeued(_endPointName, call.RpcId);
+						PendingMethodsEventSource.Instance.QueueCountChanged(_endPointName, _pendingCalls.Count);
 					}
 					_pendingCalls.Clear();
 				}
@@ -211,9 +211,9 @@ namespace SharpRemote
 				_pendingCalls.Add(rpcId, message);
 
 				int numPendingRpcs = _pendingCalls.Count;
-				PendingMethodsEventSource.Instance.Enqueued(rpcId, interfaceType, methodName,
+				PendingMethodsEventSource.Instance.Enqueued(_endPointName, rpcId, interfaceType, methodName,
 				                                            arguments != null ? arguments.Length : 0);
-				PendingMethodsEventSource.Instance.QueueCountChanged(numPendingRpcs);
+				PendingMethodsEventSource.Instance.QueueCountChanged(_endPointName, numPendingRpcs);
 			}
 
 			message.Reset(servantId, interfaceType, methodName, arguments, rpcId, callback);

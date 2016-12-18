@@ -21,7 +21,6 @@ namespace SharpRemote.Test.Remoting
 		protected abstract bool TryConnect(IRemotingEndPoint client, EndPoint localEndPoint, TimeSpan timeout);
 
 		[Test]
-		[Repeat(50)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
@@ -49,7 +48,6 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Repeat(50)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description(
 			"Verifies that Disconnect() disconnects from the remote endpoint, sets the IsConnected property to false and the RemoteEndPoint property to null"
@@ -77,7 +75,6 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Repeat(50)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that disconnecting and connecting to the same endpoint again is possible")]
 		public void TestDisconnect3()
@@ -103,7 +100,6 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Repeat(50)]
 		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
 		[Description(
 			"Verifies that the OnDisconnected event is fired when the connection is disconnected for both the client and the server"
@@ -251,7 +247,6 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Repeat(50)]
 		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that OnDisconnected sends the correct connection id")]
 		public void TestDisconnect7()
@@ -285,7 +280,6 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Repeat(50)]
 		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that after two endpoints are disconnected, neither one has any more pending RPCs waiting to be executed (which would be never)")]
 		public void TestDisconnect8()
@@ -333,7 +327,6 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[Repeat(50)]
 		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that after two endpoints are disconnected, neither one has any more pending RPCs waiting to be executed (which would be never)")]
 		public void TestDisconnect9()

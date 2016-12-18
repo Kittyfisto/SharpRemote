@@ -28,28 +28,29 @@ namespace SharpRemote.ETW
 		{
 		}
 
-		[Event(RpcEnqueuedId, Message = "RPC #{0} {1}.{2} enqueued (argument length: {3} bytes)", Level = EventLevel.Verbose)]
-		internal void Enqueued(long id,
+		[Event(RpcEnqueuedId, Message = "RPC '{0}' #{1} {2}.{3} enqueued (argument length: {4} bytes)", Level = EventLevel.Verbose)]
+		internal void Enqueued(string endPointName,
+		                       long id,
 		                       string interfaceType,
 		                       string methodName,
 		                       long argumentLengthInBytes)
 		{
 			if (IsEnabled())
-				WriteEvent(RpcEnqueuedId, id, interfaceType, methodName, argumentLengthInBytes);
+				WriteEvent(RpcEnqueuedId, endPointName, id, interfaceType, methodName, argumentLengthInBytes);
 		}
 
-		[Event(RpcDequeuedId, Message = "RPC #{0} dequeued", Level = EventLevel.Verbose)]
-		internal void Dequeued(long id)
+		[Event(RpcDequeuedId, Message = "RPC '{0}' #{1} dequeued", Level = EventLevel.Verbose)]
+		internal void Dequeued(string endPointName, long id)
 		{
 			if (IsEnabled())
-				WriteEvent(RpcDequeuedId, id);
+				WriteEvent(RpcDequeuedId, endPointName, id);
 		}
 
-		[Event(QueueCountChangedId, Message = "Queue count changed: {0}", Level = EventLevel.LogAlways)]
-		internal void QueueCountChanged(int count)
+		[Event(QueueCountChangedId, Message = "Queue count changed: '{0}' {1}", Level = EventLevel.LogAlways)]
+		internal void QueueCountChanged(string endPointName, int count)
 		{
 			if (IsEnabled())
-				WriteEvent(QueueCountChangedId, count);
+				WriteEvent(QueueCountChangedId, endPointName, count);
 		}
 	}
 }

@@ -213,6 +213,8 @@
     <Compile Include="Types\Classes\FieldSealedClass.cs" />
     <Compile Include="Types\Classes\Tree.cs" />
     <Compile Include="Types\Structs\MissingDataContractStruct.cs" />
+    <Compile Include="Types\Structs\MissingPropertyGetterStruct.cs" />
+    <Compile Include="Types\Structs\MissingPropertySetterStruct.cs" />
     <Compile Include="Types\Structs\NestedFieldStruct.cs" />
     <Compile Include="Types\Structs\NullableFieldStruct.cs" />
     <Compile Include="Types\Structs\PropertyStruct.cs" />

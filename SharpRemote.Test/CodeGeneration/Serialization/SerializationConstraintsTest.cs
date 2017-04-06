@@ -50,11 +50,27 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Description("Verifies that an class may not be both marked with the [ByReference] and [DataContract] attribute")]
+		[Description("Verifies that a class may not be both marked with the [ByReference] and [DataContract] attribute")]
 		public void TestInterfaceWithDataContractAndByReference()
 		{
 			TestFailRegister<ByReferenceAndDataContract>(
 				"The type 'SharpRemote.Test.Types.Classes.ByReferenceAndDataContract' is marked with the [DataContract] as well as [ByReference] attribute, but these are mutually exclusive");
+		}
+
+		[Test]
+		[Description("Verifies that a property without a setter may not be serialized")]
+		public void TestStructPropertyWithoutSetter()
+		{
+			TestFailRegister<MissingPropertySetterStruct>(
+				"The property 'SharpRemote.Test.Types.Structs.MissingPropertySetterStruct.Value' is marked with the [DataMember] attribute but has no setter - this is not supported");
+		}
+
+		[Test]
+		[Description("Verifies that a property without a getter may not be serialized")]
+		public void TestStructPropertyWithoutGetter()
+		{
+			TestFailRegister<MissingPropertyGetterStruct>(
+				"The property 'SharpRemote.Test.Types.Structs.MissingPropertyGetterStruct.Value' is marked with the [DataMember] attribute but has no getter - this is not supported");
 		}
 	}
 }

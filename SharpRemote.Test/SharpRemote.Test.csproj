@@ -229,6 +229,10 @@
     <Compile Include="Watchdog\InternalWatchdogTest.cs" />
     <Compile Include="Test2Authenticator.cs" />
     <Compile Include="WeakKeyDictionaryTest.cs" />
+    <Compile Include="WebApi\Game.cs" />
+    <Compile Include="WebApi\GameController.cs" />
+    <Compile Include="WebApi\Routes\RouteTokenTest.cs" />
+    <Compile Include="WebApi\WebApiServerTest.cs" />
     <Compile Include="_NativeMethodsTest.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -240,6 +244,10 @@
     <ProjectReference Include="..\SharpRemote.Host\SharpRemote.Host.csproj">
       <Project>{21218e92-3815-4e5e-9761-c3fb0709f532}</Project>
       <Name>SharpRemote.Host</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SharpRemote.WebApi\SharpRemote.WebApi.csproj">
+      <Project>{A358345A-44E1-4767-A20C-A97DE4BAF52C}</Project>
+      <Name>SharpRemote.WebApi</Name>
     </ProjectReference>
     <ProjectReference Include="..\SharpRemote.Windows\SharpRemote.Windows.csproj">
       <Project>{1b908b3a-2f3b-47b8-b69f-3827b8829586}</Project>

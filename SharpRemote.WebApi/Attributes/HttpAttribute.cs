@@ -7,9 +7,13 @@ namespace SharpRemote.WebApi
 	/// <summary>
 	/// 
 	/// </summary>
+	[AttributeUsage(AttributeTargets.Method)]
 	public abstract class HttpAttribute
 		: Attribute
 	{
+		/// <summary>
+		/// 
+		/// </summary>
 		public string Route { get; set; }
 
 		/// <summary>

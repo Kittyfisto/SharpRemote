@@ -87,7 +87,9 @@ namespace SharpRemote.WebApi.HttpListener
 			WebResponse response;
 			try
 			{
-				response = _handler.TryHandle(context.Request);
+				var uri = context.Request.Url;
+				var subUri = RemovePrefix(uri);
+				response = _handler.TryHandle(subUri, context.Request);
 			}
 			catch (Exception e)
 			{
@@ -95,6 +97,20 @@ namespace SharpRemote.WebApi.HttpListener
 				response = new WebResponse(500);
 			}
 			context.SetResponse(response);
+		}
+
+		private string RemovePrefix(Uri uri)
+		{
+			var url = uri.ToString();
+			foreach (var prefix in _listener.Prefixes)
+			{
+				if (url.StartsWith(prefix))
+				{
+					return url.Substring(prefix.Length);
+				}
+			}
+
+			return url;
 		}
 
 		/// <inheritdoc />

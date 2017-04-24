@@ -205,6 +205,8 @@
     <Compile Include="Types\Classes\BaseClass.cs" />
     <Compile Include="Types\Classes\Birke.cs" />
     <Compile Include="Types\Classes\Processor.cs" />
+    <Compile Include="Types\Interfaces\Web\IGetString.cs" />
+    <Compile Include="Types\Interfaces\Web\IGetStringList.cs" />
     <Compile Include="Types\Structs\FieldDecimal.cs" />
     <Compile Include="Types\Structs\FieldObjectStruct.cs" />
     <Compile Include="Types\Structs\FieldOptionalDecimal.cs" />
@@ -229,8 +231,14 @@
     <Compile Include="Watchdog\InternalWatchdogTest.cs" />
     <Compile Include="Test2Authenticator.cs" />
     <Compile Include="WeakKeyDictionaryTest.cs" />
+    <Compile Include="WebApi\Attributes\HttpDeleteAttributeTest.cs" />
+    <Compile Include="WebApi\Attributes\HttpGetAttributeTest.cs" />
+    <Compile Include="WebApi\Attributes\HttpPatchAttributeTest.cs" />
+    <Compile Include="WebApi\Attributes\HttpPostAttributeTest.cs" />
+    <Compile Include="WebApi\Attributes\HttpPutAttributeTest.cs" />
     <Compile Include="WebApi\Game.cs" />
     <Compile Include="WebApi\GameController.cs" />
+    <Compile Include="WebApi\Requests\RequestHandlerTest.cs" />
     <Compile Include="WebApi\Routes\RouteTest.cs" />
     <Compile Include="WebApi\Routes\RouteTokenTest.cs" />
     <Compile Include="WebApi\WebApiServerTest.cs" />

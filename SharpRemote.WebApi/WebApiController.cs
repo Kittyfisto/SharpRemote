@@ -10,22 +10,20 @@ namespace SharpRemote.WebApi
 		: IWebApiController
 	{
 		private readonly object _syncRoot;
-		private readonly IRequestHandlerCreator _requestHandlerCreator;
-		private readonly Dictionary<string, IRequestHandler> _resourceControllers;
+		private readonly Dictionary<string, IResource> _resourceControllers;
 
 		/// <summary>
 		/// </summary>
 		public WebApiController()
 		{
 			_syncRoot = new object();
-			_requestHandlerCreator = new RequestHandlerCreator();
-			_resourceControllers = new Dictionary<string, IRequestHandler>();
+			_resourceControllers = new Dictionary<string, IResource>();
 		}
 
 		/// <inheritdoc />
 		public void AddResource<T>(string name, T controller)
 		{
-			var handler = _requestHandlerCreator.Create(controller);
+			var handler = Resource.Create(controller);
 			lock (_syncRoot)
 			{
 				_resourceControllers.Add(name, handler);
@@ -33,21 +31,42 @@ namespace SharpRemote.WebApi
 		}
 
 		/// <inheritdoc />
-		public WebResponse TryHandle(WebRequest request)
+		public WebResponse TryHandle(string subUri, WebRequest request)
 		{
-			lock (_resourceControllers)
+			string resourceName;
+			string resourceSubUri;
+			if (ExtractResourceName(subUri, out resourceName, out resourceSubUri))
 			{
-				foreach (var handler in _resourceControllers.Values)
+				lock (_resourceControllers)
 				{
-					var response = handler.TryHandle(request);
-					if (response != null)
+					IResource resource;
+					if (_resourceControllers.TryGetValue(resourceName, out resource))
 					{
-						return response;
+						var response = resource.TryHandleRequest(subUri, request);
+						if (response != null)
+						{
+							return response;
+						}
 					}
 				}
 			}
 
 			return new WebResponse(404);
+		}
+
+		private bool ExtractResourceName(string subUri, out string resourceName, out string resourceSubUri)
+		{
+			int idx = subUri.IndexOf("/");
+			if (idx != -1)
+			{
+				resourceName = subUri.Substring(0, idx - 1);
+				resourceSubUri = subUri.Substring(idx + 1);
+				return true;
+			}
+
+			resourceName = null;
+			resourceSubUri = null;
+			return false;
 		}
 
 		/// <inheritdoc />

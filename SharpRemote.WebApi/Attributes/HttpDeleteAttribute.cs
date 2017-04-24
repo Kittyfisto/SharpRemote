@@ -7,12 +7,20 @@ namespace SharpRemote.WebApi
 	public sealed class HttpDeleteAttribute
 		: HttpAttribute
 	{
+		/// <summary>
+		/// 
+		/// </summary>
 		public HttpDeleteAttribute()
 		{
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="route"></param>
 		public HttpDeleteAttribute(string route)
 		{
+			Route = route;
 		}
 
 		/// <inheritdoc />

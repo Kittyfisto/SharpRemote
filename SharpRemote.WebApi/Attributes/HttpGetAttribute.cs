@@ -8,12 +8,20 @@ namespace SharpRemote.WebApi
 	public sealed class HttpGetAttribute
 		: HttpAttribute
 	{
+		/// <summary>
+		/// 
+		/// </summary>
 		public HttpGetAttribute()
 		{
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="route"></param>
 		public HttpGetAttribute(string route)
 		{
+			Route = route;
 		}
 
 		/// <inheritdoc />

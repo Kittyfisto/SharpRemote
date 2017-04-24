@@ -18,6 +18,12 @@ namespace SharpRemote.WebApi.Requests
 		/// </summary>
 		public HttpMethod Method { get; }
 
+		internal WebRequest(Uri url, HttpMethod method)
+		{
+			Url = url;
+			Method = method;
+		}
+
 		internal WebRequest(HttpListenerRequest request)
 		{
 			Url = request.Url;

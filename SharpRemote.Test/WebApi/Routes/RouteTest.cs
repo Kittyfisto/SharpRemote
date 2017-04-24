@@ -76,6 +76,15 @@ namespace SharpRemote.Test.WebApi.Routes
 		}
 
 		[Test]
+		public void TestTryMatchByte1([Values(0, 9, 10, 99, 100, byte.MaxValue)] byte value)
+		{
+			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(byte) });
+			object[] values;
+			route.TryMatch(value.ToString(), out values).Should().BeTrue();
+			values.Should().Equal(value);
+		}
+
+		[Test]
 		public void TestTryMatchShort1([Values(short.MinValue, -10000, -9999, -1000, -999, -100, -99, -10, -9, 0, 9, 10, 99, 100, 999, 1000, 9999, 10000, short.MaxValue)] short value)
 		{
 			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(short) });
@@ -85,12 +94,57 @@ namespace SharpRemote.Test.WebApi.Routes
 		}
 
 		[Test]
+		public void TestTryMatchUShort1([Values(0, 9, 10, 99, 100, 999, 1000, 9999, 10000, ushort.MaxValue)] int value)
+		{
+			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(ushort) });
+			object[] values;
+			route.TryMatch(value.ToString(), out values).Should().BeTrue();
+			values.Should().Equal((ushort)value);
+		}
+
+		[Test]
 		public void TestTryMatchInt1([Values(int.MinValue, -1000000000, -999999999, -100000000, -99999999, -10000000, -9999999, -100000, -99999, -10000, -9999, -1000, -999, -100, -99, -10, -9, 0, 9, 10, 99, 100, 999, 1000, 9999, 10000, 99999, 100000, 999999, 1000000, 9999999, 10000000, 99999999, 1000000000, int.MaxValue)] int value)
 		{
 			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(int) });
 			object[] values;
 			route.TryMatch(value.ToString(), out values).Should().BeTrue();
 			values.Should().Equal(value);
+		}
+
+		[Test]
+		public void TestTryMatchUInt1([Values(0, 9, 10, 99, 100, 999, 1000, 9999, 10000, 99999, 100000, 999999, 1000000, 9999999, 10000000, 99999999, 1000000000, uint.MaxValue)] long value)
+		{
+			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(uint) });
+			object[] values;
+			route.TryMatch(value.ToString(), out values).Should().BeTrue();
+			values.Should().Equal((uint)value);
+		}
+
+		[Test]
+		public void TestTryMatchLong1([Values(long.MinValue, -1000000000, -999999999, -100000000, -99999999, -10000000, -9999999, -100000, -99999, -10000, -9999, -1000, -999, -100, -99, -10, -9, 0, 9, 10, 99, 100, 999, 1000, 9999, 10000, 99999, 100000, 999999, 1000000, 9999999, 10000000, 99999999, 1000000000, long.MaxValue)] long value)
+		{
+			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(long) });
+			object[] values;
+			route.TryMatch(value.ToString(), out values).Should().BeTrue();
+			values.Should().Equal(value);
+		}
+
+		[Test]
+		public void TestTryMatchULong1([Values(0, 9, 10, 99, 100, 999, 1000, 9999, 10000, 99999, 100000, 999999, 1000000, 9999999, 10000000, 99999999, 1000000000)] long value)
+		{
+			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(ulong) });
+			object[] values;
+			route.TryMatch(value.ToString(), out values).Should().BeTrue();
+			values.Should().Equal((ulong)value);
+		}
+
+		[Test]
+		public void TestTryMatchULong2()
+		{
+			var route = new Route(HttpMethod.Get, "{0}", new[] { typeof(ulong) });
+			object[] values;
+			route.TryMatch(ulong.MaxValue.ToString(), out values).Should().BeTrue();
+			values.Should().Equal(ulong.MaxValue);
 		}
 	}
 }

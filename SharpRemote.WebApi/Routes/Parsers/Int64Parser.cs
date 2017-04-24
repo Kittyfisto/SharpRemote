@@ -28,7 +28,7 @@ namespace SharpRemote.WebApi.Routes.Parsers
 						break;
 
 					default:
-						digits = (int)Math.Ceiling(Math.Log10(Math.Abs(number)));
+						digits = (int)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
 						break;
 				}
 				if (number < 0)

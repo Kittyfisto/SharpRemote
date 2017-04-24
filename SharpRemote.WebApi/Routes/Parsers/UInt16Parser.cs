@@ -18,7 +18,7 @@ namespace SharpRemote.WebApi.Routes.Parsers
 			{
 				var digits = number == 0
 					? 1
-					: (int)Math.Ceiling(Math.Log10(number));
+					: (int)Math.Floor(Math.Log10(number) + 1);
 				consumed = digits;
 				value = number;
 				return true;

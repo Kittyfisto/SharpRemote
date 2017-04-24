@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using log4net;
 using SharpRemote.WebApi.Routes;
@@ -40,13 +41,13 @@ namespace SharpRemote.WebApi.Requests
 		private Route ExtractRoute(MethodInfo method)
 		{
 			var attribute = method.GetCustomAttribute<HttpAttribute>();
-			return new Route(attribute, method.GetParameters());
+			return new Route(attribute.Method, attribute.Route, method.GetParameters().Select(x => x.ParameterType));
 		}
 
 		public WebResponse TryHandle(WebRequest request)
 		{
 			object[] arguments;
-			var method = FindMethod(request.Url, out arguments);
+			var method = FindMethod(request.Method, request.Url.ToString(), out arguments);
 			if (method == null)
 				return null;
 
@@ -69,14 +70,15 @@ namespace SharpRemote.WebApi.Requests
 			return response;
 		}
 
-		private MethodInfo FindMethod(Uri url, out object[] arguments)
+		private MethodInfo FindMethod(HttpMethod httpMethod, string url, out object[] arguments)
 		{
 			foreach (var pair in _methods)
 			{
 				var route = pair.Key;
 				var method = pair.Value;
 
-				if (route.TryMatch(url, out arguments))
+				if (route.Method == httpMethod &&
+				    route.TryMatch(url, out arguments))
 				{
 					return method;
 				}

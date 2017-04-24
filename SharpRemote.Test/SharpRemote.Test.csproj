@@ -231,6 +231,7 @@
     <Compile Include="WeakKeyDictionaryTest.cs" />
     <Compile Include="WebApi\Game.cs" />
     <Compile Include="WebApi\GameController.cs" />
+    <Compile Include="WebApi\Routes\RouteTest.cs" />
     <Compile Include="WebApi\Routes\RouteTokenTest.cs" />
     <Compile Include="WebApi\WebApiServerTest.cs" />
     <Compile Include="_NativeMethodsTest.cs" />

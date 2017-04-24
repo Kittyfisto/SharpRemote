@@ -57,7 +57,7 @@ namespace SharpRemote.WebApi.Routes
 			Argument
 		}
 
-		public static IEnumerable<RouteToken> Tokenize(string pattern)
+		public static List<RouteToken> Tokenize(string pattern)
 		{
 			var tokens = new List<RouteToken>();
 			if (pattern != null)

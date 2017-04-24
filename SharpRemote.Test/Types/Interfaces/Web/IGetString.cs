@@ -6,5 +6,8 @@ namespace SharpRemote.Test.Types.Interfaces.Web
 	{
 		[HttpGet]
 		string Get();
+
+		[HttpGet("startIndex={0}&count={1}")]
+		string Get(int startIndex, int count);
 	}
 }

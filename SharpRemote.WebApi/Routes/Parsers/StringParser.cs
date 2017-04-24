@@ -1,8 +1,14 @@
+using System;
+
 namespace SharpRemote.WebApi.Routes.Parsers
 {
 	internal sealed class StringParser
 		: ArgumentParser
 	{
+		public override bool RequiresTerminator => false;
+
+		public override Type Type => typeof(string);
+
 		public override bool TryExtract(string str, int startIndex, out object value, out int consumed)
 		{
 			// TODO: Introduce termination character extracted from route (if any)

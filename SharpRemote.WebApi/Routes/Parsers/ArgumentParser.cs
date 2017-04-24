@@ -5,6 +5,10 @@ namespace SharpRemote.WebApi.Routes.Parsers
 {
 	internal abstract class ArgumentParser
 	{
+		public abstract bool RequiresTerminator { get; }
+
+		public abstract Type Type { get; }
+
 		[Pure]
 		public abstract bool TryExtract(string str,
 			int startIndex,

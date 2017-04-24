@@ -4,24 +4,25 @@ using System.Globalization;
 namespace SharpRemote.WebApi.Routes.Parsers
 {
 	internal sealed class UInt64Parser
-		: ArgumentParser
+		: IntegerParser
 	{
+		public override Type Type => typeof(ulong);
+
 		public override bool TryExtract(string str,
-			int start,
+			int startIndex,
 			out object value,
 			out int consumed)
 		{
-			var tmp = str.Substring(start);
-
-			ulong number;
-			if (UInt64.TryParse(tmp, NumberStyles.Integer, CultureInfo.CurrentCulture, out number))
+			string digits;
+			if (TryGetDigits(str, startIndex, out digits))
 			{
-				var digits = number == 0
-					? 1
-					: (int)Math.Floor(Math.Log10(number) + 1);
-				consumed = digits;
-				value = number;
-				return true;
+				ulong number;
+				if (ulong.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out number))
+				{
+					value = number;
+					consumed = digits.Length;
+					return true;
+				}
 			}
 
 			consumed = 0;

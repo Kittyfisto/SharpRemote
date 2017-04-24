@@ -4,38 +4,25 @@ using System.Globalization;
 namespace SharpRemote.WebApi.Routes.Parsers
 {
 	internal sealed class SByteParser
-		: ArgumentParser
+		: IntegerParser
 	{
+		public override Type Type => typeof(sbyte);
+
 		public override bool TryExtract(string str,
-			int start,
+			int startIndex,
 			out object value,
 			out int consumed)
 		{
-			var tmp = str.Substring(start);
-
-			SByte number;
-			if (SByte.TryParse(tmp, NumberStyles.Integer, CultureInfo.CurrentCulture, out number))
+			string digits;
+			if (TryGetDigits(str, startIndex, out digits))
 			{
-				int digits;
-				switch (number)
+				sbyte number;
+				if (sbyte.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out number))
 				{
-					case 0:
-						digits = 1;
-						break;
-
-					case sbyte.MinValue:
-						digits = 3;
-						break;
-
-					default:
-						digits = (int)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
-						break;
+					value = number;
+					consumed = digits.Length;
+					return true;
 				}
-				if (number < 0)
-					++digits;
-				consumed = digits;
-				value = number;
-				return true;
 			}
 
 			consumed = 0;

@@ -60,6 +60,7 @@
     <Compile Include="Routes\Parsers\ByteParser.cs" />
     <Compile Include="Routes\Parsers\Int16Parser.cs" />
     <Compile Include="Routes\Parsers\Int64Parser.cs" />
+    <Compile Include="Routes\Parsers\IntegerParser.cs" />
     <Compile Include="Routes\Parsers\SByteParser.cs" />
     <Compile Include="Routes\Parsers\StringParser.cs" />
     <Compile Include="Routes\Parsers\UInt16Parser.cs" />

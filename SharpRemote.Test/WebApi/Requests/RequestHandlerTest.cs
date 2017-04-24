@@ -13,6 +13,8 @@ namespace SharpRemote.Test.WebApi.Requests
 	public sealed class RequestHandlerTest
 	{
 		public static readonly Uri Empty = new Uri("http://foo");
+		public static readonly WebRequest EmptyGet = new WebRequest(Empty, HttpMethod.Get);
+		public static readonly WebRequest EmptyPost = new WebRequest(Empty, HttpMethod.Post);
 
 		[Test]
 		public void TestGetString1()
@@ -20,7 +22,7 @@ namespace SharpRemote.Test.WebApi.Requests
 			var resource = new Mock<IGetString>();
 			resource.Setup(x => x.Get()).Returns("Foobar");
 			var handler = Resource.Create(resource.Object);
-			var response = handler.TryHandleRequest("", new WebRequest(Empty, HttpMethod.Get));
+			var response = handler.TryHandleRequest("", EmptyGet);
 
 			response.Should().NotBeNull();
 			response.Code.Should().Be(200);
@@ -30,12 +32,26 @@ namespace SharpRemote.Test.WebApi.Requests
 		}
 
 		[Test]
+		public void TestGetString2()
+		{
+			var resource = new Mock<IGetString>();
+			resource.Setup(x => x.Get(It.IsAny<int>(), It.IsAny<int>()))
+				.Returns((int startIndex, int count) => "Foobar".Substring(startIndex, count));
+			var handler = Resource.Create(resource.Object);
+			var response = handler.TryHandleRequest("startIndex=2&count=3", EmptyGet);
+			response.Should().NotBeNull();
+			response.Code.Should().Be(200);
+			response.Encoding.Should().Be(Encoding.UTF8);
+			Encoding.UTF8.GetString(response.Content).Should().Be("\"oba\"");
+		}
+
+		[Test]
 		public void TestGetStringList1()
 		{
 			var resource = new Mock<IGetStringList>();
 			resource.Setup(x => x.Get()).Returns(new[] {"Hello", "World!"});
 			var handler = Resource.Create(resource.Object);
-			var response = handler.TryHandleRequest("", new WebRequest(Empty, HttpMethod.Get));
+			var response = handler.TryHandleRequest("", EmptyGet);
 			response.Should().NotBeNull();
 			response.Code.Should().Be(200);
 			response.Encoding.Should().Be(Encoding.UTF8);
@@ -49,11 +65,25 @@ namespace SharpRemote.Test.WebApi.Requests
 			var resource = new Mock<IGetStringList>();
 			resource.Setup(x => x.Get(It.Is<int>(y => y == 9001))).Returns("Sup");
 			var handler = Resource.Create(resource.Object);
-			var response = handler.TryHandleRequest("9001", new WebRequest(Empty, HttpMethod.Get));
+			var response = handler.TryHandleRequest("9001", EmptyGet);
 			response.Should().NotBeNull();
 			response.Code.Should().Be(200);
 			response.Encoding.Should().Be(Encoding.UTF8);
 			Encoding.UTF8.GetString(response.Content).Should().Be("\"Sup\"");
+		}
+
+		[Test]
+		public void TestGetStringList3()
+		{
+			var resource = new Mock<IGetStringList>();
+			resource.Setup(x => x.Get(It.Is<int>(y => y == 9001))).Returns("Sup");
+			var handler = Resource.Create(resource.Object);
+
+			const string reason = "because the resource cannot handle the request";
+			handler.TryHandleRequest("dwadawd", EmptyGet).Should().BeNull(reason);
+			handler.TryHandleRequest("", EmptyPost).Should().BeNull(reason);
+			handler.TryHandleRequest("id=9001", EmptyGet).Should().BeNull(reason);
+			handler.TryHandleRequest("id=9001", EmptyPost).Should().BeNull(reason);
 		}
 	}
 }

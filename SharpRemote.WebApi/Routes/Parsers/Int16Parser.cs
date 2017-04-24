@@ -4,38 +4,25 @@ using System.Globalization;
 namespace SharpRemote.WebApi.Routes.Parsers
 {
 	internal sealed class Int16Parser
-		: ArgumentParser
+		: IntegerParser
 	{
+		public override Type Type => typeof(short);
+
 		public override bool TryExtract(string str,
-			int start,
+			int startIndex,
 			out object value,
 			out int consumed)
 		{
-			var tmp = str.Substring(start);
-
-			short number;
-			if (short.TryParse(tmp, NumberStyles.Integer, CultureInfo.CurrentCulture, out number))
+			string digits;
+			if (TryGetDigits(str, startIndex, out digits))
 			{
-				int digits;
-				switch (number)
+				short number;
+				if (short.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out number))
 				{
-					case 0:
-						digits = 1;
-						break;
-
-					case short.MinValue:
-						digits = 5;
-						break;
-
-					default:
-						digits = (int)Math.Floor(Math.Log10(Math.Abs(number)) + 1);
-						break;
+					value = number;
+					consumed = digits.Length;
+					return true;
 				}
-				if (number < 0)
-					++digits;
-				consumed = digits;
-				value = number;
-				return true;
 			}
 
 			consumed = 0;

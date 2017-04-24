@@ -23,8 +23,9 @@ namespace SharpRemote.WebApi.Routes
 			if (arguments != _arguments.Count)
 				throw new ArgumentException();
 
-			foreach (var token in _tokens)
+			for(int i = 0; i < _tokens.Count; ++i)
 			{
+				var token = _tokens[i];
 				if (token.Type == RouteToken.TokenType.Argument)
 				{
 					if (token.ArgumentIndex >= _arguments.Count ||
@@ -33,6 +34,22 @@ namespace SharpRemote.WebApi.Routes
 							"Referencing non-existant argument #{0} (there are only {1} arguments)",
 							token.ArgumentIndex,
 							_arguments.Count));
+				}
+
+				if (i < _tokens.Count - 1)
+				{
+					if (token.Type == RouteToken.TokenType.Argument)
+					{
+						var argument = _arguments[token.ArgumentIndex];
+						if (argument.RequiresTerminator)
+						{
+							var nextToken = _tokens[i + 1];
+							if (nextToken.Type != RouteToken.TokenType.Constant)
+							{
+								throw new ArgumentException(string.Format("A terminator is required after argument of {0} at index {1}", argument.Type, i));
+							}
+						}
+					}
 				}
 			}
 		}

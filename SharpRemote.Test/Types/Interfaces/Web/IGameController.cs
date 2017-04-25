@@ -8,5 +8,8 @@ namespace SharpRemote.Test.Types.Interfaces.Web
 	{
 		[Route]
 		IEnumerable<Game> GetAll();
+
+		[Route("{0}")]
+		Game Get(int id);
 	}
 }

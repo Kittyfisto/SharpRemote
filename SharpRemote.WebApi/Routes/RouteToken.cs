@@ -10,6 +10,14 @@ namespace SharpRemote.WebApi.Routes
 		public readonly TokenType Type;
 		public readonly string Pattern;
 
+		public override string ToString()
+		{
+			if (Type == TokenType.Argument)
+				return "{" + ArgumentIndex + "}";
+
+			return Pattern;
+		}
+
 		public bool Equals(RouteToken other)
 		{
 			return Type == other.Type && string.Equals(Pattern, other.Pattern) && ArgumentIndex == other.ArgumentIndex;

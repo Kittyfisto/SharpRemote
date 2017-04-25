@@ -46,11 +46,17 @@ namespace SharpRemote.WebApi.Resources
 				if (attribute != null)
 				{
 					var route = Route.Create(method);
+					MethodInfo otherMethod;
+					if (_methods.TryGetValue(route, out otherMethod))
+						throw new ArgumentException(string.Format("The method {0}() and {1}() have the same route: This is not allowed",
+							method.Name,
+							otherMethod.Name));
+
 					_methods.Add(route, method);
 				}
 			}
 		}
-		
+
 		public WebResponse TryHandleRequest(string uri, WebRequest request)
 		{
 			object[] arguments;

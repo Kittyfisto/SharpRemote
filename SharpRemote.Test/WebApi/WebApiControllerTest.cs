@@ -12,7 +12,7 @@ using SharpRemote.WebApi.HttpListener;
 namespace SharpRemote.Test.WebApi
 {
 	[TestFixture]
-	public sealed class WebApiServerTest
+	public sealed class WebApiControllerTest
 	{
 		private IPEndPoint _localEndPoint;
 		private HttpClient _client;
@@ -51,7 +51,7 @@ namespace SharpRemote.Test.WebApi
 		}
 
 		[Test]
-		public void TestRegisterResource1()
+		public void TestGet1()
 		{
 			var controller = new Mock<IGameController>();
 			_server.AddResource("games", controller.Object);
@@ -59,6 +59,26 @@ namespace SharpRemote.Test.WebApi
 			var message = _client.Get(CreateUri("games"));
 			message.StatusCode.Should().Be(HttpStatusCode.OK);
 			message.GetContent().Should().Be("[]");
+		}
+
+		[Test]
+		public void TestGet2()
+		{
+			var controller = new Mock<IGameController>();
+			controller.Setup(x => x.Get(It.Is<int>(y => y == 42))).Returns(new Game(42, "Foo"));
+			_server.AddResource("games", controller.Object);
+
+			var message = _client.Get(CreateUri("games/42"));
+			message.StatusCode.Should().Be(HttpStatusCode.OK);
+			message.GetContent().Should().Be("{\"Id\":42,\"Name\":\"Foo\"}");
+		}
+
+		[Test]
+		public void TestTwoIdenticalRoutesNotAllowed()
+		{
+			new Action(() => _server.AddResource("Test", new Mock<ITwoIdenticalRoutes>().Object))
+				.ShouldThrow<ArgumentException>()
+				.WithMessage("The method GetFoo() and GetBar() have the same route: This is not allowed");
 		}
 	}
 }

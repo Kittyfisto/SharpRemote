@@ -101,6 +101,53 @@ namespace SharpRemote.WebApi.Routes
 
 		public HttpMethod Method { get; }
 
+		public override bool Equals(object obj)
+		{
+			if (!(obj is Route))
+				return false;
+
+			return Equals((Route) obj);
+		}
+
+		private bool Equals(Route other)
+		{
+			if (Method != other.Method)
+				return false;
+
+			if (_fromBodyIndex != other._fromBodyIndex)
+				return false;
+
+			if (_tokens.Count != other._tokens.Count)
+				return false;
+
+			for (int i = 0; i < _tokens.Count; ++i)
+			{
+				if (!Equals(_tokens[i], other._tokens[i]))
+					return false;
+			}
+
+			if (_arguments.Count != other._arguments.Count)
+				return false;
+
+			for (int i = 0; i < _arguments.Count; ++i)
+			{
+				if (!Equals(_arguments[i], other._arguments[i]))
+					return false;
+			}
+
+			return true;
+		}
+
+		public override int GetHashCode()
+		{
+			return Method.GetHashCode();
+		}
+
+		public override string ToString()
+		{
+			return string.Join("", _tokens);
+		}
+
 		public bool TryMatch(string route, out object[] values)
 		{
 			var arguments = new object[_arguments.Count];

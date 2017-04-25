@@ -208,6 +208,7 @@
     <Compile Include="Types\Classes\Processor.cs" />
     <Compile Include="Types\Interfaces\Web\IGetString.cs" />
     <Compile Include="Types\Interfaces\Web\IGetStringList.cs" />
+    <Compile Include="Types\Interfaces\Web\ITwoIdenticalRoutes.cs" />
     <Compile Include="Types\Structs\FieldDecimal.cs" />
     <Compile Include="Types\Structs\FieldObjectStruct.cs" />
     <Compile Include="Types\Structs\FieldOptionalDecimal.cs" />
@@ -240,7 +241,7 @@
     <Compile Include="WebApi\Requests\RequestHandlerTest.cs" />
     <Compile Include="WebApi\Routes\RouteTest.cs" />
     <Compile Include="WebApi\Routes\RouteTokenTest.cs" />
-    <Compile Include="WebApi\WebApiServerTest.cs" />
+    <Compile Include="WebApi\WebApiControllerTest.cs" />
     <Compile Include="_NativeMethodsTest.cs" />
   </ItemGroup>
   <ItemGroup>

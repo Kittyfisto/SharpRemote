@@ -31,6 +31,70 @@ namespace SharpRemote.Test.WebApi.Routes
 		};
 
 		[Test]
+		public void TestToString()
+		{
+			new Route(HttpMethod.Get, "stuff", new Type[0]).ToString().Should().Be("stuff");
+			new Route(HttpMethod.Get, "{0}", new [] {typeof(int)}).ToString().Should().Be("{0}");
+		}
+
+		[Test]
+		public void TestEquals1()
+		{
+			var route = new Route(HttpMethod.Get, "", new Type[0]);
+			var equalRoute = new Route(HttpMethod.Get, "", new Type[0]);
+			route.Equals(equalRoute).Should().BeTrue();
+			route.GetHashCode().Should().Be(equalRoute.GetHashCode());
+		}
+
+		[Test]
+		public void TestEquals2()
+		{
+			var route = new Route(HttpMethod.Get, "", new Type[0]);
+			var differentRoute = new Route(HttpMethod.Put, "", new Type[0]);
+			route.Equals(differentRoute).Should().BeFalse("because the two routes have a different method");
+		}
+
+		[Test]
+		public void TestEquals3()
+		{
+			var route = new Route(HttpMethod.Put, "A", new Type[0]);
+			var differentRoute = new Route(HttpMethod.Put, "", new Type[0]);
+			route.Equals(differentRoute).Should().BeFalse("because the two routes have a different template");
+		}
+
+		[Test]
+		public void TestEquals4()
+		{
+			var route = new Route(HttpMethod.Put, "{0}", new [] {typeof(int)});
+			var differentRoute = new Route(HttpMethod.Put, "{0}", new [] {typeof(short)});
+			route.Equals(differentRoute).Should().BeFalse("because the two routes have a different argument type");
+		}
+
+		[Test]
+		public void TestEquals5()
+		{
+			var route = new Route(HttpMethod.Patch, "{0}/{1}", new [] {typeof(int), typeof(int)});
+			var differentRoute = new Route(HttpMethod.Patch, "{0}", new[] {typeof(long)});
+			route.Equals(differentRoute).Should().BeFalse("because the two routes have a different number of arguments");
+		}
+
+		[Test]
+		public void TestEquals6()
+		{
+			var route = new Route(HttpMethod.Patch, "{0}/{1}", new[] {typeof(long), typeof(long)}, fromBodyIndex: 1);
+			var differentRoute = new Route(HttpMethod.Patch, "{0}/{1}", new[] { typeof(long), typeof(long) }, fromBodyIndex: 0);
+			route.Equals(differentRoute).Should().BeFalse("because the two routes extract a different argument from the body");
+		}
+
+		[Test]
+		public void TestEquals7()
+		{
+			var route = new Route(HttpMethod.Delete, "A", new Type[0]);
+			var differentRoute = new Route(HttpMethod.Put, "a", new Type[0]);
+			route.Equals(differentRoute).Should().BeFalse("because the two routes have a different template and method");
+		}
+
+		[Test]
 		public void TestTryMatch1([ValueSource(nameof(Types))] Type type)
 		{
 			var route = new Route(HttpMethod.Get, "{0}", new[] { type });

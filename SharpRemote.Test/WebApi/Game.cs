@@ -2,13 +2,13 @@ namespace SharpRemote.Test.WebApi
 {
 	public sealed class Game
 	{
-		private readonly string _name;
+		public int Id { get; }
+		public string Name { get; }
 
-		public string Name => _name;
-
-		public Game(string name)
+		public Game(int id, string name)
 		{
-			_name = name;
+			Id = id;
+			Name = name;
 		}
 	}
 }

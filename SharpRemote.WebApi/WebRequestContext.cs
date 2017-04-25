@@ -34,10 +34,16 @@ namespace SharpRemote.WebApi
 			var response = _context.Response;
 			response.StatusCode = webResponse.Code;
 			response.ContentEncoding = webResponse.Encoding;
-			using (var writer = new BinaryWriter(response.OutputStream))
+
+			var content = webResponse.Content;
+			if (content != null)
 			{
-				writer.Write(webResponse.Content);
+				using (var writer = new BinaryWriter(response.OutputStream))
+				{
+					writer.Write(content);
+				}
 			}
+
 			response.Close();
 		}
 	}

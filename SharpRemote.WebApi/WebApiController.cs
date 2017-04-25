@@ -63,7 +63,7 @@ namespace SharpRemote.WebApi
 				int idx = subUri.IndexOf("/");
 				if (idx != -1)
 				{
-					resourceName = subUri.Substring(0, idx - 1);
+					resourceName = subUri.Substring(0, idx);
 					resourceSubUri = subUri.Substring(idx + 1);
 				}
 				else

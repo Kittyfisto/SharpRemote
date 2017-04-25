@@ -5,10 +5,10 @@ namespace SharpRemote.Test.Types.Interfaces.Web
 {
 	public interface IGetStringList
 	{
-		[HttpGet]
+		[Route]
 		IEnumerable<string> Get();
 
-		[HttpGet("{0}")]
+		[Route("{0}")]
 		string Get(int index);
 	}
 }

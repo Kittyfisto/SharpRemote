@@ -1,4 +1,6 @@
-namespace SharpRemote.WebApi.Requests
+using SharpRemote.WebApi.Requests;
+
+namespace SharpRemote.WebApi.Resources
 {
 	/// <summary>
 	///     Represents a resource exposed via a web api.
@@ -8,7 +10,7 @@ namespace SharpRemote.WebApi.Requests
 	internal interface IResource
 	{
 		/// <summary>
-		/// Tries to fulfill the given request.
+		///     Tries to fulfill the given request.
 		/// </summary>
 		/// <param name="uri"></param>
 		/// <param name="request"></param>

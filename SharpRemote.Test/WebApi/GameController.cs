@@ -16,7 +16,7 @@ namespace SharpRemote.Test.WebApi
 			};
 		}
 
-		[HttpGet]
+		[Route]
 		public IEnumerable<Game> GetAll()
 		{
 			return _games;

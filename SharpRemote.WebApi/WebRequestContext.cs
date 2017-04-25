@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using WebRequest = SharpRemote.WebApi.Requests.WebRequest;
 using WebResponse = SharpRemote.WebApi.Requests.WebResponse;
 
@@ -13,7 +14,16 @@ namespace SharpRemote.WebApi
 		public WebRequestContext(HttpListenerContext context)
 		{
 			_context = context;
-			_request = new WebRequest(context.Request);
+			_request = CreateRequest(context.Request);
+		}
+
+		private WebRequest CreateRequest(HttpListenerRequest request)
+		{
+			return new WebRequest
+			{
+				Url = request.Url,
+				Method = (HttpMethod) Enum.Parse(typeof(HttpMethod), request.HttpMethod, true)
+			};
 		}
 
 		public WebRequest Request => _request;

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using SharpRemote.WebApi.Requests;
+using SharpRemote.WebApi.Resources;
 
 namespace SharpRemote.WebApi
 {

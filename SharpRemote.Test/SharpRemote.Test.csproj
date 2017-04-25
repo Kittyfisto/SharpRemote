@@ -231,11 +231,7 @@
     <Compile Include="Watchdog\InternalWatchdogTest.cs" />
     <Compile Include="Test2Authenticator.cs" />
     <Compile Include="WeakKeyDictionaryTest.cs" />
-    <Compile Include="WebApi\Attributes\HttpDeleteAttributeTest.cs" />
-    <Compile Include="WebApi\Attributes\HttpGetAttributeTest.cs" />
-    <Compile Include="WebApi\Attributes\HttpPatchAttributeTest.cs" />
-    <Compile Include="WebApi\Attributes\HttpPostAttributeTest.cs" />
-    <Compile Include="WebApi\Attributes\HttpPutAttributeTest.cs" />
+    <Compile Include="WebApi\Attributes\RouteAttributeTest.cs" />
     <Compile Include="WebApi\Game.cs" />
     <Compile Include="WebApi\GameController.cs" />
     <Compile Include="WebApi\Requests\RequestHandlerTest.cs" />

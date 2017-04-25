@@ -6,6 +6,7 @@ using NUnit.Framework;
 using SharpRemote.Test.Types.Interfaces.Web;
 using SharpRemote.WebApi;
 using SharpRemote.WebApi.Requests;
+using SharpRemote.WebApi.Resources;
 
 namespace SharpRemote.Test.WebApi.Requests
 {
@@ -13,8 +14,8 @@ namespace SharpRemote.Test.WebApi.Requests
 	public sealed class RequestHandlerTest
 	{
 		public static readonly Uri Empty = new Uri("http://foo");
-		public static readonly WebRequest EmptyGet = new WebRequest(Empty, HttpMethod.Get);
-		public static readonly WebRequest EmptyPost = new WebRequest(Empty, HttpMethod.Post);
+		public static readonly WebRequest EmptyGet = new WebRequest {Url = Empty, Method = HttpMethod.Get};
+		public static readonly WebRequest EmptyPost = new WebRequest {Url =Empty, Method = HttpMethod.Post};
 
 		[Test]
 		public void TestGetString1()

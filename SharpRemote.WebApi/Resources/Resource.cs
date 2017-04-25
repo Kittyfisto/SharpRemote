@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Web.Script.Serialization;
 using log4net;
+using SharpRemote.WebApi.Requests;
 using SharpRemote.WebApi.Routes;
 
-namespace SharpRemote.WebApi.Requests
+namespace SharpRemote.WebApi.Resources
 {
 	/// <summary>
 	///     Represents a resource exposed via a web api.
@@ -42,24 +42,15 @@ namespace SharpRemote.WebApi.Requests
 			var methods = interfaceType.GetMethods(BindingFlags.Public | BindingFlags.Instance);
 			foreach (var method in methods)
 			{
-				var route = ExtractRoute(method);
-				if (route != null)
+				var attribute = method.GetCustomAttribute<RouteAttribute>();
+				if (attribute != null)
 				{
+					var route = Route.Create(method);
 					_methods.Add(route, method);
 				}
 			}
 		}
-
-		private Route ExtractRoute(MethodInfo method)
-		{
-			var attribute = method.GetCustomAttribute<HttpAttribute>();
-			if (attribute == null)
-				return null;
-
-			var parameters = method.GetParameters();
-			return new Route(attribute.Method, attribute.Route, parameters.Select(x => x.ParameterType));
-		}
-
+		
 		public WebResponse TryHandleRequest(string uri, WebRequest request)
 		{
 			object[] arguments;

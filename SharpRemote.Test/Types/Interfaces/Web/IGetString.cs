@@ -4,10 +4,10 @@ namespace SharpRemote.Test.Types.Interfaces.Web
 {
 	public interface IGetString
 	{
-		[HttpGet]
+		[Route]
 		string Get();
 
-		[HttpGet("startIndex={0}&count={1}")]
+		[Route("startIndex={0}&count={1}")]
 		string Get(int startIndex, int count);
 	}
 }

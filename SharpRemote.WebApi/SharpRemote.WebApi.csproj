@@ -42,19 +42,16 @@
     <Reference Include="System.Web.Extensions" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\HttpAttribute.cs" />
-    <Compile Include="Attributes\HttpDeleteAttribute.cs" />
-    <Compile Include="Attributes\HttpGetAttribute.cs" />
-    <Compile Include="Attributes\HttpPatchAttribute.cs" />
-    <Compile Include="Attributes\HttpPostAttribute.cs" />
-    <Compile Include="Attributes\HttpPutAttribute.cs" />
+    <Compile Include="Attributes\FromBody.cs" />
+    <Compile Include="Attributes\FromUriAttribute.cs" />
+    <Compile Include="Attributes\RouteAttribute.cs" />
     <Compile Include="HttpMethod.cs" />
     <Compile Include="IWebRequestContext.cs" />
-    <Compile Include="Requests\IResource.cs" />
+    <Compile Include="Resources\IResource.cs" />
     <Compile Include="Requests\IRequestHandler.cs" />
     <Compile Include="IWebApiController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Requests\Resource.cs" />
+    <Compile Include="Resources\Resource.cs" />
     <Compile Include="Routes\Parsers\ArgumentParser.cs" />
     <Compile Include="Routes\Parsers\BoolParser.cs" />
     <Compile Include="Routes\Parsers\ByteParser.cs" />

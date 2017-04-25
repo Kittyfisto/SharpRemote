@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using SharpRemote.WebApi.Requests;
 using SharpRemote.WebApi.Resources;
 
@@ -43,7 +44,7 @@ namespace SharpRemote.WebApi
 					IResource resource;
 					if (_resourceControllers.TryGetValue(resourceName, out resource))
 					{
-						var response = resource.TryHandleRequest(subUri, request);
+						var response = resource.TryHandleRequest(resourceSubUri, request);
 						if (response != null)
 						{
 							return response;
@@ -57,11 +58,20 @@ namespace SharpRemote.WebApi
 
 		private bool ExtractResourceName(string subUri, out string resourceName, out string resourceSubUri)
 		{
-			int idx = subUri.IndexOf("/");
-			if (idx != -1)
+			if (subUri != null)
 			{
-				resourceName = subUri.Substring(0, idx - 1);
-				resourceSubUri = subUri.Substring(idx + 1);
+				int idx = subUri.IndexOf("/");
+				if (idx != -1)
+				{
+					resourceName = subUri.Substring(0, idx - 1);
+					resourceSubUri = subUri.Substring(idx + 1);
+				}
+				else
+				{
+					resourceName = subUri;
+					resourceSubUri = String.Empty;
+				}
+
 				return true;
 			}
 

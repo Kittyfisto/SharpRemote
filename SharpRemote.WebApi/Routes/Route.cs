@@ -14,16 +14,33 @@ namespace SharpRemote.WebApi.Routes
 	{
 		private readonly List<ArgumentParser> _arguments;
 		private readonly List<RouteToken> _tokens;
+		private readonly int _fromBodyIndex;
 
 		public static Route Create(MethodInfo method)
 		{
 			var attribute = method.GetCustomAttribute<RouteAttribute>();
 			if (attribute == null)
-				return null;
+				throw new ArgumentException();
 
 			var parameters = method.GetParameters();
 			var httpMethod = ExtractHttpMethod(method.Name);
-			return new Route(httpMethod, attribute.Template, parameters.Select(x => x.ParameterType));
+			var parameterTypes = new Type[parameters.Length];
+			var fromBodyIndex = -1;
+			for (int i = 0; i < parameters.Length; ++i)
+			{
+				var parameter = parameters[i];
+				parameterTypes[i] = parameter.ParameterType;
+				var attr = parameter.GetCustomAttribute<FromBodyAttribute>();
+				if (attr != null)
+				{
+					if (fromBodyIndex != -1)
+						throw new ArgumentException("Only one parameter can be marked with the FromBody attribute");
+
+					fromBodyIndex = parameter.Position;
+				}
+			}
+
+			return new Route(httpMethod, attribute.Template, parameters.Select(x => x.ParameterType), fromBodyIndex);
 		}
 
 		private static HttpMethod ExtractHttpMethod(string methodName)
@@ -41,7 +58,16 @@ namespace SharpRemote.WebApi.Routes
 		{
 			_tokens = RouteToken.Tokenize(route);
 			_arguments = new List<ArgumentParser>(parameterTypes.Select(ArgumentParser.Create));
+			_fromBodyIndex = fromBodyIndex;
 			Method = method;
+
+			if (fromBodyIndex != -1)
+			{
+				if (fromBodyIndex < -1)
+					throw new ArgumentOutOfRangeException(nameof(fromBodyIndex), "The index should be set to -1 to denote that no parameter is to be extracted from the body");
+				if (fromBodyIndex >= _arguments.Count)
+					throw new ArgumentOutOfRangeException(nameof(fromBodyIndex), "The index should be less than the amount of parameters in the route");
+			}
 
 			var arguments = _tokens.Count(x => x.Type == RouteToken.TokenType.Argument);
 			if (arguments != _arguments.Count)

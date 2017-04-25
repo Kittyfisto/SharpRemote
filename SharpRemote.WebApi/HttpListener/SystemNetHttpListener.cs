@@ -84,19 +84,25 @@ namespace SharpRemote.WebApi.HttpListener
 
 		private void Run(WebRequestContext context)
 		{
-			WebResponse response;
+			var response = new WebResponse(500);
 			try
 			{
-				var uri = context.Request.Url;
-				var subUri = RemovePrefix(uri);
-				response = _handler.TryHandle(subUri, context.Request);
+				try
+				{
+					var uri = context.Request.Url;
+					var subUri = RemovePrefix(uri);
+					response = _handler.TryHandle(subUri, context.Request);
+				}
+				catch (Exception e)
+				{
+					Log.ErrorFormat("Caught unexpected exception: {0}", e);
+					response = new WebResponse(500);
+				}
 			}
-			catch (Exception e)
+			finally
 			{
-				Log.ErrorFormat("Caught unexpected exception: {0}", e);
-				response = new WebResponse(500);
+				context.SetResponse(response);
 			}
-			context.SetResponse(response);
 		}
 
 		private string RemovePrefix(Uri uri)

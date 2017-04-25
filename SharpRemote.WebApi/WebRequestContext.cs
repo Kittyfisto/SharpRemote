@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using WebRequest = SharpRemote.WebApi.Requests.WebRequest;
 using WebResponse = SharpRemote.WebApi.Requests.WebResponse;
@@ -32,6 +33,12 @@ namespace SharpRemote.WebApi
 		{
 			var response = _context.Response;
 			response.StatusCode = webResponse.Code;
+			response.ContentEncoding = webResponse.Encoding;
+			using (var writer = new BinaryWriter(response.OutputStream))
+			{
+				writer.Write(webResponse.Content);
+			}
+			response.Close();
 		}
 	}
 }

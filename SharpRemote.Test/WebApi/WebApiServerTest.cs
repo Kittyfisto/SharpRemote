@@ -1,5 +1,11 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
+using System.Net.Http;
+using FluentAssertions;
+using Moq;
 using NUnit.Framework;
+using SharpRemote.Extensions;
+using SharpRemote.Test.Types.Interfaces.Web;
 using SharpRemote.WebApi;
 using SharpRemote.WebApi.HttpListener;
 
@@ -8,17 +14,51 @@ namespace SharpRemote.Test.WebApi
 	[TestFixture]
 	public sealed class WebApiServerTest
 	{
-		private readonly IPEndPoint _localEndPoint = new IPEndPoint(IPAddress.Loopback, 8080);
+		private IPEndPoint _localEndPoint;
+		private HttpClient _client;
+		private HttpListener _listener;
+		private string _apiUrl;
+		private WebApiController _server;
+		private SystemNetHttpListener _container;
+
+		[SetUp]
+		public void Setup()
+		{
+			_listener = new HttpListener();
+			_localEndPoint = new IPEndPoint(IPAddress.Loopback, 8080);
+			_apiUrl = string.Format("http://{0}/sharpremote/api/test/", _localEndPoint);
+			_listener.Prefixes.Add(_apiUrl);
+			_listener.Start();
+			_client = new HttpClient();
+
+			_server = new WebApiController();
+			_container = new SystemNetHttpListener(_listener, _server);
+		}
+
+		[TearDown]
+		public void TearDown()
+		{
+			_container?.Dispose();
+			_server?.Dispose();
+			_client?.Dispose();
+			_listener?.TryDispose();
+		}
+
+		private Uri CreateUri(string suffix)
+		{
+			var uri = string.Format("{0}{1}", _apiUrl, suffix);
+			return new Uri(uri, UriKind.Absolute);
+		}
 
 		[Test]
-		[Ignore("not yet implemented")]
 		public void TestRegisterResource1()
 		{
-			using (var server = new WebApiController())
-			using (var listener = new SystemNetHttpListener(server))
-			{
-				server.AddResource("Games", new GameController());
-			}
+			var controller = new Mock<IGameController>();
+			_server.AddResource("games", controller.Object);
+
+			var message = _client.Get(CreateUri("games"));
+			message.StatusCode.Should().Be(HttpStatusCode.OK);
+			message.GetContent().Should().Be("[]");
 		}
 	}
 }

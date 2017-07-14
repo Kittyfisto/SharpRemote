@@ -50,7 +50,8 @@ namespace SharpRemote.Extensions
 			}
 			catch(InvalidOperationException)
 			{
-				return false;
+				// Process.Id obviously throws an exception when the process doesn't exist anymore.
+				return true;
 			}
 			catch(Exception)
 			{

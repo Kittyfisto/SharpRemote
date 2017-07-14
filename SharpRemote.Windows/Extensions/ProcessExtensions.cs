@@ -44,7 +44,18 @@ namespace SharpRemote.Extensions
 			if (that == null)
 				return true;
 
-			return TryKill(that.Id);
+			try
+			{
+				return TryKill(that.Id);
+			}
+			catch(InvalidOperationException)
+			{
+				return false;
+			}
+			catch(Exception)
+			{
+				return false;
+			}
 		}
 	}
 }

@@ -44,7 +44,19 @@ namespace SharpRemote.Extensions
 			if (that == null)
 				return true;
 
-			return TryKill(that.Id);
+			try
+			{
+				return TryKill(that.Id);
+			}
+			catch(InvalidOperationException)
+			{
+				// Process.Id obviously throws an exception when the process doesn't exist anymore.
+				return true;
+			}
+			catch(Exception)
+			{
+				return false;
+			}
 		}
 	}
 }

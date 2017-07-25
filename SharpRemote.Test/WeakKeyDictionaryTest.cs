@@ -286,7 +286,7 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that the insertion performance is comparable to an ordinary dictionary")]
 		public void TestAddPerformance()
 		{
@@ -320,7 +320,7 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that the retrieval performance is comparable to an ordinary dictionary")]
 		public void TestTryGetValuePerformance()
 		{

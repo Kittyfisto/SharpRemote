@@ -21,7 +21,7 @@ namespace SharpRemote.Test.Remoting
 		protected abstract EndPoint EndPoint2 { get; }
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
 		public void TestConnect25()
 		{
@@ -44,7 +44,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that TryConnect() can establish a connection with an endpoint in the same process")]
 		public void TestTryConnect1()
 		{
@@ -86,7 +86,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[Repeat(10)]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
 		public void TestConnect21()
 		{
@@ -170,7 +170,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("Wont run on the shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that TryConnect() succeeds when client-side authentication is enabled and the challenge is met")]
 		public void TestTryConnect9()
 		{
@@ -205,7 +205,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that TryConnect() succeeds when server-side authentication is enabled and the challenge is met")]
 		public void TestTryConnect11()
 		{
@@ -241,7 +241,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that TryConnect() succeeds when both server and client side authentication is enabled and both challenges are met")]
 		public void TestTryConnect13()
 		{

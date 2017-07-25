@@ -3,7 +3,7 @@
 namespace SharpRemote.Hosting
 {
 	/// <summary>
-	/// Responsible for creating & providing grains.
+	/// Responsible for creating and providing grains.
 	/// It's sole purpose is to hide away the location of an object.
 	/// An object can be located in any of the following (relative to the caller):
 	/// - The same AppDomain

@@ -33,7 +33,7 @@ namespace SharpRemote.Hosting
 
 		/// <summary>
 		/// Initializes a new silo that hosts all objects in the same process it is used in, but with
-		/// proxy & servant implementations in between.
+		/// proxy and servant implementations in between.
 		/// Is only really useful for debugging remoting.
 		/// </summary>
 		/// <param name="customTypeResolver">The type resolver, if any, that is used to resolve types by their assembly qualified name</param>

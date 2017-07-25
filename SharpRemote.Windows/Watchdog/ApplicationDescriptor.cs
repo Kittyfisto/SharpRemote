@@ -16,22 +16,31 @@ namespace SharpRemote.Watchdog
 		[DataMember]
 		public string Name { get; set; }
 
+		/// <summary>
+		///     Tests if this and the given descriptor are equal.
+		///     Two descriptors are equal if they have the same names (case sensitive).
+		/// </summary>
+		/// <param name="other"></param>
+		/// <returns></returns>
 		public bool Equals(ApplicationDescriptor other)
 		{
 			return string.Equals(Name, other.Name);
 		}
 
+		/// <inheritdoc />
 		public override string ToString()
 		{
 			return string.Format("{0}", Name);
 		}
 
+		/// <inheritdoc />
 		public override bool Equals(object obj)
 		{
 			if (ReferenceEquals(null, obj)) return false;
 			return obj is ApplicationDescriptor && Equals((ApplicationDescriptor) obj);
 		}
 
+		/// <inheritdoc />
 		public override int GetHashCode()
 		{
 			unchecked

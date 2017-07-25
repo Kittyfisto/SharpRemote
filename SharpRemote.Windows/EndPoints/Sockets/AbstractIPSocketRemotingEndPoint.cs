@@ -22,7 +22,7 @@ namespace SharpRemote
 		: AbstractBinaryStreamEndPoint<Socket>
 		, ISocketRemotingEndPoint
 	{
-		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private new static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private IPEndPoint _remoteEndPoint;
 		private IPEndPoint _localEndPoint;
@@ -59,6 +59,7 @@ namespace SharpRemote
 			protected set { _remoteEndPoint = value; }
 		}
 
+		/// <inheritdoc />
 		protected override EndPoint InternalRemoteEndPoint
 		{
 			get { return _remoteEndPoint; }
@@ -77,16 +78,16 @@ namespace SharpRemote
 			protected set { _localEndPoint = value; }
 		}
 
-		protected override EndPoint InternalLocalEndPoint
-		{
-			get { return _localEndPoint; }
-		}
+		/// <inheritdoc />
+		protected override EndPoint InternalLocalEndPoint => _localEndPoint;
 
+		/// <inheritdoc />
 		protected override void Send(Socket socket, byte[] data, int offset, int size)
 		{
 			socket.Send(data, offset, size, SocketFlags.None);
 		}
 
+		/// <inheritdoc />
 		protected override bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
 		{
 			if (!socket.Connected)
@@ -108,6 +109,7 @@ namespace SharpRemote
 			return true;
 		}
 
+		/// <inheritdoc />
 		protected override bool SynchronizedRead(Socket socket, byte[] buffer, TimeSpan timeout, out SocketError err)
 		{
 			DateTime start = DateTime.Now;
@@ -149,6 +151,7 @@ namespace SharpRemote
 			return SynchronizedRead(socket, buffer, out err);
 		}
 
+		/// <inheritdoc />
 		protected override bool SynchronizedRead(Socket socket, byte[] buffer, out SocketError err)
 		{
 			err = SocketError.Success;
@@ -171,17 +174,20 @@ namespace SharpRemote
 			return true;
 		}
 
+		/// <inheritdoc />
 		protected override EndPoint GetRemoteEndPointOf(Socket socket)
 		{
 			EndPoint remoteEndPoint = socket.RemoteEndPoint;
 			return remoteEndPoint;
 		}
 
+		/// <inheritdoc />
 		protected override void DisconnectTransport(Socket socket, bool reuseSocket)
 		{
 			socket.Disconnect(false);
 		}
 
+		/// <inheritdoc />
 		protected override void DisposeAfterDisconnect(Socket socket)
 		{
 			socket.TryDispose();

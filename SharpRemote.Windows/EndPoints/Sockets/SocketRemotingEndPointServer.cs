@@ -107,6 +107,7 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		protected override void DisposeAdditional()
 		{
 			_serverSocket.TryDispose();

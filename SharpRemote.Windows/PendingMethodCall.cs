@@ -10,7 +10,7 @@ namespace SharpRemote
 	/// <remarks>
 	///     Helps to reduce the amount of resources (handles, streams) that are created and destroyed over and
 	///     over in order to reduce the amount of pressure on the GC as well as to reduce the amount of native
-	///     resources that are created & destroyed.
+	///     resources that are created and destroyed.
 	/// </remarks>
 	internal sealed class PendingMethodCall
 		: IDisposable

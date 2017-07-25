@@ -65,34 +65,22 @@ namespace SharpRemote
 		/// <summary>
 		///     The total amount of bytes that have been sent over the underlying stream.
 		/// </summary>
-		public long NumBytesSent
-		{
-			get { return Interlocked.Read(ref _numBytesSent); }
-		}
+		public long NumBytesSent => Interlocked.Read(ref _numBytesSent);
 
 		/// <summary>
 		///     The total amount of bytes that have been received over the underlying stream.
 		/// </summary>
-		public long NumBytesReceived
-		{
-			get { return Interlocked.Read(ref _numBytesReceived); }
-		}
+		public long NumBytesReceived => Interlocked.Read(ref _numBytesReceived);
 
 		/// <summary>
 		///     The total amount of remote procedure calls that have been invoked from this end.
 		/// </summary>
-		public long NumCallsInvoked
-		{
-			get { return Interlocked.Read(ref _numCallsInvoked); }
-		}
+		public long NumCallsInvoked => Interlocked.Read(ref _numCallsInvoked);
 
 		/// <summary>
 		///     The total amount of remote procedure calls that have been invoked from the other end.
 		/// </summary>
-		public long NumCallsAnswered
-		{
-			get { return Interlocked.Read(ref _numCallsAnswered); }
-		}
+		public long NumCallsAnswered => Interlocked.Read(ref _numCallsAnswered);
 
 		#endregion
 
@@ -269,36 +257,25 @@ namespace SharpRemote
 		protected abstract EndPoint InternalLocalEndPoint { get; }
 		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
 
-		public long NumProxiesCollected
-		{
-			get { return _numProxiesCollected; }
-		}
+		/// <inheritdoc />
+		public long NumProxiesCollected => _numProxiesCollected;
 
-		public long NumServantsCollected
-		{
-			get { return _numServantsCollected; }
-		}
+		/// <inheritdoc />
+		public long NumServantsCollected => _numServantsCollected;
 
-		public TimeSpan GarbageCollectionTime
-		{
-			get { return _garbageCollectionTime.Elapsed; }
-		}
+		/// <inheritdoc />
+		public TimeSpan GarbageCollectionTime => _garbageCollectionTime.Elapsed;
 
-		public LatencySettings LatencySettings
-		{
-			get { return _latencySettings; }
-		}
+		/// <inheritdoc />
+		public LatencySettings LatencySettings => _latencySettings;
 
-		public HeartbeatSettings HeartbeatSettings
-		{
-			get { return _heartbeatSettings; }
-		}
+		/// <inheritdoc />
+		public HeartbeatSettings HeartbeatSettings => _heartbeatSettings;
 
-		public EndPointSettings EndPointSettings
-		{
-			get { return _endpointSettings; }
-		}
+		/// <inheritdoc />
+		public EndPointSettings EndPointSettings => _endpointSettings;
 
+		/// <inheritdoc />
 		public int NumPendingMethodInvocations
 		{
 			get
@@ -313,19 +290,13 @@ namespace SharpRemote
 		/// <summary>
 		///     Tests if this object has been disposed of or not.
 		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		public bool IsDisposed => _isDisposed;
 
 		/// <summary>
 		///     Contains the reason why the endpoint was disconnected, or null if it wasn't disconnected / never established
 		///     a connection.
 		/// </summary>
-		public EndPointDisconnectReason? DisconnectReason
-		{
-			get { return _disconnectReason; }
-		}
+		public EndPointDisconnectReason? DisconnectReason => _disconnectReason;
 
 		protected object SyncRoot
 		{
@@ -373,6 +344,7 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId,
 		                                                string interfaceType,
 		                                                string methodName,
@@ -394,6 +366,7 @@ namespace SharpRemote
 			return CallRemoteMethodAsync(rpcId, servantId, interfaceType, methodName, arguments);
 		}
 
+		/// <inheritdoc />
 		public MemoryStream CallRemoteMethod(ulong servantId, string interfaceType, string methodName, MemoryStream arguments)
 		{
 			long rpcId = Interlocked.Increment(ref _nextRpcId);
@@ -412,16 +385,13 @@ namespace SharpRemote
 			return CallRemoteMethod(rpcId, servantId, interfaceType, methodName, arguments);
 		}
 
-		public EndPoint LocalEndPoint
-		{
-			get { return InternalLocalEndPoint; }
-		}
+		/// <inheritdoc />
+		public EndPoint LocalEndPoint => InternalLocalEndPoint;
 
-		public EndPoint RemoteEndPoint
-		{
-			get { return InternalRemoteEndPoint; }
-		}
+		/// <inheritdoc />
+		public EndPoint RemoteEndPoint => InternalRemoteEndPoint;
 
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			lock (_syncRoot)
@@ -452,18 +422,16 @@ namespace SharpRemote
 			}
 		}
 
-		public string Name
-		{
-			get { return _name; }
-		}
+		/// <inheritdoc />
+		public string Name => _name;
 
-		public bool IsConnected
-		{
-			get { return InternalRemoteEndPoint != null; }
-		}
+		/// <inheritdoc />
+		public bool IsConnected => InternalRemoteEndPoint != null;
 
+		/// <inheritdoc />
 		public ConnectionId CurrentConnectionId { get; protected set; }
 
+		/// <inheritdoc />
 		public TimeSpan RoundtripTime
 		{
 			get
@@ -476,11 +444,13 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		public void Disconnect()
 		{
 			Disconnect(CurrentConnectionId, EndPointDisconnectReason.RequestedByEndPoint);
 		}
 
+		/// <inheritdoc />
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
 			lock (_proxiesById)
@@ -492,6 +462,7 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		public T GetProxy<T>(ulong objectId) where T : class
 		{
 			IProxy proxy;
@@ -511,6 +482,7 @@ namespace SharpRemote
 			return (T) proxy;
 		}
 
+		/// <inheritdoc />
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
 			if (Log.IsDebugEnabled)
@@ -532,6 +504,7 @@ namespace SharpRemote
 			return servant;
 		}
 
+		/// <inheritdoc />
 		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
 		{
 			lock (_servantsById)
@@ -574,6 +547,7 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
 		{
 			lock (_servantsById)
@@ -1626,7 +1600,7 @@ namespace SharpRemote
 		protected abstract EndPoint GetRemoteEndPointOf(TTransport socket);
 
 		/// <summary>
-		///     Performs the authentication between client & server (if necessary) from the server-side.
+		///     Performs the authentication between client and server (if necessary) from the server-side.
 		/// </summary>
 		/// <param name="socket"></param>
 		/// <param name="remoteEndPoint"></param>
@@ -1698,7 +1672,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		///     Performs the authentication between client & server (if necessary) from the client-side.
+		///     Performs the authentication between client and server (if necessary) from the client-side.
 		/// </summary>
 		/// <param name="socket"></param>
 		/// <param name="timeout"></param>
@@ -1915,6 +1889,7 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		public override string ToString()
 		{
 			return _name;

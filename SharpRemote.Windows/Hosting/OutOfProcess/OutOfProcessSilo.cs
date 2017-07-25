@@ -187,7 +187,7 @@ namespace SharpRemote.Hosting
 		/// <exception cref="Win32Exception">When the </exception>
 		/// <exception cref="HandshakeException">The handshake between this and the <see cref="OutOfProcessSiloServer"/> of the remote process failed</exception>
 		/// <exception cref="SharpRemoteException"></exception>
-		/// <exception cref="AggregateException">The application was started multiple times, but failed to be started & connect every single time - examine <see cref="AggregateException.InnerExceptions"/> property</exception>
+		/// <exception cref="AggregateException">The application was started multiple times, but failed to be started and connect every single time - examine <see cref="AggregateException.InnerExceptions"/> property</exception>
 		public void Start()
 		{
 			_queue.Start().Wait();

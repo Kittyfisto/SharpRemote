@@ -3,7 +3,7 @@
 namespace SharpRemote.Hosting
 {
 	/// <summary>
-	/// Responsible for creating & hosting objects.
+	/// Responsible for creating and hosting objects.
 	/// </summary>
 	public interface ISubjectHost
 		: IDisposable

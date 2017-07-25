@@ -2,7 +2,7 @@
 {
 	/// <summary>
 	/// The interface used to perform a challenge-response authentication between
-	/// client & server.
+	/// client and server.
 	/// </summary>
 	public interface IAuthenticator
 	{

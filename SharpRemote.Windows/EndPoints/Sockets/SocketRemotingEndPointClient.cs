@@ -18,7 +18,7 @@ namespace SharpRemote
 		: AbstractIPSocketRemotingEndPoint
 		, ISocketRemotingEndPointClient
 	{
-		private static new readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private new static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly INetworkServiceDiscoverer _networkServiceDiscoverer;
 
@@ -391,6 +391,7 @@ namespace SharpRemote
 			return connectionId;
 		}
 
+		/// <inheritdoc />
 		protected override void DisposeAdditional()
 		{
 		}

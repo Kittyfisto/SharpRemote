@@ -100,7 +100,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description(
 			"Verifies that the OnDisconnected event is fired when the connection is disconnected for both the client and the server"
 			)]

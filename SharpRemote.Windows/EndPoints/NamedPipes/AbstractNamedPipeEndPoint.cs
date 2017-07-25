@@ -99,7 +99,7 @@ namespace SharpRemote
 				err = SocketError.Success;
 				return true;
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
 				err = SocketError.Fault;
 				return false;

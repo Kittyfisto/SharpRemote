@@ -298,8 +298,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -317,8 +317,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -334,8 +334,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -354,8 +354,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -375,8 +375,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -394,8 +394,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -413,8 +413,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -432,8 +432,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -448,8 +448,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -465,8 +465,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -492,8 +492,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -515,8 +515,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -541,8 +541,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -570,8 +570,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -600,8 +600,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -623,8 +623,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -664,8 +664,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			processor.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(processor);
 		}
 
 		protected abstract IEnumerable<IServant> Servants(IRemotingEndPoint client);
@@ -814,8 +814,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -842,8 +842,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -871,8 +871,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -914,8 +914,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -1016,8 +1016,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -1056,8 +1056,8 @@ namespace SharpRemote.Test.Remoting
 
 				// This line exists to FORCE the GC to NOT collect the subject, which
 				// in turn would unregister the servant from the server, thus making the test
-				// fail.
-				subject.Should().NotBeNull();
+				// fail sporadically.
+				GC.KeepAlive(subject);
 			}
 			finally
 			{
@@ -1101,8 +1101,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 
 		[Test]
@@ -1143,8 +1143,8 @@ namespace SharpRemote.Test.Remoting
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
-			// fail.
-			subject.Should().NotBeNull();
+			// fail sporadically.
+			GC.KeepAlive(subject);
 		}
 	}
 }

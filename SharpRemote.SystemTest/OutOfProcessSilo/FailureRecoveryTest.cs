@@ -56,6 +56,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Won't run on AppVeyor")]
 		[Description("Verifies that the host process is restarted when it's killed")]
 		public void TestRestart1()
 		{
@@ -66,13 +67,14 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			var proc = Process.GetProcessById(oldPid);
 			proc.Kill();
 
-			_startHandle.WaitOne(TimeSpan.FromSeconds(1)).Should().BeTrue("because the silo should've restarted the host process automatically");
+			_startHandle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue("because the silo should've restarted the host process automatically");
 			var newPid = _silo.HostProcessId;
 			newPid.Should().HaveValue();
 			newPid.Should().NotBe(oldPid);
 		}
 
 		[Test]
+		[LocalTest("Won't run on AppVeyor")]
 		[Description("Verifies that the silo is capable of recovering from 2 successive failures in a short time")]
 		public void TestRestart2()
 		{
@@ -99,6 +101,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Won't run on AppVeyor")]
 		[Description("Verifies that after the host process is restarted, it can be used again")]
 		public void TestRestart3()
 		{
@@ -123,6 +126,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Won't run on AppVeyor")]
 		[Description("Verifies that the host process is restarted when it stops reacting to heartbeats")]
 		public void TestRestart4()
 		{
@@ -144,6 +148,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Won't run on AppVeyor")]
 		[Description("Verifies that the host process can be restarted 100 times")]
 		public void TestRestart5()
 		{

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
-using SharpRemote.Exceptions;
 using SharpRemote.Tasks;
 
 namespace SharpRemote.CodeGeneration.Remoting
@@ -56,6 +55,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 			GenerateCtor();
 			GenerateGetObjectId();
 			GenerateGetSerializer();
+			GenerateGetEndPoint();
 			GenerateMethods();
 			GenerateInvokeEvent();
 			GenerateGetTaskScheduler();
@@ -197,6 +197,18 @@ namespace SharpRemote.CodeGeneration.Remoting
 			gen.Emit(OpCodes.Ret);
 
 			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetSerializer);
+		}
+
+		private void GenerateGetEndPoint()
+		{
+			var method = _typeBuilder.DefineMethod("get_EndPoint", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, typeof(IRemotingEndPoint), null);
+			var gen = method.GetILGenerator();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, EndPoint);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetEndPoint);
 		}
 
 		private void GenerateGetObjectId()

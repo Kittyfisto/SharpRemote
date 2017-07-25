@@ -41,15 +41,57 @@ namespace SharpRemote
 
 				var proxyInterface = FindProxyInterface(type);
 
-				var method = Methods.RemotingEndPointGetOrCreateServant.MakeGenericMethod(proxyInterface);
+				var grainWritten = gen.DefineLabel();
+				var writeServant = gen.DefineLabel();
 
+				// We have two possibilities however:
+				// If we're dealing with an object implementing IProxy that is ALSO registered with this endpoint,
+				// then we KNOW that both this endpoint and the connected counterpart have already negotiated a Grain-Id,
+				// in which case we can emit that id. The reason we want to do this is as follows:
+				// If a by-reference type is passed from endpoints A to B, then a servant exists on A and a proxy has been created
+				// on B. If said proxy is then forwarded from B to A, then we definately want the object given to A to be
+				// the ORIGINAL object, and not another proxy that performs two RPC invocations, when used (if A were
+				// to use a proxy, then we would be generating calls A->B->A, when in fact no RPC invocations should be required).
+
+				var proxy = gen.DeclareLocal(typeof(IProxy));
+
+				// var proxy = arg1 as IProxy
+				gen.Emit(OpCodes.Ldarg_1);
+				gen.Emit(OpCodes.Isinst, typeof(IProxy));
+				gen.Emit(OpCodes.Stloc, proxy);
+				// if proxy == null, goto writeServant
+				gen.Emit(OpCodes.Ldloc, proxy);
+				gen.Emit(OpCodes.Brfalse_S, writeServant);
+				// if proxy.EndPoint != _endPoint, goto writeServant
+				gen.Emit(OpCodes.Ldloc, proxy);
+				gen.Emit(OpCodes.Callvirt, Methods.GrainGetEndPoint);
+				loadRemotingEndPoint();
+				gen.Emit(OpCodes.Ceq);
+				gen.Emit(OpCodes.Brfalse_S, writeServant);
+
+				// writer.WriteLong(proxy.ObjectId)
+				loadWriter();
+				gen.Emit(OpCodes.Ldloc, proxy);
+				gen.Emit(OpCodes.Callvirt, Methods.GrainGetObjectId);
+				gen.Emit(OpCodes.Callvirt, Methods.WriteLong);
+				// goto grainWritten
+				gen.Emit(OpCodes.Br, grainWritten);
+
+
+				// If we're dealing with a proxy that is not registered OR we're not dealing with a proxy at all,
+				// then we want to create a servant 
 				// writer.Write(_remotingEndPoint.GetExistingOrCreateNewServant<T>(value).ObjectId);
+				gen.MarkLabel(writeServant);
 				loadWriter();
 				loadRemotingEndPoint();
 				gen.Emit(OpCodes.Ldarg_1);
+				var method = Methods.RemotingEndPointGetOrCreateServant.MakeGenericMethod(proxyInterface);
 				gen.Emit(OpCodes.Callvirt, method);
 				gen.Emit(OpCodes.Callvirt, Methods.GrainGetObjectId);
 				gen.Emit(OpCodes.Call, Methods.WriteLong);
+
+
+				gen.MarkLabel(grainWritten);
 			}
 			else
 			{

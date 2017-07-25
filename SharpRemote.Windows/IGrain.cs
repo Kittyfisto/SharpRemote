@@ -33,6 +33,12 @@ namespace SharpRemote
 		Type InterfaceType { get; }
 
 		/// <summary>
+		///     The endpoint this grain has been created by and over which all communication
+		///     is performed.
+		/// </summary>
+		IRemotingEndPoint EndPoint { get; }
+
+		/// <summary>
 		/// Shall invoke the event or method named <paramref cref="eventOrMethodName"/>.
 		/// </summary>
 		/// <param name="eventOrMethodName"></param>

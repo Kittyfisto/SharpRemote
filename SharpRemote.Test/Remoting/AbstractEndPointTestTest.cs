@@ -22,7 +22,7 @@ namespace SharpRemote.Test.Remoting
 		protected abstract EndPoint EndPoint1 { get; }
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description(
 			"Verifies that when the connection between two endpoints is interrupted from the calling end, any ongoing synchronous method call is stopped and an exception is thrown on the calling thread"
 			)]
@@ -53,7 +53,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description(
 			"Verifies that when the connection between two endpoints is interrupted from the called end, any ongoing synchronous method call is stopped and an exception is thrown on the calling thread"
 			)]
@@ -190,7 +190,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("Wont run on the shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that creating automatic proxies & servants from both the client & server side don't cause grain-id collisions")]
 		public void TestCreateAutomaticProxyAndServant()
 		{
@@ -272,6 +272,60 @@ namespace SharpRemote.Test.Remoting
 
 				Task.Factory.StartNew(proxy.SerializePerObject1)
 					.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue("Because the method should've executed within 5 seconds");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that SharpRemote manages situations in which a proxy of a subject is passed back to the endpoint which holds the subject")]
+		public void TestByReference()
+		{
+			using (var server = CreateServer())
+			using (var client = CreateClient())
+			{
+				Bind(server);
+				Connect(client, server.LocalEndPoint);
+
+				var factory = new Mock<IFactory>();
+				var @object = new Mock<IByReferenceType>().Object;
+				factory.Setup(x => x.Create()).Returns(@object);
+
+				server.CreateServant(42, factory.Object);
+				var factoryProxy = client.CreateProxy<IFactory>(42);
+				var actualObject = factoryProxy.Create();
+				actualObject.Should().NotBeNull();
+
+				factoryProxy.Remove(actualObject);
+				// We've marked IByReferenceType with the ByReferenceAttribute and thus we expect that
+				// if we pass a proxy to a method, then the original factory receives the *original* object
+				// and not a proxy to a proxy. The following test makes sure that this is actually the case.
+				factory.Verify(x => x.Remove(It.Is<IByReferenceType>(y => ReferenceEquals(y, @object))),
+					Times.Once, "because the original object should've been passed to the factory (and not the proxy to a proxy)");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that GetOrCreateProxy creates a new proxy-object if none existed before")]
+		public void TestGetOrCreateProxy1()
+		{
+			using (var server = CreateServer())
+			{
+				var proxy = server.GetExistingOrCreateNewProxy<IByReferenceType>(9001);
+				proxy.Should().NotBeNull("because a new proxy should've been created");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that if a matching servant has been registered with the endpoint, then GetOrCreateProxy simply returns the original subject")]
+		public void TestGetOrCreateProxy2()
+		{
+			using (var server = CreateServer())
+			{
+				var subject = new Mock<IByReferenceType>().Object;
+				server.CreateServant(9001, subject);
+
+				var proxy = server.GetExistingOrCreateNewProxy<IByReferenceType>(9001);
+				proxy.Should().NotBeNull();
+				proxy.Should().BeSameAs(subject, "because there is no need for a proxy if the subject has been registered with this endpoint");
 			}
 		}
 
@@ -369,7 +423,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that when the connection is dropped because of a connection-failure, the OnFailure event is invoked")]
 		public void TestOnFailure1()
 		{
@@ -389,7 +443,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that invoking a method on a proxy from inside OnFailure doesn't cause a deadlock")]
 		public void TestOnFailure2()
 		{

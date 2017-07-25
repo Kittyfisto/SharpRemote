@@ -16,6 +16,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo ReadDouble;
 		public static readonly MethodInfo GrainGetObjectId;
 		public static readonly MethodInfo GrainGetSerializer;
+		public static readonly MethodInfo GrainGetEndPoint;
 		public static readonly ConstructorInfo ObjectCtor;
 		public static readonly ConstructorInfo MemoryStreamCtor;
 		public static readonly ConstructorInfo BinaryWriterCtor;
@@ -71,6 +72,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo CreateTypeFromName;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateServant;
 		public static readonly MethodInfo RemotingEndPointGetOrCreateProxy;
+		public static readonly MethodInfo RemotingEndPointTryGetProxy;
 		public static readonly MethodInfo TaskGetFactory;
 		public static readonly ConstructorInfo ActionObjectIntPtrCtor;
 		public static readonly ConstructorInfo ActionTaskOfMemoryStreamIntPtrCtor;
@@ -101,6 +103,7 @@ namespace SharpRemote.CodeGeneration
 
 			GrainGetObjectId = typeof(IGrain).GetMethod("get_ObjectId");
 			GrainGetSerializer = typeof(IGrain).GetMethod("get_Serializer");
+			GrainGetEndPoint = typeof(IGrain).GetMethod("get_EndPoint");
 			ServantGetSubject = typeof (IServant).GetMethod("get_Subject");
 			GrainInvoke = typeof (IGrain).GetMethod("Invoke");
 			GrainGetInterfaceType = typeof (IGrain).GetMethod("get_InterfaceType");
@@ -166,6 +169,7 @@ namespace SharpRemote.CodeGeneration
 
 			RemotingEndPointGetOrCreateServant = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewServant");
 			RemotingEndPointGetOrCreateProxy = typeof (IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy");
+			RemotingEndPointTryGetProxy = typeof(IRemotingEndPoint).GetMethod("TryGetProxy");
 
 			CreateTypeFromName = typeof(TypeResolver).GetMethod("GetType", new[] { typeof(string) });
 

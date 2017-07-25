@@ -534,6 +534,19 @@ namespace SharpRemote
 
 		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
 		{
+			lock (_servantsById)
+			{
+				IServant servant;
+				if (_servantsById.TryGetValue(objectId, out servant))
+				{
+					var target = servant.Subject as T;
+					if (target != null)
+					{
+						return target;
+					}
+				}
+			}
+
 			lock (_proxiesById)
 			{
 				IProxy proxy;

@@ -117,7 +117,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("Wont run on the shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that Connect() succeeds when client-side authentication is enabled and the challenge is met")]
 		public void TestConnect9()
 		{
@@ -260,7 +260,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that establishing a connection to an already connected server is not allowed")]
 		public void TestConnect20()
 		{
@@ -311,7 +311,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that the OnConnected event is fired for both the client and server when a connection is successfully established")]
 		public void TestConnect24()
 		{
@@ -335,7 +335,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("Wont run on the shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[Description("Verifies that after a connection is established, latency measurements are performed")]
 		public void TestConnect26()
 		{

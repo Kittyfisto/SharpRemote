@@ -1021,7 +1021,7 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
-		[LocalTest("I swear to god, you cannot run any fucking test on this shitty CI server")]
+		[LocalTest("Why does this test keep failing on AppVeyor? Nobody knows why...")]
 		[NUnit.Framework.Description(
 			"Verifies that when a method applied with the Async attribute throws an exception, the exception is properly handled and doesn't tear down the entire process"
 			)]

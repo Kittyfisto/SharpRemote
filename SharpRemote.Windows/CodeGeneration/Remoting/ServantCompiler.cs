@@ -106,6 +106,18 @@ namespace SharpRemote.CodeGeneration.Remoting
 			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetSerializer);
 		}
 
+		private void GenerateGetEndPoint()
+		{
+			var method = _typeBuilder.DefineMethod("get_EndPoint", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final, typeof(IRemotingEndPoint), null);
+			var gen = method.GetILGenerator();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, EndPoint);
+			gen.Emit(OpCodes.Ret);
+
+			_typeBuilder.DefineMethodOverride(method, Methods.GrainGetEndPoint);
+		}
+
 		private void GenerateGetObjectId()
 		{
 			MethodBuilder method = _typeBuilder.DefineMethod("get_Id",
@@ -127,6 +139,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 			GenerateCtor();
 			GenerateGetObjectId();
 			GenerateGetSerializer();
+			GenerateGetEndPoint();
 			GenerateGetSubject();
 			GenerateInvoke();
 			GenerateGetTaskScheduler();

@@ -266,7 +266,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		[Test]
 		[Description("Verifies that serializing a [ByReference] type queries the endpoint for the servant and serializes both the interface type and the grain's object-the id to the stream")]
-		public void TestByReferenceSerialize()
+		public void TestByReferenceSerialize1()
 		{
 			_serializer.RegisterType<IByReferenceType>();
 
@@ -288,6 +288,33 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			using (var reader = new BinaryReader(stream))
 			{
 				_serializer.WriteObject(writer, value, endPoint.Object);
+				writer.Flush();
+				stream.Position = 0;
+
+				reader.ReadString().Should().Be(typeof(IByReferenceType).AssemblyQualifiedName);
+				reader.ReadInt64().Should().Be(objectId);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that serializing a [ByReference] type proxy, then the proxy's object id is serialized to the stream, if the proxy belongs to the serializing endpoint")]
+		public void TestByReferenceSerialize2()
+		{
+			_serializer.RegisterType<IByReferenceType>();
+
+			const long objectId = 42;
+			var endPoint = new Mock<IRemotingEndPoint>();
+
+			var value = new Mock<IByReferenceType>();
+			var proxy = value.As<IProxy>();
+			proxy.Setup(x => x.EndPoint).Returns(endPoint.Object);
+			proxy.Setup(x => x.ObjectId).Returns(objectId);
+
+			using (var stream = new MemoryStream())
+			using (var writer = new BinaryWriter(stream))
+			using (var reader = new BinaryReader(stream))
+			{
+				_serializer.WriteObject(writer, value.Object, endPoint.Object);
 				writer.Flush();
 				stream.Position = 0;
 

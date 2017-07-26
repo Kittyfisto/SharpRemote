@@ -94,9 +94,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					        interfaceName.Should().Be("SharpRemote.Test.Types.Interfaces.IByReferenceParemeterMethodInterface");
 					        methodName.Should().Be("AddListener");
 					        stream.Should().NotBeNull();
-					        stream.Length.Should().Be(9);
+					        stream.Length.Should().Be(10);
 					        var reader = new BinaryReader(stream);
 					        reader.ReadBoolean().Should().BeTrue("Because a non-null by-reference object has been serialized");
+					        reader.ReadByte().Should().Be((byte)ByReferenceHint.CreateProxy);
 					        reader.ReadUInt64().Should().Be(12345678912345678912);
 
 					        addListenerCalled = true;
@@ -138,6 +139,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						      .Should()
 						      .Be(typeof (IVoidMethodStringParameter).AssemblyQualifiedName,
 						          "Because the object's by reference interface type should be embedded into the stream");
+						reader.ReadByte().Should().Be((byte) ByReferenceHint.CreateProxy);
 						reader.ReadUInt64().Should().Be(12345678912345678912);
 
 						addListenerCalled = true;
@@ -543,6 +545,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					        var output = new MemoryStream();
 					        var writer = new BinaryWriter(output);
 							writer.Write(true);
+							writer.Write((byte)ByReferenceHint.CreateProxy);
 					        writer.Write(id);
 					        writer.Flush();
 					        output.Position = 0;
@@ -582,6 +585,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 						var output = new MemoryStream();
 						var writer = new BinaryWriter(output);
 						writer.Write(typeof(IVoidMethodStringParameter).AssemblyQualifiedName);
+						writer.Write((byte)ByReferenceHint.CreateProxy);
 						writer.Write(id);
 						writer.Flush();
 						output.Position = 0;

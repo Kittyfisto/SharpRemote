@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -8,9 +7,9 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration.Remoting;
+using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Hosting;
 using SharpRemote.Tasks;
-using SharpRemote.Test.Hosting;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
@@ -93,6 +92,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var inStream = new MemoryStream();
 			var writer = new BinaryWriter(inStream);
 			writer.Write(true);
+			writer.Write((byte)ByReferenceHint.CreateProxy);
 			writer.Write(12345678912345678912);
 
 			inStream.Position = 0;

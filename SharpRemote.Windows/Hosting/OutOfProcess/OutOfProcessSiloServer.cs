@@ -43,10 +43,7 @@ namespace SharpRemote.Hosting
 		private readonly ITypeResolver _customTypeResolver;
 		private readonly SocketRemotingEndPointServer _endPoint;
 
-		internal SocketRemotingEndPointServer EndPoint
-		{
-			get { return _endPoint; }
-		}
+		internal SocketRemotingEndPointServer EndPoint => _endPoint;
 
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
@@ -185,102 +182,70 @@ namespace SharpRemote.Hosting
 
 		private void EndPointOnOnFailure(EndPointDisconnectReason endPointDisconnectReason, ConnectionId id)
 		{
-			var fn = OnFailure;
-			if (fn != null)
-				fn(endPointDisconnectReason, id);
+			OnFailure?.Invoke(endPointDisconnectReason, id);
 		}
 
 		private void EndPointOnOnDisconnected(EndPoint remoteEndPoint, ConnectionId connectionId)
 		{
-			var fn = OnDisconnected;
-			if (fn != null)
-				fn(remoteEndPoint, connectionId);
+			OnDisconnected?.Invoke(remoteEndPoint, connectionId);
 		}
 
 		private void EndPointOnOnConnected(EndPoint remoteEndPoint, ConnectionId connectionId)
 		{
-			var fn = OnConnected;
-			if (fn != null)
-				fn(remoteEndPoint, connectionId);
+			OnConnected?.Invoke(remoteEndPoint, connectionId);
 		}
 
 		/// <summary>
 		/// The settings that were used to configure this server's behaviour in case of unexpected
 		/// (mostly native) faults.
 		/// </summary>
-		public PostMortemSettings PostMortemSettings
-		{
-			get { return _postMortemSettings; }
-		}
+		public PostMortemSettings PostMortemSettings => _postMortemSettings;
 
 		/// <summary>
 		///     The process id of the parent process, as specified in the command line arguments or null
 		///     when no id was specified.
 		/// </summary>
-		public int? ParentProcessId
-		{
-			get { return _parentProcessId; }
-		}
+		public int? ParentProcessId => _parentProcessId;
 
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			_waitHandle.Dispose();
+			_endPoint.Dispose();
 		}
 
-		public string Name
-		{
-			get { return _endPoint.Name; }
-		}
+		/// <inheritdoc />
+		public string Name => _endPoint.Name;
 
-		public bool IsConnected
-		{
-			get { return _endPoint.IsConnected; }
-		}
+		/// <inheritdoc />
+		public bool IsConnected => _endPoint.IsConnected;
 
-		public int NumPendingMethodInvocations
-		{
-			get { return _endPoint.NumPendingMethodInvocations; }
-		}
+		/// <inheritdoc />
+		public int NumPendingMethodInvocations => _endPoint.NumPendingMethodInvocations;
 
-		public EndPointSettings EndPointSettings
-		{
-			get { return _endPoint.EndPointSettings; }
-		}
+		/// <inheritdoc />
+		public EndPointSettings EndPointSettings => _endPoint.EndPointSettings;
 
-		public LatencySettings LatencySettings
-		{
-			get { return _endPoint.LatencySettings; }
-		}
+		/// <inheritdoc />
+		public LatencySettings LatencySettings => _endPoint.LatencySettings;
 
-		public HeartbeatSettings HeartbeatSettings
-		{
-			get { return _endPoint.HeartbeatSettings; }
-		}
+		/// <inheritdoc />
+		public HeartbeatSettings HeartbeatSettings => _endPoint.HeartbeatSettings;
 
-		public ConnectionId CurrentConnectionId
-		{
-			get { return _endPoint.CurrentConnectionId; }
-		}
+		/// <inheritdoc />
+		public ConnectionId CurrentConnectionId => _endPoint.CurrentConnectionId;
 
-		public TimeSpan RoundtripTime
-		{
-			get { return _endPoint.RoundtripTime; }
-		}
+		/// <inheritdoc />
+		public TimeSpan RoundtripTime => _endPoint.RoundtripTime;
 
-		public EndPoint LocalEndPoint
-		{
-			get { return _endPoint.LocalEndPoint; }
-		}
+		/// <inheritdoc />
+		public EndPoint LocalEndPoint => _endPoint.LocalEndPoint;
 
-		public EndPoint RemoteEndPoint
-		{
-			get { return _endPoint.RemoteEndPoint; }
-		}
+		/// <inheritdoc />
+		public EndPoint RemoteEndPoint => _endPoint.RemoteEndPoint;
 
-		public IEnumerable<IProxy> Proxies
-		{
-			get { return _endPoint.Proxies; }
-		}
+		/// <inheritdoc />
+		public IEnumerable<IProxy> Proxies => _endPoint.Proxies;
 
 		/// <summary>
 		/// 
@@ -297,31 +262,43 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		public event Action<EndPointDisconnectReason, ConnectionId> OnFailure;
 
+		/// <inheritdoc />
 		public void Disconnect()
 		{
 			_endPoint.Disconnect();
 		}
 
+		/// <inheritdoc />
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
 			return _endPoint.CreateProxy<T>(objectId);
 		}
 
+		/// <inheritdoc />
 		public T GetProxy<T>(ulong objectId) where T : class
 		{
 			return _endPoint.GetProxy<T>(objectId);
 		}
 
+		/// <inheritdoc />
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
 			return _endPoint.CreateServant(objectId, subject);
 		}
 
+		/// <inheritdoc />
+		public T RetrieveSubject<T>(ulong objectId) where T : class
+		{
+			return _endPoint.RetrieveSubject<T>(objectId);
+		}
+
+		/// <inheritdoc />
 		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
 		{
 			return _endPoint.GetExistingOrCreateNewProxy<T>(objectId);
 		}
 
+		/// <inheritdoc />
 		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
 		{
 			return _endPoint.GetExistingOrCreateNewServant(subject);

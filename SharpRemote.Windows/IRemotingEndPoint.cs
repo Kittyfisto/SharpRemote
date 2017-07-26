@@ -145,12 +145,19 @@ namespace SharpRemote
 		T GetProxy<T>(ulong objectId) where T : class;
 
 		/// <summary>
-		///     Creates and registers an object for the given subject <paramref name="subject" /> and invokes its methods, when they
-		///     have been called on the corresponding proxy.
+		///     Creates and registers a servant for the given subject <paramref name="subject" /> under the given
+		///     <paramref name="objectId" />,
+		///     giving another connected <see cref="IRemotingEndPoint" /> the ability to call the subject's methods via a proxy
+		///     (<see cref="CreateProxy{T}" />).
 		/// </summary>
 		/// <remarks>
-		///     A servant can be created independent from any proxy and the order in which both are created is unimportant, for as long
-		///     as no interface methods / properties are invoked.
+		///     A servant is responsible for invoking RPCs on the original subject whenever they are called through a proxy.
+		///     If the interfaces <typeparamref name="T"/> methods are attributed with the <see cref="InvokeAttribute"/>,
+		///     then the servant will ensure that methods are invoked with the specified synchronization.
+		/// </remarks>
+		/// <remarks>
+		///     A servant can be created independent from any proxy and the order in which both are created is unimportant, for as
+		///     long as no interface methods / properties are invoked.
 		/// </remarks>
 		/// <remarks>
 		///     This method is thread-safe.
@@ -160,6 +167,15 @@ namespace SharpRemote
 		/// <param name="subject"></param>
 		/// <returns></returns>
 		IServant CreateServant<T>(ulong objectId, T subject) where T : class;
+
+		/// <summary>
+		///     Retrieves the subject that was previously registered at this end-point via <see cref="CreateServant{T}" />
+		///     (and has not yet been garbage collected).
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId">The objectId that has been given to this endpoint when registering a servant for the subject</param>
+		/// <returns>The subject that was registered or null if the subject has been garbage collected already</returns>
+		T RetrieveSubject<T>(ulong objectId) where T : class;
 
 		/// <summary>
 		/// 

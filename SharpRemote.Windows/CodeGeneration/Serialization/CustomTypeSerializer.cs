@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using SharpRemote.CodeGeneration;
+using SharpRemote.CodeGeneration.Serialization;
 using SerializationException = SharpRemote.Exceptions.SerializationException;
 
 // ReSharper disable CheckNamespace
@@ -69,6 +70,11 @@ namespace SharpRemote
 				gen.Emit(OpCodes.Ceq);
 				gen.Emit(OpCodes.Brfalse_S, writeServant);
 
+				// writer.WriteByte(RetrieveSubject)
+				loadWriter();
+				gen.Emit(OpCodes.Ldc_I4, (int)ByReferenceHint.RetrieveSubject);
+				gen.Emit(OpCodes.Callvirt, Methods.WriteByte);
+
 				// writer.WriteLong(proxy.ObjectId)
 				loadWriter();
 				gen.Emit(OpCodes.Ldloc, proxy);
@@ -82,6 +88,13 @@ namespace SharpRemote
 				// then we want to create a servant 
 				// writer.Write(_remotingEndPoint.GetExistingOrCreateNewServant<T>(value).ObjectId);
 				gen.MarkLabel(writeServant);
+
+				// writer.WriteByte(RetrieveSubject)
+				loadWriter();
+				gen.Emit(OpCodes.Ldc_I4, (int)ByReferenceHint.CreateProxy);
+				gen.Emit(OpCodes.Callvirt, Methods.WriteByte);
+
+				// writer.WriteLong(endPoint.GetOrCreateServant<T>(value).ObjectId)
 				loadWriter();
 				loadRemotingEndPoint();
 				gen.Emit(OpCodes.Ldarg_1);
@@ -397,16 +410,38 @@ namespace SharpRemote
 			else if (type.Type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
 			{
 				var proxyInterface = FindProxyInterface(type.Type);
-				var method = typeof(IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy").MakeGenericMethod(proxyInterface);
 
-				// result = _remotingEndPoint.GetExistingOrCreateNewProxy<T>(serializer.ReadLong());
+				var objectRetrieved = gen.DefineLabel();
+				var getOrCreateProxy = gen.DefineLabel();
+
+				// The stream contains a hint for us as to whether we should create a proxy OR retrieve the actual subject
+				// for the given grain-id.
+				loadReader();
+				gen.Emit(OpCodes.Callvirt, Methods.ReadByte);
+				gen.Emit(OpCodes.Ldc_I4, (int)ByReferenceHint.RetrieveSubject);
+				gen.Emit(OpCodes.Ceq);
+				gen.Emit(OpCodes.Brfalse_S, getOrCreateProxy);
+				// result = _remotingEndPoint.RetrieveSubject(serializer.ReadLong())
+				var retrieveSubject = typeof(IRemotingEndPoint).GetMethod("RetrieveSubject").MakeGenericMethod(proxyInterface);
 				loadRemotingEndPoint();
 				loadReader();
-				gen.Emit(OpCodes.Call, Methods.ReadLong);
-				gen.Emit(OpCodes.Callvirt, method);
+				gen.Emit(OpCodes.Callvirt, Methods.ReadLong);
+				gen.Emit(OpCodes.Callvirt, retrieveSubject);
+				gen.Emit(OpCodes.Br, objectRetrieved);
+
+
+				gen.MarkLabel(getOrCreateProxy);
+				// result = _remotingEndPoint.GetExistingOrCreateNewProxy<T>(serializer.ReadLong());
+				var getOrCreateNewProxy = typeof(IRemotingEndPoint).GetMethod("GetExistingOrCreateNewProxy").MakeGenericMethod(proxyInterface);
+				loadRemotingEndPoint();
+				loadReader();
+				gen.Emit(OpCodes.Callvirt, Methods.ReadLong);
+				gen.Emit(OpCodes.Callvirt, getOrCreateNewProxy);
 
 				gen.Emit(OpCodes.Stloc, target);
 				gen.Emit(OpCodes.Ldloc, target);
+
+				gen.MarkLabel(objectRetrieved);
 			}
 			else
 			{

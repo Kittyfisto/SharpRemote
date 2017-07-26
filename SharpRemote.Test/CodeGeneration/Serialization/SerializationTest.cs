@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Structs;
@@ -292,7 +293,10 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				stream.Position = 0;
 
 				reader.ReadString().Should().Be(typeof(IByReferenceType).AssemblyQualifiedName);
+				reader.ReadByte().Should().Be((byte)ByReferenceHint.CreateProxy);
 				reader.ReadInt64().Should().Be(objectId);
+
+				stream.Position.Should().Be(stream.Length, "because we should've consumed the entire stream");
 			}
 		}
 
@@ -319,7 +323,10 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				stream.Position = 0;
 
 				reader.ReadString().Should().Be(typeof(IByReferenceType).AssemblyQualifiedName);
+				reader.ReadByte().Should().Be((byte)ByReferenceHint.RetrieveSubject);
 				reader.ReadInt64().Should().Be(objectId);
+
+				stream.Position.Should().Be(stream.Length, "because we should've consumed the entire stream");
 			}
 		}
 
@@ -343,6 +350,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			using (var reader = new BinaryReader(stream))
 			{
 				writer.Write(typeof(IByReferenceType).AssemblyQualifiedName);
+				writer.Write((byte)ByReferenceHint.CreateProxy);
 				writer.Write(objectId);
 
 				writer.Flush();
@@ -350,6 +358,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				var actualValue = _serializer.ReadObject(reader, endPoint.Object);
 				actualValue.Should().BeSameAs(value);
+
+				stream.Position.Should().Be(stream.Length, "because we should've consumed the entire stream");
 			}
 		}
 

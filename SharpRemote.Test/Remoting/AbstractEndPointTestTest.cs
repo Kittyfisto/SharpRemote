@@ -166,6 +166,49 @@ namespace SharpRemote.Test.Remoting
 		}
 
 		[Test]
+		[Description("Verifies that if a matching servant has been registered with the endpoint, then RetrieveSubject simply returns the original subject")]
+		public void TestRegisterServant3()
+		{
+			using (var server = CreateServer())
+			{
+				var subject = new Mock<IByReferenceType>().Object;
+				server.CreateServant(9001, subject);
+
+				var proxy = server.RetrieveSubject<IByReferenceType>(9001);
+				proxy.Should().NotBeNull();
+				proxy.Should().BeSameAs(subject, "because we've just registered a subject with that id");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that if no matching servant has been registered with the endpoint, then RetrieveSubject simply returns null")]
+		public void TestRegisterServant4()
+		{
+			using (var server = CreateServer())
+			{
+				var subject = new Mock<IByReferenceType>().Object;
+				server.CreateServant(9001, subject);
+
+				var proxy = server.RetrieveSubject<IByReferenceType>(9002);
+				proxy.Should().BeNull("because we didn't register a subject with the given id");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that if no matching servant has been registered with the endpoint, then RetrieveSubject simply returns null")]
+		public void TestRegisterServant5()
+		{
+			using (var server = CreateServer())
+			{
+				var subject = new Mock<IByReferenceType>().Object;
+				server.CreateServant(9001, subject);
+
+				var proxy = server.RetrieveSubject<IByReferenceReturnMethodInterface>(9001);
+				proxy.Should().BeNull("because we registered the subject under a different (incompatible) type");
+			}
+		}
+
+		[Test]
 		[Description("Verifies that the endpoint settings are properly forwarded")]
 		public void TestCtor2()
 		{
@@ -311,21 +354,6 @@ namespace SharpRemote.Test.Remoting
 			{
 				var proxy = server.GetExistingOrCreateNewProxy<IByReferenceType>(9001);
 				proxy.Should().NotBeNull("because a new proxy should've been created");
-			}
-		}
-
-		[Test]
-		[Description("Verifies that if a matching servant has been registered with the endpoint, then GetOrCreateProxy simply returns the original subject")]
-		public void TestGetOrCreateProxy2()
-		{
-			using (var server = CreateServer())
-			{
-				var subject = new Mock<IByReferenceType>().Object;
-				server.CreateServant(9001, subject);
-
-				var proxy = server.GetExistingOrCreateNewProxy<IByReferenceType>(9001);
-				proxy.Should().NotBeNull();
-				proxy.Should().BeSameAs(subject, "because there is no need for a proxy if the subject has been registered with this endpoint");
 			}
 		}
 

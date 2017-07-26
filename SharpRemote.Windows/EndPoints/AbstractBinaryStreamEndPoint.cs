@@ -505,8 +505,9 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
+		public T RetrieveSubject<T>(ulong objectId) where T : class
 		{
+			Type interfaceType = null;
 			lock (_servantsById)
 			{
 				IServant servant;
@@ -517,9 +518,28 @@ namespace SharpRemote
 					{
 						return target;
 					}
+
+					interfaceType = servant.InterfaceType;
 				}
 			}
 
+			if (interfaceType != null)
+			{
+				Log.WarnFormat("Unable to retrieve subject with id '{0}' as {1}: It was registered as {2}", objectId,
+					typeof(T),
+					interfaceType);
+			}
+			else
+			{
+				Log.WarnFormat("Unable to retrieve subject with id '{0}', it might have been garbage collected already", objectId);
+			}
+
+			return null;
+		}
+
+		/// <inheritdoc />
+		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
+		{
 			lock (_proxiesById)
 			{
 				IProxy proxy;

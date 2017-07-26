@@ -8,6 +8,7 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration.Remoting;
+using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Tasks;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;

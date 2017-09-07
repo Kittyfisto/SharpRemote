@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
+using SharpRemote.CodeGeneration;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 
@@ -20,24 +21,21 @@ namespace SharpRemote
 		/// <param name="name"></param>
 		/// <param name="clientAuthenticator"></param>
 		/// <param name="serverAuthenticator"></param>
-		/// <param name="customTypeResolver"></param>
-		/// <param name="serializer"></param>
+		/// <param name="codeGenerator"></param>
 		/// <param name="heartbeatSettings"></param>
 		/// <param name="latencySettings"></param>
 		/// <param name="endPointSettings"></param>
 		public NamedPipeRemotingEndPointClient(string name = null,
 		                                       IAuthenticator clientAuthenticator = null,
 											   IAuthenticator serverAuthenticator = null,
-											   ITypeResolver customTypeResolver = null,
-											   Serializer serializer = null,
+											   ICodeGenerator codeGenerator = null,
 											   HeartbeatSettings heartbeatSettings = null,
 											   LatencySettings latencySettings = null,
 											   EndPointSettings endPointSettings = null)
 			: base(name, EndPointType.Client,
 			       clientAuthenticator,
 			       serverAuthenticator,
-			       customTypeResolver,
-			       serializer,
+			       codeGenerator,
 			       heartbeatSettings,
 			       latencySettings,
 			       endPointSettings)

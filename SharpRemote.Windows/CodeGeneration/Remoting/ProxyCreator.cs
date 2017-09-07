@@ -12,32 +12,26 @@ namespace SharpRemote.CodeGeneration.Remoting
 	internal sealed class ProxyCreator
 	{
 		private readonly Serializer _serializer;
-		private readonly IRemotingEndPoint _endPoint;
-		private readonly IEndPointChannel _channel;
 		private readonly Dictionary<Type, Type> _interfaceToProxy;
 		private readonly ModuleBuilder _module;
 
-		public ProxyCreator(ModuleBuilder module, Serializer serializer, IRemotingEndPoint endPoint, IEndPointChannel channel)
+		public ProxyCreator(ModuleBuilder module, Serializer serializer)
 		{
-			if (module == null) throw new ArgumentNullException("module");
-			if (serializer == null) throw new ArgumentNullException("serializer");
-			if (endPoint == null) throw new ArgumentNullException("endPoint");
-			if (channel == null) throw new ArgumentNullException("channel");
+			if (module == null) throw new ArgumentNullException(nameof(module));
+			if (serializer == null) throw new ArgumentNullException(nameof(serializer));
 
-			_endPoint = endPoint;
-			_channel = channel;
 			_module = module;
 			_serializer = serializer;
 
 			_interfaceToProxy = new Dictionary<Type, Type>();
 		}
 
-		public ProxyCreator(ModuleBuilder module, IRemotingEndPoint endPoint, IEndPointChannel channel)
-			: this(module, new Serializer(module), endPoint, channel)
+		public ProxyCreator(ModuleBuilder module)
+			: this(module, new Serializer(module))
 		{}
 
-		public ProxyCreator(IRemotingEndPoint endPoint, IEndPointChannel channel)
-			: this (CreateModule(), endPoint, channel)
+		public ProxyCreator()
+			: this (CreateModule())
 		{
 			
 		}
@@ -89,9 +83,11 @@ namespace SharpRemote.CodeGeneration.Remoting
 		/// of the given id.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
+		/// <param name="endPoint"></param>
+		/// <param name="channel"></param>
 		/// <param name="objectId"></param>
 		/// <returns></returns>
-		public T CreateProxy<T>(ulong objectId)
+		public T CreateProxy<T>(IRemotingEndPoint endPoint, IEndPointChannel channel, ulong objectId)
 		{
 			var interfaceType = typeof (T);
 			Type proxyType;
@@ -113,8 +109,8 @@ namespace SharpRemote.CodeGeneration.Remoting
 			return (T)ctor.Invoke(new object[]
 				{
 					objectId,
-					_endPoint,
-					_channel,
+					endPoint,
+					channel,
 					_serializer
 				});
 		}

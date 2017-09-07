@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SharpRemote.Extensions;
 using log4net;
+using SharpRemote.CodeGeneration;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -31,8 +32,7 @@ namespace SharpRemote
 		                                          string name = null,
 		                                          IAuthenticator clientAuthenticator = null,
 		                                          IAuthenticator serverAuthenticator = null,
-		                                          ITypeResolver customTypeResolver = null,
-		                                          Serializer serializer = null,
+		                                          ICodeGenerator codeGenerator = null,
 		                                          HeartbeatSettings heartbeatSettings = null,
 		                                          LatencySettings latencySettings = null,
 		                                          EndPointSettings endPointSettings = null)
@@ -41,8 +41,7 @@ namespace SharpRemote
 			       type,
 			       clientAuthenticator,
 			       serverAuthenticator,
-			       customTypeResolver,
-			       serializer,
+			       codeGenerator,
 			       heartbeatSettings,
 			       latencySettings,
 			       endPointSettings)

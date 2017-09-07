@@ -52,6 +52,8 @@
     <Compile Include="Attributes\AsyncRemoteAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
+    <Compile Include="CodeGeneration\CodeGenerator.cs" />
+    <Compile Include="CodeGeneration\ICodeGenerator.cs" />
     <Compile Include="CodeGeneration\Serialization\ByReferenceHint.cs" />
     <Compile Include="CodeGeneration\Serialization\Serializers\DecimalSerializer.cs" />
     <Compile Include="Diagnostics\Debugger.cs" />

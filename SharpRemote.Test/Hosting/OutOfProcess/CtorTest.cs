@@ -1,6 +1,8 @@
 ﻿using System;
 using FluentAssertions;
+using Moq;
 using NUnit.Framework;
+using SharpRemote.CodeGeneration;
 using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
@@ -48,13 +50,14 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
-		[Description("Verifies that the serializer specified in the ctor is actually used - instead of a new one")]
+		[Description("Verifies that the code generator specified in the ctor is actually used - instead of a new one")]
 		public void TestCtor5()
 		{
 			var serializer = new Serializer();
 			serializer.IsTypeRegistered<Tree>().Should().BeFalse();
+			var codeGenerator = new CodeGenerator(serializer);
 
-			using (var silo = new OutOfProcessSilo(serializer: serializer))
+			using (var silo = new OutOfProcessSilo(codeGenerator: codeGenerator))
 			{
 				silo.Start();
 				var grain = silo.CreateGrain<IReturnsObjectMethod, ReturnsTree>();

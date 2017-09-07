@@ -10,6 +10,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using SharpRemote.CodeGeneration;
 using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.EndPoints;
 using SharpRemote.Exceptions;
@@ -132,10 +133,7 @@ namespace SharpRemote
 
 		#region Code Generation
 
-		private readonly AssemblyBuilder _assembly;
-		private readonly ModuleBuilder _module;
-		private readonly ProxyCreator _proxyCreator;
-		private readonly ServantCreator _servantCreator;
+		private readonly ICodeGenerator _codeGenerator;
 
 		#endregion
 
@@ -155,7 +153,6 @@ namespace SharpRemote
 
 		private int _previousConnectionId;
 		private readonly string _name;
-		private readonly Serializer _serializer;
 		private readonly object _syncRoot;
 
 		private EndPointDisconnectReason? _disconnectReason;
@@ -168,8 +165,7 @@ namespace SharpRemote
 		                                      EndPointType type,
 		                                      IAuthenticator clientAuthenticator,
 		                                      IAuthenticator serverAuthenticator,
-		                                      ITypeResolver customTypeResolver,
-		                                      Serializer serializer,
+		                                      ICodeGenerator codeGenerator,
 		                                      HeartbeatSettings heartbeatSettings,
 		                                      LatencySettings latencySettings,
 		                                      EndPointSettings endPointSettings)
@@ -194,24 +190,7 @@ namespace SharpRemote
 			_servantsBySubject = new WeakKeyDictionary<object, IServant>();
 
 			_proxiesById = new Dictionary<ulong, WeakReference<IProxy>>();
-
-			if (serializer == null)
-			{
-				var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
-				_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-				string moduleName = assemblyName.Name + ".dll";
-				_module = _assembly.DefineDynamicModule(moduleName);
-
-				_serializer = new Serializer(_module, customTypeResolver);
-			}
-			else
-			{
-				_module = serializer.Module;
-				_serializer = serializer;
-			}
-
-			_servantCreator = new ServantCreator(_module, _serializer, this, this);
-			_proxyCreator = new ProxyCreator(_module, _serializer, this, this);
+			_codeGenerator = codeGenerator ?? new CodeGenerator();
 
 			_endpointSettings = endPointSettings ?? new EndPointSettings();
 			_pendingMethodCalls = new PendingMethodsQueue(_name, _endpointSettings.MaxConcurrentCalls);
@@ -455,7 +434,7 @@ namespace SharpRemote
 		{
 			lock (_proxiesById)
 			{
-				var proxy = _proxyCreator.CreateProxy<T>(objectId);
+				var proxy = _codeGenerator.CreateProxy<T>(this, this, objectId);
 				var grain = new WeakReference<IProxy>((IProxy) proxy);
 				_proxiesById.Add(objectId, grain);
 				return proxy;
@@ -495,7 +474,7 @@ namespace SharpRemote
 					);
 			}
 
-			IServant servant = _servantCreator.CreateServant(objectId, subject);
+			IServant servant = _codeGenerator.CreateServant(this, this, objectId, subject);
 			lock (_servantsById)
 			{
 				_servantsById.Add(objectId, servant);
@@ -547,7 +526,7 @@ namespace SharpRemote
 				if (!_proxiesById.TryGetValue(objectId, out grain))
 				{
 					// If the proxy doesn't exist, then we can simply create a new one...
-					var value = _proxyCreator.CreateProxy<T>(objectId);
+					var value = _codeGenerator.CreateProxy<T>(this, this, objectId);
 					grain = new WeakReference<IProxy>((IProxy) value);
 					_proxiesById.Add(objectId, grain);
 					return value;
@@ -557,7 +536,7 @@ namespace SharpRemote
 					// It's possible that the proxy did exist at one point, then was collected by the GC, but
 					// our internal GC didn't have the time to remove that proxy from the dictionary yet, which
 					// means that we have to *replace* the existing weak-reference with a new, living one
-					var value = _proxyCreator.CreateProxy<T>(objectId);
+					var value = _codeGenerator.CreateProxy<T>(this, this, objectId);
 					grain = new WeakReference<IProxy>(proxy);
 					_proxiesById[objectId] = grain;
 					return value;

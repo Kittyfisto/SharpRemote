@@ -24,8 +24,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private T CreateServantAndProxy<T>(T subject)
 		{
 			var objectId = (ulong) _random.Next();
-			_servant = _servantCreator.CreateServant(objectId, subject);
-			return _proxyCreator.CreateProxy<T>(objectId);
+			_servant = _servantCreator.CreateServant(_endPoint, _channel, objectId, subject);
+			return _proxyCreator.CreateProxy<T>(_endPoint, _channel, objectId);
 		}
 
 		[TestFixtureSetUp]
@@ -40,8 +40,8 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var channel = new Mock<IEndPointChannel>();
 			_channel = channel.Object;
 
-			_proxyCreator = new ProxyCreator(_endPoint, _channel);
-			_servantCreator = new ServantCreator(_endPoint, _channel);
+			_proxyCreator = new ProxyCreator();
+			_servantCreator = new ServantCreator();
 
 			channel.Setup(
 				x => x.CallRemoteMethod(It.IsAny<ulong>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<MemoryStream>()))

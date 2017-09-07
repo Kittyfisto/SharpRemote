@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.CodeGeneration;
 using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.CodeGeneration.Serialization;
@@ -53,7 +54,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		public void TestCreate()
 		{
 			var customTypeResolver = new CustomTypeResolver1();
-			using (var silo = new OutOfProcessSilo(customTypeResolver: customTypeResolver))
+			using (var silo = new OutOfProcessSilo(codeGenerator: new CodeGenerator(customTypeResolver)))
 			{
 				silo.Start();
 

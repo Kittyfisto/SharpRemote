@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SharpRemote.Exceptions;
 using SharpRemote.ServiceDiscovery;
 using log4net;
+using SharpRemote.CodeGeneration;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -29,18 +30,16 @@ namespace SharpRemote
 		/// <param name="name">The name of this socket, used to publish it via PNRP as well as to refer to this endpoint in diagnostic output</param>
 		/// <param name="clientAuthenticator">The authenticator, if any, to authenticate a client against a server (both need to use the same authenticator)</param>
 		/// <param name="serverAuthenticator">The authenticator, if any, to authenticate a server against a client (both need to use the same authenticator)</param>
-		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// <param name="networkServiceDiscoverer">The discoverer used to find services by name within the local network</param>
-		/// <param name="serializer">The serializer used serialize and deserialize values - if none is specified a new one is created</param>
+		/// <param name="codeGenerator">The code generator to create proxy and servant types</param>
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		public SocketRemotingEndPointClient(string name = null,
 		                                    IAuthenticator clientAuthenticator = null,
 		                                    IAuthenticator serverAuthenticator = null,
-		                                    ITypeResolver customTypeResolver = null,
 		                                    INetworkServiceDiscoverer networkServiceDiscoverer = null,
-		                                    Serializer serializer = null,
+		                                    ICodeGenerator codeGenerator = null,
 		                                    HeartbeatSettings heartbeatSettings = null,
 		                                    LatencySettings latencySettings = null,
 		                                    EndPointSettings endPointSettings = null)
@@ -48,8 +47,7 @@ namespace SharpRemote
 			       name,
 			       clientAuthenticator,
 			       serverAuthenticator,
-			       customTypeResolver,
-			       serializer,
+			       codeGenerator,
 			       heartbeatSettings,
 			       latencySettings,
 			       endPointSettings)

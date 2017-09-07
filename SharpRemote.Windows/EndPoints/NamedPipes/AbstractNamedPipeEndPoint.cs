@@ -2,6 +2,7 @@
 using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
+using SharpRemote.CodeGeneration;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -22,15 +23,15 @@ namespace SharpRemote
 
 		internal AbstractNamedPipeEndPoint(string name,
 			EndPointType type,
-		                                   IAuthenticator clientAuthenticator,
+			IAuthenticator clientAuthenticator,
 			IAuthenticator serverAuthenticator,
-		                                   ITypeResolver customTypeResolver,
-			Serializer serializer,
-		                                   HeartbeatSettings heartbeatSettings,
+			ICodeGenerator codeGenerator,
+			HeartbeatSettings heartbeatSettings,
 			LatencySettings latencySettings,
-		                                   EndPointSettings endPointSettings)
+			EndPointSettings endPointSettings)
 			: base(
-				new GrainIdGenerator(type), name, type, clientAuthenticator, serverAuthenticator, customTypeResolver, serializer, heartbeatSettings,
+				new GrainIdGenerator(type), name, type, clientAuthenticator, serverAuthenticator, codeGenerator,
+				heartbeatSettings,
 				latencySettings, endPointSettings)
 		{
 		}

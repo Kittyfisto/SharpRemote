@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using SharpRemote.CodeGeneration;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -10,12 +11,14 @@ namespace SharpRemote
 		: AbstractBinaryStreamEndPoint<IDisposable>
 	{
 		public WebRemotingEndPoint(GrainIdGenerator idGenerator, string name, EndPointType type,
-		                           IAuthenticator clientAuthenticator, IAuthenticator serverAuthenticator,
-		                           ITypeResolver customTypeResolver, Serializer serializer,
-		                           HeartbeatSettings heartbeatSettings, LatencySettings latencySettings,
+		                           IAuthenticator clientAuthenticator,
+								   IAuthenticator serverAuthenticator,
+		                           ICodeGenerator codeGenerator,
+		                           HeartbeatSettings heartbeatSettings,
+								   LatencySettings latencySettings,
 		                           EndPointSettings endPointSettings)
 			: base(
-				idGenerator, name, type, clientAuthenticator, serverAuthenticator, customTypeResolver, serializer, heartbeatSettings,
+				idGenerator, name, type, clientAuthenticator, serverAuthenticator, codeGenerator, heartbeatSettings,
 				latencySettings, endPointSettings)
 		{
 		}

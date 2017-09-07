@@ -7,6 +7,7 @@ using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Hosting.OutOfProcess;
 using log4net;
+using SharpRemote.CodeGeneration;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote.Hosting
@@ -106,8 +107,7 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		/// <param name="process"></param>
 		/// <param name="options"></param>
-		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
-		/// <param name="serializer">The serializer used to serialize and deserialize values - if none is specifed then a new one is created</param>
+		/// <param name="codeGenerator">The code generator to create proxy and servant types</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
@@ -119,8 +119,7 @@ namespace SharpRemote.Hosting
 		public OutOfProcessSilo(
 			string process = ProcessWatchdog.SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
-			ITypeResolver customTypeResolver = null,
-			Serializer serializer = null,
+			ICodeGenerator codeGenerator = null,
 			LatencySettings latencySettings = null,
 			PostMortemSettings postMortemSettings = null,
 			EndPointSettings endPointSettings = null,
@@ -146,8 +145,7 @@ namespace SharpRemote.Hosting
 			failureHandler = failureHandler ?? new ZeroFailureToleranceStrategy();
 
 			_endPoint = new SocketRemotingEndPointClient(endPointName,
-			                                             customTypeResolver: customTypeResolver,
-			                                             serializer: serializer,
+			                                             codeGenerator: codeGenerator,
 			                                             heartbeatSettings: failureSettings.HeartbeatSettings,
 			                                             latencySettings: latencySettings,
 			                                             endPointSettings: endPointSettings);

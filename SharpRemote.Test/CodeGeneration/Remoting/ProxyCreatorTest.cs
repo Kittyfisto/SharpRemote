@@ -43,7 +43,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_endPoint = new Mock<IRemotingEndPoint>();
 
 			_channel = new Mock<IEndPointChannel>();
-			_creator = new ProxyCreator(module, _endPoint.Object, _channel.Object);
+			_creator = new ProxyCreator(module);
 		}
 
 		[TestFixtureTearDown]
@@ -61,7 +61,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			type.Should().NotBeNull();
 
 			_objectId = (ulong) _random.Next();
-			var obj = _creator.CreateProxy<T>(_objectId);
+			var obj = _creator.CreateProxy<T>(_endPoint.Object, _channel.Object, _objectId);
 			var proxy = obj as IProxy;
 			proxy.Should().NotBeNull();
 			proxy.ObjectId.Should().Be(_objectId);

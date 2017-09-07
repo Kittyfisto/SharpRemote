@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using log4net;
+using SharpRemote.CodeGeneration;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote.Hosting
@@ -56,6 +57,7 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		/// <param name="args">The command line arguments given to the Main() method</param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
+		/// <param name="codeGenerator">The code generator to create proxy and servant types</param>
 		/// <param name="postMortemSettings">
 		///     Settings to control how and if minidumps are collected - when set to null, default values are used (
 		///     <see
@@ -68,6 +70,7 @@ namespace SharpRemote.Hosting
 		/// <param name="endPointName">The name of this silo, used for debugging (and logging)</param>
 		public OutOfProcessSiloServer(string[] args,
 		                              ITypeResolver customTypeResolver = null,
+		                              ICodeGenerator codeGenerator = null,
 		                              PostMortemSettings postMortemSettings = null,
 		                              HeartbeatSettings heartbeatSettings = null,
 		                              LatencySettings latencySettings = null,
@@ -169,7 +172,7 @@ namespace SharpRemote.Hosting
 
 			_endPoint = new SocketRemotingEndPointServer(
 				endPointName,
-				customTypeResolver: customTypeResolver,
+				codeGenerator: codeGenerator,
 				heartbeatSettings: heartbeatSettings,
 				latencySettings: latencySettings,
 				endPointSettings: endPointSettings

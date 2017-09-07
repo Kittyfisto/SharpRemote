@@ -11,32 +11,26 @@ namespace SharpRemote.CodeGeneration.Remoting
 	/// </summary>
 	internal sealed class ServantCreator
 	{
-		private readonly IRemotingEndPoint _endPoint;
-		private readonly IEndPointChannel _channel;
 		private readonly Serializer _serializer;
 		private readonly Dictionary<Type, Type> _interfaceToSubject;
 		private readonly ModuleBuilder _module;
 
-		public ServantCreator(ModuleBuilder module, Serializer serializer, IRemotingEndPoint endPoint, IEndPointChannel channel)
+		public ServantCreator(ModuleBuilder module, Serializer serializer)
 		{
-			if (module == null) throw new ArgumentNullException("module");
-			if (serializer == null) throw new ArgumentNullException("serializer");
-			if (endPoint == null) throw new ArgumentNullException("endPoint");
-			if (channel == null) throw new ArgumentNullException("channel");
-
-			_endPoint = endPoint;
-			_channel = channel;
+			if (module == null) throw new ArgumentNullException(nameof(module));
+			if (serializer == null) throw new ArgumentNullException(nameof(serializer));
+			
 			_module = module;
 			_serializer = serializer;
 			_interfaceToSubject= new Dictionary<Type, Type>();
 		}
 
-		public ServantCreator(ModuleBuilder module, IRemotingEndPoint endPoint, IEndPointChannel channel)
-			: this(module, new Serializer(module), endPoint, channel)
+		public ServantCreator(ModuleBuilder module)
+			: this(module, new Serializer(module))
 		{}
 
-		public ServantCreator(IRemotingEndPoint endPoint, IEndPointChannel channel)
-			: this(CreateModule(), endPoint, channel)
+		public ServantCreator()
+			: this(CreateModule())
 		{}
 
 		private static ModuleBuilder CreateModule()
@@ -86,7 +80,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 			}
 		}
 
-		public IServant CreateServant<T>(ulong objectId, T subject)
+		public IServant CreateServant<T>(IRemotingEndPoint endPoint, IEndPointChannel channel, ulong objectId, T subject)
 		{
 			var interfaceType = typeof(T);
 			Type subjectType;
@@ -109,8 +103,8 @@ namespace SharpRemote.CodeGeneration.Remoting
 			return (IServant)ctor.Invoke(new object[]
 				{
 					objectId,
-					_endPoint,
-					_channel,
+					endPoint,
+					channel,
 					_serializer,
 					subject
 				});

@@ -14,21 +14,23 @@ namespace SharpRemote.Test.Remoting.Sockets
 	{
 		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
+			return new SocketRemotingEndPointClient(name,
+													clientAuthenticator,
+													serverAuthenticator,
+													networkServiceDiscoverer,
 													latencySettings: latencySettings,
-													heartbeatSettings: heartbeatSettings,
-													networkServiceDiscoverer: networkServiceDiscoverer);
+													heartbeatSettings: heartbeatSettings);
 		}
 
 		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new SocketRemotingEndPointServer(name,
 													clientAuthenticator,
-													serverAuthenticator, null,
+													serverAuthenticator,
+													networkServiceDiscoverer,
 													latencySettings: latencySettings,
 													endPointSettings: endPointSettings,
-													heartbeatSettings: heartbeatSettings,
-													networkServiceDiscoverer: networkServiceDiscoverer);
+													heartbeatSettings: heartbeatSettings);
 		}
 
 		[Test]

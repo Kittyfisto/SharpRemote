@@ -22,7 +22,7 @@ namespace SharpRemote
 		/// NOT FINISHED
 		/// </summary>
 		public BluetoothRemotingEndPoint()
-			: base(null, null, EndPointType.Client, null, null, null, null, null, null, null)
+			: base(null, null, EndPointType.Client, null, null, null, null, null, null)
 		{
 			
 		}

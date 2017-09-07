@@ -91,6 +91,7 @@
     <Compile Include="Remoting\Sockets\SocketRemotingEndPointClientTest.cs" />
     <Compile Include="Remoting\Sockets\SocketRemotingEndPointServerTest.cs" />
     <Compile Include="Remoting\Sockets\TryConnectTest.cs" />
+    <Compile Include="ServiceDiscovery\MessageTest.cs" />
     <Compile Include="Types\Classes\ByReferenceAndDataContract.cs" />
     <Compile Include="Types\Classes\ByReferenceClass.cs" />
     <Compile Include="Types\Classes\CausesAccessViolation.cs" />

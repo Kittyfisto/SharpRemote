@@ -17,6 +17,9 @@ namespace SharpRemote.ETW
 		private const int RpcDequeuedId = 2;
 		private const int QueueCountChangedId = 3;
 
+		/// <summary>
+		///     The instance of this class which shall be used to log ETW events.
+		/// </summary>
 		public static readonly PendingMethodsEventSource Instance;
 
 		static PendingMethodsEventSource()
@@ -28,12 +31,13 @@ namespace SharpRemote.ETW
 		{
 		}
 
-		[Event(RpcEnqueuedId, Message = "RPC '{0}' #{1} {2}.{3} enqueued (argument length: {4} bytes)", Level = EventLevel.Verbose)]
+		[Event(RpcEnqueuedId, Message = "RPC '{0}' #{1} {2}.{3} enqueued (argument length: {4} bytes)",
+			Level = EventLevel.Verbose)]
 		internal void Enqueued(string endPointName,
-		                       long id,
-		                       string interfaceType,
-		                       string methodName,
-		                       long argumentLengthInBytes)
+			long id,
+			string interfaceType,
+			string methodName,
+			long argumentLengthInBytes)
 		{
 			if (IsEnabled())
 				WriteEvent(RpcEnqueuedId, endPointName, id, interfaceType, methodName, argumentLengthInBytes);

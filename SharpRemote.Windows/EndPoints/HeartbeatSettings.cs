@@ -1,7 +1,7 @@
 ﻿using System;
+using SharpRemote.Hosting;
 
 // ReSharper disable CheckNamespace
-
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {

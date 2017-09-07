@@ -38,6 +38,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 			_startFailureThreshold = startFailureThreshold;
 		}
 
+		/// <inheritdoc />
 		public Decision? OnStartFailure(int numSuccessiveFailures, Exception hostProcessException, out TimeSpan waitTime)
 		{
 			if (numSuccessiveFailures > _startFailureThreshold)
@@ -73,6 +74,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 			return Decision.RestartHost;
 		}
 
+		/// <inheritdoc />
 		public Decision? OnFailure(Failure failure)
 		{
 			switch (failure)
@@ -90,11 +92,13 @@ namespace SharpRemote.Hosting.OutOfProcess
 			}
 		}
 
+		/// <inheritdoc />
 		public void OnResolutionFailed(Failure failure, Decision decision, Exception exception)
 		{
 			
 		}
 
+		/// <inheritdoc />
 		public void OnResolutionFinished(Failure failure, Decision decision, Resolution resolution)
 		{
 			

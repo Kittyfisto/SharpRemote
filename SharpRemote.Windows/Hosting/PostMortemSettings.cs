@@ -136,6 +136,7 @@ namespace SharpRemote.Hosting
 			}
 		}
 
+		/// <inheritdoc />
 		public override string ToString()
 		{
 			return

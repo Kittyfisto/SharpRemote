@@ -9,26 +9,32 @@ namespace SharpRemote.Hosting.OutOfProcess
 	public sealed class ZeroFailureToleranceStrategy
 		: IFailureHandler
 	{
+		/// <summary>
+		/// This event is fired when <see cref="OnResolutionFailed"/> is called.
+		/// </summary>
 		public event Action OnResolutionFailedEvent;
 
+		/// <inheritdoc />
 		public Decision? OnStartFailure(int numSuccessiveFailures, Exception hostProcessException, out TimeSpan waitTime)
 		{
 			waitTime = TimeSpan.Zero;
 			return Decision.Stop;
 		}
 
+		/// <inheritdoc />
 		public Decision? OnFailure(Failure failure)
 		{
 			return Decision.Stop;
 		}
 
+		/// <inheritdoc />
 		public void OnResolutionFailed(Failure failure, Decision decision, Exception exception)
 		{
 			var fn = OnResolutionFailedEvent;
-			if (fn != null)
-				fn();
+			fn?.Invoke();
 		}
 
+		/// <inheritdoc />
 		public void OnResolutionFinished(Failure failure, Decision decision, Resolution resolution)
 		{
 			

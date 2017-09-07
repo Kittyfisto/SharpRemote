@@ -10,10 +10,13 @@ namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// 
+	///     Base class for several endpoint implementations.
 	/// </summary>
 	public abstract class AbstractEndPoint
 	{
+		/// <summary>
+		/// log4net logger...
+		/// </summary>
 		protected static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		#region Static Methods

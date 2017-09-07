@@ -46,7 +46,7 @@ namespace SharpRemote.Hosting
 
 		/// <summary>
 		///     Initializes a new instance of this ProcessWatchdog with the specified options.
-		///     The given host process will only be started once <see cref="Start" /> is called.
+		///     The given host process will only be started once <see cref="Start()" /> is called.
 		/// </summary>
 		/// <param name="process"></param>
 		/// <param name="options"></param>
@@ -224,6 +224,7 @@ namespace SharpRemote.Hosting
 			_process = null;
 		}
 
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			lock (_syncRoot)
@@ -253,25 +254,16 @@ namespace SharpRemote.Hosting
 		/// <summary>
 		/// The port used by the hosted process.
 		/// </summary>
-		public int? RemotePort
-		{
-			get { return _remotePort; }
-		}
+		public int? RemotePort => _remotePort;
 
 		/// <summary>
 		/// </summary>
-		public HostState HostedProcessState
-		{
-			get { return _hostedProcessState; }
-		}
+		public HostState HostedProcessState => _hostedProcessState;
 
 		/// <summary>
 		/// </summary>
 		[Pure]
-		public bool IsProcessRunning
-		{
-			get { return !_hasProcessExited; }
-		}
+		public bool IsProcessRunning => !_hasProcessExited;
 
 		/// <summary>
 		///     Whether or not the process has failed.
@@ -279,34 +271,22 @@ namespace SharpRemote.Hosting
 		/// <remarks>
 		///     False means that the process is either running or has exited on purpose.
 		/// </remarks>
-		public bool HasProcessFailed
-		{
-			get { return _hasProcessFailed; }
-		}
+		public bool HasProcessFailed => _hasProcessFailed;
 
 		/// <summary>
 		/// Whether or not this watchdog has been disposed of.
 		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		public bool IsDisposed => _isDisposed;
 
 		/// <summary>
 		///     The process-id of the host process, or null, if it's not running.
 		/// </summary>
-		public int? HostedProcessId
-		{
-			get { return _hostedProcessId; }
-		}
+		public int? HostedProcessId => _hostedProcessId;
 
 		/// <summary>
 		/// The filename of the executable, as given in the constructor.
 		/// </summary>
-		public string HostExecutableName
-		{
-			get { return _startInfo.FileName; }
-		}
+		public string HostExecutableName => _startInfo.FileName;
 
 		/// <summary>
 		///     This event is invoked whenever the host has written a complete line to its console.
@@ -379,8 +359,7 @@ namespace SharpRemote.Hosting
 			try
 			{
 				var fn = OnFaultDetected;
-				if (fn != null)
-					fn(s.Id, reason);
+				fn?.Invoke(s.Id, reason);
 			}
 			catch (Exception e)
 			{
@@ -390,8 +369,8 @@ namespace SharpRemote.Hosting
 
 		private void EmitHostOutputWritten(string message)
 		{
-			Action<string> handler = OnHostOutputWritten;
-			if (handler != null) handler(message);
+			var fn = OnHostOutputWritten;
+			fn?.Invoke(message);
 		}
 
 		private void StartHostProcess(out int pid)

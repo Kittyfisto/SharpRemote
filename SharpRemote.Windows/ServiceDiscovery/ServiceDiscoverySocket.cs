@@ -117,7 +117,7 @@ namespace SharpRemote.ServiceDiscovery
 				string token;
 				string name;
 				IPEndPoint endPoint;
-				if (Message.TryRead(buffer, remoteEndPoint, out token, out name, out endPoint))
+				if (Message.TryRead(buffer, out token, out name, out endPoint))
 				{
 					switch (token)
 					{

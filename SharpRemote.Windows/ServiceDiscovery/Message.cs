@@ -71,8 +71,14 @@ namespace SharpRemote.ServiceDiscovery
 			return true;
 		}
 
-		public static bool TryRead(byte[] message, EndPoint remoteEndPoint, out string token, out string name, out IPEndPoint endPoint)
+		public static bool TryRead(byte[] message, out string token, out string name, out IPEndPoint endPoint)
 		{
+			token = null;
+			name = null;
+			endPoint = null;
+			if (message.Length == 0)
+				return false;
+
 			using (var md5 = MD5.Create())
 			using (var stream = new MemoryStream(message))
 			using (var reader = new BinaryReader(stream))
@@ -81,7 +87,6 @@ namespace SharpRemote.ServiceDiscovery
 				if (token == P2PQueryToken)
 				{
 					name = reader.ReadString();
-					endPoint = null;
 
 					if (!TryCompareHashes(md5, stream, reader))
 					{
@@ -110,8 +115,6 @@ namespace SharpRemote.ServiceDiscovery
 					return true;
 				}
 
-				name = null;
-				endPoint = null;
 				return false;
 			}
 		}

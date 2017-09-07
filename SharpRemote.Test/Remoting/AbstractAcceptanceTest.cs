@@ -951,7 +951,7 @@ namespace SharpRemote.Test.Remoting
 			subject.Setup(x => x.Do(It.IsAny<string[]>()))
 			       .Callback((string[] data) => values.AddRange(data));
 
-			_server.CreateServant(servantId, subject.Object);
+			var servant = _server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IVoidMethodStringArrayParameter>(servantId);
 			proxy.Do(new[]{"COM11", "COM13"});
 
@@ -960,6 +960,8 @@ namespace SharpRemote.Test.Remoting
 					"COM11",
 					"COM13"
 				});
+
+			GC.KeepAlive(servant);
 		}
 
 		[Test]

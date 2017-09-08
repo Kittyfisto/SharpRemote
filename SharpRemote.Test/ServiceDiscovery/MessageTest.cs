@@ -1,8 +1,10 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.ServiceDiscovery;
 using System.Collections.Generic;
+using System.Text;
 
 namespace SharpRemote.Test.ServiceDiscovery
 {
@@ -27,12 +29,34 @@ namespace SharpRemote.Test.ServiceDiscovery
 			string token;
 			string name;
 			IPEndPoint endPoint;
-			string payload;
+			byte[] payload;
 			Message.TryRead(response, out token, out name, out endPoint, out payload).Should().BeTrue();
 			token.Should().Be(Message.P2PResponseLegacyToken);
 			name.Should().Be("SomeApp");
 			endPoint.Should().Be(new IPEndPoint(IPAddress.Parse("82.0.118.89"), 55761));
 			payload.Should().BeNull("because this message didn't contain any payload");
+		}
+
+		[Test]
+		[Description("Verifies that the maximum allowed message length is a total of 512 bytes")]
+		public void TestMaximumMessageLength()
+		{
+			byte[] previousMessage = null;
+			for (int i = 0; i < 1024; ++i)
+			{
+				var payload = new byte[i];
+				try
+				{
+					var message = Message.CreateResponse2("", new IPEndPoint(IPAddress.Any, 0), payload);
+					message.Length.Should().BeLessOrEqualTo(512, "because UDP packets with a payload of greater than 512 are very likely to be not be properly reassembled");
+					previousMessage = message;
+				}
+				catch (ArgumentOutOfRangeException e)
+				{
+					previousMessage.Should().NotBeNull();
+					previousMessage.Length.Should().Be(512);
+				}
+			}
 		}
 
 		[Test]
@@ -42,7 +66,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 			string token;
 			string name;
 			IPEndPoint endPoint;
-			string payload;
+			byte[] payload;
 			Message.TryRead(message, out token, out name, out endPoint, out payload).Should().BeFalse();
 			name.Should().BeNull();
 			endPoint.Should().BeNull();
@@ -56,7 +80,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 			string token;
 			string name;
 			IPEndPoint endPoint;
-			string payload;
+			byte[] payload;
 			Message.TryRead(data, out token, out name, out endPoint, out payload)
 				.Should().BeTrue();
 			token.Should().Be(Message.P2PQueryToken);
@@ -72,7 +96,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 			string token;
 			string name;
 			IPEndPoint endPoint;
-			string payload;
+			byte[] payload;
 			Message.TryRead(data, out token, out name, out endPoint, out payload)
 				.Should().BeTrue();
 
@@ -90,7 +114,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 			string token;
 			string name;
 			IPEndPoint endPoint;
-			string payload;
+			byte[] payload;
 			Message.TryRead(data, out token, out name, out endPoint, out payload)
 				.Should().BeTrue();
 
@@ -104,18 +128,19 @@ namespace SharpRemote.Test.ServiceDiscovery
 		[Description("Verifies that a response V2 with payload roundtrips")]
 		public void TestResponse2Roundtrip2()
 		{
-			var data = Message.CreateResponse2("foo", new IPEndPoint(IPAddress.Parse("192.168.1.10"), 1234), "hello, world!");
+			var payload = Encoding.UTF8.GetBytes("hello, World!");
+			var data = Message.CreateResponse2("foo", new IPEndPoint(IPAddress.Parse("192.168.1.10"), 1234), payload);
 			string token;
 			string name;
 			IPEndPoint endPoint;
-			string payload;
-			Message.TryRead(data, out token, out name, out endPoint, out payload)
+			byte[] actualPayload;
+			Message.TryRead(data, out token, out name, out endPoint, out actualPayload)
 				.Should().BeTrue();
 
 			token.Should().Be(Message.P2PResponse2Token);
 			name.Should().Be("foo");
 			endPoint.Should().Be(new IPEndPoint(IPAddress.Parse("192.168.1.10"), 1234));
-			payload.Should().Be("hello, world!");
+			actualPayload.Should().Equal(payload);
 		}
 	}
 }

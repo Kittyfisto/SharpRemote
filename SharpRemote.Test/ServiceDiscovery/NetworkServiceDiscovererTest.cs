@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.ServiceDiscovery;
@@ -24,6 +26,16 @@ namespace SharpRemote.Test.ServiceDiscovery
 		public void TestFixtureTearDown()
 		{
 			_discoverer.Dispose();
+		}
+
+		[Test]
+		[SetCulture("en-US")]
+		[Description("Verifies that if a service is registered with a payload which is too big, then an exception is thrown")]
+		public void TestRegisterTooBig()
+		{
+			new Action(() => _discoverer.RegisterService("dawwdawd", new IPEndPoint(IPAddress.Any, 0), new byte[500]))
+			.ShouldThrow<ArgumentOutOfRangeException>()
+			.WithMessage("The total size of a message may not exceed 512 bytes (this message would be 568 bytes in length)\r\nParameter name: payload");
 		}
 
 		[Test]
@@ -124,10 +136,11 @@ namespace SharpRemote.Test.ServiceDiscovery
 		[Description("Verifies that a service registered with one discoverer can be found via another")]
 		public void TestFindServices5()
 		{
+			var payload = Encoding.UTF8.GetBytes("Version 5, Protocol 120");
+
 			using (var registry = new NetworkServiceDiscoverer())
 			using (registry.RegisterService("MyAwesomeWebApplication",
-				new IPEndPoint(IPAddress.Parse("19.87.0.12"), port: 15431),
-				"Version 5, Protocol 120"))
+				new IPEndPoint(IPAddress.Parse("19.87.0.12"), port: 15431), payload))
 			{
 				var services = _discoverer.FindServices("MyAwesomeWebApplication");
 				services.Should().NotBeNull();
@@ -135,7 +148,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 				foreach (var service in services)
 				{
 					service.Name.Should().Be("MyAwesomeWebApplication");
-					service.Payload.Should().Be("Version 5, Protocol 120");
+					service.Payload.Should().Equal(payload);
 				}
 			}
 		}
@@ -144,10 +157,10 @@ namespace SharpRemote.Test.ServiceDiscovery
 		[Description("Verifies that if both legacy and non legacy responses are received, then duplicate legacy responses are filtered out")]
 		public void TestFindServices6()
 		{
+			var payload = Encoding.UTF8.GetBytes("Version 5, Protocol 120");
 			using (var registry = new NetworkServiceDiscoverer(sendLegacyResponse: true))
 			using (registry.RegisterService("MyAwesomeWebApplication",
-				new IPEndPoint(IPAddress.Parse("19.87.0.12"), port: 15431),
-				"Version 5, Protocol 120"))
+				new IPEndPoint(IPAddress.Parse("19.87.0.12"), port: 15431), payload))
 			{
 				var services = _discoverer.FindServices("MyAwesomeWebApplication");
 				services.Should().NotBeNull();
@@ -155,7 +168,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 				foreach (var service in services)
 				{
 					service.Name.Should().Be("MyAwesomeWebApplication");
-					service.Payload.Should().Be("Version 5, Protocol 120");
+					service.Payload.Should().Equal(payload);
 				}
 			}
 		}

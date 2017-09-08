@@ -10,7 +10,7 @@ namespace SharpRemote.ServiceDiscovery
 	public sealed class RegisteredService
 		: IDisposable
 	{
-		internal RegisteredService(string name, IPEndPoint endPoint, string payload)
+		internal RegisteredService(string name, IPEndPoint endPoint, byte[] payload)
 		{
 			Name = name;
 			EndPoint = endPoint;
@@ -30,7 +30,7 @@ namespace SharpRemote.ServiceDiscovery
 		/// <summary>
 		///     An optional payload that better describes the service.
 		/// </summary>
-		public string Payload { get; }
+		public byte[] Payload { get; }
 
 		/// <inheritdoc />
 		public void Dispose()

@@ -111,6 +111,24 @@ namespace SharpRemote.ServiceDiscovery
 		/// </summary>
 		/// <param name="value"></param>
 		/// <returns></returns>
+		public bool TryRead(out ushort value)
+		{
+			if (BytesLeft < 4)
+			{
+				value = ushort.MinValue;
+				return false;
+			}
+
+			value = ReadUInt16();
+			return true;
+		}
+
+		/// <summary>
+		///     Tries to read an integer from the stream or returns false
+		///     if there isn't enough bytes left.
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns></returns>
 		public bool TryRead(out int value)
 		{
 			if (BytesLeft < 4)
@@ -129,7 +147,7 @@ namespace SharpRemote.ServiceDiscovery
 		/// </summary>
 		/// <param name="value"></param>
 		/// <returns></returns>
-		public bool TryReadUInt32(out uint value)
+		public bool TryRead(out uint value)
 		{
 			if (BytesLeft < 4)
 			{

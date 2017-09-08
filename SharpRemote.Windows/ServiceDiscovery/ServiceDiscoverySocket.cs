@@ -120,7 +120,7 @@ namespace SharpRemote.ServiceDiscovery
 				string token;
 				string name;
 				IPEndPoint endPoint;
-				string payload;
+				byte[] payload;
 				if (Message.TryRead(buffer, out token, out name, out endPoint, out payload))
 				{
 					switch (token)
@@ -198,7 +198,7 @@ namespace SharpRemote.ServiceDiscovery
 			}
 		}
 
-		private void SendResponse(string serviceName, IPEndPoint endPoint, string payload)
+		private void SendResponse(string serviceName, IPEndPoint endPoint, byte[] payload)
 		{
 			var buffer = Message.CreateResponse2(serviceName, endPoint, payload);
 			_socket.SendTo(buffer, _multicastEndPoint);

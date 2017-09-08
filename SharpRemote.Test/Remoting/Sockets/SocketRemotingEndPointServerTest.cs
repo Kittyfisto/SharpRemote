@@ -22,7 +22,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				server.Bind(IPAddress.Loopback);
 				discoverer.Verify(x => x.RegisterService(It.Is<string>(name => name == "foobar"),
 				                                         It.IsAny<IPEndPoint>(),
-														 It.IsAny<string>()),
+														 It.IsAny<byte[]>()),
 				                  Times.Once);
 			}
 		}

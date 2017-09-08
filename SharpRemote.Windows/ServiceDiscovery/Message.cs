@@ -23,6 +23,16 @@ namespace SharpRemote.ServiceDiscovery
 		/// </remarks>
 		public const string P2PResponse2Token = "SharpRemote.P2P.Response2";
 
+		/// <summary>
+		///     The maximum allowed length of a network discovery message.
+		/// </summary>
+		/// <remarks>
+		///     This limit exists in order to follow the guideline that a UDP packet shouldn't
+		///     be greater than 512 in order to have good chances of getting reassembled
+		///     in case the IPv4 MTU of any intermediate host is exceeded.
+		/// </remarks>
+		public const int MaximumMessageLength = 512;
+
 		[Pure]
 		public static byte[] CreateQuery(string name)
 		{
@@ -61,7 +71,7 @@ namespace SharpRemote.ServiceDiscovery
 		}
 
 		[Pure]
-		public static byte[] CreateResponse2(string name, IPEndPoint endPoint, string payload = null)
+		public static byte[] CreateResponse2(string name, IPEndPoint endPoint, byte[] payload = null)
 		{
 			using (var md5 = MD5.Create())
 			using (var stream = new MemoryStream())
@@ -70,7 +80,7 @@ namespace SharpRemote.ServiceDiscovery
 				writer.Write(P2PResponse2Token);
 				writer.Flush();
 				var contentLengthStart = (int) stream.Position;
-				writer.Write(value: 0); //< placeholder for message length
+				writer.Write((ushort) 0); //< placeholder for message length
 				var hashStart = stream.Position;
 				writer.Write(new byte[16]); //< placeholder for message hash
 				var content = MessageContent.Name | MessageContent.EndPoint;
@@ -81,24 +91,34 @@ namespace SharpRemote.ServiceDiscovery
 				writer.Write(name);
 				writer.Write(endPoint);
 				if (payload != null)
+				{
+					writer.Write((ushort) payload.Length);
 					writer.Write(payload);
+				}
 				writer.Flush();
 
-				var contentLength = (int) (stream.Position - contentLengthStart - 4);
+				var contentLength = (int) (stream.Position - contentLengthStart - 2);
 				stream.Position = contentLengthStart;
 				writer.Write(contentLength);
 				writer.Flush();
 
-				var hash = md5.ComputeHash(stream.GetBuffer(), contentLengthStart, contentLength + 4);
+				var hash = md5.ComputeHash(stream.GetBuffer(), contentLengthStart, contentLength + 2);
 				stream.Position = hashStart;
 				writer.Write(hash);
 
-				return stream.ToArray();
+				var message = stream.ToArray();
+				if (message.Length > MaximumMessageLength)
+					throw new ArgumentOutOfRangeException(nameof(payload),
+						string.Format("The total size of a message may not exceed {0} bytes (this message would be {1} bytes in length)",
+							MaximumMessageLength,
+							message.Length));
+
+				return message;
 			}
 		}
 
 		public static bool TryRead(byte[] message, out string token, out string name, out IPEndPoint endPoint,
-			out string payload)
+			out byte[] payload)
 		{
 			token = null;
 			name = null;
@@ -125,7 +145,7 @@ namespace SharpRemote.ServiceDiscovery
 			}
 		}
 
-		private static bool ReadResponse2(ref string name, ref IPEndPoint endPoint, ref string payload,
+		private static bool ReadResponse2(ref string name, ref IPEndPoint endPoint, ref byte[] payload,
 			BinaryReaderExt reader, MD5 md5, MemoryStream stream)
 		{
 			// This code is intended to be forwards compatible.
@@ -136,7 +156,7 @@ namespace SharpRemote.ServiceDiscovery
 			// For this reason, we include the total message length here, so that even if we
 			// do not know the additional content, we include it in our hash code calculation.
 			var contentLengthStart = (int) stream.Position;
-			int contentLength;
+			ushort contentLength;
 			if (!reader.TryRead(out contentLength))
 				return false;
 
@@ -153,15 +173,17 @@ namespace SharpRemote.ServiceDiscovery
 				if (!reader.TryRead(out endPoint))
 					return false;
 			if ((content & MessageContent.Payload) == MessageContent.Payload)
-				if (!reader.TryRead(out payload))
-					return false;
+			{
+				int payloadLength = reader.ReadUInt16();
+				payload = reader.ReadBytes(payloadLength);
+			}
 
 			// We need to black out the actual hash to 0 before
 			// we compute the hash of the received content
 			stream.Position = hashStart;
 			for (var i = 0; i < 16; ++i)
 				stream.WriteByte(value: 0);
-			var actualHash = md5.ComputeHash(stream.ToArray(), contentLengthStart, contentLength + 4);
+			var actualHash = md5.ComputeHash(stream.ToArray(), contentLengthStart, contentLength + 2);
 			if (!AreHashesEqual(hash, actualHash))
 				return false;
 

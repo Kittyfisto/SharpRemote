@@ -14,9 +14,9 @@ namespace SharpRemote.ServiceDiscovery
 		private readonly IPAddress _localAddress;
 		private readonly string _name;
 		private readonly string _networkInterfaceId;
-		private readonly string _payload;
+		private readonly byte[] _payload;
 
-		internal Service(string name, IPEndPoint ep, IPAddress localAddress, string networkInterfaceId = null, string payload = null)
+		internal Service(string name, IPEndPoint ep, IPAddress localAddress, string networkInterfaceId = null, byte[] payload = null)
 		{
 			if (name == null) throw new ArgumentNullException(nameof(name));
 			if (ep == null) throw new ArgumentNullException(nameof(ep));
@@ -53,7 +53,7 @@ namespace SharpRemote.ServiceDiscovery
 		/// <summary>
 		///     The payload that was added to the service entry via <see cref="INetworkServiceDiscoverer.RegisterService"/>.
 		/// </summary>
-		public string Payload => _payload;
+		public byte[] Payload => _payload;
 
 		/// <inheritdoc />
 		public bool Equals(Service other)

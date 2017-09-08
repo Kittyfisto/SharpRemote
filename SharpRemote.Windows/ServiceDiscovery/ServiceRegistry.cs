@@ -19,7 +19,7 @@ namespace SharpRemote.ServiceDiscovery
 			_services = new List<RegisteredService>();
 		}
 
-		public RegisteredService RegisterService(string name, IPEndPoint endPoint, string payload= null)
+		public RegisteredService RegisterService(string name, IPEndPoint endPoint, byte[] payload = null)
 		{
 			if (name == null)
 				throw new ArgumentNullException(nameof(name));

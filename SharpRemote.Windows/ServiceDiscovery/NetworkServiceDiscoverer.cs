@@ -79,8 +79,18 @@ namespace SharpRemote.ServiceDiscovery
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException">When <paramref name="name"/> or <paramref name="endPoint"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="name"/> is empty</exception>
-		public RegisteredService RegisterService(string name, IPEndPoint endPoint, string payload = null)
+		public RegisteredService RegisterService(string name, IPEndPoint endPoint, byte[] payload = null)
 		{
+			if (name == null)
+				throw new ArgumentNullException(nameof(name));
+			if (endPoint == null)
+				throw new ArgumentNullException(nameof(endPoint));
+
+			// We use this call as another pre-condition: It checks
+			// that the maximum UDP packet size isn't exceeded
+			// ReSharper disable once ReturnValueOfPureMethodIsNotUsed
+			Message.CreateResponse2(name, endPoint, payload);
+
 			lock (_syncRoot)
 			{
 				if (_isDisposed)

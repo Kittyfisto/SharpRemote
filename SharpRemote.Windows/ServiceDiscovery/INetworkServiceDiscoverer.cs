@@ -38,7 +38,7 @@ namespace SharpRemote.ServiceDiscovery
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException">When <paramref name="name"/> or <paramref name="endPoint"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="name"/> is empty</exception>
-		RegisteredService RegisterService(string name, IPEndPoint endPoint, string payload = null);
+		RegisteredService RegisterService(string name, IPEndPoint endPoint, byte[] payload = null);
 
 		/// <summary>
 		/// Finds all services with the given name in the local network that respond within the one second.

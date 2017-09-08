@@ -47,6 +47,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 		}
 
 		[Test]
+		[LocalTest("")]
 		[Description("Verifies that a service that has been registered is actually returned")]
 		public void TestFindServices1()
 		{
@@ -62,6 +63,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 		}
 
 		[Test]
+		[LocalTest("")]
 		[Description("Verifies that only services with the queried name are returned")]
 		public void TestFindServices2()
 		{
@@ -78,6 +80,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 		}
 
 		[Test]
+		[LocalTest("")]
 		[Description("Verifies that once a service is unregistered, it is no longer found")]
 		public void TestFindServices3()
 		{
@@ -111,6 +114,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 		}
 
 		[Test]
+		[LocalTest("")]
 		[Description(
 			"Verifies that services which are bound to any address are responded with all explicit addresses of the particular machine")]
 		public void TestFindServices4()
@@ -133,6 +137,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 		}
 
 		[Test]
+		[LocalTest("")]
 		[Description("Verifies that a service registered with one discoverer can be found via another")]
 		public void TestFindServices5()
 		{
@@ -154,6 +159,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 		}
 
 		[Test]
+		[LocalTest("")]
 		[Description("Verifies that if both legacy and non legacy responses are received, then duplicate legacy responses are filtered out")]
 		public void TestFindServices6()
 		{

@@ -76,6 +76,7 @@
     <Compile Include="ETW\PendingMethodsEventSource.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchNamedPipeEndPointException.cs" />
+    <Compile Include="Extensions\ByteArrayExtensions.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />
     <Compile Include="FileInfoExtensions.cs" />
@@ -85,6 +86,8 @@
     <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
     <Compile Include="Hosting\OutOfProcess\IFailureHandler.cs" />
     <Compile Include="Hosting\OutOfProcess\ZeroFailureToleranceStrategy.cs" />
+    <Compile Include="ServiceDiscovery\BinaryReaderExt.cs" />
+    <Compile Include="ServiceDiscovery\BinaryWriterEx.cs" />
     <Compile Include="ServiceDiscovery\INetworkServiceDiscoverer.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
     <Compile Include="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />

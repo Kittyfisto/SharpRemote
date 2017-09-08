@@ -7,7 +7,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.ServiceDiscovery;
 
-namespace SharpRemote.Test.Broadcasting
+namespace SharpRemote.Test.ServiceDiscovery
 {
 	[TestFixture]
 	public sealed class NetworkServiceDiscovererTest
@@ -39,7 +39,7 @@ namespace SharpRemote.Test.Broadcasting
 		public void TestFindServices1()
 		{
 			const string name = "Foobar";
-			var ep = new IPEndPoint(IPAddress.Parse("123.241.108.21"), 12345);
+			var ep = new IPEndPoint(IPAddress.Parse("123.241.108.21"), port: 12345);
 
 			using (_discoverer.RegisterService(name, ep))
 			{
@@ -54,10 +54,10 @@ namespace SharpRemote.Test.Broadcasting
 		public void TestFindServices2()
 		{
 			const string name = "Foobar";
-			var ep = new IPEndPoint(IPAddress.Parse("123.241.108.21"), 12345);
+			var ep = new IPEndPoint(IPAddress.Parse("123.241.108.21"), port: 12345);
 
 			using (_discoverer.RegisterService(name, ep))
-			using (_discoverer.RegisterService("Not Foobar", new IPEndPoint(IPAddress.Any, 1243)))
+			using (_discoverer.RegisterService("Not Foobar", new IPEndPoint(IPAddress.Any, port: 1243)))
 			{
 				var services = _discoverer.FindServices(name);
 				services.Should().NotBeNull();
@@ -70,8 +70,8 @@ namespace SharpRemote.Test.Broadcasting
 		public void TestFindServices3()
 		{
 			const string name = "Foobar";
-			var ep1 = new IPEndPoint(IPAddress.Parse("123.241.108.21"), 12345);
-			var ep2 = new IPEndPoint(IPAddress.Parse("1.2.3.4"), 1243);
+			var ep1 = new IPEndPoint(IPAddress.Parse("123.241.108.21"), port: 12345);
+			var ep2 = new IPEndPoint(IPAddress.Parse("1.2.3.4"), port: 1243);
 
 			using (_discoverer.RegisterService(name, ep1))
 			{
@@ -81,13 +81,14 @@ namespace SharpRemote.Test.Broadcasting
 				{
 					services = _discoverer.FindServices(name);
 					services.Should().NotBeNull();
-					services.Select(x => x.EndPoint).Distinct().Count().Should().Be(2,
-						"Because we should've received responses for 2 different services, but over all possible adapters");
+					services.Select(x => x.EndPoint).Distinct().Count().Should().Be(expected: 2,
+						because: "Because we should've received responses for 2 different services, but over all possible adapters");
 					services.Should().Contain(new Service(name, ep1, IPAddress.Loopback));
 
 					var service = services.First(x => !Equals(x.EndPoint, ep1));
 					service.EndPoint.Should().NotBeNull();
-					service.EndPoint.Address.Should().NotBe(IPAddress.Any, "Because a specific address should be given in the response");
+					service.EndPoint.Address.Should().NotBe(IPAddress.Any,
+						"Because a specific address should be given in the response");
 					service.Name.Should().Be(name);
 				}
 
@@ -98,11 +99,12 @@ namespace SharpRemote.Test.Broadcasting
 		}
 
 		[Test]
-		[Description("Verifies that services which are bound to any address are responded with all explicit addresses of the particular machine")]
+		[Description(
+			"Verifies that services which are bound to any address are responded with all explicit addresses of the particular machine")]
 		public void TestFindServices4()
 		{
 			const string name = "Foobar";
-			var ep = new IPEndPoint(IPAddress.Any, 12345);
+			var ep = new IPEndPoint(IPAddress.Any, port: 12345);
 
 			using (_discoverer.RegisterService(name, ep))
 			{
@@ -110,11 +112,51 @@ namespace SharpRemote.Test.Broadcasting
 				services.Should().NotBeNull();
 
 				var iPv4Interfaces = NetworkInterface.GetAllNetworkInterfaces()
-				                                     .Where(x => x.OperationalStatus == OperationalStatus.Up)
-				                                     .SelectMany(x => x.GetIPProperties().UnicastAddresses)
-				                                     .Where(x => x.Address.AddressFamily == AddressFamily.InterNetwork)
-				                                     .ToList();
+					.Where(x => x.OperationalStatus == OperationalStatus.Up)
+					.SelectMany(x => x.GetIPProperties().UnicastAddresses)
+					.Where(x => x.Address.AddressFamily == AddressFamily.InterNetwork)
+					.ToList();
 				services.Count.Should().Be(iPv4Interfaces.Count);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that a service registered with one discoverer can be found via another")]
+		public void TestFindServices5()
+		{
+			using (var registry = new NetworkServiceDiscoverer())
+			using (registry.RegisterService("MyAwesomeWebApplication",
+				new IPEndPoint(IPAddress.Parse("19.87.0.12"), port: 15431),
+				"Version 5, Protocol 120"))
+			{
+				var services = _discoverer.FindServices("MyAwesomeWebApplication");
+				services.Should().NotBeNull();
+				services.Should().NotBeEmpty();
+				foreach (var service in services)
+				{
+					service.Name.Should().Be("MyAwesomeWebApplication");
+					service.Payload.Should().Be("Version 5, Protocol 120");
+				}
+			}
+		}
+
+		[Test]
+		[Description("Verifies that if both legacy and non legacy responses are received, then duplicate legacy responses are filtered out")]
+		public void TestFindServices6()
+		{
+			using (var registry = new NetworkServiceDiscoverer(sendLegacyResponse: true))
+			using (registry.RegisterService("MyAwesomeWebApplication",
+				new IPEndPoint(IPAddress.Parse("19.87.0.12"), port: 15431),
+				"Version 5, Protocol 120"))
+			{
+				var services = _discoverer.FindServices("MyAwesomeWebApplication");
+				services.Should().NotBeNull();
+				services.Should().NotBeEmpty();
+				foreach (var service in services)
+				{
+					service.Name.Should().Be("MyAwesomeWebApplication");
+					service.Payload.Should().Be("Version 5, Protocol 120");
+				}
 			}
 		}
 	}

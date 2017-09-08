@@ -9,7 +9,7 @@ using log4net;
 namespace SharpRemote.ServiceDiscovery
 {
 	/// <summary>
-	/// Service discovery socket implementation that is bound to a single address (and thus to a single network interface).
+	///    Service discovery socket implementation that is bound to a single address (and thus to a single network interface).
 	/// </summary>
 	internal sealed class ServiceDiscoverySocket
 		: IServiceDiscoverySocket
@@ -26,6 +26,7 @@ namespace SharpRemote.ServiceDiscovery
 		private readonly IPEndPoint _localEndPoint;
 		private readonly IPEndPoint _multicastEndPoint;
 		private readonly IPAddress _multicastAddress;
+		private readonly bool _sendLegacyResponse;
 
 		private bool _isDisposed;
 
@@ -34,13 +35,15 @@ namespace SharpRemote.ServiceDiscovery
 		                              IPAddress multicastAddress,
 		                              int port,
 		                              int ttl,
-		                              INetworkServiceRegisty services)
+		                              INetworkServiceRegisty services,
+		                              bool sendLegacyResponse)
 		{
 			_services = services;
 			_localAddress = localAddress;
 			_localEndPoint = new IPEndPoint(_localAddress, port);
 			_multicastAddress = multicastAddress;
 			_multicastEndPoint = new IPEndPoint(multicastAddress, port);
+			_sendLegacyResponse = sendLegacyResponse;
 
 			_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
 				{
@@ -117,7 +120,8 @@ namespace SharpRemote.ServiceDiscovery
 				string token;
 				string name;
 				IPEndPoint endPoint;
-				if (Message.TryRead(buffer, out token, out name, out endPoint))
+				string payload;
+				if (Message.TryRead(buffer, out token, out name, out endPoint, out payload))
 				{
 					switch (token)
 					{
@@ -125,10 +129,13 @@ namespace SharpRemote.ServiceDiscovery
 							SendResponse(name, remoteEndPoint);
 							break;
 
-						case Message.P2PResponseToken:
-							Action<Service> fn = OnResponseReceived;
-							if (fn != null)
-								fn(new Service(name, endPoint, _localAddress));
+						case Message.P2PResponse2Token:
+						case Message.P2PResponseLegacyToken:
+							OnResponseReceived?.Invoke(new Service(name,
+								endPoint,
+								_localAddress,
+								null,
+								payload));
 							break;
 					}
 				}
@@ -178,6 +185,7 @@ namespace SharpRemote.ServiceDiscovery
 
 				foreach (var service in services)
 				{
+					var payload = service.Payload;
 					var endPoint = service.EndPoint;
 					if (Equals(endPoint.Address, IPAddress.Any) ||
 					    Equals(endPoint.Address, IPAddress.IPv6Any))
@@ -185,9 +193,20 @@ namespace SharpRemote.ServiceDiscovery
 						endPoint = new IPEndPoint(_localAddress, endPoint.Port);
 					}
 
-					byte[] buffer = Message.CreateResponse(service.Name, endPoint);
-					_socket.SendTo(buffer, _multicastEndPoint);
+					SendResponse(service.Name, endPoint, payload);
 				}
+			}
+		}
+
+		private void SendResponse(string serviceName, IPEndPoint endPoint, string payload)
+		{
+			var buffer = Message.CreateResponse2(serviceName, endPoint, payload);
+			_socket.SendTo(buffer, _multicastEndPoint);
+
+			if (_sendLegacyResponse) //< If the user requests to support super old SharpRemote versions, then we'll oblige and send responses understood by them
+			{
+				buffer = Message.CreateLegacyResponse(serviceName, endPoint);
+				_socket.SendTo(buffer, _multicastEndPoint);
 			}
 		}
 

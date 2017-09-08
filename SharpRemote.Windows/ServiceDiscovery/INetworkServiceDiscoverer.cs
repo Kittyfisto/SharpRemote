@@ -34,10 +34,11 @@ namespace SharpRemote.ServiceDiscovery
 		/// </remarks>
 		/// <param name="name"></param>
 		/// <param name="endPoint"></param>
+		/// <param name="payload">An optional payload</param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException">When <paramref name="name"/> or <paramref name="endPoint"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="name"/> is empty</exception>
-		RegisteredService RegisterService(string name, IPEndPoint endPoint);
+		RegisteredService RegisterService(string name, IPEndPoint endPoint, string payload = null);
 
 		/// <summary>
 		/// Finds all services with the given name in the local network that respond within the one second.

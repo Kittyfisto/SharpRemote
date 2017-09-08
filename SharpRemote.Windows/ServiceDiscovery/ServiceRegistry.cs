@@ -19,16 +19,16 @@ namespace SharpRemote.ServiceDiscovery
 			_services = new List<RegisteredService>();
 		}
 
-		public RegisteredService RegisterService(string name, IPEndPoint endPoint)
+		public RegisteredService RegisterService(string name, IPEndPoint endPoint, string payload= null)
 		{
 			if (name == null)
-				throw new ArgumentNullException("name");
+				throw new ArgumentNullException(nameof(name));
 			if (name == "")
-				throw new ArgumentException("A name must consist of at least one character", "name");
+				throw new ArgumentException("A name must consist of at least one character", nameof(name));
 			if (endPoint == null)
-				throw new ArgumentNullException("endPoint");
+				throw new ArgumentNullException(nameof(endPoint));
 
-			var service = new RegisteredService(name, endPoint);
+			var service = new RegisteredService(name, endPoint, payload);
 			lock (_syncRoot)
 			{
 				_services.Add(service);

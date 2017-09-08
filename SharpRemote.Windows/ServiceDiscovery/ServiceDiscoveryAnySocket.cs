@@ -22,6 +22,7 @@ namespace SharpRemote.ServiceDiscovery
 		private readonly INetworkServiceRegisty _services;
 		private readonly IPAddress _multicastAddress;
 		private readonly int _port;
+		private readonly bool _sendLegacyResponse;
 		private readonly int _ttl;
 		private readonly Dictionary<IPAddress, ServiceDiscoverySocket> _sockets;
 		private readonly object _syncRoot;
@@ -29,21 +30,23 @@ namespace SharpRemote.ServiceDiscovery
 		public ServiceDiscoveryAnySocket(INetworkServiceRegisty services,
 		                                 IPAddress multicastAddress,
 		                                 int port,
-		                                 int ttl)
+		                                 int ttl,
+		                                 bool sendLegacyResponse)
 		{
 			if (services == null)
-				throw new ArgumentNullException("services");
+				throw new ArgumentNullException(nameof(services));
 			if (multicastAddress == null)
-				throw new ArgumentNullException("multicastAddress");
+				throw new ArgumentNullException(nameof(multicastAddress));
 			if (port <= 0 || port >= ushort.MaxValue)
-				throw new ArgumentOutOfRangeException("port");
+				throw new ArgumentOutOfRangeException(nameof(port));
 			if (ttl <= 0 || ttl >= byte.MaxValue)
-				throw new ArgumentOutOfRangeException("ttl");
+				throw new ArgumentOutOfRangeException(nameof(ttl));
 
 			_services = services;
 			_multicastAddress = multicastAddress;
 			_port = port;
 			_ttl = ttl;
+			_sendLegacyResponse = sendLegacyResponse;
 			_sockets = new Dictionary<IPAddress, ServiceDiscoverySocket>();
 			_syncRoot = new object();
 
@@ -58,9 +61,7 @@ namespace SharpRemote.ServiceDiscovery
 
 		private void SocketOnResponseReceived(Service service)
 		{
-			var fn = OnResponseReceived;
-			if (fn != null)
-				fn(service);
+			OnResponseReceived?.Invoke(service);
 		}
 
 		public void Dispose()
@@ -130,7 +131,8 @@ namespace SharpRemote.ServiceDiscovery
 																				_multicastAddress,
 																				_port,
 																				_ttl,
-																				_services);
+																				_services,
+																				_sendLegacyResponse);
 										}
 										catch (SocketException e)
 										{

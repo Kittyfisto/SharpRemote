@@ -30,46 +30,37 @@ namespace SharpRemote.ServiceDiscovery
 		/// <summary>
 		/// Whether or not <see cref="Dispose"/> has been called.
 		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		public bool IsDisposed => _isDisposed;
 
 		/// <summary>
 		/// Initializes a new instance of this class with the specified settings, or
 		/// default values when none are given.
 		/// </summary>
 		/// <param name="settings"></param>
-		public NetworkServiceDiscoverer(NetworkServiceDiscoverySettings settings = null)
+		/// <param name="sendLegacyResponse">Whether or not legacy responses should be sent. When this is set to true, then SharpRemote V0.3 (and earlier) is able to understand a response sent from this discoverer.</param>
+		public NetworkServiceDiscoverer(NetworkServiceDiscoverySettings settings = null,
+										bool sendLegacyResponse = false)
 		{
 			_settings = settings ?? new NetworkServiceDiscoverySettings();
 			_services = new ServiceRegistry();
 			_socket = new ServiceDiscoveryAnySocket(_services,
 			                                        _settings.MulticastAddress,
 			                                        _settings.Port,
-			                                        _settings.TTL);
+			                                        _settings.TTL,
+			                                        sendLegacyResponse);
 			_syncRoot = new object();
 		}
 
 		/// <summary>
 		/// The services registered at this instance.
 		/// </summary>
-		public IEnumerable<RegisteredService> LocalServices
-		{
-			get
-			{
-				return _services.ToList();
-			}
-		}
+		public IEnumerable<RegisteredService> LocalServices => _services.ToList();
 
 		/// <summary>
 		/// The settings this service operates under.
 		/// Cannot be changed after the fact.
 		/// </summary>
-		public NetworkServiceDiscoverySettings Settings
-		{
-			get { return _settings; }
-		}
+		public NetworkServiceDiscoverySettings Settings => _settings;
 
 		/// <summary>
 		/// Registers a new service with the given name and endPoint.
@@ -82,19 +73,20 @@ namespace SharpRemote.ServiceDiscovery
 		/// There can only be one one service per (name, endPoint) tuple.
 		/// Registering the same tuple again throws.
 		/// </remarks>
-		/// <param name="name"></param>
-		/// <param name="endPoint"></param>
+		/// <param name="name">The name of the service</param>
+		/// <param name="endPoint">The endpoint the service can be contacted at</param>
+		/// <param name="payload">An optional payload</param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException">When <paramref name="name"/> or <paramref name="endPoint"/> is null</exception>
 		/// <exception cref="ArgumentException">When <paramref name="name"/> is empty</exception>
-		public RegisteredService RegisterService(string name, IPEndPoint endPoint)
+		public RegisteredService RegisterService(string name, IPEndPoint endPoint, string payload = null)
 		{
 			lock (_syncRoot)
 			{
 				if (_isDisposed)
 					throw new ObjectDisposedException("");
 
-				return _services.RegisterService(name, endPoint);
+				return _services.RegisterService(name, endPoint, payload);
 			}
 		}
 
@@ -148,7 +140,7 @@ namespace SharpRemote.ServiceDiscovery
 		public List<Service> FindServices(string name, TimeSpan timeout)
 		{
 			if (timeout <= TimeSpan.Zero)
-				throw new ArgumentOutOfRangeException("timeout");
+				throw new ArgumentOutOfRangeException(nameof(timeout));
 
 			lock (_syncRoot)
 			{
@@ -200,10 +192,25 @@ namespace SharpRemote.ServiceDiscovery
 						);
 				}
 
+				RemoveDuplicateLegacyResponses(ret);
 				return ret.ToList();
 			}
 		}
 
+		private void RemoveDuplicateLegacyResponses(HashSet<Service> responses)
+		{
+			foreach (var service in responses.ToList())
+			{
+				if (service.Payload != null)
+				{
+					var serviceWithoutPayload = new Service(service.Name, service.EndPoint, service.LocalAddress, service.NetworkInterfaceId);
+					if (responses.Contains(serviceWithoutPayload))
+						responses.Remove(serviceWithoutPayload);
+				}
+			}
+		}
+
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			lock (_syncRoot)

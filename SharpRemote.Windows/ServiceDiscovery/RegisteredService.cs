@@ -5,60 +5,58 @@ namespace SharpRemote.ServiceDiscovery
 {
 	/// <summary>
 	///     Represents a registered network service that can be found
-	///     via <see cref="NetworkServiceDiscoverer.FindServices" />.
+	///     via <see cref="NetworkServiceDiscoverer.FindServices(string)" />.
 	/// </summary>
 	public sealed class RegisteredService
 		: IDisposable
 	{
-		private readonly IPEndPoint _endPoint;
-		private readonly string _name;
-
-		internal RegisteredService(string name, IPEndPoint endPoint)
+		internal RegisteredService(string name, IPEndPoint endPoint, string payload)
 		{
-			_name = name;
-			_endPoint = endPoint;
+			Name = name;
+			EndPoint = endPoint;
+			Payload = payload;
 		}
 
 		/// <summary>
 		///     The name of the registered service.
 		/// </summary>
-		public string Name
-		{
-			get { return _name; }
-		}
+		public string Name { get; }
 
 		/// <summary>
 		///     The endpoint the registered service operates on.
 		/// </summary>
-		public IPEndPoint EndPoint
-		{
-			get { return _endPoint; }
-		}
+		public IPEndPoint EndPoint { get; }
 
+		/// <summary>
+		///     An optional payload that better describes the service.
+		/// </summary>
+		public string Payload { get; }
+
+		/// <inheritdoc />
 		public void Dispose()
 		{
-			Action<RegisteredService> fn = OnDisposed;
-			if (fn != null)
-				fn(this);
+			OnDisposed?.Invoke(this);
 		}
 
 		private bool Equals(RegisteredService other)
 		{
-			return string.Equals(_name, other._name) && _endPoint.Equals(other._endPoint);
+			return string.Equals(Name, other.Name) && EndPoint.Equals(other.EndPoint);
 		}
 
+		/// <inheritdoc />
 		public override bool Equals(object obj)
 		{
-			if (ReferenceEquals(null, obj)) return false;
+			if (ReferenceEquals(objA: null, objB: obj)) return false;
 			if (ReferenceEquals(this, obj)) return true;
 			return obj is RegisteredService && Equals((RegisteredService) obj);
 		}
 
+		/// <inheritdoc />
 		public override int GetHashCode()
 		{
 			unchecked
 			{
-				return (_name.GetHashCode()*397) ^ _endPoint.GetHashCode();
+				return (Name.GetHashCode() * 397) ^ EndPoint.GetHashCode();
 			}
 		}
 

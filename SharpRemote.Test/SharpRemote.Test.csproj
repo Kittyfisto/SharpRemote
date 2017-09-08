@@ -73,7 +73,7 @@
     <Compile Include="Hosting\OutOfProcess\StartTest.cs" />
     <Compile Include="Hosting\ProcessWatchdogTest.cs" />
     <Compile Include="Key.cs" />
-    <Compile Include="Broadcasting\NetworkServiceDiscovererTest.cs" />
+    <Compile Include="ServiceDiscovery\NetworkServiceDiscovererTest.cs" />
     <Compile Include="LatencySettingsTest.cs" />
     <Compile Include="LogItem.cs" />
     <Compile Include="PendingMethodsQueueTest.cs" />

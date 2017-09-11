@@ -21,6 +21,8 @@ namespace SharpRemote.ServiceDiscovery
 
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private readonly NetworkInterface _iface;
+		private readonly string _networkInterfaceId;
 		private readonly Socket _socket;
 		private readonly IPAddress _localAddress;
 		private readonly IPEndPoint _localEndPoint;
@@ -38,6 +40,8 @@ namespace SharpRemote.ServiceDiscovery
 		                              INetworkServiceRegisty services,
 		                              bool sendLegacyResponse)
 		{
+			_iface = iface;
+			_networkInterfaceId = iface.Id;
 			_services = services;
 			_localAddress = localAddress;
 			_localEndPoint = new IPEndPoint(_localAddress, port);
@@ -134,7 +138,7 @@ namespace SharpRemote.ServiceDiscovery
 							OnResponseReceived?.Invoke(new Service(name,
 								endPoint,
 								_localAddress,
-								null,
+								_networkInterfaceId,
 								payload));
 							break;
 					}

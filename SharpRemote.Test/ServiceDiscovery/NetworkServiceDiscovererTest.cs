@@ -178,5 +178,19 @@ namespace SharpRemote.Test.ServiceDiscovery
 				}
 			}
 		}
+
+		[Test]
+		[Description("Verifies that the interface id which received a response is forwarded along with the service")]
+		public void TestFindServices7()
+		{
+			using (var registeredService = _discoverer.RegisterService("Chrome", new IPEndPoint(IPAddress.Parse("19.87.0.12"), port: 15431)))
+			{
+				var services = _discoverer.FindServices("Chrome");
+				foreach(var service in services)
+				{
+					service.NetworkInterfaceId.Should().NotBeNull("because every response should include the network interface over which we received the response");
+				}
+			}
+		}
 	}
 }

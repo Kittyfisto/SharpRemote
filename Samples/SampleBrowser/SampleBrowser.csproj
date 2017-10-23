@@ -161,6 +161,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\SharpRemote.Bluetooth\SharpRemote.Bluetooth.csproj">
+      <Project>{41f098da-29dc-48af-9c6c-2bc6f4f0be41}</Project>
+      <Name>SharpRemote.Bluetooth</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\SharpRemote.Test\SharpRemote.Test.csproj">
       <Project>{377C04C5-EE8C-4159-BDDC-37F1A8372705}</Project>
       <Name>SharpRemote.Test</Name>

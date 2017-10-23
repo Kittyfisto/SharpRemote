@@ -42,6 +42,21 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			}
 		}
 
+		public static T Roundtrip<T>(this ISerializer serializer, T value, IRemotingEndPoint endPoint = null)
+		{
+			using (var stream = new MemoryStream())
+			{
+				var writer = new BinaryWriter(stream, Encoding.UTF8);
+				serializer.WriteObject(writer, value, endPoint);
+				writer.Flush();
+				stream.Position = 0;
+
+				var reader = new BinaryReader(stream, Encoding.UTF8);
+				object actualValue = serializer.ReadObject(reader, endPoint);
+				return (T)actualValue;
+			}
+		}
+
 		public static object ShouldRoundtrip(this ISerializer serializer, object value, IRemotingEndPoint endPoint = null)
 		{
 			using (var stream = new MemoryStream())

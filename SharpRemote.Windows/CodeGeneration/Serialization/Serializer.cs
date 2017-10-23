@@ -40,7 +40,7 @@ namespace SharpRemote
 		/// <param name="customTypeResolver">The instance of the type resolver, if any, that is used to resolve types upon deserialization</param>
 		public Serializer(ModuleBuilder module, ITypeResolver customTypeResolver = null)
 		{
-			if (module == null) throw new ArgumentNullException("module");
+			if (module == null) throw new ArgumentNullException(nameof(module));
 
 			_module = module;
 			_customTypeResolver = customTypeResolver;
@@ -75,10 +75,7 @@ namespace SharpRemote
 		/// <summary>
 		/// The module where all newly created types reside in.
 		/// </summary>
-		public ModuleBuilder Module
-		{
-			get { return _module; }
-		}
+		public ModuleBuilder Module => _module;
 
 		/// <summary>
 		/// Creates a new serializer that dynamically compiles serialization methods to a new DynamicAssembly.
@@ -88,6 +85,7 @@ namespace SharpRemote
 		{
 		}
 
+		/// <inheritdoc />
 		public Type GetType(string assemblyQualifiedTypeName)
 		{
 			if (_customTypeResolver != null)
@@ -96,12 +94,14 @@ namespace SharpRemote
 			return TypeResolver.GetType(assemblyQualifiedTypeName);
 		}
 
+		/// <inheritdoc />
 		public void RegisterType<T>()
 		{
 			Type type = typeof (T);
 			RegisterType(type);
 		}
 
+		/// <inheritdoc />
 		public void WriteObject(BinaryWriter writer, object value, IRemotingEndPoint remotingEndPoint)
 		{
 			if (value == null)
@@ -116,6 +116,7 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		public object ReadObject(BinaryReader reader, IRemotingEndPoint remotingEndPoint)
 		{
 			string typeName = reader.ReadString();
@@ -525,8 +526,8 @@ namespace SharpRemote
 			gen.Emit(OpCodes.Ldc_I4_0);
 			gen.Emit(OpCodes.Call, Methods.WriteBool);
 
-			Label @end = gen.DefineLabel();
-			gen.Emit(OpCodes.Br, @end);
+			Label end = gen.DefineLabel();
+			gen.Emit(OpCodes.Br, end);
 
 			// else { writer.Write(true); <Serialize Fields> }
 			gen.MarkLabel(@true);
@@ -541,7 +542,7 @@ namespace SharpRemote
 			gen.Emit(OpCodes.Ldarg_3);
 			gen.Emit(OpCodes.Call, valueNotNullMethod);
 
-			gen.MarkLabel(@end);
+			gen.MarkLabel(end);
 			gen.Emit(OpCodes.Ret);
 
 			return method;
@@ -603,8 +604,8 @@ namespace SharpRemote
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldsfld, Methods.StringEmpty);
 			gen.Emit(OpCodes.Call, Methods.WriteString);
-			Label @end = gen.DefineLabel();
-			gen.Emit(OpCodes.Br, @end);
+			Label end = gen.DefineLabel();
+			gen.Emit(OpCodes.Br, end);
 
 			// else { writer.WriteString(type.AssemblyQualifiedName);
 			gen.MarkLabel(@true);
@@ -615,15 +616,16 @@ namespace SharpRemote
 
 			writeValue();
 
-			gen.MarkLabel(@end);
+			gen.MarkLabel(end);
 			gen.Emit(OpCodes.Ret);
 
 			//gen.EmitWriteLine("Type info written");
 		}
 
+		/// <inheritdoc />
 		public void RegisterType(Type type)
 		{
-			if (type == null) throw new ArgumentNullException("type");
+			if (type == null) throw new ArgumentNullException(nameof(type));
 
 			SerializationMethods unused;
 			RegisterType(type, out unused);
@@ -680,16 +682,18 @@ namespace SharpRemote
 			}
 		}
 
+		/// <inheritdoc />
 		[Pure]
 		public bool IsTypeRegistered<T>()
 		{
 			return IsTypeRegistered(typeof (T));
 		}
 
+		/// <inheritdoc />
 		[Pure]
 		public bool IsTypeRegistered(Type type)
 		{
-			if (type == null) throw new ArgumentNullException("type");
+			if (type == null) throw new ArgumentNullException(nameof(type));
 
 			lock (_serializationMethods)
 			{
@@ -716,10 +720,10 @@ namespace SharpRemote
 				MethodInfo readValueMethod,
 				MethodInfo readObjectMethod)
 			{
-				if (writeValueMethod == null) throw new ArgumentNullException("writeValueMethod");
-				if (writeObjectMethod == null) throw new ArgumentNullException("writeObjectMethod");
-				if (readValueMethod == null) throw new ArgumentNullException("readValueMethod");
-				if (readObjectMethod == null) throw new ArgumentNullException("readObjectMethod");
+				if (writeValueMethod == null) throw new ArgumentNullException(nameof(writeValueMethod));
+				if (writeObjectMethod == null) throw new ArgumentNullException(nameof(writeObjectMethod));
+				if (readValueMethod == null) throw new ArgumentNullException(nameof(readValueMethod));
+				if (readObjectMethod == null) throw new ArgumentNullException(nameof(readObjectMethod));
 
 				WriteValueMethod = writeValueMethod;
 				WriteObjectMethod = writeObjectMethod;

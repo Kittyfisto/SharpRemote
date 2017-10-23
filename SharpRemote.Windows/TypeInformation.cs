@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using SharpRemote.Attributes;
 
 namespace SharpRemote
 {
@@ -39,7 +40,12 @@ namespace SharpRemote
 
 		public TypeInformation(Type type)
 		{
-			if (type == null) throw new ArgumentNullException("type");
+			if (type == null) throw new ArgumentNullException(nameof(type));
+
+			var methods = type.GetMethods().Concat(
+				type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+			).ToList();
+			ThrowIfConstraintsAreViolated(methods);
 
 			_collectionType = GetCollectionInterface(type, out _elementType);
 			_type = type;
@@ -93,85 +99,37 @@ namespace SharpRemote
 			return collectionType;
 		}
 
-		public Type ElementType
-		{
-			get { return _elementType; }
-		}
+		public Type ElementType => _elementType;
 
-		public Type Type
-		{
-			get { return _type; }
-		}
+		public Type Type => _type;
 
-		public FieldInfo[] Fields
-		{
-			get { return _fields; }
-		}
+		public FieldInfo[] Fields => _fields;
 
-		public PropertyInfo[] Properties
-		{
-			get { return _properties; }
-		}
+		public PropertyInfo[] Properties => _properties;
 
-		public string Namespace
-		{
-			get { return _type.Namespace; }
-		}
+		public string Namespace => _type.Namespace;
 
-		public string Name
-		{
-			get { return _type.Name; }
-		}
+		public string Name => _type.Name;
 
-		public bool IsPrimitive
-		{
-			get { return _type.IsPrimitive; }
-		}
+		public bool IsPrimitive => _type.IsPrimitive;
 
-		public bool IsStack
-		{
-			get { return _type.IsGenericType && _type.GetGenericTypeDefinition() == typeof (Stack<>); }
-		}
+		public bool IsStack => _type.IsGenericType && _type.GetGenericTypeDefinition() == typeof (Stack<>);
 
-		public bool IsQueue
-		{
-			get { return _type.IsGenericType && _type.GetGenericTypeDefinition() == typeof(Queue<>); }
-		}
+		public bool IsQueue => _type.IsGenericType && _type.GetGenericTypeDefinition() == typeof(Queue<>);
 
-		public bool IsCollection
-		{
-			get { return _collectionType != null; }
-		}
+		public bool IsCollection => _collectionType != null;
 
-		public Type CollectionType
-		{
-			get { return _collectionType; }
-		}
+		public Type CollectionType => _collectionType;
 
-		public bool IsValueType
-		{
-			get { return _type.IsValueType; }
-		}
+		public bool IsValueType => _type.IsValueType;
 
-		public bool IsSealed
-		{
-			get { return _type.IsSealed; }
-		}
+		public bool IsSealed => _type.IsSealed;
 
-		public bool IsArray
-		{
-			get { return _type.IsArray; }
-		}
+		public bool IsArray => _type.IsArray;
 
-		public bool IsGenericType
-		{
-			get { return _type.IsGenericType; }
-		}
+		public bool IsGenericType => _type.IsGenericType;
 
-		public Type[] GenericArguments
-		{
-			get { return _type.GetGenericArguments(); }
-		}
+		public Type[] GenericArguments => _type.GetGenericArguments();
 
 		#region Public Methods
 
@@ -182,7 +140,133 @@ namespace SharpRemote
 
 		#endregion
 
-		private void ThrowIfConstraintsAreViolated(IEnumerable<PropertyInfo> properties)
+		private static void ThrowIfConstraintsAreViolated(IReadOnlyList<MethodInfo> methods)
+		{
+			var attributes = new HashSet<Type>();
+			bool isSingleton = methods.Any(x => x.GetCustomAttribute<SingletonFactoryMethodAttribute>() != null);
+
+			foreach (var method in methods)
+			{
+				Type attributeType;
+				if (IsSerializationCallback(method, out attributeType))
+				{
+					var type = method.DeclaringType;
+					if (isSingleton)
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The type '{0}.{1}' is a singleton and thus may not contain any serialization callbacks",
+								type.Namespace, type.Name));
+					}
+					var byref = type.GetCustomAttribute<ByReferenceAttribute>();
+					if (byref != null)
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The type '{0}.{1}' is marked with the [ByReference] attribute and thus may not contain methods marked with the [{2}] attribute",
+								type.Namespace, type.Name, StripAttribute(attributeType.Name)));
+					}
+					if (!type.IsClass)
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The type '{0}.{1}' may not contain methods marked with the [{2}] attribute: Only classes may have these callbacks",
+								type.Namespace, type.Name, StripAttribute(attributeType.Name)));
+					}
+
+					if (!method.IsPublic)
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be publicly accessible",
+								type.Namespace, type.Name, method.Name, StripAttribute(attributeType.Name)));
+					}
+
+					if (method.IsStatic)
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be non-static",
+								type.Namespace, type.Name, method.Name, StripAttribute(attributeType.Name)));
+					}
+
+					var parameters = method.GetParameters();
+					if (parameters.Length > 0)
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be parameterless",
+								type.Namespace, type.Name, method.Name, StripAttribute(attributeType.Name)));
+					}
+
+					if (method.IsGenericMethodDefinition)
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be non-generic",
+								type.Namespace, type.Name, method.Name, StripAttribute(attributeType.Name)));
+					}
+
+					if (attributes.Contains(attributeType))
+					{
+						throw new ArgumentException(
+							string.Format(
+								"The type '{0}.{1}' contains too many methods with the [{2}] attribute: There may not be more than one",
+								type.Namespace, type.Name, StripAttribute(attributeType.Name)));
+					}
+
+					attributes.Add(attributeType);
+				}
+			}
+		}
+
+		[Pure]
+		private static string StripAttribute(string attributeTypeName)
+		{
+			const string attr = "Attribute";
+			if (attributeTypeName.EndsWith(attr))
+				return attributeTypeName.Substring(0, attributeTypeName.Length - attr.Length);
+
+			return attributeTypeName;
+		}
+
+		[Pure]
+		private static bool IsSerializationCallback(MethodInfo method, out Type attributeType)
+		{
+			var beforeSerialize = method.GetCustomAttribute<BeforeSerializeAttribute>();
+			var afterSerialize = method.GetCustomAttribute<AfterSerializeAttribute>();
+			var beforeDeserialize = method.GetCustomAttribute<BeforeDeserializeAttribute>();
+			var afterDeserialize = method.GetCustomAttribute<AfterDeserializeAttribute>();
+
+			if (beforeSerialize != null)
+			{
+				attributeType = beforeSerialize.GetType();
+				return true;
+			}
+
+			if (afterSerialize != null)
+			{
+				attributeType = afterSerialize.GetType();
+				return true;
+			}
+
+			if (beforeDeserialize != null)
+			{
+				attributeType = beforeDeserialize.GetType();
+				return true;
+			}
+
+			if (afterDeserialize != null)
+			{
+				attributeType = afterDeserialize.GetType();
+				return true;
+			}
+
+			attributeType = null;
+			return false;
+		}
+
+		private static void ThrowIfConstraintsAreViolated(IEnumerable<PropertyInfo> properties)
 		{
 			foreach (var property in properties)
 			{
@@ -192,47 +276,47 @@ namespace SharpRemote
 					throw new ArgumentException(
 						string.Format(
 							"The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no getter - this is not supported",
-							type.Namespace, type.Name, property.Name));
+							type?.Namespace, type?.Name, property.Name));
 				}
 				if (!property.CanWrite)
 				{
 					throw new ArgumentException(
 						string.Format(
 							"The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no setter - this is not supported",
-							type.Namespace, type.Name, property.Name));
+							type?.Namespace, type?.Name, property.Name));
 				}
 				if (!property.GetMethod.IsPublic)
 				{
 					throw new ArgumentException(
 						string.Format(
 							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public getter - this is not supported",
-							type.Namespace, type.Name, property.Name));
+							type?.Namespace, type?.Name, property.Name));
 				}
 				if (!property.SetMethod.IsPublic)
 				{
 					throw new ArgumentException(
 						string.Format(
 							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public setter - this is not supported",
-							type.Namespace, type.Name, property.Name));
+							type?.Namespace, type?.Name, property.Name));
 				}
 				if (property.GetMethod.IsStatic)
 				{
 					throw new ArgumentException(
 						string.Format(
 							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a static getter - this is not supported",
-							type.Namespace, type.Name, property.Name));
+							type?.Namespace, type?.Name, property.Name));
 				}
 				if (property.SetMethod.IsStatic)
 				{
 					throw new ArgumentException(
 						string.Format(
 							"The property '{0}.{1}.{2}' is marked with the [DataMember] has a static setter - this is not supported",
-							type.Namespace, type.Name, property.Name));
+							type?.Namespace, type?.Name, property.Name));
 				}
 			}
 		}
 
-		private void ThrowIfConstraintsAreViolated(IEnumerable<FieldInfo> fields)
+		private static void ThrowIfConstraintsAreViolated(IEnumerable<FieldInfo> fields)
 		{
 			foreach (var field in fields)
 			{
@@ -242,29 +326,23 @@ namespace SharpRemote
 					throw new ArgumentException(
 						string.Format(
 							"The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is static - this is not supported",
-							type.Namespace, type.Name, field.Name));
+							type?.Namespace, type?.Name, field.Name));
 				}
 				if (!field.IsPublic)
 				{
 					throw new ArgumentException(
 						string.Format(
 							"The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is not public - this is not supported",
-							type.Namespace, type.Name, field.Name));
+							type?.Namespace, type?.Name, field.Name));
 				}
 				if (field.IsInitOnly)
 				{
 					throw new ArgumentException(
 						string.Format(
 							"The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is readonly - this is not supported",
-							type.Namespace, type.Name, field.Name));
+							type?.Namespace, type?.Name, field.Name));
 				}
 			}
 		}
-
-		public Type Test<T>()
-		{
-			return typeof (int);
-		}
 	}
-
 }

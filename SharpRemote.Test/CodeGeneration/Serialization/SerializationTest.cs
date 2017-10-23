@@ -374,6 +374,56 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer.ShouldRoundtrip(value);
 		}
 
+		[Test]
+		[Description("Verifies that a class all four callbacks are invoked on the correct objects in the correct order")]
+		public void TestClassWithDeserializationCallback()
+		{
+			var value = new ClassWithSerializationCallbacks();
+			var actualValue = _serializer.Roundtrip(value);
+
+			const string reason = "because those two callbacks should've been invoked in that order";
+			value.Callbacks.Should().Equal(new object[]
+			{
+				"BeforeSerialization",
+				"AfterSerialization"
+			}, reason);
+
+			actualValue.Callbacks.Should().Equal(new object[]
+			{
+				"BeforeDeserialization",
+				"AfterDeserialization"
+			}, reason);
+		}
+
+		[Test]
+		public void TestClassWithBeforeSerializeCallback()
+		{
+			var value = new ClassWithBeforeSerializeCallback
+			{
+				Type = typeof(string)
+			};
+			var actualValue = _serializer.Roundtrip(value);
+
+			actualValue.Should().NotBeNull();
+			const string reason = "because the BeforeSerialize callback should've been invoked which sets this value";
+			actualValue.SerializedType.Should().Be(typeof(string).AssemblyQualifiedName, reason);
+			actualValue.SomeImortantInfo.Should().Be(typeof(string).MetadataToken, reason);
+		}
+
+		[Test]
+		public void TestClassWithAfterDeserializeCallback()
+		{
+			var value = new ClassWithAfterDeserializeCallback
+			{
+				SerializedType = typeof(double).AssemblyQualifiedName
+			};
+			var actualValue = _serializer.Roundtrip(value);
+
+			actualValue.Should().NotBeNull();
+			const string reason = "because the AfterDeserialize callback should've been invoked which sets this value";
+			actualValue.Type.Should().Be<double>(reason);
+		}
+
 		public static void WriteValueNotNull(BinaryWriter writer, ClassWithNullableTimeSpan obj, ISerializer serializer)
 		{
 			var tmp = obj.Value.HasValue;

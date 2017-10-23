@@ -49,7 +49,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\AfterDeserializeAttribute.cs" />
+    <Compile Include="Attributes\AfterSerializeAttribute.cs" />
     <Compile Include="Attributes\AsyncRemoteAttribute.cs" />
+    <Compile Include="Attributes\BeforeDeserializeAttribute.cs" />
+    <Compile Include="Attributes\BeforeSerializeAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />

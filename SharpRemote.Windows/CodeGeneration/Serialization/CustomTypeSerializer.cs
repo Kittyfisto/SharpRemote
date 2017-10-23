@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
+using SharpRemote.Attributes;
 using SharpRemote.CodeGeneration;
 using SharpRemote.CodeGeneration.Serialization;
 using SerializationException = SharpRemote.Exceptions.SerializationException;
@@ -30,10 +31,24 @@ namespace SharpRemote
 		{
 			if (type.GetCustomAttribute<DataContractAttribute>() != null)
 			{
+				Action loadValue = () =>
+				{
+					if (type.IsValueType)
+					{
+						gen.Emit(OpCodes.Ldarga, 1);
+					}
+					else
+					{
+						gen.Emit(OpCodes.Ldarg_1);
+					}
+				};
+
 				// The type should be serialized by value, e.g. we simply serialize all fields and properties
 				// marked with the [DataMember] attribute
-				EmitWriteFields(gen, loadRemotingEndPoint, type);
+				EmitCallBeforeSerialization(gen, loadValue, type);
+				EmitWriteFields(gen, loadValue, loadRemotingEndPoint, type);
 				EmitWriteProperties(gen, loadRemotingEndPoint, type);
+				EmitCallAfterSerialization(gen, loadValue, type);
 			}
 			else if (type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
 			{
@@ -103,7 +118,6 @@ namespace SharpRemote
 				gen.Emit(OpCodes.Callvirt, Methods.GrainGetObjectId);
 				gen.Emit(OpCodes.Call, Methods.WriteLong);
 
-
 				gen.MarkLabel(grainWritten);
 			}
 			else
@@ -111,6 +125,26 @@ namespace SharpRemote
 				throw new ArgumentException(
 					string.Format("The type '{0}.{1}' is missing the [DataContract] or [ByReference] attribute, nor is there a custom-serializer available for this type", type.Namespace,
 						type.Name));
+			}
+		}
+
+		private void EmitCallBeforeSerialization(ILGenerator gen, Action loadValue, Type type)
+		{
+			var method = type.GetMethods().FirstOrDefault(x => x.GetCustomAttribute<BeforeSerializeAttribute>() != null);
+			if (method != null)
+			{
+				loadValue();
+				gen.EmitCall(OpCodes.Callvirt, method, null);
+			}
+		}
+
+		private void EmitCallAfterSerialization(ILGenerator gen, Action loadValue, Type type)
+		{
+			var method = type.GetMethods().FirstOrDefault(x => x.GetCustomAttribute<AfterSerializeAttribute>() != null);
+			if (method != null)
+			{
+				loadValue();
+				gen.EmitCall(OpCodes.Callvirt, method, null);
 			}
 		}
 
@@ -220,9 +254,11 @@ namespace SharpRemote
 		///     Emits code to write all fields of the given type into a <see cref="BinaryWriter" />.
 		/// </summary>
 		/// <param name="gen"></param>
+		/// <param name="loadValue"></param>
 		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
 		public void EmitWriteFields(ILGenerator gen,
+			Action loadValue,
 			Action loadRemotingEndPoint,
 			Type type)
 		{
@@ -233,17 +269,7 @@ namespace SharpRemote
 
 			Action loadWriter = () => gen.Emit(OpCodes.Ldarg_0);
 			Action loadSerializer = () => gen.Emit(OpCodes.Ldarg_2);
-			Action loadValue = () =>
-			{
-				if (type.IsValueType)
-				{
-					gen.Emit(OpCodes.Ldarga, 1);
-				}
-				else
-				{
-					gen.Emit(OpCodes.Ldarg_1);
-				}
-			};
+			
 
 			foreach (var field in allFields)
 			{
@@ -391,20 +417,20 @@ namespace SharpRemote
 			if (type.Type.GetCustomAttribute<DataContractAttribute>() != null)
 			{
 				CreateAndStoreNewInstance(gen, type, target);
+				EmitCallBeforeDeserialization(gen, type, target);
 				EmitReadAllFields(gen,
 								  loadReader,
 								  loadSerializer,
 								  loadRemotingEndPoint,
 								  type,
 								  target);
-
 				EmitReadAllProperties(gen,
 					loadReader,
 					loadSerializer,
 					loadRemotingEndPoint,
 					type,
 					target);
-
+				EmitCallAfterDeserialization(gen, type, target);
 				gen.Emit(OpCodes.Ldloc, target);
 			}
 			else if (type.Type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
@@ -446,6 +472,26 @@ namespace SharpRemote
 			else
 			{
 				throw new NotImplementedException();
+			}
+		}
+
+		private void EmitCallBeforeDeserialization(ILGenerator gen, TypeInformation type, LocalBuilder target)
+		{
+			var method = type.Type.GetMethods().FirstOrDefault(x => x.GetCustomAttribute<BeforeDeserializeAttribute>() != null);
+			if (method != null)
+			{
+				gen.Emit(OpCodes.Ldloc, target);
+				gen.EmitCall(OpCodes.Callvirt, method, null);
+			}
+		}
+
+		private void EmitCallAfterDeserialization(ILGenerator gen, TypeInformation type, LocalBuilder target)
+		{
+			var method = type.Type.GetMethods().FirstOrDefault(x => x.GetCustomAttribute<AfterDeserializeAttribute>() != null);
+			if (method != null)
+			{
+				gen.Emit(OpCodes.Ldloc, target);
+				gen.EmitCall(OpCodes.Callvirt, method, null);
 			}
 		}
 

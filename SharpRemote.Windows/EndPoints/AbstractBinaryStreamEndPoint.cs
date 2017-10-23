@@ -157,7 +157,19 @@ namespace SharpRemote
 		private long _nextRpcId;
 		private TTransport _socket;
 
-		internal AbstractBinaryStreamEndPoint(GrainIdGenerator idGenerator,
+		/// <summary>
+		///     Initializes this object.
+		/// </summary>
+		/// <param name="idGenerator"></param>
+		/// <param name="name"></param>
+		/// <param name="type"></param>
+		/// <param name="clientAuthenticator"></param>
+		/// <param name="serverAuthenticator"></param>
+		/// <param name="codeGenerator"></param>
+		/// <param name="heartbeatSettings"></param>
+		/// <param name="latencySettings"></param>
+		/// <param name="endPointSettings"></param>
+		protected AbstractBinaryStreamEndPoint(GrainIdGenerator idGenerator,
 		                                      string name,
 		                                      EndPointType type,
 		                                      IAuthenticator clientAuthenticator,

@@ -82,11 +82,23 @@ namespace SharpRemote.ServiceDiscovery
 			}
 		}
 
+		/// <summary>
+		///     Compares the two given services for equality.
+		/// </summary>
+		/// <param name="left"></param>
+		/// <param name="right"></param>
+		/// <returns></returns>
 		public static bool operator ==(Service left, Service right)
 		{
 			return left.Equals(right);
 		}
 
+		/// <summary>
+		///     Compares the two given services for inequality.
+		/// </summary>
+		/// <param name="left"></param>
+		/// <param name="right"></param>
+		/// <returns></returns>
 		public static bool operator !=(Service left, Service right)
 		{
 			return !left.Equals(right);

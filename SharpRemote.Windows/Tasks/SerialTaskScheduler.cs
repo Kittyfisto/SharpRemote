@@ -53,11 +53,16 @@ namespace SharpRemote.Tasks
 			_pendingTaskCount = new SemaphoreSlim(0, int.MaxValue);
 		}
 
+		/// <summary>
+		///     Initializes this object.
+		/// </summary>
+		/// <param name="deactivationThreshold"></param>
+		/// <param name="logExceptions"></param>
 		public SerialTaskScheduler(TimeSpan deactivationThreshold, bool logExceptions)
 			: this(logExceptions)
 		{
 			if (deactivationThreshold <= TimeSpan.Zero)
-				throw new ArgumentOutOfRangeException("deactivationThreshold");
+				throw new ArgumentOutOfRangeException(nameof(deactivationThreshold));
 
 			_deactivationThreshold = deactivationThreshold;
 		}
@@ -102,20 +107,15 @@ namespace SharpRemote.Tasks
 		/// <remarks>
 		///     Only used for testing.
 		/// </remarks>
-		public IEnumerable<Exception> Exceptions
-		{
-			get { return _exceptions ?? Enumerable.Empty<Exception>(); }
-		}
+		public IEnumerable<Exception> Exceptions => _exceptions ?? Enumerable.Empty<Exception>();
 
 		/// <summary>
 		///     Tests if the task that executes all pending tasks is currently running or not.
 		///     It will be stopped when no tasks have been queued for a certain time.
 		/// </summary>
-		internal bool IsExecutingThreadRunning
-		{
-			get { return _executingThread != null; }
-		}
+		internal bool IsExecutingThreadRunning => _executingThread != null;
 
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			_disposeEvent.Set();
@@ -184,6 +184,13 @@ namespace SharpRemote.Tasks
 			}
 		}
 
+		/// <summary>
+		///     Enqueues the given task to this scheduler: It will be executed
+		///     once all previous tasks have finished or failed.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="fn"></param>
+		/// <param name="completionSource"></param>
 		public void QueueTask<T>(Func<T> fn, TaskCompletionSource<T> completionSource)
 		{
 			lock (_syncRoot)
@@ -195,6 +202,12 @@ namespace SharpRemote.Tasks
 			}
 		}
 
+		/// <summary>
+		///     Enqueues the given task to this scheduler: It will be executed
+		///     once all previous tasks have finished or failed.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="fn"></param>
 		public Task<T> QueueTask<T>(Func<T> fn)
 		{
 			var completionSource = new TaskCompletionSource<T>();
@@ -202,6 +215,12 @@ namespace SharpRemote.Tasks
 			return completionSource.Task;
 		}
 
+		/// <summary>
+		///     Enqueues the given task to this scheduler: It will be executed
+		///     once all previous tasks have finished or failed.
+		/// </summary>
+		/// <param name="fn"></param>
+		/// <param name="completionSource"></param>
 		public void QueueTask(Action fn, TaskCompletionSource<int> completionSource)
 		{
 			lock (_syncRoot)
@@ -213,6 +232,11 @@ namespace SharpRemote.Tasks
 			}
 		}
 
+		/// <summary>
+		///     Enqueues the given task to this scheduler: It will be executed
+		///     once all previous tasks have finished or failed.
+		/// </summary>
+		/// <param name="fn"></param>
 		public Task QueueTask(Action fn)
 		{
 			var completionSource = new TaskCompletionSource<int>();
@@ -258,17 +282,14 @@ namespace SharpRemote.Tasks
 
 			public PendingTask(Action task, TaskCompletionSource<int> completionSource)
 			{
-				if (task == null) throw new ArgumentNullException("task");
-				if (completionSource == null) throw new ArgumentNullException("completionSource");
+				if (task == null) throw new ArgumentNullException(nameof(task));
+				if (completionSource == null) throw new ArgumentNullException(nameof(completionSource));
 
 				_task = task;
 				_completionSource = completionSource;
 			}
 
-			public Task Task
-			{
-				get { return _completionSource.Task; }
-			}
+			public Task Task => _completionSource.Task;
 
 			public void Execute()
 			{
@@ -292,17 +313,14 @@ namespace SharpRemote.Tasks
 
 			public PendingTask(Func<T> task, TaskCompletionSource<T> completionSource)
 			{
-				if (task == null) throw new ArgumentNullException("task");
-				if (completionSource == null) throw new ArgumentNullException("completionSource");
+				if (task == null) throw new ArgumentNullException(nameof(task));
+				if (completionSource == null) throw new ArgumentNullException(nameof(completionSource));
 
 				_task = task;
 				_completionSource = completionSource;
 			}
 
-			public Task<T> Task
-			{
-				get { return _completionSource.Task; }
-			}
+			public Task<T> Task => _completionSource.Task;
 
 			public void Execute()
 			{

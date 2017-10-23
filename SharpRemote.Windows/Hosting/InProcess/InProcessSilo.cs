@@ -26,11 +26,10 @@ namespace SharpRemote.Hosting
 			_registry = new DefaultImplementationRegistry();
 		}
 
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		/// <inheritdoc />
+		public bool IsDisposed => _isDisposed;
 
+		/// <inheritdoc />
 		public void RegisterDefaultImplementation<TInterface, TImplementation>() where TInterface : class where TImplementation : TInterface
 		{
 			_registry.RegisterDefaultImplementation(typeof(TImplementation), typeof(TInterface));
@@ -57,12 +56,14 @@ namespace SharpRemote.Hosting
 			_registry.RegisterDefaultImplementation(implementationType, typeof(TInterface));
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface>(params object[] parameters) where TInterface : class
 		{
 			var type = _registry.GetImplementation(typeof (TInterface));
 			return CreateGrain<TInterface>(type, parameters);
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters)
 			where TInterface : class
 		{
@@ -70,18 +71,21 @@ namespace SharpRemote.Hosting
 			return CreateGrain<TInterface>(type, parameters);
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters) where TInterface : class
 		{
 			object subject = Activator.CreateInstance(implementation, parameters);
 			return (TInterface) subject;
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface, TImplementation>(params object[] parameters) where TInterface : class where TImplementation : TInterface
 		{
 			object subject = Activator.CreateInstance(typeof(TImplementation), parameters);
 			return (TInterface)subject;
 		}
 
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			_isDisposed = true;

@@ -51,7 +51,7 @@ namespace SharpRemote.Test.ServiceDiscovery
 					message.Length.Should().BeLessOrEqualTo(512, "because UDP packets with a payload of greater than 512 are very likely to be not be properly reassembled");
 					previousMessage = message;
 				}
-				catch (ArgumentOutOfRangeException e)
+				catch (ArgumentOutOfRangeException)
 				{
 					previousMessage.Should().NotBeNull();
 					previousMessage.Length.Should().Be(512);

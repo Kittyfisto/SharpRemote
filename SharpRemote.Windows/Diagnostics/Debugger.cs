@@ -14,9 +14,6 @@
 		{
 		}
 
-		public bool IsDebuggerAttached
-		{
-			get { return System.Diagnostics.Debugger.IsAttached; }
-		}
+		public bool IsDebuggerAttached => System.Diagnostics.Debugger.IsAttached;
 	}
 }

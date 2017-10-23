@@ -39,7 +39,7 @@ namespace SharpRemote
 		IRemotingEndPoint EndPoint { get; }
 
 		/// <summary>
-		/// Shall invoke the event or method named <paramref cref="eventOrMethodName"/>.
+		/// Shall invoke the event or method named <paramref ref="eventOrMethodName"/>.
 		/// </summary>
 		/// <param name="eventOrMethodName"></param>
 		/// <param name="reader"></param>

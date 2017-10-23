@@ -56,7 +56,7 @@ namespace SharpRemote
 					break;
 
 				default:
-					throw new InvalidEnumArgumentException("order", (int)order, typeof(ArrayOrder));
+					throw new InvalidEnumArgumentException(nameof(order), (int)order, typeof(ArrayOrder));
 			}
 
 			gen.MarkLabel(loop);

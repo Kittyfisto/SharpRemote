@@ -17,7 +17,10 @@ namespace SharpRemote.Test.Types.Classes
 
 		public void Do()
 		{
+#pragma warning disable 618
 			var currentId = AppDomain.GetCurrentThreadId();
+#pragma warning restore 618
+
 			var threads = Process.GetCurrentProcess().Threads
 			                     .Cast<ProcessThread>()
 			                     .Where(x => x.Id != currentId);

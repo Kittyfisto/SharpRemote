@@ -15,10 +15,11 @@ namespace SharpRemote
 			gen.Emit(OpCodes.Call, factoryMethod);
 		}
 
+		/// <inheritdoc />
 		public void RegisterSingleton<T>(MethodInfo getSingleton)
 		{
-			if (getSingleton == null) throw new ArgumentNullException("getSingleton");
-			if (!getSingleton.IsStatic) throw new ArgumentException("The factory method must be static", "getSingleton");
+			if (getSingleton == null) throw new ArgumentNullException(nameof(getSingleton));
+			if (!getSingleton.IsStatic) throw new ArgumentException("The factory method must be static", nameof(getSingleton));
 			if (!getSingleton.IsPublic) throw new ArgumentException("The factory method must be publicly visible");
 
 			_getSingletonInstance.Add(typeof(T), getSingleton);

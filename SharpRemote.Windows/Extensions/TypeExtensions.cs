@@ -28,7 +28,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Retrieves the first custom attribute type <paramref name="T"/> from the given
+		/// Retrieves the first custom attribute type <typeparamref name="T"/> from the given
 		/// type, including its base classes and interfaces.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>

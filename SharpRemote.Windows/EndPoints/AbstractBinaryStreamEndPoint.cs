@@ -5,13 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using SharpRemote.CodeGeneration;
-using SharpRemote.CodeGeneration.Remoting;
 using SharpRemote.EndPoints;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
@@ -53,7 +50,7 @@ namespace SharpRemote
 		private const string AuthenticationResponseMessage = "Authentication";
 		private const string AuthenticationFailedMessage = "Authentication failed";
 		private const string AuthenticationSucceedMessage = "Authentication succeeded";
-		protected const string HandshakeSucceedMessage = "Handshake succeeded";
+		private const string HandshakeSucceedMessage = "Handshake succeeded";
 
 		#region Statistics
 
@@ -98,7 +95,7 @@ namespace SharpRemote
 		private readonly EndPointSettings _endpointSettings;
 		private readonly PendingMethodsQueue _pendingMethodCalls;
 		private readonly Dictionary<long, MethodInvocation> _pendingMethodInvocations;
-		protected CancellationTokenSource CancellationTokenSource;
+		private CancellationTokenSource _cancellationTokenSource;
 
 		#endregion
 
@@ -170,7 +167,7 @@ namespace SharpRemote
 		                                      LatencySettings latencySettings,
 		                                      EndPointSettings endPointSettings)
 		{
-			if (idGenerator == null) throw new ArgumentNullException("idGenerator");
+			if (idGenerator == null) throw new ArgumentNullException(nameof(idGenerator));
 			if (heartbeatSettings != null)
 			{
 				if (heartbeatSettings.Interval <= TimeSpan.Zero)
@@ -228,12 +225,22 @@ namespace SharpRemote
 			_latencySettings = latencySettings ?? new LatencySettings();
 		}
 
+		/// <summary>
+		///     The socket used to communicate with the other endpoint.
+		/// </summary>
 		protected TTransport Socket
 		{
 			set { _socket = value; }
 		}
 
+		/// <summary>
+		///     The endpoint-address of this endpoint.
+		/// </summary>
 		protected abstract EndPoint InternalLocalEndPoint { get; }
+
+		/// <summary>
+		///     The endpoint-address of this endpoint we're connected to, or null.
+		/// </summary>
 		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
 
 		/// <inheritdoc />
@@ -277,10 +284,11 @@ namespace SharpRemote
 		/// </summary>
 		public EndPointDisconnectReason? DisconnectReason => _disconnectReason;
 
-		protected object SyncRoot
-		{
-			get { return _syncRoot; }
-		}
+		/// <summary>
+		///     The lock used to ensure that certain sections are not executed in parallel
+		///     (mostly to do with connecting/disconnecting).
+		/// </summary>
+		protected object SyncRoot => _syncRoot;
 
 		/// <summary>
 		///     Returns all the proxies of this endpoint.
@@ -726,6 +734,12 @@ namespace SharpRemote
 			}
 		}
 
+		/// <summary>
+		///     Tests if the given disconnect reason indicates a failure of the connection
+		///     or rather an intentional disconnect.
+		/// </summary>
+		/// <param name="reason"></param>
+		/// <returns></returns>
 		protected static bool IsFailure(EndPointDisconnectReason reason)
 		{
 			switch (reason)
@@ -842,6 +856,9 @@ namespace SharpRemote
 			}
 		}
 
+		/// <summary>
+		///     Called when <see cref="Dispose" /> is called.
+		/// </summary>
 		protected abstract void DisposeAdditional();
 
 		/// <summary>
@@ -925,7 +942,7 @@ namespace SharpRemote
 					               InternalRemoteEndPoint,
 					               reason);
 
-					CancellationTokenSource.Cancel();
+					_cancellationTokenSource.Cancel();
 					_pendingMethodCalls.CancelAllCalls();
 
 					ClearPendingMethodInvocations();
@@ -1864,9 +1881,9 @@ namespace SharpRemote
 				Socket = socket;
 				InternalRemoteEndPoint = remoteEndPoint;
 				CurrentConnectionId = new ConnectionId(Interlocked.Increment(ref _previousConnectionId));
-				CancellationTokenSource = new CancellationTokenSource();
+				_cancellationTokenSource = new CancellationTokenSource();
 
-				var args = new ThreadArgs(socket, CancellationTokenSource.Token, CurrentConnectionId);
+				var args = new ThreadArgs(socket, _cancellationTokenSource.Token, CurrentConnectionId);
 
 				_readThread = new Thread(ReadLoop)
 				{

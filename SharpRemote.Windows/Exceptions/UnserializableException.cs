@@ -68,6 +68,7 @@ namespace SharpRemote
 			_originalTargetSite = info.GetString("OriginalTargetSite");
 		}
 
+		/// <inheritdoc />
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData(info, context);
@@ -91,37 +92,25 @@ namespace SharpRemote
 		/// The <see cref="Exception.Message"/> of the
 		/// original exception that could not be serialized.
 		/// </summary>
-		public string OriginalMessage
-		{
-			get { return _originalMessage; }
-		}
+		public string OriginalMessage => _originalMessage;
 
 		/// <summary>
 		/// The <see cref="Exception.StackTrace"/> of the
 		/// original exception that could not be serialized.
 		/// </summary>
-		public string OriginalStacktrace
-		{
-			get { return _originalStacktrace; }
-		}
+		public string OriginalStacktrace => _originalStacktrace;
 
 		/// <summary>
 		/// The <see cref="Exception.Source"/> of the
 		/// original exception that could not be serialized.
 		/// </summary>
-		public string OriginalSource
-		{
-			get { return _originalSource; }
-		}
+		public string OriginalSource => _originalSource;
 
 		/// <summary>
 		/// The fully qualified typename of the original
 		/// exception that could not be serialized.
 		/// </summary>
-		public string OriginalTypename
-		{
-			get { return _originalTypename; }
-		}
+		public string OriginalTypename => _originalTypename;
 
 #if !WINDOWS_PHONE_APP
 #if !SILVERLIGHT
@@ -130,10 +119,7 @@ namespace SharpRemote
 		/// The name of the <see cref="Exception.TargetSite"/> of the
 		/// original exception that could not be serialized.
 		/// </summary>
-		public string OriginalTargetSite
-		{
-			get { return _originalTargetSite; }
-		}
+		public string OriginalTargetSite => _originalTargetSite;
 #endif
 #endif
 	}

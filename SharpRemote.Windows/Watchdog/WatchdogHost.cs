@@ -5,7 +5,7 @@ namespace SharpRemote.Watchdog
 {
 	/// <summary>
 	///     Responsible for hosting a <see cref="IInternalWatchdog" /> instance and exposing it via
-	///     a <see cref="SocketRemotingEndPoint" />.
+	///     a <see cref="AbstractIPSocketRemotingEndPoint" />.
 	/// </summary>
 	public sealed class WatchdogHost
 		: IDisposable
@@ -16,6 +16,9 @@ namespace SharpRemote.Watchdog
 		private readonly SocketRemotingEndPointServer _endPoint;
 		private readonly InternalWatchdog _watchdog;
 
+		/// <summary>
+		/// Initializes this object.
+		/// </summary>
 		public WatchdogHost()
 		{
 			_watchdog = new InternalWatchdog();
@@ -25,11 +28,12 @@ namespace SharpRemote.Watchdog
 			_endPoint.Bind(IPAddress.Any);
 		}
 
-		public EndPoint LocalEndPoint
-		{
-			get { return _endPoint.LocalEndPoint; }
-		}
+		/// <summary>
+		/// 
+		/// </summary>
+		public EndPoint LocalEndPoint => _endPoint.LocalEndPoint;
 
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			_watchdog.Dispose();

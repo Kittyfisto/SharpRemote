@@ -22,6 +22,7 @@ namespace SharpRemote.Exceptions
 			ApplicationName = info.GetString("ApplicationName");
 		}
 
+		/// <inheritdoc />
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData(info, context);

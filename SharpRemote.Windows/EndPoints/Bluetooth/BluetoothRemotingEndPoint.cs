@@ -43,8 +43,6 @@ namespace SharpRemote
 		public void Connect(TimeSpan timeout)
 		{
 			var devices = DiscoverDevices(timeout);
-
-			int n = 0;
 		}
 
 		/// <summary>

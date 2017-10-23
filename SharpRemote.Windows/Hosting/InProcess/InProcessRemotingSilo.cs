@@ -57,28 +57,30 @@ namespace SharpRemote.Hosting
 			_client.Connect(_server.LocalEndPoint, TimeSpan.FromSeconds(5));
 		}
 
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		/// <inheritdoc />
+		public bool IsDisposed => _isDisposed;
 
+		/// <inheritdoc />
 		public void RegisterDefaultImplementation<TInterface, TImplementation>() where TInterface : class where TImplementation : TInterface
 		{
 			_registry.RegisterDefaultImplementation(typeof(TImplementation), typeof(TInterface));
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface>(params object[] parameters) where TInterface : class
 		{
 			var type = _registry.GetImplementation(typeof (TInterface));
 			return CreateGrain<TInterface>(type, parameters);
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface>(string assemblyQualifiedTypeName, params object[] parameters) where TInterface : class
 		{
 			var type = GetType(assemblyQualifiedTypeName);
 			return CreateGrain<TInterface>(type, parameters);
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface>(Type implementation, params object[] parameters) where TInterface : class
 		{
 			ulong objectId;
@@ -92,6 +94,7 @@ namespace SharpRemote.Hosting
 			return proxy;
 		}
 
+		/// <inheritdoc />
 		public TInterface CreateGrain<TInterface, TImplementation>(params object[] parameters) where TInterface : class where TImplementation : TInterface
 		{
 			ulong objectId;
@@ -105,6 +108,7 @@ namespace SharpRemote.Hosting
 			return proxy;
 		}
 
+		/// <inheritdoc />
 		public void Dispose()
 		{
 			_subjectHostProxy.TryDispose();

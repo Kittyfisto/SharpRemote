@@ -1,6 +1,9 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using System.Reflection;
 using System.Runtime.Serialization;
 
+// ReSharper disable once CheckNamespace
 namespace SharpRemote
 {
 	/// <summary>
@@ -36,5 +39,31 @@ namespace SharpRemote
 		/// </summary>
 		[DataMember]
 		public string Name { get; set; }
+
+		/// <summary>
+		///     Creates a new description for the given property.
+		/// </summary>
+		/// <param name="property"></param>
+		/// <param name="typesByAssemblyQualifiedName"></param>
+		/// <returns></returns>
+		[Pure]
+		public static PropertyDescription Create(PropertyInfo property, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
+		{
+			var propertyType = property.PropertyType;
+			var propertyTypeName = propertyType.AssemblyQualifiedName;
+			TypeDescription type = null;
+			if (propertyTypeName != null)
+				if (!typesByAssemblyQualifiedName.TryGetValue(propertyTypeName, out type))
+				{
+					type = TypeDescription.Create(propertyType, typesByAssemblyQualifiedName);
+					typesByAssemblyQualifiedName.Add(propertyTypeName, type);
+				}
+
+			return new PropertyDescription
+			{
+				Name = property.Name,
+				PropertyType = type
+			};
+		}
 	}
 }

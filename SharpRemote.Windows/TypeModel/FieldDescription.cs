@@ -1,6 +1,8 @@
-﻿using System.Reflection;
+﻿using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.Serialization;
 
+// ReSharper disable once CheckNamespace
 namespace SharpRemote
 {
 	/// <summary>
@@ -36,5 +38,30 @@ namespace SharpRemote
 		/// </summary>
 		[DataMember]
 		public string Name { get; set; }
+
+		/// <summary>
+		///     Creates a new description for the given field.
+		/// </summary>
+		/// <param name="field"></param>
+		/// <param name="typesByAssemblyQualifiedName"></param>
+		/// <returns></returns>
+		public static FieldDescription Create(FieldInfo field, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
+		{
+			var fieldType = field.FieldType;
+			var fieldTypeName = fieldType.AssemblyQualifiedName;
+			TypeDescription type = null;
+			if (fieldTypeName != null)
+				if (!typesByAssemblyQualifiedName.TryGetValue(fieldTypeName, out type))
+				{
+					type = TypeDescription.Create(fieldType, typesByAssemblyQualifiedName);
+					typesByAssemblyQualifiedName.Add(fieldTypeName, type);
+				}
+
+			return new FieldDescription
+			{
+				Name = field.Name,
+				FieldType = type
+			};
+		}
 	}
 }

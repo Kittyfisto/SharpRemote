@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.Serialization;
 using log4net;
 using SharpRemote.Attributes;
 
@@ -13,10 +14,12 @@ namespace SharpRemote
 	///     may be serialized/deserialized *without* requiring that the types describes by this type model
 	///     can be loaded.
 	/// </summary>
+	[DataContract]
 	public sealed class TypeModel
+		: ITypeModel
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private readonly List<TypeDescription> _types;
+		private List<TypeDescription> _types;
 
 		private readonly Dictionary<string, TypeDescription> _typesByAssemblyQualifiedName;
 		private int _nextId;
@@ -31,10 +34,13 @@ namespace SharpRemote
 			_nextId = 1;
 		}
 
-		/// <summary>
-		///     The types added to this model.
-		/// </summary>
-		public IReadOnlyList<TypeDescription> Types => _types;
+		/// <inheritdoc />
+		[DataMember]
+		public IReadOnlyList<TypeDescription> Types
+		{
+			get { return _types; }
+			set { _types = new List<TypeDescription>(value); }
+		}
 
 		/// <summary>
 		///     Adds the given <typeparamref name="T" /> to this model.
@@ -62,8 +68,6 @@ namespace SharpRemote
 			var typeDescription = TypeDescription.Create(type, typesByAssemblyQualifiedName);
 			typeDescription.Id = GetNextId();
 
-			Add(typeDescription);
-
 			// It's likely that we had to expand the type model beyond the given type, all of those additional types
 			// have now been added to the local dictionary, but not this type model (yet):
 			foreach (var description in typesByAssemblyQualifiedName.Values)
@@ -82,19 +86,6 @@ namespace SharpRemote
 		private int GetNextId()
 		{
 			return _nextId++;
-		}
-
-		/// <summary>
-		///     Adds the given type to this model.
-		/// </summary>
-		/// <param name="type"></param>
-		/// <exception cref="ArgumentNullException">When <paramref name="type" /> is null</exception>
-		private void Add(TypeDescription type)
-		{
-			if (type == null)
-				throw new ArgumentNullException(nameof(type));
-
-			_types.Add(type);
 		}
 
 		/// <summary>

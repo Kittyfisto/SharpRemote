@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -12,6 +11,7 @@ namespace SharpRemote
 	/// </summary>
 	[DataContract]
 	public sealed class PropertyDescription
+		: IPropertyDescription
 	{
 		private TypeDescription _propertyType;
 
@@ -21,9 +21,7 @@ namespace SharpRemote
 		[DataMember]
 		public int PropertyTypeId { get; set; }
 
-		/// <summary>
-		///     The type of this property, equivalent of <see cref="PropertyInfo.PropertyType" />.
-		/// </summary>
+		/// <inheritdoc />
 		public TypeDescription PropertyType
 		{
 			get { return _propertyType; }
@@ -34,9 +32,7 @@ namespace SharpRemote
 			}
 		}
 
-		/// <summary>
-		///     The equivalent of <see cref="MemberInfo.Name" />.
-		/// </summary>
+		/// <inheritdoc />
 		[DataMember]
 		public string Name { get; set; }
 
@@ -46,7 +42,6 @@ namespace SharpRemote
 		/// <param name="property"></param>
 		/// <param name="typesByAssemblyQualifiedName"></param>
 		/// <returns></returns>
-		[Pure]
 		public static PropertyDescription Create(PropertyInfo property, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
 		{
 			var propertyType = property.PropertyType;

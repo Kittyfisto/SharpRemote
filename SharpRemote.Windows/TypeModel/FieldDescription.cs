@@ -11,6 +11,7 @@ namespace SharpRemote
 	/// </summary>
 	[DataContract]
 	public sealed class FieldDescription
+		: IFieldDescription
 	{
 		private TypeDescription _fieldType;
 
@@ -20,9 +21,7 @@ namespace SharpRemote
 		[DataMember]
 		public int FieldTypeId { get; set; }
 
-		/// <summary>
-		///     The type of this field, equivalent of <see cref="FieldInfo.FieldType" />.
-		/// </summary>
+		/// <inheritdoc />
 		public TypeDescription FieldType
 		{
 			get { return _fieldType; }
@@ -33,9 +32,7 @@ namespace SharpRemote
 			}
 		}
 
-		/// <summary>
-		///     The equivalent of <see cref="MemberInfo.Name" />.
-		/// </summary>
+		/// <inheritdoc />
 		[DataMember]
 		public string Name { get; set; }
 

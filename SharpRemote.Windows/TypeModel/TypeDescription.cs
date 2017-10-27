@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -14,6 +13,7 @@ namespace SharpRemote
 	/// </summary>
 	[DataContract]
 	public sealed class TypeDescription
+		: ITypeDescription
 	{
 		/// <summary>
 		///     An id which differentiates this object amongst all others for the same
@@ -22,39 +22,27 @@ namespace SharpRemote
 		[DataMember]
 		public int Id { get; set; }
 
-		/// <summary>
-		///     Equivalent of <see cref="Type.AssemblyQualifiedName" />.
-		/// </summary>
+		/// <inheritdoc />
 		[DataMember]
 		public string AssemblyQualifiedName { get; set; }
 
-		/// <summary>
-		///     A classification of this type which is helpful for the serializer.
-		/// </summary>
+		/// <inheritdoc />
 		[DataMember]
 		public SerializationType SerializationType { get; set; }
 
-		/// <summary>
-		///     Equivalent of <see cref="Type.IsClass" />.
-		/// </summary>
+		/// <inheritdoc />
 		[DataMember]
 		public bool IsClass { get; set; }
 
-		/// <summary>
-		///     Equivalent of <see cref="Type.IsEnum" />.
-		/// </summary>
+		/// <inheritdoc />
 		[DataMember]
 		public bool IsEnum { get; set; }
 
-		/// <summary>
-		///     Equivalent of <see cref="Type.IsInterface" />.
-		/// </summary>
+		/// <inheritdoc />
 		[DataMember]
 		public bool IsInterface { get; set; }
-
-		/// <summary>
-		///     Equivalent of <see cref="Type.IsValueType" />.
-		/// </summary>
+		
+		/// <inheritdoc />
 		[DataMember]
 		public bool IsValueType { get; set; }
 
@@ -71,10 +59,16 @@ namespace SharpRemote
 		public FieldDescription[] Fields { get; set; }
 
 		/// <summary>
-		/// The list of public non-static methods in case this is a <see cref="SerializationType.ByReference"/> type.
+		/// The list of public non-static methods in case this is a <see cref="SharpRemote.SerializationType.ByReference"/> type.
 		/// </summary>
 		[DataMember]
 		public MethodDescription[] Methods { get; set; }
+
+		IReadOnlyList<PropertyDescription> ITypeDescription.Properties => Properties;
+
+		IReadOnlyList<FieldDescription> ITypeDescription.Fields => Fields;
+
+		IReadOnlyList<MethodDescription> ITypeDescription.Methods => Methods;
 
 		/// <summary>
 		///     Creates a new description for the given type.
@@ -82,7 +76,6 @@ namespace SharpRemote
 		/// <param name="type"></param>
 		/// <param name="typesByAssemblyQualifiedName"></param>
 		/// <returns></returns>
-		[Pure]
 		public static TypeDescription Create(Type type, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
 		{
 			if (type == null)

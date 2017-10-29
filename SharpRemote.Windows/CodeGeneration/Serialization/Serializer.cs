@@ -321,7 +321,7 @@ namespace SharpRemote
 			Action loadRemotingEndPoint = () => gen.Emit(OpCodes.Ldarg_2);
 
 			MethodInfo method;
-			if (IsSingleton(typeInformation, out method))
+			if (IsSingleton(typeInformation.Type, out method))
 			{
 				EmitReadSingleton(gen, method);
 			}
@@ -453,7 +453,7 @@ namespace SharpRemote
 			Action loadRemotingEndPoint = () => gen.Emit(OpCodes.Ldarg_3);
 
 			MethodInfo method;
-			if (IsSingleton(typeInformation, out method))
+			if (IsSingleton(typeInformation.Type, out method))
 			{
 				// Nothing to do, all possible instance information has already been written....
 			}
@@ -639,6 +639,15 @@ namespace SharpRemote
 
 			if (type.GetRealCustomAttribute<ByReferenceAttribute>(true) != null)
 			{
+				// Before we accept that this type is ByReference, we should
+				// verify that no other constraints are broken (such as also being
+				// a singleton type).
+				MethodInfo unused;
+				if (IsSingleton(type, out unused))
+				{
+					return type;
+				}
+
 				return FindProxyInterface(type);
 			}
 

@@ -121,6 +121,7 @@
     <Compile Include="Types\Classes\ReturnsTask.cs" />
     <Compile Include="Types\Classes\ReturnsTree.cs" />
     <Compile Include="Types\Classes\Singleton2.cs" />
+    <Compile Include="Types\Classes\SingletonByReference.cs" />
     <Compile Include="Types\Classes\SingletonWithAfterDeserializeCallback.cs" />
     <Compile Include="Types\Classes\SingletonWithAfterSerializeCallback.cs" />
     <Compile Include="Types\Classes\SingletonWithBeforeDeserializeCallback.cs" />

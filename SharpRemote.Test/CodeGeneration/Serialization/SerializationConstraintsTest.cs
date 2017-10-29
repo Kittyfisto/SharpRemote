@@ -373,5 +373,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		#endregion
+
+		#region Singletons with ByReference not allowed
+
+		[Test]
+		public void TestSingletonsWithByReferenceNotAllowed()
+		{
+			TestFailRegister<SingletonByReference>(
+				"The type 'SharpRemote.Test.Types.Classes.SingletonByReference' both has a method marked with the SingletonFactoryMethod attribute and also implements an interface 'SharpRemote.Test.Types.Interfaces.IByReferenceType' which has the ByReference attribute: This is not allowed; they are mutually exclusive");
+		}
+
+		#endregion
 	}
 }

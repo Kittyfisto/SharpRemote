@@ -37,7 +37,15 @@ namespace SharpRemote
 				    .ToList();
 
 				if (factories.Count == 0)
-					return false;
+				{
+					factories = type.GetProperties()
+						.Where(x => x.GetCustomAttribute<SingletonFactoryMethodAttribute>() != null)
+						.Select(x => x.GetMethod)
+						.ToList();
+
+					if (factories.Count == 0)
+						return false;
+				}
 
 				if (factories.Count > 1)
 					throw new ArgumentException(string.Format("The type '{0}' has more than one singleton factory - this is not allowed", type));

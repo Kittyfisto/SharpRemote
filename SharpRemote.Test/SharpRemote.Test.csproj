@@ -112,6 +112,7 @@
     <Compile Include="Types\Classes\GenericAfterSerializeCallback.cs" />
     <Compile Include="Types\Classes\GenericBeforeDeserializeCallback.cs" />
     <Compile Include="Types\Classes\GenericBeforeSerializeCallback.cs" />
+    <Compile Include="Types\Classes\ISingleton.cs" />
     <Compile Include="Types\Classes\NonPublicAfterDeserializeCallback.cs" />
     <Compile Include="Types\Classes\NonPublicAfterSerializeCallback.cs" />
     <Compile Include="Types\Classes\NonPublicBeforeDeserializeCallback.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="Types\Classes\ReturnsPid.cs" />
     <Compile Include="Types\Classes\ReturnsTask.cs" />
     <Compile Include="Types\Classes\ReturnsTree.cs" />
+    <Compile Include="Types\Classes\Singleton2.cs" />
     <Compile Include="Types\Classes\SingletonWithAfterDeserializeCallback.cs" />
     <Compile Include="Types\Classes\SingletonWithAfterSerializeCallback.cs" />
     <Compile Include="Types\Classes\SingletonWithBeforeDeserializeCallback.cs" />

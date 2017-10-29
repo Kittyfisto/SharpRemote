@@ -204,20 +204,27 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestSingleton()
+		public void TestSingleton1()
 		{
-			_serializer.RegisterSingleton<Singleton>(typeof (Singleton).GetProperty("Instance").GetMethod);
-			_serializer.ShouldRoundtrip(Singleton.Instance);
+			_serializer.ShouldRoundtrip(Singleton.GetInstance());
 			_serializer.ShouldRoundtripEnumeration(new[]
 				{
 					null,
-					Singleton.Instance
+					Singleton.GetInstance()
 				});
 			_serializer.ShouldRoundtrip(new ClassWithSingleton());
 			_serializer.ShouldRoundtrip(new ClassWithSingleton
 				{
-					That = Singleton.Instance
+					That = Singleton.GetInstance()
 				});
+		}
+
+		[Test]
+		public void TestSingleton2()
+		{
+			var values = _serializer.Roundtrip(new ISingleton[] { Singleton2.Instance});
+			values.Should().HaveCount(1);
+			values[0].Should().BeSameAs(Singleton2.Instance);
 		}
 
 		[Test]

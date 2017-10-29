@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace SharpRemote
@@ -11,15 +10,6 @@ namespace SharpRemote
 	/// </summary>
 	public interface ISerializer
 	{
-		/// <summary>
-		/// Registers the given type to be a singleton.
-		/// The given method is used to retrieve the instance again upon deserialization
-		/// and must have a signature of static T().
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="getSingleton"></param>
-		void RegisterSingleton<T>(MethodInfo getSingleton);
-
 		/// <summary>
 		/// Registers the given type <typeparamref name="T"/> with this serializer.
 		/// </summary>

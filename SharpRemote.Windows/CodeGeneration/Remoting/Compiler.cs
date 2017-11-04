@@ -20,7 +20,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 
 		protected Compiler(Serializer serializer, Type interfaceType)
 		{
-			if (interfaceType == null) throw new ArgumentNullException("interfaceType");
+			if (interfaceType == null) throw new ArgumentNullException(nameof(interfaceType));
 
 			SerializerCompiler = serializer;
 			InterfaceType = interfaceType;

@@ -28,8 +28,8 @@ namespace SharpRemote.Watchdog
 
 		public ApplicationInstaller(IInternalWatchdog watchdog, ApplicationDescriptor descriptor, Installation installation = Installation.FailOnUpgrade)
 		{
-			if (watchdog == null) throw new ArgumentNullException("watchdog");
-			if (descriptor == null) throw new ArgumentNullException("descriptor");
+			if (watchdog == null) throw new ArgumentNullException(nameof(watchdog));
+			if (descriptor == null) throw new ArgumentNullException(nameof(descriptor));
 			if (descriptor.Name == null) throw new ArgumentNullException("descriptor.Name");
 
 			_blockBuffer = new byte[BlockSize];

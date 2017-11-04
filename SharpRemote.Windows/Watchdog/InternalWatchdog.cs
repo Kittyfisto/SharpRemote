@@ -39,7 +39,7 @@ namespace SharpRemote.Watchdog
 
 		public InternalWatchdog(IIsolatedStorage storage)
 		{
-			if (storage == null) throw new ArgumentNullException("storage");
+			if (storage == null) throw new ArgumentNullException(nameof(storage));
 
 			_syncRoot = new object();
 
@@ -294,7 +294,7 @@ namespace SharpRemote.Watchdog
 							break;
 
 						default:
-							throw new InvalidEnumArgumentException("installation", (int) installation, typeof (Installation));
+							throw new InvalidEnumArgumentException(nameof(installation), (int) installation, typeof (Installation));
 					}
 				}
 				else

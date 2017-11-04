@@ -90,12 +90,12 @@ namespace SharpRemote
 		                        ConnectionId connectionId,
 		                        EndPoint remoteEndPoint)
 		{
-			if (heartbeat == null) throw new ArgumentNullException("heartbeat");
-			if (debugger == null) throw new ArgumentNullException("debugger");
-			if (heartBeatInterval < TimeSpan.Zero) throw new ArgumentOutOfRangeException("heartBeatInterval");
-			if (failureThreshold < 1) throw new ArgumentOutOfRangeException("failureThreshold");
+			if (heartbeat == null) throw new ArgumentNullException(nameof(heartbeat));
+			if (debugger == null) throw new ArgumentNullException(nameof(debugger));
+			if (heartBeatInterval < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(heartBeatInterval));
+			if (failureThreshold < 1) throw new ArgumentOutOfRangeException(nameof(failureThreshold));
 			if (connectionId == ConnectionId.None) throw new ArgumentException("connectionId");
-			if (remoteEndPoint == null) throw new ArgumentNullException("remoteEndPoint");
+			if (remoteEndPoint == null) throw new ArgumentNullException(nameof(remoteEndPoint));
 
 			_syncRoot = new object();
 			_heartbeat = heartbeat;

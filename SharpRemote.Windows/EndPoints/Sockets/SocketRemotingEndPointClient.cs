@@ -108,10 +108,10 @@ namespace SharpRemote
 		/// </exception>
 		public bool TryConnect(IPEndPoint endPoint, TimeSpan timeout)
 		{
-			if (endPoint == null) throw new ArgumentNullException("endPoint");
+			if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
 			if (Equals(endPoint, LocalEndPoint))
-				throw new ArgumentException("An endPoint cannot be connected to itself", "endPoint");
-			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+				throw new ArgumentException("An endPoint cannot be connected to itself", nameof(endPoint));
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
 			if (IsConnected)
 				throw new InvalidOperationException(
 					"This endPoint is already connected to another endPoint and cannot establish any more connections");
@@ -141,10 +141,10 @@ namespace SharpRemote
 			out Exception exception,
 			out ConnectionId connectionId)
 		{
-			if (endPoint == null) throw new ArgumentNullException("endPoint");
+			if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
 			if (Equals(endPoint, LocalEndPoint))
-				throw new ArgumentException("An endPoint cannot be connected to itself", "endPoint");
-			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+				throw new ArgumentException("An endPoint cannot be connected to itself", nameof(endPoint));
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
 			if (IsConnected)
 				throw new InvalidOperationException(
 					"This endPoint is already connected to another endPoint and cannot establish any more connections");
@@ -258,9 +258,9 @@ namespace SharpRemote
 
 		private bool TryConnect(string endPointName, TimeSpan timeout, out Exception exception, out ConnectionId connectionId)
 		{
-			if (endPointName == null) throw new ArgumentNullException("endPointName");
+			if (endPointName == null) throw new ArgumentNullException(nameof(endPointName));
 			if (endPointName == "") throw new ArgumentException("endPointName");
-			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
 			if (_networkServiceDiscoverer == null) throw new InvalidOperationException("No discoverer was specified when creating this client and thus network service discovery by name is not possible");
 
 			var results = _networkServiceDiscoverer.FindServices(endPointName);
@@ -312,8 +312,8 @@ namespace SharpRemote
 		/// </exception>
 		public ConnectionId Connect(string endPointName, TimeSpan timeout)
 		{
-			if (endPointName == null) throw new ArgumentNullException("endPointName");
-			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+			if (endPointName == null) throw new ArgumentNullException(nameof(endPointName));
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
 			if (_networkServiceDiscoverer == null) throw new InvalidOperationException("No discoverer was specified when creating this client and thus network service discovery by name is not possible");
 
 			var results = _networkServiceDiscoverer.FindServices(endPointName);

@@ -30,8 +30,8 @@ namespace SharpRemote.CodeGeneration.Remoting
 		                       Type interfaceType)
 			: base(serializer, interfaceType)
 		{
-			if (module == null) throw new ArgumentNullException("module");
-			if (subjectTypeName == null) throw new ArgumentNullException("subjectTypeName");
+			if (module == null) throw new ArgumentNullException(nameof(module));
+			if (subjectTypeName == null) throw new ArgumentNullException(nameof(subjectTypeName));
 
 			_module = module;
 

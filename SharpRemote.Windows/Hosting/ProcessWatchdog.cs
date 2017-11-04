@@ -65,7 +65,7 @@ namespace SharpRemote.Hosting
 			TimeSpan? processReadyTimeout = null
 			)
 		{
-			if (process == null) throw new ArgumentNullException("process");
+			if (process == null) throw new ArgumentNullException(nameof(process));
 			if (string.IsNullOrWhiteSpace(process)) throw new ArgumentException("process");
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 				throw new ArgumentException("postMortemSettings");

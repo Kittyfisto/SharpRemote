@@ -46,9 +46,9 @@ namespace SharpRemote
 			bool performLatencyMeasurements
 			)
 		{
-			if (latencyGrain == null) throw new ArgumentNullException("latencyGrain");
-			if (interval < TimeSpan.Zero) throw new ArgumentOutOfRangeException("interval", "A positive interval must be given");
-			if (numSamples < 1) throw new ArgumentOutOfRangeException("numSamples", "1 or more samples must be specified");
+			if (latencyGrain == null) throw new ArgumentNullException(nameof(latencyGrain));
+			if (interval < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(interval), "A positive interval must be given");
+			if (numSamples < 1) throw new ArgumentOutOfRangeException(nameof(numSamples), "1 or more samples must be specified");
 
 			_syncRoot = new object();
 			_interval = interval;

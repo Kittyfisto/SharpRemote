@@ -86,12 +86,12 @@ namespace SharpRemote
 		/// <exception cref="InvalidOperationException"></exception>
 		public bool TryConnect(NamedPipeEndPoint endPoint, TimeSpan timeout, out Exception exception, out ConnectionId connectionId)
 		{
-			if (endPoint == null) throw new ArgumentNullException("endPoint");
+			if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
 			if (Equals(endPoint, LocalEndPoint))
-				throw new ArgumentException("An endPoint cannot be connected to itself", "endPoint");
+				throw new ArgumentException("An endPoint cannot be connected to itself", nameof(endPoint));
 			if (endPoint.Type != NamedPipeEndPoint.PipeType.Server)
-				throw new ArgumentException("An endpoint can only establish a connection with a server-side enpoint", "endPoint");
-			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException("timeout");
+				throw new ArgumentException("An endpoint can only establish a connection with a server-side enpoint", nameof(endPoint));
+			if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
 			if (IsConnected)
 				throw new InvalidOperationException(
 					"This endPoint is already connected to another endPoint and cannot establish any more connections");

@@ -121,7 +121,7 @@ namespace SharpRemote
 		{
 			if (key == null)
 			{
-				throw new ArgumentNullException("key");
+				throw new ArgumentNullException(nameof(key));
 			}
 
 			if (_buckets != null)
@@ -142,7 +142,7 @@ namespace SharpRemote
 		private void Insert(TKey key, TValue value, bool add)
 		{
 			if (key == null)
-				throw new ArgumentNullException("key");
+				throw new ArgumentNullException(nameof(key));
 
 			//if (_buckets == null) Initialize(0);
 			var hashCode = key.GetHashCode() & HashCodeMask;
@@ -284,7 +284,7 @@ namespace SharpRemote
 		{
 			if (key == null)
 			{
-				throw new ArgumentNullException("key");
+				throw new ArgumentNullException(nameof(key));
 			}
 
 			if (_buckets != null)

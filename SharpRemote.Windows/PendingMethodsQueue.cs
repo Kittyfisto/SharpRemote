@@ -34,7 +34,7 @@ namespace SharpRemote
 		public PendingMethodsQueue(string endPointName = "", int maxConcurrentCalls = 2000)
 		{
 			if (maxConcurrentCalls < 0)
-				throw new ArgumentOutOfRangeException("maxConcurrentCalls");
+				throw new ArgumentOutOfRangeException(nameof(maxConcurrentCalls));
 
 			_endPointName = endPointName;
 			_maxConcurrentCalls = maxConcurrentCalls;

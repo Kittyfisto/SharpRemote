@@ -27,9 +27,9 @@ namespace SharpRemote
 		public Heartbeat(IDebugger debugger, IRemotingEndPoint endPoint)
 		{
 			if (debugger == null)
-				throw new ArgumentNullException("debugger");
+				throw new ArgumentNullException(nameof(debugger));
 			if (endPoint == null)
-				throw new ArgumentNullException("endPoint");
+				throw new ArgumentNullException(nameof(endPoint));
 
 			_debugger = debugger;
 			_endPoint = endPoint;

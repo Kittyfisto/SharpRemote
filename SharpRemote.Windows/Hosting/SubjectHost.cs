@@ -35,8 +35,8 @@ namespace SharpRemote.Hosting
 			Action onDisposed = null,
 			ITypeResolver customTypeResolver = null)
 		{
-			if (endpoint == null) throw new ArgumentNullException("endpoint");
-			if (registry == null) throw new ArgumentNullException("registry");
+			if (endpoint == null) throw new ArgumentNullException(nameof(endpoint));
+			if (registry == null) throw new ArgumentNullException(nameof(registry));
 
 			_registry = registry;
 			_customTypeResolver = customTypeResolver;

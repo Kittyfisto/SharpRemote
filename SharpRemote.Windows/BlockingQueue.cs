@@ -19,7 +19,7 @@ namespace SharpRemote
 		public BlockingQueue(int maximumCapacity)
 		{
 			if (maximumCapacity <= 0)
-				throw new ArgumentOutOfRangeException("maximumCapacity", "maximumCapacity must be greater than 0");
+				throw new ArgumentOutOfRangeException(nameof(maximumCapacity), "maximumCapacity must be greater than 0");
 
 			_syncRoot = new object();
 			_values = new T[maximumCapacity];

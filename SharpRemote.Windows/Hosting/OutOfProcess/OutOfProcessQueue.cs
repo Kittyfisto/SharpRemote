@@ -56,13 +56,13 @@ namespace SharpRemote.Hosting.OutOfProcess
 			)
 		{
 			if (process == null)
-				throw new ArgumentNullException("process");
+				throw new ArgumentNullException(nameof(process));
 			if (endPoint == null)
-				throw new ArgumentNullException("endPoint");
+				throw new ArgumentNullException(nameof(endPoint));
 			if (failureHandler == null)
-				throw new ArgumentNullException("failureHandler");
+				throw new ArgumentNullException(nameof(failureHandler));
 			if (failureSettings == null)
-				throw new ArgumentNullException("failureSettings");
+				throw new ArgumentNullException(nameof(failureSettings));
 
 			_syncRoot = new object();
 

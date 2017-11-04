@@ -64,7 +64,7 @@ namespace SharpRemote
 		/// <param name="ep"></param>
 		public void Bind(IPEndPoint ep)
 		{
-			if (ep == null) throw new ArgumentNullException("ep");
+			if (ep == null) throw new ArgumentNullException(nameof(ep));
 
 			var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
 				{
@@ -82,7 +82,7 @@ namespace SharpRemote
 		/// <param name="localAddress"></param>
 		public void Bind(IPAddress localAddress)
 		{
-			if (localAddress == null) throw new ArgumentNullException("localAddress");
+			if (localAddress == null) throw new ArgumentNullException(nameof(localAddress));
 			if (IsConnected)
 				throw new InvalidOperationException("A socket may only bound to a particular port when its not already connected");
 

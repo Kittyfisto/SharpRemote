@@ -44,7 +44,7 @@ namespace SharpRemote.Watchdog
 		/// <exception cref="ArgumentNullException">When description.Name is null</exception>
 		public InstalledApplication(ApplicationDescriptor description)
 		{
-			if (description == null) throw new ArgumentNullException("description");
+			if (description == null) throw new ArgumentNullException(nameof(description));
 // ReSharper disable NotResolvedInText
 			if (description.Name == null) throw new ArgumentNullException("description.Name");
 // ReSharper restore NotResolvedInText

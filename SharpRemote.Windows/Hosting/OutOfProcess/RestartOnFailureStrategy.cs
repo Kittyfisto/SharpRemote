@@ -32,7 +32,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		public RestartOnFailureStrategy(int startFailureThreshold = 10)
 		{
 			if (startFailureThreshold < 0)
-				throw new ArgumentOutOfRangeException("startFailureThreshold");
+				throw new ArgumentOutOfRangeException(nameof(startFailureThreshold));
 
 			_baseWaitTime = TimeSpan.FromMilliseconds(10);
 			_startFailureThreshold = startFailureThreshold;

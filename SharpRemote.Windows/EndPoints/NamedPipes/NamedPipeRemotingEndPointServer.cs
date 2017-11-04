@@ -58,7 +58,7 @@ namespace SharpRemote
 		/// <param name="endPoint"></param>
 		public void Bind(NamedPipeEndPoint endPoint)
 		{
-			if (endPoint == null) throw new ArgumentNullException("endPoint");
+			if (endPoint == null) throw new ArgumentNullException(nameof(endPoint));
 			if (LocalEndPoint != null)
 				throw new InvalidOperationException("This endpoint is already bound");
 

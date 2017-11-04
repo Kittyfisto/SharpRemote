@@ -54,21 +54,10 @@ namespace SharpRemote
 		/// <returns></returns>
 		public static FieldDescription Create(FieldInfo field, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
 		{
-			var fieldType = field.FieldType;
-			var fieldTypeName = fieldType.AssemblyQualifiedName;
-			TypeDescription type = null;
-			if (fieldTypeName != null)
-				if (!typesByAssemblyQualifiedName.TryGetValue(fieldTypeName, out type))
-				{
-					// The ctor add itself the given dictionary, so we don't have to add it ourselves
-					// (It needs to be this way because a type is allowed to reference itself).
-					type = TypeDescription.Create(fieldType, typesByAssemblyQualifiedName);
-				}
-
 			return new FieldDescription
 			{
 				Name = field.Name,
-				FieldType = type
+				FieldType = TypeDescription.GetOrCreate(field.FieldType, typesByAssemblyQualifiedName)
 			};
 		}
 	}

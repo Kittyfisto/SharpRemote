@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -59,6 +60,28 @@ namespace SharpRemote
 		public override string ToString()
 		{
 			return string.Format("{0} {1}", _parameterType, Name);
+		}
+
+		/// <summary>
+		///     Creates a new parameter description for the given type.
+		/// </summary>
+		/// <param name="parameter"></param>
+		/// <param name="typesByAssemblyQualifiedName"></param>
+		/// <returns></returns>
+		public static ParameterDescription Create(ParameterInfo parameter,
+		                                          IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
+		{
+			var description = new ParameterDescription
+			{
+				Name = parameter.Name,
+				IsIn = parameter.IsIn,
+				IsOut = parameter.IsOut,
+				IsRetval = parameter.IsRetval,
+				Position = parameter.Position,
+				ParameterType = TypeDescription.GetOrCreate(parameter.ParameterType, typesByAssemblyQualifiedName)
+			};
+
+			return description;
 		}
 	}
 }

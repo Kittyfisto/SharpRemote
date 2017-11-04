@@ -15,6 +15,18 @@ namespace SharpRemote
 		ITypeDescription PropertyType { get; }
 
 		/// <summary>
+		///     The method through which the value of this property can be accessed.
+		///     Equivalent of <see cref="PropertyInfo.GetMethod" />.
+		/// </summary>
+		IMethodDescription GetMethod { get; }
+
+		/// <summary>
+		///     The method through which the value of this property can be changed.
+		///     Equivalent of <see cref="PropertyInfo.SetMethod" />.
+		/// </summary>
+		IMethodDescription SetMethod { get; }
+
+		/// <summary>
 		///     The equivalent of <see cref="MemberInfo.Name" />.
 		/// </summary>
 		string Name { get; }

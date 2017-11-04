@@ -47,6 +47,12 @@ namespace SharpRemote
 		bool IsSealed { get; }
 
 		/// <summary>
+		///     The type doesn't strictly adhere to the rules of its <see cref="SerializationType" />,
+		///     however it's part of the .NET framework and thus serialization methods have been built-in.
+		/// </summary>
+		bool IsBuiltIn { get; }
+
+		/// <summary>
 		///     The list of public non-static properties with the <see cref="DataMemberAttribute" />.
 		/// </summary>
 		IReadOnlyList<IPropertyDescription> Properties { get; }

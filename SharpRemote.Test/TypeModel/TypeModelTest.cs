@@ -4,6 +4,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Structs;
 using System.Collections.Generic;
+using SharpRemote.Test.Types.Interfaces;
 
 namespace SharpRemote.Test.TypeModel
 {
@@ -39,7 +40,8 @@ namespace SharpRemote.Test.TypeModel
 			typeof(long),
 			typeof(float),
 			typeof(double),
-			typeof(string)
+			typeof(string),
+			typeof(decimal)
 			// TODO: Add all other built in types
 			// typeof(IpAddress)
 		};
@@ -49,16 +51,22 @@ namespace SharpRemote.Test.TypeModel
 		{
 			var model = new SharpRemote.TypeModel();
 			var description = model.Add(type);
-			description.SerializationType.Should().Be(SerializationType.BuiltIn);
+			description.SerializationType.Should().Be(SerializationType.ByValue);
+			description.IsBuiltIn.Should().BeTrue();
+			description.IsClass.Should().Be(type.IsClass);
+			description.IsSealed.Should().Be(type.IsSealed);
+			description.IsEnum.Should().Be(type.IsEnum);
+			description.IsInterface.Should().Be(type.IsInterface);
+			description.IsValueType.Should().Be(type.IsValueType);
 		}
 
 		[Test]
-		public void TestFields1()
+		public void TestFieldStruct()
 		{
 			var model = new SharpRemote.TypeModel();
 			var type = model.Add<FieldStruct>();
 			type.AssemblyQualifiedName.Should().Be(typeof(FieldStruct).AssemblyQualifiedName);
-			type.SerializationType.Should().Be(SerializationType.DataContract);
+			type.SerializationType.Should().Be(SerializationType.ByValue);
 			type.Properties.Should().BeEmpty("because the type doesn't have any properties");
 			type.Methods.Should().BeEmpty("because the methods of DataContract types are uninteresting");
 			type.IsClass.Should().BeFalse("because the type is a struct");
@@ -71,14 +79,20 @@ namespace SharpRemote.Test.TypeModel
 			var field1 = type.Fields[0];
 			field1.Name.Should().Be(nameof(FieldStruct.A));
 			field1.FieldType.AssemblyQualifiedName.Should().Be(typeof(double).AssemblyQualifiedName);
+			field1.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
+			field1.FieldType.IsBuiltIn.Should().BeTrue();
 
 			var field2 = type.Fields[1];
 			field2.Name.Should().Be(nameof(FieldStruct.B));
 			field2.FieldType.AssemblyQualifiedName.Should().Be(typeof(int).AssemblyQualifiedName);
+			field2.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
+			field2.FieldType.IsBuiltIn.Should().BeTrue();
 
 			var field3 = type.Fields[2];
 			field3.Name.Should().Be(nameof(FieldStruct.C));
 			field3.FieldType.AssemblyQualifiedName.Should().Be(typeof(string).AssemblyQualifiedName);
+			field3.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
+			field3.FieldType.IsBuiltIn.Should().BeTrue();
 
 			model.Types.Should().BeEquivalentTo(new object[]
 			{
@@ -87,6 +101,54 @@ namespace SharpRemote.Test.TypeModel
 				field2.FieldType, //< int
 				field3.FieldType //< string
 			});
+		}
+
+		[Test]
+		public void TestFieldDecimal()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<FieldDecimal>();
+			type.AssemblyQualifiedName.Should().Be(typeof(FieldDecimal).AssemblyQualifiedName);
+			type.SerializationType.Should().Be(SerializationType.ByValue);
+			type.Properties.Should().BeEmpty("because the type doesn't have any properties");
+			type.Methods.Should().BeEmpty("because the methods of DataContract types are uninteresting");
+			type.IsClass.Should().BeFalse("because the type is a struct");
+			type.IsEnum.Should().BeFalse("because the type is a struct");
+			type.IsValueType.Should().BeTrue("because the type is a struct");
+			type.IsInterface.Should().BeFalse("because the type is a struct");
+			type.IsSealed.Should().BeTrue("because structs are always sealed");
+			type.Fields.Should().HaveCount(1);
+			var field = type.Fields[0];
+			field.Name.Should().Be("Value");
+			field.FieldType.AssemblyQualifiedName.Should().Be(typeof(decimal).AssemblyQualifiedName);
+			field.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
+			field.FieldType.IsBuiltIn.Should().BeTrue();
+		}
+
+		[Test]
+		public void TestByReferenceType()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<IByReferenceType>();
+			type.AssemblyQualifiedName.Should().Be(typeof(IByReferenceType).AssemblyQualifiedName);
+			type.SerializationType.Should().Be(SerializationType.ByReference);
+			type.IsClass.Should().BeFalse();
+			type.IsBuiltIn.Should().BeFalse();
+			type.IsEnum.Should().BeFalse();
+			type.IsInterface.Should().BeTrue();
+			type.IsSealed.Should().BeFalse();
+			type.IsValueType.Should().BeFalse();
+			type.Fields.Should().BeEmpty("because by reference types cannot have fields");
+			type.Methods.Should().BeEmpty("because special methods can only be accessed via their property");
+
+			type.Properties.Should().HaveCount(1);
+			var property = type.Properties[0];
+			property.Name.Should().Be("Value");
+			property.GetMethod.Should().NotBeNull();
+			property.GetMethod.Name.Should().Be("get_Value");
+			property.GetMethod.ReturnParameter.Should().NotBeNull();
+			property.SetMethod.Should().BeNull();
+			property.PropertyType.AssemblyQualifiedName.Should().Be(typeof(int).AssemblyQualifiedName);
 		}
 	}
 }

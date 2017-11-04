@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -37,11 +38,28 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public override string ToString()
 		{
-			return string.Format("{0} {1}({2})", ReturnParameter, Name, string.Join(", ", (IEnumerable<ParameterDescription>)Parameters));
+			var parameters = Parameters ?? Enumerable.Empty<ParameterDescription>();
+			return string.Format("{0} {1}({2})", ReturnParameter, Name, string.Join(", ", parameters));
 		}
 
 		IParameterDescription IMethodDescription.ReturnParameter => ReturnParameter;
 		ITypeDescription IMethodDescription.ReturnType => ReturnType;
 		IReadOnlyList<IParameterDescription> IMethodDescription.Parameters => Parameters;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="methodInfo"></param>
+		/// <param name="typesByAssemblyQualifiedName"></param>
+		/// <returns></returns>
+		public static MethodDescription Create(MethodInfo methodInfo, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
+		{
+			var description = new MethodDescription
+			{
+				Name = methodInfo.Name,
+				ReturnParameter = ParameterDescription.Create(methodInfo.ReturnParameter, typesByAssemblyQualifiedName)
+			};
+			return description;
+		}
 	}
 }

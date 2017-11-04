@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -36,6 +37,14 @@ namespace SharpRemote
 
 		/// <inheritdoc />
 		[DataMember]
+		public IMethodDescription GetMethod { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
+		public IMethodDescription SetMethod { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
 		public string Name { get; set; }
 
 		ITypeDescription IPropertyDescription.PropertyType => _propertyType;
@@ -43,7 +52,14 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public override string ToString()
 		{
-			return string.Format("{0} {1} {{ get; set; }}", PropertyType, Name);
+			var builder = new StringBuilder();
+			builder.AppendFormat("{0} {1} {{ ", PropertyType, Name);
+			if (GetMethod != null)
+				builder.Append("get; ");
+			if (SetMethod != null)
+				builder.Append("set; ");
+			builder.Append("}}");
+			return builder.ToString();
 		}
 
 		/// <summary>
@@ -54,21 +70,12 @@ namespace SharpRemote
 		/// <returns></returns>
 		public static PropertyDescription Create(PropertyInfo property, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
 		{
-			var propertyType = property.PropertyType;
-			var propertyTypeName = propertyType.AssemblyQualifiedName;
-			TypeDescription type = null;
-			if (propertyTypeName != null)
-				if (!typesByAssemblyQualifiedName.TryGetValue(propertyTypeName, out type))
-				{
-					// The ctor add itself the given dictionary, so we don't have to add it ourselves
-					// (It needs to be this way because a type is allowed to reference itself).
-					type = TypeDescription.Create(propertyType, typesByAssemblyQualifiedName);
-				}
-
 			return new PropertyDescription
 			{
 				Name = property.Name,
-				PropertyType = type
+				PropertyType = TypeDescription.GetOrCreate(property.PropertyType, typesByAssemblyQualifiedName),
+				GetMethod = property.GetMethod != null ? MethodDescription.Create(property.GetMethod, typesByAssemblyQualifiedName) : null,
+				SetMethod = property.SetMethod != null ? MethodDescription.Create(property.SetMethod, typesByAssemblyQualifiedName) : null
 			};
 		}
 	}

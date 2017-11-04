@@ -12,7 +12,7 @@ namespace SharpRemote
 		/// <summary>
 		///     The type of this field, equivalent of <see cref="FieldInfo.FieldType" />.
 		/// </summary>
-		TypeDescription FieldType { get; }
+		ITypeDescription FieldType { get; }
 
 		/// <summary>
 		///     The equivalent of <see cref="MemberInfo.Name" />.

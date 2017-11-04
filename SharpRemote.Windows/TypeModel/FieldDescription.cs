@@ -21,7 +21,9 @@ namespace SharpRemote
 		[DataMember]
 		public int FieldTypeId { get; set; }
 
-		/// <inheritdoc />
+		/// <summary>
+		///     The type of this field, equivalent of <see cref="FieldInfo.FieldType" />.
+		/// </summary>
 		public TypeDescription FieldType
 		{
 			get { return _fieldType; }
@@ -35,6 +37,14 @@ namespace SharpRemote
 		/// <inheritdoc />
 		[DataMember]
 		public string Name { get; set; }
+
+		ITypeDescription IFieldDescription.FieldType => _fieldType;
+
+		/// <inheritdoc />
+		public override string ToString()
+		{
+			return string.Format("{0} {1};", _fieldType, Name);
+		}
 
 		/// <summary>
 		///     Creates a new description for the given field.
@@ -50,8 +60,9 @@ namespace SharpRemote
 			if (fieldTypeName != null)
 				if (!typesByAssemblyQualifiedName.TryGetValue(fieldTypeName, out type))
 				{
+					// The ctor add itself the given dictionary, so we don't have to add it ourselves
+					// (It needs to be this way because a type is allowed to reference itself).
 					type = TypeDescription.Create(fieldType, typesByAssemblyQualifiedName);
-					typesByAssemblyQualifiedName.Add(fieldTypeName, type);
 				}
 
 			return new FieldDescription

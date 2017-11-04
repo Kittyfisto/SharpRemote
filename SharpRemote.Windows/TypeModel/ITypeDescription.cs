@@ -42,18 +42,23 @@ namespace SharpRemote
 		bool IsValueType { get; }
 
 		/// <summary>
+		///     Equivalent of <see cref="Type.IsSealed" />.
+		/// </summary>
+		bool IsSealed { get; }
+
+		/// <summary>
 		///     The list of public non-static properties with the <see cref="DataMemberAttribute" />.
 		/// </summary>
-		IReadOnlyList<PropertyDescription> Properties { get; }
+		IReadOnlyList<IPropertyDescription> Properties { get; }
 
 		/// <summary>
 		///     The list of public non-static fields with the <see cref="DataMemberAttribute" />.
 		/// </summary>
-		IReadOnlyList<FieldDescription> Fields { get; }
+		IReadOnlyList<IFieldDescription> Fields { get; }
 
 		/// <summary>
 		/// The list of public non-static methods in case this is a <see cref="SharpRemote.SerializationType.ByReference"/> type.
 		/// </summary>
-		IReadOnlyList<MethodDescription> Methods { get; }
+		IReadOnlyList<IMethodDescription> Methods { get; }
 	}
 }

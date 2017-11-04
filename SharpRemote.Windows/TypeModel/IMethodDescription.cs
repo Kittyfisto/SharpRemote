@@ -11,18 +11,23 @@ namespace SharpRemote
 	public interface IMethodDescription
 	{
 		/// <summary>
+		///     The equivalent of <see cref="MemberInfo.Name" />.
+		/// </summary>
+		string Name { get; }
+
+		/// <summary>
 		///     The equivalent of <see cref="MethodInfo.ReturnParameter" />.
 		/// </summary>
-		ParameterDescription ReturnParameter { get; }
+		IParameterDescription ReturnParameter { get; }
 
 		/// <summary>
 		///     The equivalent of <see cref="MethodInfo.ReturnType" />.
 		/// </summary>
-		TypeDescription ReturnType { get; }
+		ITypeDescription ReturnType { get; }
 
 		/// <summary>
 		///     The equivalent of <see cref="MethodBase.GetParameters" />.
 		/// </summary>
-		IReadOnlyList<ParameterDescription> Parameters { get; }
+		IReadOnlyList<IParameterDescription> Parameters { get; }
 	}
 }

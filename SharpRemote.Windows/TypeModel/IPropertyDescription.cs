@@ -12,7 +12,7 @@ namespace SharpRemote
 		/// <summary>
 		///     The type of this property, equivalent of <see cref="PropertyInfo.PropertyType" />.
 		/// </summary>
-		TypeDescription PropertyType { get; }
+		ITypeDescription PropertyType { get; }
 
 		/// <summary>
 		///     The equivalent of <see cref="MemberInfo.Name" />.

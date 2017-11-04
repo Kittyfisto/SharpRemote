@@ -20,11 +20,9 @@ namespace SharpRemote
 		[DataMember]
 		public int ParameterTypeId { get; set; }
 
-		/// <inheritdoc />
-		[DataMember]
-		public string Name { get; set; }
-
-		/// <inheritdoc />
+		/// <summary>
+		///     The equivalent of <see cref="ParameterInfo.ParameterType" />.
+		/// </summary>
 		public TypeDescription ParameterType
 		{
 			get { return _parameterType; }
@@ -33,6 +31,34 @@ namespace SharpRemote
 				_parameterType = value;
 				ParameterTypeId = value?.Id ?? 0;
 			}
+		}
+
+		/// <inheritdoc />
+		[DataMember]
+		public string Name { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
+		public bool IsIn { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
+		public bool IsOut { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
+		public bool IsRetval { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
+		public int Position { get; set; }
+
+		ITypeDescription IParameterDescription.ParameterType => _parameterType;
+
+		/// <inheritdoc />
+		public override string ToString()
+		{
+			return string.Format("{0} {1}", _parameterType, Name);
 		}
 	}
 }

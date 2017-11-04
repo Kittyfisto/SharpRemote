@@ -15,9 +15,17 @@ namespace SharpRemote
 	{
 		/// <inheritdoc />
 		[DataMember]
+		public string Name { get; set; }
+
+		/// <summary>
+		///     The equivalent of <see cref="MethodInfo.ReturnParameter" />.
+		/// </summary>
+		[DataMember]
 		public ParameterDescription ReturnParameter { get; set; }
 
-		/// <inheritdoc />
+		/// <summary>
+		///     The equivalent of <see cref="MethodInfo.ReturnType" />.
+		/// </summary>
 		public TypeDescription ReturnType => ReturnParameter?.ParameterType;
 
 		/// <summary>
@@ -26,6 +34,14 @@ namespace SharpRemote
 		[DataMember]
 		public ParameterDescription[] Parameters { get; set; }
 
-		IReadOnlyList<ParameterDescription> IMethodDescription.Parameters => Parameters;
+		/// <inheritdoc />
+		public override string ToString()
+		{
+			return string.Format("{0} {1}({2})", ReturnParameter, Name, string.Join(", ", (IEnumerable<ParameterDescription>)Parameters));
+		}
+
+		IParameterDescription IMethodDescription.ReturnParameter => ReturnParameter;
+		ITypeDescription IMethodDescription.ReturnType => ReturnType;
+		IReadOnlyList<IParameterDescription> IMethodDescription.Parameters => Parameters;
 	}
 }

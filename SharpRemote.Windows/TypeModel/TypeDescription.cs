@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -15,6 +16,17 @@ namespace SharpRemote
 	public sealed class TypeDescription
 		: ITypeDescription
 	{
+		private static readonly HashSet<Type> BuiltInTypes;
+
+		static TypeDescription()
+		{
+			BuiltInTypes = new HashSet<Type>
+			{
+				typeof(void),
+				typeof(string)
+			};
+		}
+
 		/// <summary>
 		///     An id which differentiates this object amongst all others for the same
 		///     <see cref="TypeModel" />.
@@ -41,10 +53,14 @@ namespace SharpRemote
 		/// <inheritdoc />
 		[DataMember]
 		public bool IsInterface { get; set; }
-		
+
 		/// <inheritdoc />
 		[DataMember]
 		public bool IsValueType { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
+		public bool IsSealed { get; set; }
 
 		/// <summary>
 		///     The list of public non-static properties with the <see cref="DataMemberAttribute" />.
@@ -64,11 +80,17 @@ namespace SharpRemote
 		[DataMember]
 		public MethodDescription[] Methods { get; set; }
 
-		IReadOnlyList<PropertyDescription> ITypeDescription.Properties => Properties;
+		IReadOnlyList<IPropertyDescription> ITypeDescription.Properties => Properties;
 
-		IReadOnlyList<FieldDescription> ITypeDescription.Fields => Fields;
+		IReadOnlyList<IFieldDescription> ITypeDescription.Fields => Fields;
 
-		IReadOnlyList<MethodDescription> ITypeDescription.Methods => Methods;
+		IReadOnlyList<IMethodDescription> ITypeDescription.Methods => Methods;
+
+		/// <inheritdoc />
+		public override string ToString()
+		{
+			return string.Format("{0}", AssemblyQualifiedName);
+		}
 
 		/// <summary>
 		///     Creates a new description for the given type.
@@ -92,11 +114,48 @@ namespace SharpRemote
 
 			typesByAssemblyQualifiedName.Add(assemblyQualifiedName, description);
 
+			description.SerializationType = GetSerializationType(type);
+			description.IsValueType = type.IsValueType;
+			description.IsClass = type.IsClass;
+			description.IsInterface = type.IsInterface;
+			description.IsEnum = type.IsEnum;
+			description.IsSealed = type.IsSealed;
 			description.Fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
-				.Select(x => FieldDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
+			                         .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
+			                         .Select(x => FieldDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
 			description.Properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-				.Select(x => PropertyDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
+			                             .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
+			                             .Select(x => PropertyDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
+			description.Methods = new MethodDescription[0];
 			return description;
+		}
+
+		[Pure]
+		private static SerializationType GetSerializationType(Type type)
+		{
+			if (IsBuiltIn(type))
+			{
+				return SerializationType.BuiltIn;
+			}
+
+			var attr = type.GetCustomAttribute<DataContractAttribute>();
+			if (attr != null)
+			{
+				return SerializationType.DataContract;
+			}
+
+			throw new NotImplementedException();
+		}
+
+		private static bool IsBuiltIn(Type type)
+		{
+			if (type.IsPrimitive)
+				return true;
+
+			if (BuiltInTypes.Contains(type))
+				return true;
+
+			return false;
 		}
 	}
 }

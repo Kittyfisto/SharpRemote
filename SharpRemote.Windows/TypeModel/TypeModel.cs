@@ -46,9 +46,9 @@ namespace SharpRemote
 		///     Adds the given <typeparamref name="T" /> to this model.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		public void Add<T>()
+		public ITypeDescription Add<T>()
 		{
-			Add(typeof(T));
+			return Add(typeof(T));
 		}
 
 		/// <summary>
@@ -56,7 +56,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="type"></param>
 		/// <exception cref="ArgumentNullException">When <paramref name="type" /> is null</exception>
-		public void Add(Type type)
+		public ITypeDescription Add(Type type)
 		{
 			var typesByAssemblyQualifiedName = new Dictionary<string, TypeDescription>(_typesByAssemblyQualifiedName.Count);
 			foreach (var pair in _typesByAssemblyQualifiedName)
@@ -81,6 +81,7 @@ namespace SharpRemote
 					_types.Add(description);
 				}
 			}
+			return typeDescription;
 		}
 
 		private int GetNextId()

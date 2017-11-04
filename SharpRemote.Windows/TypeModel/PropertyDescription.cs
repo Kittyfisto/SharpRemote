@@ -21,7 +21,9 @@ namespace SharpRemote
 		[DataMember]
 		public int PropertyTypeId { get; set; }
 
-		/// <inheritdoc />
+		/// <summary>
+		///     The type of this property, equivalent of <see cref="PropertyInfo.PropertyType" />.
+		/// </summary>
 		public TypeDescription PropertyType
 		{
 			get { return _propertyType; }
@@ -35,6 +37,14 @@ namespace SharpRemote
 		/// <inheritdoc />
 		[DataMember]
 		public string Name { get; set; }
+
+		ITypeDescription IPropertyDescription.PropertyType => _propertyType;
+
+		/// <inheritdoc />
+		public override string ToString()
+		{
+			return string.Format("{0} {1} {{ get; set; }}", PropertyType, Name);
+		}
 
 		/// <summary>
 		///     Creates a new description for the given property.
@@ -50,8 +60,9 @@ namespace SharpRemote
 			if (propertyTypeName != null)
 				if (!typesByAssemblyQualifiedName.TryGetValue(propertyTypeName, out type))
 				{
+					// The ctor add itself the given dictionary, so we don't have to add it ourselves
+					// (It needs to be this way because a type is allowed to reference itself).
 					type = TypeDescription.Create(propertyType, typesByAssemblyQualifiedName);
-					typesByAssemblyQualifiedName.Add(propertyTypeName, type);
 				}
 
 			return new PropertyDescription

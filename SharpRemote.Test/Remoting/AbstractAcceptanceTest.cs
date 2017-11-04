@@ -1098,7 +1098,7 @@ namespace SharpRemote.Test.Remoting
 			 .Should().BeTrue("Because the event invocation shouldn't deadlock when executed asynchronously");
 
 			WaitFor(() => called, TimeSpan.FromSeconds(10))
-				.Should().BeTrue("Because the event handler should've been invoked well within one second");
+				.Should().BeTrue("Because the event handler should've been invoked well within 10 seconds");
 			actualMessage.Should().Be("Foobar");
 
 			// This line exists to FORCE the GC to NOT collect the subject, which

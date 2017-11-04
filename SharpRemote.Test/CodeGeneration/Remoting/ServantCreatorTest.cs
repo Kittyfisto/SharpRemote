@@ -103,6 +103,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			actualListener.Should()
 			              .BeSameAs(listener.Object, "because the compiled code should've retrieved the existing proxy by its id");
 			outStream.Length.Should().Be(0, "because nothing needed to be written to the outstream");
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]
@@ -135,6 +139,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 				        });
 			subject.Raise(x => x.Foobar += null, 42);
 			callRemoteMethodInvoked.Should().BeTrue();
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]
@@ -152,6 +160,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			outStream.Position = 0;
 			var reader = new BinaryReader(outStream);
 			reader.ReadDouble().Should().BeApproximately(Math.PI, 0);
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]
@@ -279,6 +291,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			servant.Invoke("Dispose", null, new BinaryWriter(new MemoryStream()));
 			disposed.Should().BeTrue();
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]
@@ -300,6 +316,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			output.Position = 0;
 			var reader = new BinaryReader(output);
 			reader.ReadInt32().Should().Be(42);
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]
@@ -317,6 +337,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			servant.Invoke("DoStuff", null, new BinaryWriter(new MemoryStream()));
 			innerTask.Should().NotBeNull();
 			innerTask.Status.Should().Be(TaskStatus.RanToCompletion);
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]
@@ -336,6 +360,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			servant.Invoke("Do", new BinaryReader(arguments), new BinaryWriter(new MemoryStream()));
 			actualType.Should().Be<string>();
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]
@@ -371,6 +399,10 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			servant.Invoke("CommitInstallation", new BinaryReader(arguments), new BinaryWriter(output));
 			output.Position = 0;
 			output.Length.Should().BeInRange(342, 344);
+
+			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
+			// we need to keep the subject alive.
+			GC.KeepAlive(subject.Object);
 		}
 	}
 }

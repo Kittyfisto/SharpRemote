@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.Serialization.Serializers
+namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 {
-	internal sealed class ByteArraySerializer
+	internal sealed class StringSerializer
 		: AbstractTypeSerializer
 	{
 		public override bool Supports(Type type)
 		{
-			return type == typeof (byte[]);
+			return type == typeof (string);
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
@@ -21,19 +21,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			Type type,
 			bool valueCanBeNull = true)
 		{
-			EmitWriteNullableValue(gen, loadWriter, loadValue, () =>
+			EmitWriteNullableValue(
+				gen,
+				loadWriter,
+				loadValue,
+				() =>
 				{
 					loadWriter();
 					loadValue();
-					gen.Emit(OpCodes.Ldlen);
-					gen.Emit(OpCodes.Conv_I4);
-					gen.Emit(OpCodes.Call, Methods.WriteInt32);
-
-					loadWriter();
-					loadValue();
-					gen.Emit(OpCodes.Call, Methods.WriteBytes);
+					gen.Emit(OpCodes.Call, Methods.WriteString);
 				},
-			                       valueCanBeNull);
+				valueCanBeNull);
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
@@ -44,14 +42,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
-			EmitReadNullableValue(gen, loadReader, () =>
-				{
-					loadReader();
-					loadReader();
-					gen.Emit(OpCodes.Call, Methods.ReadInt32);
-					gen.Emit(OpCodes.Call, Methods.ReadBytes);
-				},
-			                      valueCanBeNull);
+			EmitReadNullableValue(
+				gen,
+				loadReader,
+				() =>
+					{
+						loadReader();
+						gen.Emit(OpCodes.Call, Methods.ReadString);
+					},
+				valueCanBeNull);
 		}
 	}
 }

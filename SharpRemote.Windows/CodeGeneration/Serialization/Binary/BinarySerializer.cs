@@ -7,7 +7,7 @@ using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using System.Text;
 using SharpRemote.CodeGeneration;
-using SharpRemote.CodeGeneration.Serialization.Serializers;
+using SharpRemote.CodeGeneration.Serialization.Binary.Serializers;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote

@@ -1,4 +1,5 @@
-﻿namespace SharpRemote.CodeGeneration.Serialization
+﻿// ReSharper disable once CheckNamespace
+namespace SharpRemote
 {
 	/// <summary>
 	///     This enum is used while serializing a type that is attributed with the <see cref="ByReferenceAttribute" />.

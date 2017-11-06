@@ -56,8 +56,8 @@
     <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />
     <Compile Include="CodeGeneration\ICodeGenerator.cs" />
-    <Compile Include="CodeGeneration\Serialization\ByReferenceHint.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\DecimalSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\ByReferenceHint.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\DecimalSerializer.cs" />
     <Compile Include="Diagnostics\Debugger.cs" />
     <Compile Include="Diagnostics\IDebugger.cs" />
     <Compile Include="ConnectionId.cs" />
@@ -111,32 +111,32 @@
     <Compile Include="ServiceDiscovery\ServiceDiscoverySocket.cs" />
     <Compile Include="ServiceDiscovery\ServiceRegistry.cs" />
     <Compile Include="CodeGeneration\Remoting\Compiler.cs" />
-    <Compile Include="CodeGeneration\Serialization\ArraySerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\CustomTypeSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\CollectionSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\EnumerableSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\ITypeSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\NativeTypeSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\QueueSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\ApplicationIdSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\DateTimeOffsetSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\DateTimeSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\EnumSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\GuidSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\KeyValuePairSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\ByteArraySerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\Int32Serializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\IPAddressSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\IPEndPointSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\NullableSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\StringSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\TimeSpanSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\TypeSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\AbstractTypeSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\UriSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializers\VersionSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\SingletonSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\StackSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\ArraySerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\CustomTypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\CollectionSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\EnumerableSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\ITypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\NativeTypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\QueueSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\ApplicationIdSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\DateTimeOffsetSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\DateTimeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\EnumSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\GuidSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\KeyValuePairSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\ByteArraySerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\Int32Serializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\IPAddressSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\IPEndPointSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\NullableSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\StringSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\TimeSpanSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\TypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\AbstractTypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\UriSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\VersionSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\SingletonSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\StackSerializer.cs" />
     <Compile Include="CodeGeneration\TypeResolver.cs" />
     <Compile Include="Dispatch.cs" />
     <Compile Include="EndPoints\EndPointDisconnectReason.cs" />
@@ -209,7 +209,7 @@
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSilo.cs" />
     <Compile Include="Hosting\SubjectHost.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
-    <Compile Include="CodeGeneration\Serialization\BinarySerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializer.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCompiler.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCreator.cs" />
     <Compile Include="IRemotingEndPoint.cs" />
@@ -244,7 +244,10 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="CodeGeneration\Serialization\Json\" />
+    <Folder Include="CodeGeneration\Serialization\Xml\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

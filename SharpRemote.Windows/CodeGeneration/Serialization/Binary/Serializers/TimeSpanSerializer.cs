@@ -1,14 +1,24 @@
 ﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.Serialization.Serializers
+namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 {
-	internal sealed class EnumSerializer
+	internal sealed class TimeSpanSerializer
 		: AbstractTypeSerializer
 	{
+		private readonly MethodInfo _getTicks;
+		private readonly ConstructorInfo _ctor;
+
+		public TimeSpanSerializer()
+		{
+			_getTicks = typeof(TimeSpan).GetProperty("Ticks").GetMethod;
+			_ctor = typeof(TimeSpan).GetConstructor(new[] { typeof(long) });
+		}
+
 		public override bool Supports(Type type)
 		{
-			return type.IsEnum;
+			return type == typeof (TimeSpan);
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
@@ -22,8 +32,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                    bool valueCanBeNull = true)
 		{
 			loadWriter();
-			loadValue();
-			gen.Emit(OpCodes.Call, Methods.WriteInt32);
+			loadValueAddress();
+			gen.Emit(OpCodes.Call, _getTicks);
+			gen.Emit(OpCodes.Call, Methods.WriteLong);
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
@@ -35,7 +46,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                   bool valueCanBeNull = true)
 		{
 			loadReader();
-			gen.Emit(OpCodes.Call, Methods.ReadInt32);
+			gen.Emit(OpCodes.Call, Methods.ReadLong);
+			gen.Emit(OpCodes.Newobj, _ctor);
 		}
 	}
 }

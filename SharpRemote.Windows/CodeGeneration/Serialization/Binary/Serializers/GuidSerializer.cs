@@ -1,14 +1,24 @@
 ﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.Serialization.Serializers
+namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 {
-	internal sealed class Int32Serializer
+	internal sealed class GuidSerializer
 		: AbstractTypeSerializer
 	{
+		private readonly ConstructorInfo _ctor;
+		private readonly MethodInfo _toByteArray;
+
+		public GuidSerializer()
+		{
+			_ctor = typeof (Guid).GetConstructor(new[] {typeof (byte[])});
+			_toByteArray = typeof (Guid).GetMethod("ToByteArray");
+		}
+
 		public override bool Supports(Type type)
 		{
-			return type == typeof (Int32);
+			return type == typeof (Guid);
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
@@ -22,8 +32,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                    bool valueCanBeNull = true)
 		{
 			loadWriter();
-			loadValue();
-			gen.Emit(OpCodes.Call, Methods.WriteInt32);
+			loadValueAddress();
+			gen.Emit(OpCodes.Call, _toByteArray);
+			gen.Emit(OpCodes.Call, Methods.WriteBytes);
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
@@ -35,7 +46,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		                                   bool valueCanBeNull = true)
 		{
 			loadReader();
-			gen.Emit(OpCodes.Call, Methods.ReadInt32);
+			gen.Emit(OpCodes.Ldc_I4, 16);
+			gen.Emit(OpCodes.Call, Methods.ReadBytes);
+			gen.Emit(OpCodes.Newobj, _ctor);
 		}
 	}
 }

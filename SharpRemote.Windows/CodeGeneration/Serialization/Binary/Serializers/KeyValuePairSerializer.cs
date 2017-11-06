@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.Serialization.Serializers
+namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 {
 	internal sealed class KeyValuePairSerializer
 		: AbstractTypeSerializer

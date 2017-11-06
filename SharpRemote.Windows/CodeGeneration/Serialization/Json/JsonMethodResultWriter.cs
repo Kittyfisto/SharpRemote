@@ -4,7 +4,8 @@ using System.IO;
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
 {
-	internal sealed class JsonMethodResultWriter : IMethodResultWriter
+	internal sealed class JsonMethodResultWriter
+		: IMethodResultWriter
 	{
 		public JsonMethodResultWriter(Stream stream, ulong rpcId)
 		{
@@ -16,7 +17,7 @@ namespace SharpRemote
 			throw new NotImplementedException();
 		}
 
-		public void SetFinished()
+		public void WriteFinished()
 		{
 			throw new NotImplementedException();
 		}
@@ -77,6 +78,11 @@ namespace SharpRemote
 		}
 
 		public void WriteResult(string value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void WriteResult(byte[] value)
 		{
 			throw new NotImplementedException();
 		}

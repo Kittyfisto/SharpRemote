@@ -76,5 +76,10 @@ namespace SharpRemote
 		{
 			throw new NotImplementedException();
 		}
+
+		public void WriteNamedArgument(string name, byte[] value)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

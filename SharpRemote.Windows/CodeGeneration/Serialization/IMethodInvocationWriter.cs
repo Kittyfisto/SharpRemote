@@ -92,5 +92,12 @@ namespace SharpRemote
 		/// <param name="name"></param>
 		/// <param name="value"></param>
 		void WriteNamedArgument(string name, string value);
+
+		/// <summary>
+		///     Adds an argument of the given name and value to this method call.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="value"></param>
+		void WriteNamedArgument(string name, byte[] value);
 	}
 }

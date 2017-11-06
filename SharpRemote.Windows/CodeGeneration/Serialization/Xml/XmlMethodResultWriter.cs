@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+// ReSharper disable once CheckNamespace
+namespace SharpRemote
 {
 	internal sealed class XmlMethodResultWriter
 		: IMethodResultWriter
@@ -16,7 +17,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			throw new NotImplementedException();
 		}
 
-		public void SetFinished()
+		public void WriteFinished()
 		{
 			throw new NotImplementedException();
 		}
@@ -77,6 +78,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		}
 
 		public void WriteResult(string value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void WriteResult(byte[] value)
 		{
 			throw new NotImplementedException();
 		}

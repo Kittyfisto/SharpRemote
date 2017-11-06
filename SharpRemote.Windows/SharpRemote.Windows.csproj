@@ -45,7 +45,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbstractMethodInvocationWriter.cs" />
     <Compile Include="Attributes\AfterDeserializeAttribute.cs" />
     <Compile Include="Attributes\AfterSerializeAttribute.cs" />
     <Compile Include="Attributes\AsyncRemoteAttribute.cs" />

@@ -86,5 +86,10 @@ namespace SharpRemote
 		{
 			throw new NotImplementedException();
 		}
+
+		public byte[] ReadResultAsBytes()
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

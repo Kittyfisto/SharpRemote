@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+// ReSharper disable once CheckNamespace
+namespace SharpRemote
 {
 	internal sealed class XmlMethodInvocationReader
 		: IMethodInvocationReader

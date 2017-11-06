@@ -36,7 +36,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -47,7 +47,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -58,7 +58,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -69,7 +69,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -80,7 +80,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -91,7 +91,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -102,7 +102,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -113,7 +113,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -124,7 +124,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -135,7 +135,7 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
@@ -146,10 +146,21 @@ namespace SharpRemote
 		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
 		/// </summary>
 		/// <remarks>
-		///     Its the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
 		/// <returns></returns>
 		string ReadResultAsString();
+
+		/// <summary>
+		///     Returns the result of the method as an <see cref="string" />.
+		///     May throw an exception if the method didn't return a value of that type, but doesn't need to.
+		/// </summary>
+		/// <remarks>
+		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
+		///     which matches the signature of the method being called.
+		/// </remarks>
+		/// <returns></returns>
+		byte[] ReadResultAsBytes();
 	}
 }

@@ -21,6 +21,8 @@ namespace SharpRemote
 		/// </summary>
 		private static readonly HashSet<Type> BuiltInTypes;
 
+		private TypeDescription _baseType;
+
 		static TypeDescription()
 		{
 			BuiltInTypes = new HashSet<Type>
@@ -56,6 +58,27 @@ namespace SharpRemote
 		/// </summary>
 		[DataMember]
 		public MethodDescription[] Methods { get; set; }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[DataMember]
+		public int BaseTypeId { get; set; }
+
+		/// <summary>
+		///     Equivalent of <see cref="Type.BaseType" />.
+		/// </summary>
+		public TypeDescription BaseType
+		{
+			get { return _baseType; }
+			set
+			{
+				_baseType = value;
+				BaseTypeId = value?.Id ?? 0;
+			}
+		}
+
+		ITypeDescription ITypeDescription.BaseType => _baseType;
 
 		/// <inheritdoc />
 		[DataMember]
@@ -140,6 +163,8 @@ namespace SharpRemote
 			typesByAssemblyQualifiedName.Add(assemblyQualifiedName, description);
 
 			bool builtIn;
+			if (IsInterestingBaseType(type.BaseType))
+				description.BaseType = Create(type.BaseType, typesByAssemblyQualifiedName);
 			description.SerializationType = GetSerializationType(type, out builtIn);
 			description.IsBuiltIn = builtIn;
 			description.IsValueType = type.IsValueType;
@@ -152,10 +177,10 @@ namespace SharpRemote
 			{
 				case SerializationType.ByValue:
 					// TODO: Throw when ByValue rules are violated
-					description.Fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+					description.Fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
 					                         .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
 					                         .Select(x => FieldDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
-					description.Properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+					description.Properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
 					                             .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
 					                             .Select(x => PropertyDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
 					description.Methods = new MethodDescription[0];
@@ -187,6 +212,18 @@ namespace SharpRemote
 
 
 			return description;
+		}
+
+		[Pure]
+		private static bool IsInterestingBaseType(Type baseType)
+		{
+			if (baseType == null)
+				return false;
+			if (baseType == typeof(object))
+				return false;
+			if (baseType == typeof(ValueType))
+				return false;
+			return true;
 		}
 
 		[Pure]

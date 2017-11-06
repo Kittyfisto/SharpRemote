@@ -12,6 +12,11 @@ namespace SharpRemote
 	public interface ITypeDescription
 	{
 		/// <summary>
+		///     Equivalent of <see cref="Type.BaseType" />.
+		/// </summary>
+		ITypeDescription BaseType { get; }
+
+		/// <summary>
 		///     Equivalent of <see cref="Type.AssemblyQualifiedName" />.
 		/// </summary>
 		string AssemblyQualifiedName { get; }
@@ -63,7 +68,8 @@ namespace SharpRemote
 		IReadOnlyList<IFieldDescription> Fields { get; }
 
 		/// <summary>
-		/// The list of public non-static methods in case this is a <see cref="SharpRemote.SerializationType.ByReference"/> type.
+		///     The list of public non-static methods in case this is a <see cref="SharpRemote.SerializationType.ByReference" />
+		///     type.
 		/// </summary>
 		IReadOnlyList<IMethodDescription> Methods { get; }
 	}

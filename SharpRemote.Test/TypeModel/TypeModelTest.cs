@@ -4,6 +4,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Structs;
 using System.Collections.Generic;
+using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 
 namespace SharpRemote.Test.TypeModel
@@ -126,6 +127,7 @@ namespace SharpRemote.Test.TypeModel
 		}
 
 		[Test]
+		[Description("Verifies that the type model can describe a 'by reference' type")]
 		public void TestByReferenceType()
 		{
 			var model = new SharpRemote.TypeModel();
@@ -149,6 +151,45 @@ namespace SharpRemote.Test.TypeModel
 			property.GetMethod.ReturnParameter.Should().NotBeNull();
 			property.SetMethod.Should().BeNull();
 			property.PropertyType.AssemblyQualifiedName.Should().Be(typeof(int).AssemblyQualifiedName);
+		}
+
+		[Test]
+		[Description("Verifies that the type model can describe a type which itself inherits from another serializable type")]
+		public void TestInheritedClass()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<InheritedClass>();
+			type.Properties.Should().HaveCount(1);
+			var property = type.Properties[0];
+			property.Name.Should().Be("Value1");
+			property.PropertyType.AssemblyQualifiedName.Should().Be(typeof(long).AssemblyQualifiedName);
+
+			type.BaseType.Should().NotBeNull();
+			type = type.BaseType;
+			type.BaseType.Should().BeNull("because the type model only concentrates the serializable aspect of types, something which the base type object doesn't have any impact on");
+			type.Properties.Should().HaveCount(1);
+			property = type.Properties[0];
+			property.Name.Should().Be("Value1");
+			property.PropertyType.AssemblyQualifiedName.Should().Be(typeof(string).AssemblyQualifiedName);
+
+			var field = type.Fields[0];
+			field.Name.Should().Be("Value2");
+			field.FieldType.AssemblyQualifiedName.Should().Be(typeof(bool).AssemblyQualifiedName);
+		}
+
+		[Test]
+		public void TestRecursiveClass()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<RecursiveClass>();
+			type.Fields.Should().HaveCount(2);
+			var field = type.Fields[0];
+			field.Name.Should().Be("Left");
+			field.FieldType.Should().BeSameAs(type, "because a recursive type model shall reference the very same object");
+
+			field = type.Fields[1];
+			field.Name.Should().Be("Right");
+			field.FieldType.Should().BeSameAs(type, "because a recursive type model shall reference the very same object");
 		}
 	}
 }

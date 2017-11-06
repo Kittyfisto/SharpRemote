@@ -14,8 +14,8 @@ namespace SharpRemote.Hosting
 		: ISilo
 	{
 		private readonly ITypeResolver _customTypeResolver;
-		private readonly SocketRemotingEndPointClient _client;
-		private readonly SocketRemotingEndPointServer _server;
+		private readonly ISocketEndPoint _client;
+		private readonly ISocketEndPoint _server;
 		private readonly ISubjectHost _subjectHostProxy;
 		private readonly SubjectHost _subjectHost;
 		private readonly DefaultImplementationRegistry _registry;
@@ -43,12 +43,12 @@ namespace SharpRemote.Hosting
 			const int subjectHostId = 0;
 			_nextObjectId = subjectHostId + 1;
 
-			_client = new SocketRemotingEndPointClient();
+			_client = new SocketEndPoint(EndPointType.Client);
 			_subjectHostProxy = _client.CreateProxy<ISubjectHost>(subjectHostId);
 
 			_syncRoot = new object();
 
-			_server = new SocketRemotingEndPointServer();
+			_server = new SocketEndPoint(EndPointType.Server);
 			_registry = new DefaultImplementationRegistry();
 			_subjectHost = new SubjectHost(_server, _registry);
 			_server.CreateServant(subjectHostId, (ISubjectHost)_subjectHost);

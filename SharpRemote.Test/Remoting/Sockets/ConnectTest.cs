@@ -16,37 +16,32 @@ namespace SharpRemote.Test.Remoting.Sockets
 	public sealed class ConnectTest
 		: AbstractConnectTest
 	{
-		public override LogItem[] Loggers
+		public override LogItem[] Loggers => new[]
 		{
-			get
-			{
-				return new[]
-					{
-						new LogItem(typeof (SocketRemotingEndPointClient)),
-						new LogItem(typeof (SocketRemotingEndPointServer))
-					};
-			}
-		}
+			new LogItem(typeof (SocketEndPoint)),
+		};
 
 		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointClient(name,
-													clientAuthenticator,
-													serverAuthenticator,
-													networkServiceDiscoverer,
-													latencySettings: latencySettings,
-													heartbeatSettings: heartbeatSettings);
+			return new SocketEndPoint(EndPointType.Client,
+			                          name,
+			                          clientAuthenticator,
+			                          serverAuthenticator,
+			                          networkServiceDiscoverer,
+			                          latencySettings: latencySettings,
+			                          heartbeatSettings: heartbeatSettings);
 		}
 
 		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointServer(name,
-													clientAuthenticator,
-													serverAuthenticator,
-													networkServiceDiscoverer,
-													latencySettings: latencySettings,
-													endPointSettings: endPointSettings,
-													heartbeatSettings: heartbeatSettings);
+			return new SocketEndPoint(EndPointType.Server,
+			                          name,
+			                          clientAuthenticator,
+			                          serverAuthenticator,
+			                          networkServiceDiscoverer,
+			                          latencySettings: latencySettings,
+			                          endPointSettings: endPointSettings,
+			                          heartbeatSettings: heartbeatSettings);
 		}
 
 		[Test]
@@ -200,57 +195,42 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 		protected override void Bind(IRemotingEndPoint endPoint)
 		{
-			((SocketRemotingEndPointServer)endPoint).Bind(IPAddress.Loopback);
+			((ISocketEndPoint)endPoint).Bind(IPAddress.Loopback);
 		}
 
 		protected override void Bind(IRemotingEndPoint endPoint, EndPoint address)
 		{
-			((SocketRemotingEndPointServer)endPoint).Bind((IPEndPoint) address);
+			((ISocketEndPoint)endPoint).Bind((IPEndPoint) address);
 		}
 
-		protected override EndPoint EndPoint1
-		{
-			get { return new IPEndPoint(IPAddress.Loopback, 50012); }
-		}
+		protected override EndPoint EndPoint1 => new IPEndPoint(IPAddress.Loopback, 50012);
 
-		protected override EndPoint EndPoint2
-		{
-			get { return new IPEndPoint(IPAddress.Loopback, 12345); }
-		}
+		protected override EndPoint EndPoint2 => new IPEndPoint(IPAddress.Loopback, 12345);
 
-		protected override EndPoint EndPoint3
-		{
-			get { return new IPEndPoint(IPAddress.Loopback, 54321); }
-		}
+		protected override EndPoint EndPoint3 => new IPEndPoint(IPAddress.Loopback, 54321);
 
-		protected override EndPoint EndPoint4
-		{
-			get { return new IPEndPoint(IPAddress.Loopback, 58752); }
-		}
+		protected override EndPoint EndPoint4 => new IPEndPoint(IPAddress.Loopback, 58752);
 
-		protected override EndPoint EndPoint5
-		{
-			get { return new IPEndPoint(IPAddress.Loopback, 1234); }
-		}
+		protected override EndPoint EndPoint5 => new IPEndPoint(IPAddress.Loopback, 1234);
 
 		protected override ConnectionId Connect(IRemotingEndPoint endPoint, EndPoint address)
 		{
-			return ((SocketRemotingEndPointClient) endPoint).Connect((IPEndPoint) address);
+			return ((SocketEndPoint) endPoint).Connect((IPEndPoint) address);
 		}
 
 		protected override void Connect(IRemotingEndPoint endPoint, EndPoint address, TimeSpan timeout)
 		{
-			((SocketRemotingEndPointClient) endPoint).Connect((IPEndPoint) address, timeout);
+			((SocketEndPoint) endPoint).Connect((IPEndPoint) address, timeout);
 		}
 
 		protected override void Connect(IRemotingEndPoint endPoint, string name)
 		{
-			((SocketRemotingEndPointClient) endPoint).Connect(name);
+			((SocketEndPoint) endPoint).Connect(name);
 		}
 
 		protected override void Connect(IRemotingEndPoint endPoint, string name, TimeSpan timeout)
 		{
-			((SocketRemotingEndPointClient)endPoint).Connect(name, timeout);
+			((SocketEndPoint)endPoint).Connect(name, timeout);
 		}
 	}
 }

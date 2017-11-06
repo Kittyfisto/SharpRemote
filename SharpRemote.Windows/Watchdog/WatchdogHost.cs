@@ -13,7 +13,7 @@ namespace SharpRemote.Watchdog
 		public const string PeerName = "SharpRemote.Watchdog";
 		public const ulong ObjectId = 0;
 
-		private readonly SocketRemotingEndPointServer _endPoint;
+		private readonly ISocketEndPoint _endPoint;
 		private readonly InternalWatchdog _watchdog;
 
 		/// <summary>
@@ -23,7 +23,7 @@ namespace SharpRemote.Watchdog
 		{
 			_watchdog = new InternalWatchdog();
 
-			_endPoint = new SocketRemotingEndPointServer(PeerName);
+			_endPoint = new SocketEndPoint(EndPointType.Server, PeerName);
 			_endPoint.CreateServant(ObjectId, (IInternalWatchdog) _watchdog);
 			_endPoint.Bind(IPAddress.Any);
 		}

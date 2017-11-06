@@ -10,7 +10,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 	public sealed class OutOfProcessQueueTest
 	{
 		private ProcessWatchdog _process;
-		private SocketRemotingEndPointClient _endPoint;
+		private SocketEndPoint _endPoint;
 		private Mock<IFailureHandler> _failureHandler;
 		private FailureSettings _failureSettings;
 		private OutOfProcessQueue _queue;
@@ -19,7 +19,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		public void SetUp()
 		{
 			_process = new ProcessWatchdog();
-			_endPoint = new SocketRemotingEndPointClient();
+			_endPoint = new SocketEndPoint(EndPointType.Client);
 			_failureHandler = new Mock<IFailureHandler>();
 			_failureSettings = new FailureSettings();
 			_queue = new OutOfProcessQueue(_process, _endPoint, _failureHandler.Object, _failureSettings);

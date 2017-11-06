@@ -12,14 +12,16 @@ namespace SharpRemote.Test.Remoting.Sockets
 	{
 		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointClient(name, clientAuthenticator, serverAuthenticator, null,
+			return new SocketEndPoint(EndPointType.Client,
+			                          name, clientAuthenticator, serverAuthenticator, null,
 													latencySettings: latencySettings,
 													heartbeatSettings: heartbeatSettings);
 		}
 
 		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointServer(name,
+			return new SocketEndPoint(EndPointType.Server,
+			                          name,
 													clientAuthenticator,
 													serverAuthenticator, null,
 													latencySettings: latencySettings,
@@ -29,27 +31,27 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 		protected override void Bind(IRemotingEndPoint endPoint)
 		{
-			((SocketRemotingEndPointServer)endPoint).Bind(IPAddress.Loopback);
+			((ISocketEndPoint)endPoint).Bind(IPAddress.Loopback);
 		}
 
 		protected override void Bind(IRemotingEndPoint endPoint, EndPoint address)
 		{
-			((SocketRemotingEndPointServer)endPoint).Bind((IPEndPoint) address);
+			((ISocketEndPoint)endPoint).Bind((IPEndPoint) address);
 		}
 
 		protected override void Connect(IRemotingEndPoint client, EndPoint localEndPoint)
 		{
-			((SocketRemotingEndPointClient) client).Connect((IPEndPoint) localEndPoint);
+			((SocketEndPoint) client).Connect((IPEndPoint) localEndPoint);
 		}
 
 		protected override void Connect(IRemotingEndPoint client, EndPoint localEndPoint, TimeSpan timeout)
 		{
-			((SocketRemotingEndPointClient) client).Connect((IPEndPoint) localEndPoint, timeout);
+			((SocketEndPoint) client).Connect((IPEndPoint) localEndPoint, timeout);
 		}
 
 		protected override bool TryConnect(IRemotingEndPoint client, EndPoint localEndPoint, TimeSpan timeout)
 		{
-			return ((SocketRemotingEndPointClient) client).TryConnect((IPEndPoint) localEndPoint, timeout);
+			return ((SocketEndPoint) client).TryConnect((IPEndPoint) localEndPoint, timeout);
 		}
 	}
 }

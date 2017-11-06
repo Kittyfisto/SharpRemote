@@ -3,7 +3,7 @@
 namespace SharpRemote
 {
 	/// <summary>
-	///     Identifies a connection of one <see cref="SocketRemotingEndPointClient" />.
+	///     Identifies a connection of one <see cref="SocketEndPoint" />.
 	/// </summary>
 	public struct ConnectionId
 		: IEquatable<ConnectionId>

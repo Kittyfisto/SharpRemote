@@ -72,9 +72,7 @@
     <Compile Include="EndPoints\NamedPipes\NamedPipeEndPoint.cs" />
     <Compile Include="EndPoints\NamedPipes\NamedPipeRemotingEndPointClient.cs" />
     <Compile Include="EndPoints\NamedPipes\NamedPipeRemotingEndPointServer.cs" />
-    <Compile Include="EndPoints\Sockets\ISocketRemotingEndPoint.cs" />
-    <Compile Include="EndPoints\Sockets\ISocketRemotingEndPointClient.cs" />
-    <Compile Include="EndPoints\Sockets\ISocketRemotingEndPointServer.cs" />
+    <Compile Include="EndPoints\Sockets\ISocketEndPoint.cs" />
     <Compile Include="ETW\PendingMethodsEventSource.cs" />
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchNamedPipeEndPointException.cs" />
@@ -143,8 +141,7 @@
     <Compile Include="Dispatch.cs" />
     <Compile Include="EndPoints\EndPointDisconnectReason.cs" />
     <Compile Include="EndPoints\MessageType.cs" />
-    <Compile Include="EndPoints\Sockets\SocketRemotingEndPointClient.cs" />
-    <Compile Include="EndPoints\Sockets\SocketRemotingEndPointServer.cs" />
+    <Compile Include="EndPoints\Sockets\SocketEndPoint.cs" />
     <Compile Include="EndPointType.cs" />
     <Compile Include="Extensions\AssemblyExtensions.cs" />
     <Compile Include="GrainIdGenerator.cs" />
@@ -204,7 +201,6 @@
     <Compile Include="TypeInformation.cs" />
     <Compile Include="Extensions\DisposableExtensions.cs" />
     <Compile Include="EndPoints\AbstractBinaryStreamEndPoint.cs" />
-    <Compile Include="EndPoints\Sockets\AbstractIPSocketRemotingEndPoint.cs" />
     <Compile Include="Hosting\InProcess\InProcessRemotingSilo.cs" />
     <Compile Include="Hosting\InProcess\InProcessSilo.cs" />
     <Compile Include="Hosting\ISilo.cs" />

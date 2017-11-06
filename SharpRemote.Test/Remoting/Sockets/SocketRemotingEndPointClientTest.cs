@@ -14,7 +14,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 		{
 			var discoverer = new Mock<INetworkServiceDiscoverer>();
 
-			using (var server = new SocketRemotingEndPointClient(networkServiceDiscoverer: discoverer.Object))
+			using (var server = new SocketEndPoint(EndPointType.Client, networkServiceDiscoverer: discoverer.Object))
 			{
 				new Action(() => server.Connect("foobar")).ShouldThrow<NoSuchEndPointException>();
 				discoverer.Verify(x => x.FindServices(It.Is<string>(name => name == "foobar")),

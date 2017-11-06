@@ -38,7 +38,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly ConcurrentQueue<Operation> _actions;
-		private readonly SocketRemotingEndPointClient _endPoint;
+		private readonly ISocketEndPoint _endPoint;
 		private readonly IFailureHandler _failureHandler;
 		private readonly FailureSettings _failureSettings;
 		private readonly ProcessWatchdog _process;
@@ -50,7 +50,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 
 		public OutOfProcessQueue(
 			ProcessWatchdog process,
-			SocketRemotingEndPointClient endPoint,
+			ISocketEndPoint endPoint,
 			IFailureHandler failureHandler,
 			FailureSettings failureSettings
 			)

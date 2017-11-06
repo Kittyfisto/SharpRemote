@@ -12,25 +12,92 @@ namespace SharpRemote.Test.Remoting.Sockets
 	public sealed class TryConnectTest
 		: AbstractTryConnectTest
 	{
-		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IInternalRemotingEndPoint CreateClient(string name = null,
+		                                                         IAuthenticator clientAuthenticator = null,
+		                                                         IAuthenticator serverAuthenticator = null,
+		                                                         LatencySettings latencySettings = null,
+		                                                         HeartbeatSettings heartbeatSettings = null,
+		                                                         NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointClient(name,
-													clientAuthenticator,
-													serverAuthenticator,
-													networkServiceDiscoverer,
-													latencySettings: latencySettings,
-													heartbeatSettings: heartbeatSettings);
+			return new SocketEndPoint(EndPointType.Client,
+			                          name,
+			                          clientAuthenticator,
+			                          serverAuthenticator,
+			                          networkServiceDiscoverer,
+			                          latencySettings: latencySettings,
+			                          heartbeatSettings: heartbeatSettings);
 		}
 
-		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IInternalRemotingEndPoint CreateServer(string name = null,
+		                                                         IAuthenticator clientAuthenticator = null,
+		                                                         IAuthenticator serverAuthenticator = null,
+		                                                         LatencySettings latencySettings = null,
+		                                                         EndPointSettings endPointSettings = null,
+		                                                         HeartbeatSettings heartbeatSettings = null,
+		                                                         NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
-			return new SocketRemotingEndPointServer(name,
-													clientAuthenticator,
-													serverAuthenticator,
-													networkServiceDiscoverer,
-													latencySettings: latencySettings,
-													endPointSettings: endPointSettings,
-													heartbeatSettings: heartbeatSettings);
+			return new SocketEndPoint(EndPointType.Server,
+			                          name,
+			                          clientAuthenticator,
+			                          serverAuthenticator,
+			                          networkServiceDiscoverer,
+			                          latencySettings: latencySettings,
+			                          endPointSettings: endPointSettings,
+			                          heartbeatSettings: heartbeatSettings);
+		}
+
+		protected override void Bind(IRemotingEndPoint endPoint)
+		{
+			((ISocketEndPoint) endPoint).Bind(IPAddress.Loopback);
+		}
+
+		protected override void Bind(IRemotingEndPoint endPoint, EndPoint address)
+		{
+			((ISocketEndPoint) endPoint).Bind((IPEndPoint) address);
+		}
+
+		protected override bool TryConnect(IRemotingEndPoint endPoint, EndPoint address, TimeSpan timeout)
+		{
+			return ((SocketEndPoint) endPoint).TryConnect((IPEndPoint) address, timeout);
+		}
+
+		protected override bool TryConnect(IRemotingEndPoint endPoint, EndPoint address)
+		{
+			return ((SocketEndPoint) endPoint).TryConnect((IPEndPoint) address);
+		}
+
+		protected override bool TryConnect(IRemotingEndPoint endPoint, string name, TimeSpan timeout)
+		{
+			return ((SocketEndPoint) endPoint).TryConnect(name, timeout);
+		}
+
+		protected override bool TryConnect(IRemotingEndPoint endPoint, string name)
+		{
+			return ((SocketEndPoint) endPoint).TryConnect(name);
+		}
+
+		protected override void Connect(IRemotingEndPoint endPoint, EndPoint address)
+		{
+			((SocketEndPoint) endPoint).Connect((IPEndPoint) address);
+		}
+
+		protected override EndPoint EndPoint1 => new IPEndPoint(IPAddress.Loopback, port: 58752);
+
+		protected override EndPoint EndPoint2 => new IPEndPoint(IPAddress.Loopback, port: 50012);
+
+		[Test]
+		[Description(
+			"Verifies that TryConnect() fails when the other socket doesn't respond with the proper greeting message in time")]
+		public void TestConnect8()
+		{
+			using (var rep = CreateClient())
+			using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+			{
+				socket.Bind(new IPEndPoint(IPAddress.Loopback, port: 54321));
+				socket.Listen(backlog: 1);
+				socket.BeginAccept(ar => socket.EndAccept(ar), state: null);
+				TryConnect(rep, new IPEndPoint(IPAddress.Loopback, port: 54321)).Should().BeFalse();
+			}
 		}
 
 		[Test]
@@ -39,8 +106,8 @@ namespace SharpRemote.Test.Remoting.Sockets
 		public void TestTryConnect23()
 		{
 			using (var discoverer = new NetworkServiceDiscoverer())
-			using (var client = CreateClient(name: "Rep1", networkServiceDiscoverer: discoverer))
-			using (var server = CreateServer(name: "Rep2", networkServiceDiscoverer: discoverer))
+			using (var client = CreateClient("Rep1", networkServiceDiscoverer: discoverer))
+			using (var server = CreateServer("Rep2", networkServiceDiscoverer: discoverer))
 			{
 				Bind(server);
 
@@ -50,8 +117,8 @@ namespace SharpRemote.Test.Remoting.Sockets
 				server.IsConnected.Should().BeFalse();
 				server.RemoteEndPoint.Should().BeNull();
 
-				TryConnect(client, server.Name, TimeSpan.FromSeconds(10))
-					  .Should().BeTrue();
+				TryConnect(client, server.Name, TimeSpan.FromSeconds(value: 10))
+					.Should().BeTrue();
 
 				client.IsConnected.Should().BeTrue();
 				client.RemoteEndPoint.Should().Be(server.LocalEndPoint);
@@ -67,7 +134,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 			using (var rep = CreateClient())
 			{
 				new Action(
-					() => TryConnect(rep, new IPEndPoint(IPAddress.Loopback, 12345), TimeSpan.FromSeconds(0)))
+				           () => TryConnect(rep, new IPEndPoint(IPAddress.Loopback, port: 12345), TimeSpan.FromSeconds(value: 0)))
 					.ShouldThrow<ArgumentOutOfRangeException>()
 					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
 			}
@@ -80,70 +147,10 @@ namespace SharpRemote.Test.Remoting.Sockets
 			using (var rep = CreateClient())
 			{
 				new Action(
-					() => TryConnect(rep, new IPEndPoint(IPAddress.Loopback, 12345), TimeSpan.FromSeconds(-1)))
+				           () => TryConnect(rep, new IPEndPoint(IPAddress.Loopback, port: 12345), TimeSpan.FromSeconds(value: -1)))
 					.ShouldThrow<ArgumentOutOfRangeException>()
 					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
 			}
-		}
-
-		[Test]
-		[Description(
-			"Verifies that TryConnect() fails when the other socket doesn't respond with the proper greeting message in time")]
-		public void TestConnect8()
-		{
-			using (var rep = CreateClient())
-			using (var socket = new System.Net.Sockets.Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
-			{
-				socket.Bind(new IPEndPoint(IPAddress.Loopback, 54321));
-				socket.Listen(1);
-				socket.BeginAccept(ar => socket.EndAccept(ar), null);
-				TryConnect(rep, new IPEndPoint(IPAddress.Loopback, 54321)).Should().BeFalse();
-			}
-		}
-
-		protected override void Bind(IRemotingEndPoint endPoint)
-		{
-			((SocketRemotingEndPointServer)endPoint).Bind(IPAddress.Loopback);
-		}
-
-		protected override void Bind(IRemotingEndPoint endPoint, EndPoint address)
-		{
-			((SocketRemotingEndPointServer)endPoint).Bind((IPEndPoint) address);
-		}
-
-		protected override bool TryConnect(IRemotingEndPoint endPoint, EndPoint address, TimeSpan timeout)
-		{
-			return ((SocketRemotingEndPointClient) endPoint).TryConnect((IPEndPoint) address, timeout);
-		}
-
-		protected override bool TryConnect(IRemotingEndPoint endPoint, EndPoint address)
-		{
-			return ((SocketRemotingEndPointClient) endPoint).TryConnect((IPEndPoint) address);
-		}
-
-		protected override bool TryConnect(IRemotingEndPoint endPoint, string name, TimeSpan timeout)
-		{
-			return ((SocketRemotingEndPointClient) endPoint).TryConnect(name, timeout);
-		}
-
-		protected override bool TryConnect(IRemotingEndPoint endPoint, string name)
-		{
-			return ((SocketRemotingEndPointClient) endPoint).TryConnect(name);
-		}
-
-		protected override void Connect(IRemotingEndPoint endPoint, EndPoint address)
-		{
-			((SocketRemotingEndPointClient) endPoint).Connect((IPEndPoint) address);
-		}
-
-		protected override EndPoint EndPoint1
-		{
-			get { return new IPEndPoint(IPAddress.Loopback, 58752); }
-		}
-
-		protected override EndPoint EndPoint2
-		{
-			get { return new IPEndPoint(IPAddress.Loopback, 50012); }
 		}
 	}
 }

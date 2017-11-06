@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -32,9 +33,8 @@ namespace SharpRemote.Test.Remoting
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
 			TestLogger.SetLevel<AbstractEndPoint>(Level.Info);
-			TestLogger.SetLevel<AbstractIPSocketRemotingEndPoint>(Level.Info);
-			TestLogger.SetLevel<SocketRemotingEndPointClient>(Level.Info);
-			TestLogger.SetLevel<SocketRemotingEndPointServer>(Level.Info);
+			TestLogger.SetLevel<AbstractBinaryStreamEndPoint<Socket>>(Level.Info);
+			TestLogger.SetLevel<SocketEndPoint>(Level.Info);
 
 			_server = CreateServer();
 			Bind(_server);

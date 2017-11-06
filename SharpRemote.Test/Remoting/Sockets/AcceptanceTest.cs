@@ -11,29 +11,29 @@ namespace SharpRemote.Test.Remoting.Sockets
 	{
 		protected override void Connect(IRemotingEndPoint client, IRemotingEndPoint server)
 		{
-			((SocketRemotingEndPointClient)client).Connect(
-				((SocketRemotingEndPointServer)server).LocalEndPoint,
+			((SocketEndPoint)client).Connect(
+				((ISocketEndPoint)server).LocalEndPoint,
 				TimeSpan.FromMinutes(1));
 		}
 
 		protected override IEnumerable<IServant> Servants(IRemotingEndPoint client)
 		{
-			return ((SocketRemotingEndPointClient) client).Servants;
+			return ((SocketEndPoint) client).Servants;
 		}
 
 		protected override IRemotingEndPoint CreateClient()
 		{
-			return new SocketRemotingEndPointClient("Client");
+			return new SocketEndPoint(EndPointType.Client, "Client");
 		}
 
 		protected override IRemotingEndPoint CreateServer()
 		{
-			return new SocketRemotingEndPointServer("Server");
+			return new SocketEndPoint(EndPointType.Server, "Server");
 		}
 
 		protected override void Bind(IRemotingEndPoint server)
 		{
-			((SocketRemotingEndPointServer)server).Bind(IPAddress.Loopback);
+			((ISocketEndPoint)server).Bind(IPAddress.Loopback);
 		}
 	}
 }

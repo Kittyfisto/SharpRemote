@@ -61,6 +61,9 @@ namespace SharpRemote
 			set { _value = value; }
 		}
 
+		/// <summary>
+		///     The actual value of this id.
+		/// </summary>
 		public Guid Value => _value;
 	}
 }

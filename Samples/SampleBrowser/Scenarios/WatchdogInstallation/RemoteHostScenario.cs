@@ -26,7 +26,7 @@ namespace SampleBrowser.Scenarios.WatchdogInstallation
 		protected override bool RunTest()
 		{
 			using (var accessor = new LogInterceptor(Log))
-			using (var endPoint = new SocketRemotingEndPointClient())
+			using (var endPoint = new SocketEndPoint(EndPointType.Client))
 			{
 				endPoint.Connect(WatchdogHost.PeerName, TimeSpan.FromSeconds(5));
 

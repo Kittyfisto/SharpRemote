@@ -429,7 +429,7 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that retrieving a proxy that no longer exists, but hasn't been garbage collected by the remoting endpoint, can be re-created")]
 		public void TestGarbageCollection3()
 		{
-			using (var server = new SocketRemotingEndPointServer())
+			using (var server = new SocketEndPoint(EndPointType.Server))
 			{
 				new Action(() =>
 				{
@@ -455,8 +455,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that when the connection is dropped because of a connection-failure, the OnFailure event is invoked")]
 		public void TestOnFailure1()
 		{
-			using (var server = new SocketRemotingEndPointServer())
-			using (var client = new SocketRemotingEndPointClient())
+			using (var server = new SocketEndPoint(EndPointType.Server))
+			using (var client = new SocketEndPoint(EndPointType.Client))
 			{
 				server.Bind(IPAddress.Loopback);
 				client.Connect(server.LocalEndPoint);
@@ -475,8 +475,8 @@ namespace SharpRemote.Test.Remoting
 		[Description("Verifies that invoking a method on a proxy from inside OnFailure doesn't cause a deadlock")]
 		public void TestOnFailure2()
 		{
-			using (var server = new SocketRemotingEndPointServer())
-			using (var client = new SocketRemotingEndPointClient())
+			using (var server = new SocketEndPoint(EndPointType.Server))
+			using (var client = new SocketEndPoint(EndPointType.Client))
 			{
 				var subject = new Mock<IVoidMethod>();
 				server.CreateServant(42, subject.Object);

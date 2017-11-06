@@ -886,7 +886,6 @@ namespace SharpRemote
 		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason, SocketError? error = null)
 		{
 			EndPoint remoteEndPoint;
-			TTransport socket;
 			bool hasDisconnected = false;
 			bool emitOnFailure = false;
 			ConnectionId connectionId;
@@ -918,7 +917,7 @@ namespace SharpRemote
 				}
 
 				remoteEndPoint = InternalRemoteEndPoint;
-				socket = _socket;
+				var socket = _socket;
 
 				InternalRemoteEndPoint = null;
 				_pendingMethodCalls.IsConnected = false;
@@ -1003,9 +1002,22 @@ namespace SharpRemote
 			EmitOnDisconnected(hasDisconnected, remoteEndPoint, connectionId);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="reuseSocket"></param>
 		protected abstract void DisconnectTransport(TTransport socket, bool reuseSocket);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
 		protected abstract void DisposeAfterDisconnect(TTransport socket);
 
+		/// <summary>
+		/// 
+		/// </summary>
 		protected void ClearPendingMethodInvocations()
 		{
 			lock (_pendingMethodInvocations)
@@ -1032,6 +1044,11 @@ namespace SharpRemote
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="endPoint"></param>
+		/// <param name="connectionId"></param>
 		protected void FireOnConnected(EndPoint endPoint, ConnectionId connectionId)
 		{
 			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
@@ -1287,7 +1304,7 @@ namespace SharpRemote
 					if (_pendingMethodInvocations.TryGetValue(rpcId, out existingMethodInvocation))
 					{
 						IGrain tmp = existingMethodInvocation.Grain;
-						ulong? grainId = tmp != null ? (ulong?) tmp.ObjectId : null;
+						ulong? grainId = tmp?.ObjectId;
 
 						var builder = new StringBuilder();
 						builder.AppendFormat("{0}: Received RPC invocation request #{1}, but one with the same id is already pending!",
@@ -1564,10 +1581,33 @@ namespace SharpRemote
 			return SendGoodbye(socket, rpcId, waitTime);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="waitTime"></param>
+		/// <param name="timeSpan"></param>
+		/// <returns></returns>
 		protected abstract bool SendGoodbye(TTransport socket, long waitTime, TimeSpan timeSpan);
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="data"></param>
+		/// <param name="offset"></param>
+		/// <param name="size"></param>
 		protected abstract void Send(TTransport socket, byte[] data, int offset, int size);
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="timeout"></param>
+		/// <param name="messageStep"></param>
+		/// <param name="messageType"></param>
+		/// <param name="message"></param>
+		/// <exception cref="HandshakeException"></exception>
 		protected void ReadMessage(TTransport socket,
 		                           TimeSpan timeout,
 		                           string messageStep,
@@ -1581,6 +1621,13 @@ namespace SharpRemote
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="messageType"></param>
+		/// <param name="message"></param>
+		/// <exception cref="HandshakeException"></exception>
 		protected void WriteMessage(TTransport socket,
 		                            string messageType,
 		                            string message = "")
@@ -1625,6 +1672,11 @@ namespace SharpRemote
 			return true;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <returns></returns>
 		protected abstract EndPoint GetRemoteEndPointOf(TTransport socket);
 
 		/// <summary>
@@ -1925,6 +1977,11 @@ namespace SharpRemote
 
 		#region Reading from / Writing to socket
 
+		/// <summary>
+		///     This method blocks and writes to the given <see cref="ThreadArgs.Socket" /> until
+		///     the socket has been disposed of or the <see cref="ThreadArgs.Token" /> has been cancelled.
+		/// </summary>
+		/// <param name="sock"></param>
 		protected void WriteLoop(object sock)
 		{
 			var args = (ThreadArgs) sock;
@@ -1977,6 +2034,11 @@ namespace SharpRemote
 			Disconnect(currentConnectionId, reason, error);
 		}
 
+		/// <summary>
+		///     This method blocks and reads from the given <see cref="ThreadArgs.Socket" /> until
+		///     the socket has been disposed of or the <see cref="ThreadArgs.Token" /> has been cancelled.
+		/// </summary>
+		/// <param name="sock"></param>
 		protected void ReadLoop(object sock)
 		{
 			var args = (ThreadArgs) sock;
@@ -2055,29 +2117,92 @@ namespace SharpRemote
 			Disconnect(connectionId, reason, error);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="data"></param>
+		/// <param name="length"></param>
+		/// <param name="err"></param>
+		/// <returns></returns>
 		protected abstract bool SynchronizedWrite(TTransport socket, byte[] data, int length, out SocketError err);
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="buffer"></param>
+		/// <param name="timeout"></param>
+		/// <param name="err"></param>
+		/// <returns></returns>
 		protected abstract bool SynchronizedRead(TTransport socket, byte[] buffer, TimeSpan timeout, out SocketError err);
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		/// <param name="buffer"></param>
+		/// <param name="err"></param>
+		/// <returns></returns>
 		protected abstract bool SynchronizedRead(TTransport socket, byte[] buffer, out SocketError err);
 
 		#endregion
 
+		/// <summary>
+		/// Describes the error which occured because of which the
+		/// connection is being dropped.
+		/// </summary>
 		protected enum ErrorType
 		{
+			/// <summary>
+			/// No error occured.
+			/// </summary>
 			None,
 
+			/// <summary>
+			/// The error occured during the handshake:
+			/// This happens when the target isn't a proper SharpRemote endpoint.
+			/// </summary>
 			Handshake,
+
+			/// <summary>
+			/// 
+			/// </summary>
 			Authentication,
-			AuthenticationRequired,
+
+			/// <summary>
+			/// 
+			/// </summary>
+			AuthenticationRequired
 		}
 
+		/// <summary>
+		/// The structure given to <see cref="AbstractBinaryStreamEndPoint{TTransport}.ReadLoop"/>
+		/// and <see cref="AbstractBinaryStreamEndPoint{TTransport}.WriteLoop"/>.
+		/// </summary>
 		protected sealed class ThreadArgs
 		{
+			/// <summary>
+			/// 
+			/// </summary>
 			public readonly ConnectionId ConnectionId;
+
+			/// <summary>
+			/// 
+			/// </summary>
 			public readonly TTransport Socket;
+
+			/// <summary>
+			/// 
+			/// </summary>
 			public readonly CancellationToken Token;
 
+			/// <summary>
+			/// 
+			/// </summary>
+			/// <param name="socket"></param>
+			/// <param name="token"></param>
+			/// <param name="connectionId"></param>
 			public ThreadArgs(TTransport socket, CancellationToken token, ConnectionId connectionId)
 			{
 				Socket = socket;

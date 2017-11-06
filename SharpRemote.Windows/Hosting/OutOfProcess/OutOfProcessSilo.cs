@@ -33,7 +33,7 @@ namespace SharpRemote.Hosting
 		: ISilo
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private readonly SocketRemotingEndPointClient _endPoint;
+		private readonly SocketEndPoint _endPoint;
 
 		private readonly ProcessWatchdog _process;
 		private readonly OutOfProcessQueue _queue;
@@ -99,11 +99,12 @@ namespace SharpRemote.Hosting
 			failureSettings = failureSettings ?? new FailureSettings();
 			failureHandler = failureHandler ?? new ZeroFailureToleranceStrategy();
 
-			_endPoint = new SocketRemotingEndPointClient(endPointName,
-				codeGenerator: codeGenerator,
-				heartbeatSettings: failureSettings.HeartbeatSettings,
-				latencySettings: latencySettings,
-				endPointSettings: endPointSettings);
+			_endPoint = new SocketEndPoint(EndPointType.Client,
+			                               endPointName,
+			                               codeGenerator: codeGenerator,
+			                               heartbeatSettings: failureSettings.HeartbeatSettings,
+			                               latencySettings: latencySettings,
+			                               endPointSettings: endPointSettings);
 
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 

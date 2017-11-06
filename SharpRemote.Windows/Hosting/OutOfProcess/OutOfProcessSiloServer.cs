@@ -42,9 +42,9 @@ namespace SharpRemote.Hosting
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 		private readonly ITypeResolver _customTypeResolver;
-		private readonly SocketRemotingEndPointServer _endPoint;
+		private readonly ISocketEndPoint _endPoint;
 
-		internal SocketRemotingEndPointServer EndPoint => _endPoint;
+		internal ISocketEndPoint EndPoint => _endPoint;
 
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
@@ -170,7 +170,7 @@ namespace SharpRemote.Hosting
 				                                        _postMortemSettings.RuntimeVersions);
 			}
 
-			_endPoint = new SocketRemotingEndPointServer(
+			_endPoint = new SocketEndPoint(EndPointType.Server,
 				endPointName,
 				codeGenerator: codeGenerator,
 				heartbeatSettings: heartbeatSettings,

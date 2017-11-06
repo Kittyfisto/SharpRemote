@@ -1,12 +1,13 @@
 ﻿using System;
 using System.IO;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+// ReSharper disable once CheckNamespace
+namespace SharpRemote
 {
-	internal sealed class XmlMethodInvocationWriter
+	internal sealed class JsonMethodInvocationWriter
 		: IMethodInvocationWriter
 	{
-		public XmlMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
+		public JsonMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
 			throw new NotImplementedException();
 		}

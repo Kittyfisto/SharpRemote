@@ -1,10 +1,16 @@
 ﻿using System;
+using System.IO;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml
 {
 	internal sealed class XmlMethodResultWriter
 		: IMethodResultWriter
 	{
+		public XmlMethodResultWriter(Stream stream, ulong rpcId)
+		{
+			throw new NotImplementedException();
+		}
+
 		public void Dispose()
 		{
 			throw new NotImplementedException();

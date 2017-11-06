@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection.Emit;
+using SharpRemote.CodeGeneration.Serialization.Xml;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -18,25 +19,25 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
-			throw new NotImplementedException();
+			return new XmlMethodInvocationWriter(stream, grainId, methodName, rpcId);
 		}
 
 		/// <inheritdoc />
 		public IMethodInvocationReader CreateMethodInvocationReader(Stream stream)
 		{
-			throw new NotImplementedException();
+			return new XmlMethodInvocationReader(stream);
 		}
 
 		/// <inheritdoc />
-		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
+		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId)
 		{
-			throw new NotImplementedException();
+			return new XmlMethodResultWriter(stream, rpcId);
 		}
 
 		/// <inheritdoc />
 		public IMethodResultReader CreateMethodResultReader(Stream stream)
 		{
-			throw new NotImplementedException();
+			return new XmlMethodResultReader(stream);
 		}
 	}
 }

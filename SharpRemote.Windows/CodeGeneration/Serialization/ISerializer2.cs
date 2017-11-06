@@ -41,11 +41,9 @@ namespace SharpRemote
 		/// <summary>
 		/// </summary>
 		/// <param name="stream">The stream to which the result (or exception) of the method invocation are written to</param>
-		/// <param name="grainId"></param>
-		/// <param name="methodName"></param>
 		/// <param name="rpcId"></param>
 		/// <returns></returns>
-		IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong grainId, string methodName, ulong rpcId);
+		IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId);
 
 		/// <summary>
 		/// </summary>

@@ -54,6 +54,11 @@
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializerCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodInvocationReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodInvocationWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodResultReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodResultWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodInvocationReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodInvocationWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultReader.cs" />
@@ -256,9 +261,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="CodeGeneration\Serialization\Json\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

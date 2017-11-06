@@ -1,12 +1,12 @@
 ﻿using System;
 using System.IO;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+// ReSharper disable once CheckNamespace
+namespace SharpRemote
 {
-	internal sealed class XmlMethodResultReader
-		: IMethodResultReader
+	internal sealed class JsonMethodResultWriter : IMethodResultWriter
 	{
-		public XmlMethodResultReader(Stream stream)
+		public JsonMethodResultWriter(Stream stream, ulong rpcId)
 		{
 			throw new NotImplementedException();
 		}
@@ -16,72 +16,72 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			throw new NotImplementedException();
 		}
 
-		public ulong RpcId
-		{
-			get { throw new NotImplementedException(); }
-		}
-
-		public Exception ReadException()
+		public void SetFinished()
 		{
 			throw new NotImplementedException();
 		}
 
-		public object ReadResult()
+		public void WriteResult(object value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public sbyte ReadResultAsSByte()
+		public void WriteResult(sbyte value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public byte ReadResultAsByte()
+		public void WriteResult(byte value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ushort ReadResultAsUInt16()
+		public void WriteResult(ushort value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public short ReadResultAsInt16()
+		public void WriteResult(short value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public uint ReadResultUInt32()
+		public void WriteResult(uint value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public int ReadResultAsInt32()
+		public void WriteResult(int value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ulong ReadResultAsUInt64()
+		public void WriteResult(ulong value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public long ReadResultAsInt64()
+		public void WriteResult(long value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public float ReadResultAsFloat()
+		public void WriteResult(float value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public double ReadResultAsDouble()
+		public void WriteResult(double value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public string ReadResultAsString()
+		public void WriteResult(string value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void WriteException(Exception e)
 		{
 			throw new NotImplementedException();
 		}

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Hosting;
 using SharpRemote.Test.Types;

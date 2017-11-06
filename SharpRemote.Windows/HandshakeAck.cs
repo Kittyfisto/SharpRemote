@@ -11,6 +11,15 @@ namespace SharpRemote
 	public struct HandshakeAck
 	{
 		/// <summary>
+		///     The reason the server dropped the connection with the client.
+		/// </summary>
+		/// <remarks>
+		///     A server should send this message prior to dropping the connection with a client,
+		///     but it does not need to: A server may just close the socket and be done with the client.
+		/// </remarks>
+		[DataMember] public ConnectionDropReason DropReason;
+
+		/// <summary>
 		///     The version the sharpremote protocol the server wants to use for this connection.
 		///     If the server doesn't support any of the client's versions, then <see cref="ProtocolVersion.None" />
 		///     is returned here.
@@ -23,6 +32,11 @@ namespace SharpRemote
 		///     is returned here.
 		/// </summary>
 		[DataMember] public Serializer Serializer;
+
+		/// <summary>
+		///     A model of all types the server expects the client to know.
+		/// </summary>
+		[DataMember] public TypeModel TypeModel;
 
 		/// <summary>
 		///     The response to the client's challenge or null if the client didn't pose a challenge

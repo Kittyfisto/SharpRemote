@@ -25,6 +25,11 @@ namespace SharpRemote
 		[DataMember] public Serializer SupportedSerializers;
 
 		/// <summary>
+		///     A model of all types the client expects the server to know.
+		/// </summary>
+		[DataMember] public TypeModel TypeModel;
+
+		/// <summary>
 		///     The challenge that is posed by the client (and must be answered by the server).
 		/// </summary>
 		[DataMember] public object Challenge;

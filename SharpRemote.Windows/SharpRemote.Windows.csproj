@@ -52,6 +52,7 @@
     <Compile Include="Attributes\BeforeSerializeAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
+    <Compile Include="ConnectionDropReason.cs" />
     <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />
     <Compile Include="CodeGeneration\ICodeGenerator.cs" />
@@ -220,6 +221,7 @@
     <Compile Include="CodeGeneration\Remoting\ProxyCompiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CodeGeneration\Remoting\ProxyCreator.cs" />
+    <Compile Include="TypeModel\TypeId.cs" />
     <Compile Include="TypeModel\TypeModel.cs" />
     <Compile Include="Watchdog\ApplicationDescriptor.cs" />
     <Compile Include="Watchdog\ApplicationInstaller.cs" />

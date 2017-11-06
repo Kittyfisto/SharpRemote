@@ -11,22 +11,22 @@ namespace SharpRemote.CodeGeneration.Remoting
 	/// </summary>
 	internal sealed class ServantCreator
 	{
-		private readonly Serializer _serializer;
+		private readonly BinarySerializer _serializer;
 		private readonly Dictionary<Type, Type> _interfaceToSubject;
 		private readonly ModuleBuilder _module;
 
-		public ServantCreator(ModuleBuilder module, Serializer serializer)
+		public ServantCreator(ModuleBuilder module, BinarySerializer binarySerializer)
 		{
 			if (module == null) throw new ArgumentNullException(nameof(module));
-			if (serializer == null) throw new ArgumentNullException(nameof(serializer));
+			if (binarySerializer == null) throw new ArgumentNullException(nameof(binarySerializer));
 			
 			_module = module;
-			_serializer = serializer;
+			_serializer = binarySerializer;
 			_interfaceToSubject= new Dictionary<Type, Type>();
 		}
 
 		public ServantCreator(ModuleBuilder module)
-			: this(module, new Serializer(module))
+			: this(module, new BinarySerializer(module))
 		{}
 
 		public ServantCreator()
@@ -43,7 +43,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 			return module;
 		}
 
-		public ISerializer Serializer
+		public ISerializer BinarySerializer
 		{
 			get { return _serializer; }
 		}

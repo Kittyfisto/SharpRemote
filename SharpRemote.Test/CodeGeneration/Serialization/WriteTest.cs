@@ -26,7 +26,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
 		{
-			_serializer = new Serializer();
+			_serializer = new BinarySerializer();
 		}
 
 		[Test]

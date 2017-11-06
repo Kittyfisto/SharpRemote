@@ -16,7 +16,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	[TestFixture]
 	public sealed partial class SerializationTest
 	{
-		private Serializer _serializer;
+		private BinarySerializer _serializer;
 		private AssemblyBuilder _assembly;
 		private string _moduleName;
 
@@ -27,7 +27,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
 			ModuleBuilder module = _assembly.DefineDynamicModule(_moduleName);
-			_serializer = new Serializer(module);
+			_serializer = new BinarySerializer(module);
 		}
 
 		[TestFixtureTearDown]

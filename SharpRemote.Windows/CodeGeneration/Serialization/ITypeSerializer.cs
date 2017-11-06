@@ -22,7 +22,7 @@ namespace SharpRemote
 		/// Emits the code necessary to write a value of type <see cref="Type"/> into a <see cref="BinaryWriter"/>.
 		/// </summary>
 		/// <param name="gen"></param>
-		/// <param name="serializerCompiler"></param>
+		/// <param name="binarySerializerCompiler"></param>
 		/// <param name="loadWriter"></param>
 		/// <param name="loadValue"></param>
 		/// <param name="loadValueAddress"></param>
@@ -30,19 +30,19 @@ namespace SharpRemote
 		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
 		/// <param name="valueCanBeNull"></param>
-		void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Action loadRemotingEndPoint, Type type, bool valueCanBeNull = true);
+		void EmitWriteValue(ILGenerator gen, BinarySerializer binarySerializerCompiler, Action loadWriter, Action loadValue, Action loadValueAddress, Action loadSerializer, Action loadRemotingEndPoint, Type type, bool valueCanBeNull = true);
 
 		/// <summary>
 		/// Emits the code necessary to read a value of type <see cref="Type"/> from <see cref="BinaryReader"/> that was previously
 		/// written to by the code emitted by <see cref="EmitWriteValue"/>.
 		/// </summary>
 		/// <param name="gen"></param>
-		/// <param name="serializerCompiler"></param>
+		/// <param name="binarySerializerCompiler"></param>
 		/// <param name="loadReader"></param>
 		/// <param name="loadSerializer"></param>
 		/// <param name="loadRemotingEndPoint"></param>
 		/// <param name="type"></param>
 		/// <param name="valueCanBeNull"></param>
-		void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader, Action loadSerializer, Action loadRemotingEndPoint, Type type, bool valueCanBeNull = true);
+		void EmitReadValue(ILGenerator gen, BinarySerializer binarySerializerCompiler, Action loadReader, Action loadSerializer, Action loadRemotingEndPoint, Type type, bool valueCanBeNull = true);
 	}
 }

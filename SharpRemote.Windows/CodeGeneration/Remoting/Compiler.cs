@@ -11,18 +11,18 @@ namespace SharpRemote.CodeGeneration.Remoting
 {
 	internal abstract class Compiler
 	{
-		protected readonly Serializer SerializerCompiler;
+		protected readonly BinarySerializer BinarySerializerCompiler;
 		protected readonly Type InterfaceType;
 		protected FieldBuilder Channel;
 		protected FieldBuilder EndPoint;
 		protected FieldBuilder ObjectId;
 		protected FieldBuilder Serializer;
 
-		protected Compiler(Serializer serializer, Type interfaceType)
+		protected Compiler(BinarySerializer binarySerializer, Type interfaceType)
 		{
 			if (interfaceType == null) throw new ArgumentNullException(nameof(interfaceType));
 
-			SerializerCompiler = serializer;
+			BinarySerializerCompiler = binarySerializer;
 			InterfaceType = interfaceType;
 		}
 
@@ -61,7 +61,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 				}
 				else
 				{
-					SerializerCompiler.EmitReadValue(
+					BinarySerializerCompiler.EmitReadValue(
 						gen,
 						loadReader,
 						loadSerializer,
@@ -92,7 +92,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 					gen.Emit(OpCodes.Call, getResult);
 					gen.Emit(OpCodes.Stloc, taskResult);
 
-					SerializerCompiler.EmitWriteValue(gen,
+					BinarySerializerCompiler.EmitWriteValue(gen,
 						loadWriter,
 						() => gen.Emit(OpCodes.Ldloc, taskResult),
 						() => gen.Emit(OpCodes.Ldloca, taskResult),
@@ -116,7 +116,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 				gen.Emit(OpCodes.Callvirt, methodInfo);
 				gen.Emit(OpCodes.Stloc, tmp);
 
-				SerializerCompiler.EmitWriteValue(gen,
+				BinarySerializerCompiler.EmitWriteValue(gen,
 				                                  loadWriter,
 				                                  () => gen.Emit(OpCodes.Ldloc, tmp),
 				                                  () => gen.Emit(OpCodes.Ldloca, tmp),
@@ -207,7 +207,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 					Action loadValueAddress = () => gen.Emit(OpCodes.Ldarga, currentIndex);
 
 					//WriteXXX(_serializer, arg[y], binaryWriter);
-					SerializerCompiler.EmitWriteValue(
+					BinarySerializerCompiler.EmitWriteValue(
 						gen,
 						loadWriter,
 						loadValue,
@@ -400,7 +400,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 			else
 			{
 				// return _serializer.DeserializeXXX(reader);
-				SerializerCompiler.EmitReadValue(
+				BinarySerializerCompiler.EmitReadValue(
 					gen,
 					loadReader,
 					() =>

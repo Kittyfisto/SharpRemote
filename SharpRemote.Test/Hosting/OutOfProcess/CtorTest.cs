@@ -53,7 +53,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that the code generator specified in the ctor is actually used - instead of a new one")]
 		public void TestCtor5()
 		{
-			var serializer = new Serializer();
+			var serializer = new BinarySerializer();
 			serializer.IsTypeRegistered<Tree>().Should().BeFalse();
 			var codeGenerator = new CodeGenerator(serializer);
 

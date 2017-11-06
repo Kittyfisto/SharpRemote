@@ -18,11 +18,11 @@ namespace SharpRemote.CodeGeneration
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="serializer"></param>
-		public CodeGenerator(Serializer serializer)
+		/// <param name="binarySerializer"></param>
+		public CodeGenerator(BinarySerializer binarySerializer)
 		{
-			_proxyCreator = new ProxyCreator(serializer.Module, serializer);
-			_servantCreator = new ServantCreator(serializer.Module, serializer);
+			_proxyCreator = new ProxyCreator(binarySerializer.Module, binarySerializer);
+			_servantCreator = new ServantCreator(binarySerializer.Module, binarySerializer);
 		}
 
 		/// <summary>
@@ -36,7 +36,7 @@ namespace SharpRemote.CodeGeneration
 			var moduleName = assemblyName.Name + ".dll";
 			var module = assembly.DefineDynamicModule(moduleName);
 
-			var serializer = new Serializer(module, customTypeResolver);
+			var serializer = new BinarySerializer(module, customTypeResolver);
 			_proxyCreator = new ProxyCreator(module, serializer);
 			_servantCreator = new ServantCreator(module, serializer);
 		}

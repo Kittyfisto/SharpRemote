@@ -23,7 +23,7 @@ namespace SharpRemote
 	/// - Natively supported: <see cref="string"/>, <see cref="TimeSpan"/>, etc...
 	/// - Attributed with the <see cref="DataContractAttribute"/> and <see cref="DataMemberAttribute"/>
 	/// </remarks>
-	public sealed partial class Serializer
+	public sealed partial class BinarySerializer
 		: ISerializer
 	{
 		private readonly ModuleBuilder _module;
@@ -38,7 +38,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="module"></param>
 		/// <param name="customTypeResolver">The instance of the type resolver, if any, that is used to resolve types upon deserialization</param>
-		public Serializer(ModuleBuilder module, ITypeResolver customTypeResolver = null)
+		public BinarySerializer(ModuleBuilder module, ITypeResolver customTypeResolver = null)
 		{
 			if (module == null) throw new ArgumentNullException(nameof(module));
 
@@ -80,7 +80,7 @@ namespace SharpRemote
 		/// <summary>
 		/// Creates a new serializer that dynamically compiles serialization methods to a new DynamicAssembly.
 		/// </summary>
-		public Serializer(ITypeResolver typeResolver = null)
+		public BinarySerializer(ITypeResolver typeResolver = null)
 			: this(CreateModule(), typeResolver)
 		{
 		}

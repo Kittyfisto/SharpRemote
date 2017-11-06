@@ -24,11 +24,11 @@ namespace SharpRemote.CodeGeneration.Remoting
 		private FieldBuilder _perObjectScheduler;
 		private readonly MethodInfo[] _allMethods;
 
-		public ServantCompiler(Serializer serializer,
+		public ServantCompiler(BinarySerializer binarySerializer,
 		                       ModuleBuilder module,
 		                       string subjectTypeName,
 		                       Type interfaceType)
-			: base(serializer, interfaceType)
+			: base(binarySerializer, interfaceType)
 		{
 			if (module == null) throw new ArgumentNullException(nameof(module));
 			if (subjectTypeName == null) throw new ArgumentNullException(nameof(subjectTypeName));

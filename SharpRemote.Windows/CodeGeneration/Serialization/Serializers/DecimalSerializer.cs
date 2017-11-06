@@ -11,7 +11,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			return type == typeof (Decimal);
 		}
 
-		public override void EmitWriteValue(ILGenerator gen, Serializer serializerCompiler, Action loadWriter,
+		public override void EmitWriteValue(ILGenerator gen, BinarySerializer binarySerializerCompiler, Action loadWriter,
 		                                    Action loadValue,
 		                                    Action loadValueAddress, Action loadSerializer, Action loadRemotingEndPoint,
 		                                    Type type,
@@ -22,7 +22,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			gen.Emit(OpCodes.Call, Methods.WriteDecimal);
 		}
 
-		public override void EmitReadValue(ILGenerator gen, Serializer serializerCompiler, Action loadReader,
+		public override void EmitReadValue(ILGenerator gen, BinarySerializer binarySerializerCompiler, Action loadReader,
 		                                   Action loadSerializer,
 		                                   Action loadRemotingEndPoint, Type type, bool valueCanBeNull = true)
 		{

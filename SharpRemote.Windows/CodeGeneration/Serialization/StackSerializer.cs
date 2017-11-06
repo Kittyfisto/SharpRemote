@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	public partial class BinarySerializer
 	{
 		private void EmitReadStack(ILGenerator gen,
 			Action loadReader,

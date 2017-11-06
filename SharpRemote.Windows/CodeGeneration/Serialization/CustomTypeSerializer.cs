@@ -13,7 +13,7 @@ using SerializationException = SharpRemote.Exceptions.SerializationException;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	public partial class BinarySerializer
 	{
 		#region Writing
 

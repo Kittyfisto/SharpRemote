@@ -52,6 +52,7 @@
     <Compile Include="Attributes\BeforeSerializeAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
+    <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />
     <Compile Include="CodeGeneration\ICodeGenerator.cs" />
     <Compile Include="CodeGeneration\Serialization\ByReferenceHint.cs" />
@@ -77,6 +78,10 @@
     <Compile Include="Exceptions\NoSuchEndPointException.cs" />
     <Compile Include="Exceptions\NoSuchNamedPipeEndPointException.cs" />
     <Compile Include="Extensions\ByteArrayExtensions.cs" />
+    <Compile Include="HandshakeAck.cs" />
+    <Compile Include="HandshakeSynack.cs" />
+    <Compile Include="ProtocolVersion.cs" />
+    <Compile Include="Serializer.cs" />
     <Compile Include="TypeModel\FieldDescription.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />
@@ -207,7 +212,7 @@
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSilo.cs" />
     <Compile Include="Hosting\SubjectHost.cs" />
     <Compile Include="CodeGeneration\Methods.cs" />
-    <Compile Include="CodeGeneration\Serialization\Serializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\BinarySerializer.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCompiler.cs" />
     <Compile Include="CodeGeneration\Remoting\ServantCreator.cs" />
     <Compile Include="IRemotingEndPoint.cs" />

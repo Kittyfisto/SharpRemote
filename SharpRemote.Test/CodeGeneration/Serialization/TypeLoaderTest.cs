@@ -13,7 +13,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestCustomTypeResolver1()
 		{
 			var resolver = new CustomTypeResolver1();
-			var serializer = new Serializer(resolver);
+			var serializer = new BinarySerializer(resolver);
 			serializer.ShouldRoundtrip(typeof (int));
 			resolver.GetTypeCalled.Should().Be(2, "Because the custom type resolve method should be used once to determine that a Type object is being deserialized and then again to retrieve the actual type value");
 		}
@@ -28,7 +28,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					return typeof (Birke);
 				});
 
-			var serializer = new Serializer(resolver);
+			var serializer = new BinarySerializer(resolver);
 			serializer.RegisterType<Birke>();
 
 			using (var stream = new MemoryStream())

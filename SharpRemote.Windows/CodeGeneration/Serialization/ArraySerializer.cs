@@ -7,7 +7,7 @@ using SharpRemote.CodeGeneration;
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
-	public partial class Serializer
+	public partial class BinarySerializer
 	{
 		private enum ArrayOrder
 		{

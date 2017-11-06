@@ -11,7 +11,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		#region Public Methods
 
 		public override void EmitReadValue(ILGenerator gen,
-			Serializer serializerCompiler,
+			BinarySerializer binarySerializerCompiler,
 			Action loadReader,
 			Action loadSerializer,
 			Action loadRemotingEndPoint,
@@ -22,13 +22,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			Type valueType = type.GenericTypeArguments[1];
 			ConstructorInfo ctor = type.GetConstructor(new[] {keyType, valueType});
 
-			serializerCompiler.EmitReadValue(gen,
+			binarySerializerCompiler.EmitReadValue(gen,
 				loadReader,
 				loadSerializer,
 				loadRemotingEndPoint,
 				keyType);
 
-			serializerCompiler.EmitReadValue(gen,
+			binarySerializerCompiler.EmitReadValue(gen,
 				loadReader,
 				loadSerializer,
 				loadRemotingEndPoint,
@@ -38,7 +38,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-		                                    Serializer serializerCompiler,
+		                                    BinarySerializer binarySerializerCompiler,
 		                                    Action loadWriter,
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
@@ -70,7 +70,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					gen.Emit(OpCodes.Ldloca, key);
 				};
 
-			serializerCompiler.EmitWriteValue(gen,
+			binarySerializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  loadKeyValue,
 			                                  loadKeyValueAddress,
@@ -96,7 +96,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 					gen.Emit(OpCodes.Ldloca, value);
 				};
 
-			serializerCompiler.EmitWriteValue(gen,
+			binarySerializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  loadValueValue,
 			                                  loadValueValueAddress,

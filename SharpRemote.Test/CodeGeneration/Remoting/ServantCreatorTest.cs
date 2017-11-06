@@ -35,7 +35,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_endPoint = new Mock<IRemotingEndPoint>();
 			_channel = new Mock<IEndPointChannel>();
 			_creator = new ServantCreator(module);
-			_serializer = _creator.Serializer;
+			_serializer = _creator.BinarySerializer;
 		}
 
 		private ServantCreator _creator;

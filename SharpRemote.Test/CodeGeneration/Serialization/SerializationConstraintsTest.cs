@@ -10,12 +10,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	[TestFixture]
 	public sealed class SerializationConstraintsTest
 	{
-		private Serializer _serializer;
+		private BinarySerializer _serializer;
 
 		[TestFixtureSetUp]
 		public void TestFixtureSetUp()
 		{
-			_serializer = new Serializer();
+			_serializer = new BinarySerializer();
 		}
 
 		private void TestFailRegister<T>(string reason)

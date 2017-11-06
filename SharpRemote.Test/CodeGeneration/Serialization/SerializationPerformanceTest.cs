@@ -19,7 +19,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		/// <typeparam name="T"></typeparam>
 		private void Prepare<T>()
 		{
-			_serializer = new Serializer();
+			_serializer = new BinarySerializer();
 			_serializer.RegisterType<T>();
 			_contractSerializer = new DataContractSerializer(typeof (T));
 		}

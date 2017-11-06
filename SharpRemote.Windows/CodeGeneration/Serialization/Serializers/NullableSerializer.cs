@@ -12,7 +12,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-		                                    Serializer serializerCompiler,
+		                                    BinarySerializer binarySerializerCompiler,
 		                                    Action loadWriter,
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
@@ -40,7 +40,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			gen.Emit(OpCodes.Brfalse, end);
 
 			LocalBuilder value = null;
-			serializerCompiler.EmitWriteValue(gen,
+			binarySerializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  () =>
 				                                  {
@@ -67,7 +67,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
-		                                   Serializer serializerCompiler,
+		                                   BinarySerializer binarySerializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
 		                                   Action loadRemotingEndPoint,
@@ -84,7 +84,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 			gen.Emit(OpCodes.Call, Methods.ReadBool);
 			gen.Emit(OpCodes.Brfalse, noValue);
 
-			serializerCompiler.EmitReadValue(gen,
+			binarySerializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
 			                                 loadRemotingEndPoint,

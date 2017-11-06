@@ -61,7 +61,7 @@
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
     <Compile Include="CodeGeneration\Serialization\DecimalTest.cs" />
-    <Compile Include="CodeGeneration\Serialization\SerializerTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\BinarySerializerTest.cs" />
     <Compile Include="CodeGeneration\TypeResolverTest.cs" />
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="HeartbeatSettingsTest.cs" />

@@ -12,7 +12,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-			Serializer serializerCompiler,
+			BinarySerializer binarySerializerCompiler,
 			Action loadWriter,
 			Action loadValue,
 			Action loadValueAddress,
@@ -37,7 +37,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Serializers
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
-		                                   Serializer serializerCompiler,
+		                                   BinarySerializer binarySerializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
 		                                   Action loadRemotingEndPoint,

@@ -11,23 +11,23 @@ namespace SharpRemote.CodeGeneration.Remoting
 	/// </summary>
 	internal sealed class ProxyCreator
 	{
-		private readonly Serializer _serializer;
+		private readonly BinarySerializer _serializer;
 		private readonly Dictionary<Type, Type> _interfaceToProxy;
 		private readonly ModuleBuilder _module;
 
-		public ProxyCreator(ModuleBuilder module, Serializer serializer)
+		public ProxyCreator(ModuleBuilder module, BinarySerializer binarySerializer)
 		{
 			if (module == null) throw new ArgumentNullException(nameof(module));
-			if (serializer == null) throw new ArgumentNullException(nameof(serializer));
+			if (binarySerializer == null) throw new ArgumentNullException(nameof(binarySerializer));
 
 			_module = module;
-			_serializer = serializer;
+			_serializer = binarySerializer;
 
 			_interfaceToProxy = new Dictionary<Type, Type>();
 		}
 
 		public ProxyCreator(ModuleBuilder module)
-			: this(module, new Serializer(module))
+			: this(module, new BinarySerializer(module))
 		{}
 
 		public ProxyCreator()

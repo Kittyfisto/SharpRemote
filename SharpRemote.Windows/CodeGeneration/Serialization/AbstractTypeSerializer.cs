@@ -89,7 +89,7 @@ namespace SharpRemote
 		public abstract bool Supports(Type type);
 
 		public abstract void EmitWriteValue(ILGenerator gen,
-			Serializer serializerCompiler,
+			BinarySerializer binarySerializerCompiler,
 			Action loadWriter,
 			Action loadValue,
 			Action loadValueAddress,
@@ -99,7 +99,7 @@ namespace SharpRemote
 			bool valueCanBeNull = true);
 
 		public abstract void EmitReadValue(ILGenerator gen,
-			Serializer serializerCompiler,
+			BinarySerializer binarySerializerCompiler,
 			Action loadReader,
 			Action loadSerializer,
 			Action loadRemotingEndPoint,

@@ -8,16 +8,19 @@ namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// Base class for <see cref="ITypeSerializer"/> implementations.
-	/// Adds methods to read / write nullable values.
+	///     Base class for <see cref="IBuiltInTypeSerializer" /> implementations.
+	///     Adds methods to read / write nullable values.
 	/// </summary>
 	internal abstract class AbstractTypeSerializer
-		: ITypeSerializer
+		: IBuiltInTypeSerializer
 	{
+		[Pure]
+		public abstract bool Supports(Type type);
+
 		protected static void EmitReadNullableValue(ILGenerator gen,
-												  Action loadReader,
-												  Action loadValue,
-			bool valueCanBeNull)
+		                                            Action loadReader,
+		                                            Action loadValue,
+		                                            bool valueCanBeNull)
 		{
 			if (valueCanBeNull)
 			{
@@ -85,25 +88,22 @@ namespace SharpRemote
 			}
 		}
 
-		[Pure]
-		public abstract bool Supports(Type type);
-
 		public abstract void EmitWriteValue(ILGenerator gen,
-			BinarySerializer binarySerializerCompiler,
-			Action loadWriter,
-			Action loadValue,
-			Action loadValueAddress,
-			Action loadSerializer,
-			Action loadRemotingEndPoint,
-			Type type,
-			bool valueCanBeNull = true);
+		                                    ISerializerCompiler serializerCompiler,
+		                                    Action loadWriter,
+		                                    Action loadValue,
+		                                    Action loadValueAddress,
+		                                    Action loadSerializer,
+		                                    Action loadRemotingEndPoint,
+		                                    Type type,
+		                                    bool valueCanBeNull = true);
 
 		public abstract void EmitReadValue(ILGenerator gen,
-			BinarySerializer binarySerializerCompiler,
-			Action loadReader,
-			Action loadSerializer,
-			Action loadRemotingEndPoint,
-			Type type,
-			bool valueCanBeNull = true);
+		                                   ISerializerCompiler serializerCompiler,
+		                                   Action loadReader,
+		                                   Action loadSerializer,
+		                                   Action loadRemotingEndPoint,
+		                                   Type type,
+		                                   bool valueCanBeNull = true);
 	}
 }

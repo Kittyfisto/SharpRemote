@@ -27,7 +27,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-		                                    BinarySerializer binarySerializerCompiler,
+		                                    ISerializerCompiler serializerCompiler,
 		                                    Action loadWriter,
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
@@ -46,7 +46,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 					                       gen.Emit(OpCodes.Callvirt, GetAddress);
 					                       gen.Emit(OpCodes.Stloc, addr);
 					                       IPAddressSerializer.EmitWriteValue(gen,
-					                                                          binarySerializerCompiler, loadWriter,
+					                                                          serializerCompiler, loadWriter,
 					                                                          () => gen.Emit(OpCodes.Ldloc, addr), loadValueAddress,
 					                                                          loadSerializer,
 					                                                          loadRemotingEndPoint,
@@ -62,7 +62,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
-		                                   BinarySerializer binarySerializerCompiler,
+		                                   ISerializerCompiler serializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
 		                                   Action loadRemotingEndPoint,
@@ -72,7 +72,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 			EmitReadNullableValue(gen, loadReader, () =>
 				{
 					IPAddressSerializer.EmitReadValue(gen,
-					                                  binarySerializerCompiler,
+					                                  serializerCompiler,
 					                                  loadReader,
 					                                  loadSerializer,
 					                                  loadRemotingEndPoint,

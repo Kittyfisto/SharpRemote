@@ -52,6 +52,8 @@
     <Compile Include="Attributes\BeforeSerializeAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
+    <Compile Include="CodeGeneration\Serialization\ISerializerCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializer.cs" />
     <Compile Include="ConnectionDropReason.cs" />
     <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />
@@ -115,7 +117,7 @@
     <Compile Include="CodeGeneration\Serialization\Binary\CustomTypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\CollectionSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\EnumerableSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Binary\ITypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\IBuiltInTypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\NativeTypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\QueueSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\ApplicationIdSerializer.cs" />
@@ -131,7 +133,7 @@
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\NullableSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\StringSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\TimeSpanSerializer.cs" />
-    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\TypeSerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\Serializers\BuiltInTypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\AbstractTypeSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\UriSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\VersionSerializer.cs" />
@@ -246,7 +248,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="CodeGeneration\Serialization\Json\" />
-    <Folder Include="CodeGeneration\Serialization\Xml\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

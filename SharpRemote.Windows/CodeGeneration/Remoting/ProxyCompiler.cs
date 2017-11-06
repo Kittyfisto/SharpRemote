@@ -20,8 +20,8 @@ namespace SharpRemote.CodeGeneration.Remoting
 		private FieldBuilder _perTypeScheduler;
 		private FieldBuilder _perObjectScheduler;
 
-		public ProxyCompiler(BinarySerializer binarySerializer, ModuleBuilder module, string proxyTypeName, Type interfaceType)
-			: base(binarySerializer, interfaceType)
+		public ProxyCompiler(ISerializerCompiler serializer, ModuleBuilder module, string proxyTypeName, Type interfaceType)
+			: base(serializer, interfaceType)
 		{
 			if (module == null) throw new ArgumentNullException(nameof(module));
 			if (proxyTypeName == null) throw new ArgumentNullException(nameof(proxyTypeName));

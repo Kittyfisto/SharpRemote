@@ -37,7 +37,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-		                                    BinarySerializer binarySerializerCompiler,
+		                                    ISerializerCompiler serializerCompiler,
 		                                    Action loadWriter,
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
@@ -46,7 +46,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
-			binarySerializerCompiler.EmitWriteValue(gen,
+			serializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  () =>
 				                                  {
@@ -58,7 +58,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 											  loadRemotingEndPoint,
 			                                  typeof (byte[]));
 
-			binarySerializerCompiler.EmitWriteValue(gen,
+			serializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  () =>
 				                                  {
@@ -70,7 +70,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 											  loadRemotingEndPoint,
 			                                  typeof (string));
 
-			binarySerializerCompiler.EmitWriteValue(gen,
+			serializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  () =>
 				                                  {
@@ -82,7 +82,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 											  loadRemotingEndPoint,
 			                                  typeof (Version));
 
-			binarySerializerCompiler.EmitWriteValue(gen,
+			serializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  () =>
 				                                  {
@@ -94,7 +94,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 											  loadRemotingEndPoint,
 			                                  typeof (string));
 
-			binarySerializerCompiler.EmitWriteValue(gen,
+			serializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  () =>
 				                                  {
@@ -108,38 +108,38 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
-		                                   BinarySerializer binarySerializerCompiler,
+		                                   ISerializerCompiler serializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
 		                                   Action loadRemotingEndPoint,
 		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
-			binarySerializerCompiler.EmitReadValue(gen,
+			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
 			                                 loadRemotingEndPoint,
 			                                 typeof (byte[]));
 
-			binarySerializerCompiler.EmitReadValue(gen,
+			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
 			                                 loadRemotingEndPoint,
 			                                 typeof (string));
 
-			binarySerializerCompiler.EmitReadValue(gen,
+			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
 			                                 loadRemotingEndPoint,
 			                                 typeof (Version));
 
-			binarySerializerCompiler.EmitReadValue(gen,
+			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
 			                                 loadRemotingEndPoint,
 			                                 typeof (string));
 
-			binarySerializerCompiler.EmitReadValue(gen,
+			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
 			                                 loadRemotingEndPoint,

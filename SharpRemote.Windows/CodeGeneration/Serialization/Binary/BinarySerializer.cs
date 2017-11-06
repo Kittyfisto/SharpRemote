@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
@@ -14,21 +14,21 @@ namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	/// <see cref="ISerializer"/> implementation that just-in-time compiles the code responsible
-	/// for serializing arbitrary types. <see cref="WriteObject"/> serializes an object graph to
-	/// a <see cref="BinaryWriter"/> and <see cref="ReadObject"/> deserializes one from a <see cref="BinaryReader"/>.
+	///     <see cref="ISerializer" /> implementation that just-in-time compiles the code responsible
+	///     for serializing arbitrary types. <see cref="WriteObject" /> serializes an object graph to
+	///     a <see cref="BinaryWriter" /> and <see cref="ReadObject" /> deserializes one from a <see cref="BinaryReader" />.
 	/// </summary>
 	/// <remarks>
-	/// An object graph (or sub-graph) can only be serialized if its type is either:
-	/// - Natively supported: <see cref="string"/>, <see cref="TimeSpan"/>, etc...
-	/// - Attributed with the <see cref="DataContractAttribute"/> and <see cref="DataMemberAttribute"/>
+	///     An object graph (or sub-graph) can only be serialized if its type is either:
+	///     - Natively supported: <see cref="string" />, <see cref="TimeSpan" />, etc...
+	///     - Attributed with the <see cref="DataContractAttribute" /> and <see cref="DataMemberAttribute" />
 	/// </remarks>
 	public sealed partial class BinarySerializer
-		: ISerializer
+		: ISerializerCompiler
 	{
 		private readonly ModuleBuilder _module;
 		private readonly Dictionary<Type, SerializationMethods> _serializationMethods;
-		private readonly List<ITypeSerializer> _customSerializers;
+		private readonly List<IBuiltInTypeSerializer> _customSerializers;
 		private readonly Dictionary<Type, MethodInfo> _getSingletonInstance;
 		private readonly ITypeResolver _customTypeResolver;
 
@@ -46,12 +46,12 @@ namespace SharpRemote
 			_customTypeResolver = customTypeResolver;
 			_serializationMethods = new Dictionary<Type, SerializationMethods>();
 
-			_customSerializers = new List<ITypeSerializer>
+			_customSerializers = new List<IBuiltInTypeSerializer>
 			{
 				new Int32Serializer(),
 				new IPEndPointSerializer(),
 				new IPAddressSerializer(),
-				new TypeSerializer(),
+				new BuiltInTypeSerializer(),
 				new StringSerializer(),
 				new ByteArraySerializer(),
 				new TimeSpanSerializer(),

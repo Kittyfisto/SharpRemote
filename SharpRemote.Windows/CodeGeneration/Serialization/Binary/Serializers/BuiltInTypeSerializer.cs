@@ -9,12 +9,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 	/// Serialization simply writes the type's assembly qualified name, e.g. "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
 	/// and deserialization calls <see cref="TypeResolver.GetType(string)"/> or a user specified method.
 	/// </summary>
-	internal sealed class TypeSerializer
+	internal sealed class BuiltInTypeSerializer
 		: AbstractTypeSerializer
 	{
 		public static readonly MethodInfo GetAssemblyQualifiedName;
 
-		static TypeSerializer()
+		static BuiltInTypeSerializer()
 		{
 			GetAssemblyQualifiedName = typeof(Type).GetProperty("AssemblyQualifiedName").GetGetMethod();
 		}
@@ -25,7 +25,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-		                                    BinarySerializer binarySerializerCompiler,
+		                                    ISerializerCompiler serializerCompiler,
 		                                    Action loadWriter,
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
@@ -50,7 +50,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
-		                                   BinarySerializer binarySerializerCompiler,
+		                                   ISerializerCompiler serializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
 		                                   Action loadRemotingEndPoint,

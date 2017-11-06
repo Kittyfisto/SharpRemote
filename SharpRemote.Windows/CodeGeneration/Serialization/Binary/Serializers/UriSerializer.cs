@@ -22,7 +22,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitWriteValue(ILGenerator gen,
-		                                    BinarySerializer binarySerializerCompiler,
+		                                    ISerializerCompiler serializerCompiler,
 		                                    Action loadWriter,
 		                                    Action loadValue,
 		                                    Action loadValueAddress,
@@ -31,7 +31,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		                                    Type type,
 		                                    bool valueCanBeNull = true)
 		{
-			binarySerializerCompiler.EmitWriteValue(gen,
+			serializerCompiler.EmitWriteValue(gen,
 			                                  loadWriter,
 			                                  () =>
 				                                  {
@@ -45,14 +45,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 		}
 
 		public override void EmitReadValue(ILGenerator gen,
-		                                   BinarySerializer binarySerializerCompiler,
+		                                   ISerializerCompiler serializerCompiler,
 		                                   Action loadReader,
 		                                   Action loadSerializer,
 		                                   Action loadRemotingEndPoint,
 		                                   Type type,
 		                                   bool valueCanBeNull = true)
 		{
-			binarySerializerCompiler.EmitReadValue(gen,
+			serializerCompiler.EmitReadValue(gen,
 			                                 loadReader,
 			                                 loadSerializer,
 			                                 loadSerializer,

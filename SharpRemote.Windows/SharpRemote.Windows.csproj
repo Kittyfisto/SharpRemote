@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AbstractMethodInvocationWriter.cs" />
     <Compile Include="Attributes\AfterDeserializeAttribute.cs" />
     <Compile Include="Attributes\AfterSerializeAttribute.cs" />
     <Compile Include="Attributes\AsyncRemoteAttribute.cs" />
@@ -53,6 +54,10 @@
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializerCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodInvocationReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodInvocationWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializer.cs" />
     <Compile Include="ConnectionDropReason.cs" />
     <Compile Include="HandshakeSyn.cs" />
@@ -81,6 +86,11 @@
     <Compile Include="Extensions\ByteArrayExtensions.cs" />
     <Compile Include="HandshakeAck.cs" />
     <Compile Include="HandshakeSynack.cs" />
+    <Compile Include="CodeGeneration\Serialization\IMethodResultReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\IMethodInvocationWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\IMethodInvocationReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\IMethodResultWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\ISerializer2.cs" />
     <Compile Include="ProtocolVersion.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="TypeModel\FieldDescription.cs" />
@@ -190,7 +200,7 @@
     <Compile Include="IGrain.cs" />
     <Compile Include="Attributes\InvokeAttribute.cs" />
     <Compile Include="IProxy.cs" />
-    <Compile Include="ISerializer.cs" />
+    <Compile Include="CodeGeneration\Serialization\ISerializer.cs" />
     <Compile Include="IServant.cs" />
     <Compile Include="Attributes\SingletonFactoryMethodAttribute.cs" />
     <Compile Include="ITypeResolver.cs" />

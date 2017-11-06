@@ -19,7 +19,7 @@ namespace SharpRemote.Watchdog
 
 			using (var stream = File.OpenRead(path))
 			{
-				var serializer = new XmlSerializer(typeof (T));
+				var serializer = new System.Xml.Serialization.XmlSerializer(typeof (T));
 				return (T)serializer.Deserialize(stream);
 			}
 		}
@@ -48,7 +48,7 @@ namespace SharpRemote.Watchdog
 						IndentChar = '\t',
 						Indentation = 1
 					};
-					var serializer = new XmlSerializer(typeof(T));
+					var serializer = new System.Xml.Serialization.XmlSerializer(typeof(T));
 					serializer.Serialize(writer, value);
 				}
 			}

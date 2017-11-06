@@ -1,49 +1,40 @@
 ﻿using System;
 using System.IO;
+using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+// ReSharper disable once CheckNamespace
+namespace SharpRemote
 {
+	/// <summary>
+	///     A serializer implementation which writes and reads xml documents which carry method call invocations or results.
+	/// </summary>
 	public sealed class XmlSerializer
-		: ISerializer
+		: ISerializer2
 	{
+		private readonly ITypeResolver _customTypeResolver;
+		private readonly ModuleBuilder _module;
 		private readonly TypeModel _typeModel;
 
-		public XmlSerializer()
-		{
-			
-		}
-
-		public void RegisterType<T>()
+		/// <inheritdoc />
+		public IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void RegisterType(Type type)
+		/// <inheritdoc />
+		public IMethodInvocationReader CreateMethodInvocationReader(Stream stream)
 		{
 			throw new NotImplementedException();
 		}
 
-		public bool IsTypeRegistered<T>()
+		/// <inheritdoc />
+		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
 			throw new NotImplementedException();
 		}
 
-		public bool IsTypeRegistered(Type type)
-		{
-			throw new NotImplementedException();
-		}
-
-		public void WriteObject(BinaryWriter writer, object value, IRemotingEndPoint endPoint)
-		{
-			throw new NotImplementedException();
-		}
-
-		public object ReadObject(BinaryReader reader, IRemotingEndPoint endPoint)
-		{
-			throw new NotImplementedException();
-		}
-
-		public Type GetType(string assemblyQualifiedTypeName)
+		/// <inheritdoc />
+		public IMethodResultReader CreateMethodResultReader(Stream stream)
 		{
 			throw new NotImplementedException();
 		}

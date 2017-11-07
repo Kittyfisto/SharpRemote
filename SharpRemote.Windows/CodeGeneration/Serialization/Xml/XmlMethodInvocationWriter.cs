@@ -14,6 +14,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string MethodAttributeName = "Method";
 		public const string ArgumentElementName = "Argument";
 		public const string ArgumentNameAttributeName = "Name";
+		public const string ArgumentValueAttributeName = "Value";
 
 		private readonly XmlSerializer _serializer;
 		private readonly StreamWriter _textWriter;
@@ -53,89 +54,59 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public void WriteNamedArgument(string name, sbyte value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteSByte(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, byte value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteByte(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, ushort value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteUInt16(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, short value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteInt16(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, uint value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteUInt32(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, int value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteInt32(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, ulong value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteUInt64(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, long value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteInt64(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, float value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteFloat(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString("R", CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, double value)
 		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteDouble(_writer, value);
-			_writer.WriteEndElement();
+			WriteNamedArgument(name, value.ToString("R", CultureInfo.InvariantCulture));
 		}
 
 		public void WriteNamedArgument(string name, string value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
 			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
-			_serializer.WriteString(_writer, value);
+			_writer.WriteAttributeString(ArgumentValueAttributeName, value);
 			_writer.WriteEndElement();
 		}
 

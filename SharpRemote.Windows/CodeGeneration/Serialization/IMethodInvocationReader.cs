@@ -15,7 +15,7 @@ namespace SharpRemote
 		///     Is used to match method call and -result.
 		/// </summary>
 		ulong RpcId { get; }
-		
+
 		/// <summary>
 		///     The id of the grain on which the method is to be invoked.
 		/// </summary>
@@ -29,92 +29,105 @@ namespace SharpRemote
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		object ReadNextArgument(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgument(out string name, out object value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		sbyte ReadNextArgumentAsSByte(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsSByte(out string name, out sbyte value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		byte ReadNextArgumentAsByte(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsByte(out string name, out byte value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		ushort ReadNextArgumentAsUInt16(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsUInt16(out string name, out ushort value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		short ReadNextArgumentAsInt16(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsInt16(out string name, out short value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		uint ReadNextArgumentAsUInt32(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsUInt32(out string name, out uint value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		int ReadNextArgumentAsInt32(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsInt32(out string name, out int value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		ulong ReadNextArgumentAsUInt64(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsUInt64(out string name, out ulong value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		long ReadNextArgumentAsInt64(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsInt64(out string name, out long value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		float ReadNextArgumentAsFloat(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsFloat(out string name, out float value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		double ReadNextArgumentAsDouble(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsDouble(out string name, out double value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		string ReadNextArgumentAsString(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsString(out string name, out string value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="argumentName">The name of the next argument, if it was written to the next message.</param>
-		/// <returns>The value of the next argument.</returns>
-		byte[] ReadNextArgumentAsBytes(out string argumentName);
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsBytes(out string name, out byte[] value);
 	}
 }

@@ -14,6 +14,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string RpcIdAttributeName = XmlMethodInvocationWriter.RpcIdAttributeName;
 		public const string GrainIdAttributeName = XmlMethodInvocationWriter.GrainIdAttributeName;
 		public const string MethodAttributeName = XmlMethodInvocationWriter.MethodAttributeName;
+		public const string ArgumentNameAttributeName = XmlMethodInvocationWriter.ArgumentNameAttributeName;
+		public const string ArgumentValueAttributeName = XmlMethodInvocationWriter.ArgumentValueAttributeName;
 
 		private readonly XmlSerializer _xmlSerializer;
 		private readonly StreamReader _textReader;
@@ -71,69 +73,186 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public string MethodName => _methodName;
 
-		public object ReadNextArgument(out string argumentName)
+		public bool ReadNextArgument(out string name, out object value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public sbyte ReadNextArgumentAsSByte(out string argumentName)
+		public bool ReadNextArgumentAsSByte(out string name, out sbyte value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = sbyte.MinValue;
+				return false;
+			}
+			value = sbyte.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsByte(out string name, out byte value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = byte.MinValue;
+				return false;
+			}
+			value = byte.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsUInt16(out string name, out ushort value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = ushort.MinValue;
+				return false;
+			}
+			value = ushort.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsInt16(out string name, out short value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = short.MinValue;
+				return false;
+			}
+			value = short.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsUInt32(out string name, out uint value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = uint.MinValue;
+				return false;
+			}
+			value = uint.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsInt32(out string name, out int value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = int.MinValue;
+				return false;
+			}
+			value = int.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsUInt64(out string name, out ulong value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = ulong.MinValue;
+				return false;
+			}
+			value = ulong.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsInt64(out string name, out long value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = long.MinValue;
+				return false;
+			}
+			value = long.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsFloat(out string name, out float value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = float.MinValue;
+				return false;
+			}
+			value = float.Parse(tmp, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsDouble(out string name, out double value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = double.MinValue;
+				return false;
+			}
+			value = double.Parse(tmp, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsString(out string name, out string value)
+		{
+			return ReadNextArgument(out name, out value);
+		}
+
+		public bool ReadNextArgumentAsBytes(out string name, out byte[] value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public byte ReadNextArgumentAsByte(out string argumentName)
+		private bool ReadNextArgument()
 		{
-			throw new NotImplementedException();
+			if (!_reader.Read())
+				return false;
+
+			if (_reader.NodeType == XmlNodeType.EndElement && _reader.Name == RpcElementName)
+				return false;
+
+			return true;
 		}
 
-		public ushort ReadNextArgumentAsUInt16(out string argumentName)
+		private bool ReadNextArgument(out string name, out string value)
 		{
-			throw new NotImplementedException();
-		}
+			if (!ReadNextArgument())
+			{
+				name = null;
+				value = null;
+				return false;
+			}
 
-		public short ReadNextArgumentAsInt16(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
+			name = null;
+			value = null;
+			var attributeCount = _reader.AttributeCount;
+			for (int i = 0; i < attributeCount; ++i)
+			{
+				_reader.MoveToNextAttribute();
 
-		public uint ReadNextArgumentAsUInt32(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
+				switch (_reader.Name)
+				{
+					case ArgumentNameAttributeName:
+						name = _reader.Value;
+						break;
 
-		public int ReadNextArgumentAsInt32(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
+					case ArgumentValueAttributeName:
+						value = _reader.Value;
+						break;
+				}
+			}
 
-		public ulong ReadNextArgumentAsUInt64(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
-
-		public long ReadNextArgumentAsInt64(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
-
-		public float ReadNextArgumentAsFloat(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
-
-		public double ReadNextArgumentAsDouble(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
-
-		public string ReadNextArgumentAsString(out string argumentName)
-		{
-			throw new NotImplementedException();
-		}
-
-		public byte[] ReadNextArgumentAsBytes(out string argumentName)
-		{
-			throw new NotImplementedException();
+			// TODO: Throw better exception
+			if (name == null)
+				throw new NotImplementedException();
+			if (value == null)
+				throw new NotImplementedException();
+			return true;
 		}
 	}
 }

@@ -31,67 +31,67 @@ namespace SharpRemote.CodeGeneration.Serialization.Json
 			get { throw new NotImplementedException(); }
 		}
 
-		public object ReadNextArgument(out string argumentName)
+		public bool ReadNextArgument(out string argumentName, out object value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public sbyte ReadNextArgumentAsSByte(out string argumentName)
+		public bool ReadNextArgumentAsSByte(out string name, out sbyte value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public byte ReadNextArgumentAsByte(out string argumentName)
+		public bool ReadNextArgumentAsByte(out string name, out byte value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ushort ReadNextArgumentAsUInt16(out string argumentName)
+		public bool ReadNextArgumentAsUInt16(out string name, out ushort value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public short ReadNextArgumentAsInt16(out string argumentName)
+		public bool ReadNextArgumentAsInt16(out string name, out short value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public uint ReadNextArgumentAsUInt32(out string argumentName)
+		public bool ReadNextArgumentAsUInt32(out string name, out uint value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public int ReadNextArgumentAsInt32(out string argumentName)
+		public bool ReadNextArgumentAsInt32(out string name, out int value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ulong ReadNextArgumentAsUInt64(out string argumentName)
+		public bool ReadNextArgumentAsUInt64(out string name, out ulong value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public long ReadNextArgumentAsInt64(out string argumentName)
+		public bool ReadNextArgumentAsInt64(out string name, out long value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public float ReadNextArgumentAsFloat(out string argumentName)
+		public bool ReadNextArgumentAsFloat(out string name, out float value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public double ReadNextArgumentAsDouble(out string argumentName)
+		public bool ReadNextArgumentAsDouble(out string name, out double value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public string ReadNextArgumentAsString(out string argumentName)
+		public bool ReadNextArgumentAsString(out string name, out string value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public byte[] ReadNextArgumentAsBytes(out string argumentName)
+		public bool ReadNextArgumentAsBytes(out string name, out byte[] value)
 		{
 			throw new NotImplementedException();
 		}

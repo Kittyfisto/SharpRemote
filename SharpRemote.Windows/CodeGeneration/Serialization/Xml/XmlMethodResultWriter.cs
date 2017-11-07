@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Xml;
 using SharpRemote.Extensions;
@@ -9,7 +10,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		: IMethodResultWriter
 	{
 		public const string RpcElementName = XmlMethodInvocationWriter.RpcElementName;
-		public const string RpcIdElementName = XmlMethodInvocationWriter.RpcIdAttributeName;
+		public const string RpcIdAttributeName = XmlMethodInvocationWriter.RpcIdAttributeName;
 		public const string ResultElementName = "ReturnValue";
 		public const string ExceptionElementName = "Exception";
 
@@ -26,9 +27,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			_writer = XmlWriter.Create(_textWriter, settings);
 			_writer.WriteStartDocument();
 			_writer.WriteStartElement(RpcElementName);
-			_writer.WriteStartElement(RpcIdElementName);
-			serializer.WriteUInt64(_writer, rpcId);
-			_writer.WriteEndElement();
+			_writer.WriteAttributeString(RpcIdAttributeName, rpcId.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void Dispose()

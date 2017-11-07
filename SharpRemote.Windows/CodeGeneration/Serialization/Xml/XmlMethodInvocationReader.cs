@@ -22,10 +22,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private readonly ulong _grainId;
 		private readonly string _methodName;
 
-		public XmlMethodInvocationReader(XmlSerializer xmlSerializer, Stream stream)
+		public XmlMethodInvocationReader(XmlSerializer xmlSerializer, Encoding encoding, Stream stream)
 		{
 			_xmlSerializer = xmlSerializer;
-			_textReader = new StreamReader(stream, Encoding.Default, true, 4096, true);
+			_textReader = new StreamReader(stream, encoding, true, 4096, true);
 			_reader = XmlReader.Create(_textReader);
 			_reader.MoveToContent();
 

@@ -16,7 +16,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 
 		protected override string Format(MemoryStream stream)
 		{
-			using (var reader = new StreamReader(stream, Encoding.Default, true, 4096, true))
+			using (var reader = new StreamReader(stream, Encoding.Default, detectEncodingFromByteOrderMarks: true,
+			                                     bufferSize: 4096, leaveOpen: true))
 			{
 				return reader.ReadToEnd();
 			}
@@ -38,5 +39,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 			ulong.MaxValue
 		};
 
+		public static IEnumerable<string> MethodNames => new[]
+		{
+			"",
+			"Foo",
+			"汉字",
+			"昨夜のコンサートは最高でした。"
+		};
 	}
 }

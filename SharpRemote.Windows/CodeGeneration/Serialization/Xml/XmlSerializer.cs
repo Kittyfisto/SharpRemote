@@ -37,13 +37,15 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public void RegisterType<T>()
 		{
-			_typeModel.Add<T>();
+			RegisterType(typeof(T));
 		}
 
 		/// <inheritdoc />
 		public void RegisterType(Type type)
 		{
+			Log.DebugFormat("Registering type '{0}'", type);
 			_typeModel.Add(type);
+			Log.DebugFormat("Type '{0}' successfully registered", type);
 		}
 
 		/// <inheritdoc />
@@ -67,7 +69,7 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public IMethodInvocationReader CreateMethodInvocationReader(Stream stream, IRemotingEndPoint endPoint = null)
 		{
-			return new XmlMethodInvocationReader(this, stream);
+			return new XmlMethodInvocationReader(this, _settings.Encoding, stream);
 		}
 
 		/// <inheritdoc />
@@ -79,7 +81,7 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public IMethodResultReader CreateMethodResultReader(Stream stream, IRemotingEndPoint endPoint = null)
 		{
-			return new XmlMethodResultReader(this, stream);
+			return new XmlMethodResultReader(this, _settings.Encoding, stream);
 		}
 
 		/// <summary>

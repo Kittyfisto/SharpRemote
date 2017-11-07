@@ -11,6 +11,12 @@ namespace SharpRemote
 		: IDisposable
 	{
 		/// <summary>
+		///     The id which identifies this remote procedure call.
+		///     Is used to match method call and -result.
+		/// </summary>
+		ulong RpcId { get; }
+		
+		/// <summary>
 		///     The id of the grain on which the method is to be invoked.
 		/// </summary>
 		ulong GrainId { get; }
@@ -19,12 +25,6 @@ namespace SharpRemote
 		///     The name of the method which is to be invoked.
 		/// </summary>
 		string MethodName { get; }
-
-		/// <summary>
-		///     The id which identifies this remote procedure call.
-		///     Is used to match method call and -result.
-		/// </summary>
-		ulong RpcId { get; }
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.

@@ -84,7 +84,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			bool failed = false;
 			handler.OnResolutionFailedEvent += () => failed = true;
 
-			using (var silo = new Hosting.OutOfProcessSilo(failureHandler: handler))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: handler))
 			{
 				silo.Start();
 				var proxy = silo.CreateGrain<IDoImportStuff, DoesImportantStuff>();
@@ -137,7 +137,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			bool failed = false;
 			handler.OnResolutionFailedEvent += () => failed = true;
 
-			using (var silo = new Hosting.OutOfProcessSilo(failureHandler: handler))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: handler))
 			{
 				silo.Start();
 				var proxy = silo.CreateGrain<IDoImportStuff, DoesImportantStuff>();
@@ -186,7 +186,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			bool failed = false;
 			handler.OnResolutionFailedEvent += () => failed = true;
 
-			using (var silo = new Hosting.OutOfProcessSilo(failureHandler: handler))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: handler))
 			{
 				silo.Start();
 

@@ -29,7 +29,7 @@ namespace SharpRemote.Test.Watchdog
 		private string _binFolder;
 		private IInternalWatchdog _watchdog;
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void TestFixtureSetUp()
 		{
 			Assembly assembly = typeof (InternalWatchdog).Assembly;

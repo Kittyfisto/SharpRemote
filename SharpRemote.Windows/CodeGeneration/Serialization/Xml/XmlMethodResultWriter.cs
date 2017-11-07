@@ -9,18 +9,19 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		: IMethodResultWriter
 	{
 		public const string RpcElementName = XmlMethodInvocationWriter.RpcElementName;
-		public const string RpcIdElementName = XmlMethodInvocationWriter.RpcIdElementName;
+		public const string RpcIdElementName = XmlMethodInvocationWriter.RpcIdAttributeName;
 		public const string ResultElementName = "ReturnValue";
 		public const string ExceptionElementName = "Exception";
 
 		private readonly XmlSerializer _serializer;
 		private readonly StreamWriter _textWriter;
 		private readonly XmlWriter _writer;
-		private IRemotingEndPoint _endPoint;
+		private readonly IRemotingEndPoint _endPoint;
 
-		public XmlMethodResultWriter(XmlSerializer serializer, XmlWriterSettings settings, Stream stream, ulong rpcId, IRemotingEndPoint endPoint)
+		public XmlMethodResultWriter(XmlSerializer serializer, XmlWriterSettings settings, Stream stream, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
 			_serializer = serializer;
+			_endPoint = endPoint;
 			_textWriter = new StreamWriter(stream, settings.Encoding, 4096, leaveOpen: true);
 			_writer = XmlWriter.Create(_textWriter, settings);
 			_writer.WriteStartDocument();

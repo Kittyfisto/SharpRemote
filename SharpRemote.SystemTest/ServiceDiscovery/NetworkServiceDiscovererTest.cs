@@ -8,21 +8,22 @@ using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.ServiceDiscovery;
+using SharpRemote.Test;
 
-namespace SharpRemote.Test.ServiceDiscovery
+namespace SharpRemote.SystemTest.ServiceDiscovery
 {
 	[TestFixture]
 	public sealed class NetworkServiceDiscovererTest
 	{
 		private NetworkServiceDiscoverer _discoverer;
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void TestFixtureSetUp()
 		{
 			_discoverer = new NetworkServiceDiscoverer();
 		}
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void TestFixtureTearDown()
 		{
 			_discoverer.Dispose();
@@ -38,13 +39,13 @@ namespace SharpRemote.Test.ServiceDiscovery
 			.WithMessage("The total size of a message may not exceed 512 bytes (this message would be 568 bytes in length)\r\nParameter name: payload");
 		}
 
-		[Test]
-		[Description("Verifies that when no services are registered, then none can be found")]
-		public void TestFindAllServices1()
-		{
-			var services = _discoverer.FindAllServices();
-			services.Should().BeEmpty();
-		}
+		//[Test]
+		//[Description("Verifies that when no services are registered, then none can be found")]
+		//public void TestFindAllServices1()
+		//{
+		//	var services = _discoverer.FindAllServices();
+		//	services.Should().BeEmpty();
+		//}
 
 		[Test]
 		[LocalTest("")]

@@ -36,11 +36,7 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		public IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream,
-		                                                            ulong grainId,
-		                                                            string methodName,
-		                                                            ulong rpcId,
-		                                                            IRemotingEndPoint endPoint = null)
+		public IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong rpcId, ulong grainId, string methodName, IRemotingEndPoint endPoint = null)
 		{
 			return new BinaryMethodInvocationWriter(stream, grainId, methodName, rpcId);
 		}

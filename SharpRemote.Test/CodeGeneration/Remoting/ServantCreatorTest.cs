@@ -47,7 +47,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private string _moduleName;
 		private ISerializer _serializer;
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void TearDown()
 		{
 			_assembly.Save(_moduleName);

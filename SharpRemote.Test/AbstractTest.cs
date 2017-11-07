@@ -8,7 +8,7 @@ namespace SharpRemote.Test
 {
 	public abstract class AbstractTest
 	{
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public virtual void TestFixtureSetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
@@ -34,7 +34,7 @@ namespace SharpRemote.Test
 			Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
 		}
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void TestFixtureTearDown()
 		{
 			TestLogger.DisableConsoleLogging();

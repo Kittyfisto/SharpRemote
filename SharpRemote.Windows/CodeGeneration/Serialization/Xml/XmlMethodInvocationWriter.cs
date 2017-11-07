@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Globalization;
+using System.IO;
 using System.Xml;
 using SharpRemote.Extensions;
 
@@ -8,14 +9,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		: IMethodInvocationWriter
 	{
 		public const string RpcElementName = "RPC";
-		public const string RpcIdElementName = "ID";
+		public const string RpcIdAttributeName = "ID";
+		public const string GrainIdAttributeName = "Grain";
+		public const string MethodAttributeName = "Method";
 		public const string ArgumentElementName = "Argument";
 		public const string ArgumentNameAttributeName = "Name";
 
 		private readonly XmlSerializer _serializer;
-		private readonly ulong _grainId;
-		private readonly string _methodName;
-		private readonly ulong _rpcId;
 		private readonly StreamWriter _textWriter;
 		private readonly XmlWriter _writer;
 		private readonly IRemotingEndPoint _endPoint;
@@ -23,15 +23,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public XmlMethodInvocationWriter(XmlSerializer serializer, XmlWriterSettings settings, Stream stream, ulong grainId, string methodName, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
 			_serializer = serializer;
-			_grainId = grainId;
-			_methodName = methodName;
-			_rpcId = rpcId;
 			_endPoint = endPoint;
 
 			_textWriter = new StreamWriter(stream, settings.Encoding, 4096, true);
 			_writer = XmlWriter.Create(_textWriter, settings);
 			_writer.WriteStartDocument();
+
 			_writer.WriteStartElement(RpcElementName);
+			_writer.WriteAttributeString(RpcIdAttributeName, rpcId.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteAttributeString(GrainIdAttributeName, grainId.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteAttributeString(MethodAttributeName, methodName);
 		}
 
 		public void Dispose()

@@ -28,7 +28,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			return _proxyCreator.CreateProxy<T>(_endPoint, _channel, objectId);
 		}
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void TestFixtureSetUp()
 		{
 			var seed = (int) DateTime.Now.Ticks;

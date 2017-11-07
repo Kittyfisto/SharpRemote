@@ -10,25 +10,37 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		protected abstract ISerializer2 Create();
 
 		[Test]
-		public void TestEmptyMethodCall()
+		public void TestEmptyMethodCall([ValueSource("GrainIds")] ulong grainId,
+		                                [ValueSource("RpcIds")] ulong rpcId)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (serializer.CreateMethodInvocationWriter(stream, grainId: 42, methodName: "Foo", rpcId: 1337))
-				{
-				}
+				using (serializer.CreateMethodInvocationWriter(stream, rpcId, grainId, "Foo"))
+				{}
 
 				stream.Position.Should()
 				      .BeGreaterThan(expected: 0, because: "because some data must've been written to the stream");
 				stream.Position = 0;
+
+				WriteMessage(stream);
+
 				using (var reader = serializer.CreateMethodInvocationReader(stream))
 				{
-					reader.GrainId.Should().Be(expected: 42);
+					reader.RpcId.Should().Be(rpcId);
+					reader.GrainId.Should().Be(grainId);
 					reader.MethodName.Should().Be("Foo");
-					reader.RpcId.Should().Be(expected: 1337);
 				}
 			}
+		}
+
+		protected abstract string Format(MemoryStream stream);
+
+		private void WriteMessage(MemoryStream stream)
+		{
+			var formatted = Format(stream);
+			TestContext.Out.Write(formatted);
+			stream.Position = 0;
 		}
 	}
 }

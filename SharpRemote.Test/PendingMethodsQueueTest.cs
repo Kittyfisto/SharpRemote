@@ -34,11 +34,11 @@ namespace SharpRemote.Test
 			Task.Factory.StartNew(() =>
 				{
 					queue.Enqueue(1, "", "", new MemoryStream(), 1);
-				}).Wait(TimeSpan.FromSeconds(1)).Should().BeTrue();
+				}, TaskCreationOptions.LongRunning).Wait(TimeSpan.FromSeconds(1)).Should().BeTrue();
 			Task.Factory.StartNew(() =>
 			{
 				queue.Enqueue(1, "", "", new MemoryStream(), 2);
-			}).Wait(TimeSpan.FromSeconds(1)).Should().BeFalse();
+			}, TaskCreationOptions.LongRunning).Wait(TimeSpan.FromSeconds(1)).Should().BeFalse();
 		}
 
 		[Test]

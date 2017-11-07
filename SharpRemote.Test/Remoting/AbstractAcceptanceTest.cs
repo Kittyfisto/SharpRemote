@@ -28,7 +28,7 @@ namespace SharpRemote.Test.Remoting
 		private IRemotingEndPoint _client;
 		private IRemotingEndPoint _server;
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public new void SetUp()
 		{
 			TestLogger.EnableConsoleLogging(Level.Error);
@@ -49,7 +49,7 @@ namespace SharpRemote.Test.Remoting
 		protected abstract IRemotingEndPoint CreateClient();
 		protected abstract void Connect(IRemotingEndPoint client, IRemotingEndPoint server);
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void TearDown()
 		{
 			TestLogger.DisableConsoleLogging();

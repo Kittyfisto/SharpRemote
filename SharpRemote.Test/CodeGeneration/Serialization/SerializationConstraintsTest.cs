@@ -12,7 +12,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	{
 		private BinarySerializer _serializer;
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void TestFixtureSetUp()
 		{
 			_serializer = new BinarySerializer();

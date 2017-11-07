@@ -95,13 +95,22 @@ namespace SharpRemote
 		///     The given <paramref name="stream" /> should NOT be written to any more after
 		///     the returned writer has been disposed of.
 		/// </remarks>
+		/// <remarks>
+		///     The given <paramref name="stream" /> should NOT be disposed of when the returned
+		///     <see cref="IMethodInvocationWriter" /> is disposed of:
+		///     That writer does NOT own the stream and should NOT close it either.
+		/// </remarks>
 		/// <param name="stream"></param>
+		/// <param name="rpcId"></param>
 		/// <param name="grainId"></param>
 		/// <param name="methodName"></param>
-		/// <param name="rpcId"></param>
 		/// <param name="endPoint"></param>
 		/// <returns></returns>
-		IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId, IRemotingEndPoint endPoint = null);
+		IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream,
+		                                                     ulong rpcId,
+		                                                     ulong grainId,
+		                                                     string methodName,
+		                                                     IRemotingEndPoint endPoint = null);
 
 		/// <summary>
 		/// </summary>
@@ -111,6 +120,11 @@ namespace SharpRemote
 		/// </remarks>
 		/// <remarks>
 		///     It is expected that this method can read a stream written to by <see cref="CreateMethodInvocationWriter" />.
+		/// </remarks>
+		/// <remarks>
+		///     The given <paramref name="stream" /> should NOT be disposed of when the returned
+		///     <see cref="IMethodInvocationReader" /> is disposed of:
+		///     That reader does NOT own the stream and should NOT close it either.
 		/// </remarks>
 		/// <param name="stream">The stream from which the details of the method invocation are read from</param>
 		/// <param name="endPoint"></param>
@@ -129,6 +143,11 @@ namespace SharpRemote
 		///     The given <paramref name="stream" /> should NOT be written to any more after
 		///     the returned writer has been disposed of.
 		/// </remarks>
+		/// <remarks>
+		///     The given <paramref name="stream" /> should NOT be disposed of when the returned
+		///     <see cref="IMethodResultWriter" /> is disposed of:
+		///     That writer does NOT own the stream and should NOT close it either.
+		/// </remarks>
 		/// <param name="stream">The stream to which the result (or exception) of the method invocation are written to</param>
 		/// <param name="rpcId"></param>
 		/// <param name="endPoint"></param>
@@ -144,6 +163,11 @@ namespace SharpRemote
 		/// <remarks>
 		///     The given <paramref name="stream" /> should NOT be read from any more after
 		///     the returned reader has been disposed of.
+		/// </remarks>
+		/// <remarks>
+		///     The given <paramref name="stream" /> should NOT be disposed of when the returned
+		///     <see cref="IMethodResultReader" /> is disposed of:
+		///     That reader does NOT own the stream and should NOT close it either.
 		/// </remarks>
 		/// <param name="stream">The stream from which the result of the method invocation is read from</param>
 		/// <param name="endPoint"></param>

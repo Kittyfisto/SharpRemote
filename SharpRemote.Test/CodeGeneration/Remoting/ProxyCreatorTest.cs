@@ -29,7 +29,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private string _moduleName;
 		private Mock<IRemotingEndPoint> _endPoint;
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void SetUp()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Proxies");
@@ -46,7 +46,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_creator = new ProxyCreator(module);
 		}
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void TearDown()
 		{
 			_assembly.Save(_moduleName);

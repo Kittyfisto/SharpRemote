@@ -13,7 +13,7 @@ namespace SharpRemote.Test
 	public sealed class _NativeMethodsTest
 // ReSharper restore InconsistentNaming
 	{
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void TestFixtureSetUp()
 		{
 			var dir = Assembly.GetExecutingAssembly().GetDirectory();

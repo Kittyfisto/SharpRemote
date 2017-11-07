@@ -46,8 +46,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Moq.4.2.1502.0911\lib\net40\Moq.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+    <Reference Include="nunit.framework, Version=3.6.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\NUnit.3.6.1\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -57,6 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblySetup.cs" />
     <Compile Include="BlockingCollectionTest.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializerAcceptanceTest.cs" />
@@ -77,7 +79,6 @@
     <Compile Include="Hosting\OutOfProcess\StartTest.cs" />
     <Compile Include="Hosting\ProcessWatchdogTest.cs" />
     <Compile Include="Key.cs" />
-    <Compile Include="ServiceDiscovery\NetworkServiceDiscovererTest.cs" />
     <Compile Include="LatencySettingsTest.cs" />
     <Compile Include="LogItem.cs" />
     <Compile Include="PendingMethodsQueueTest.cs" />
@@ -149,7 +150,6 @@
     <Compile Include="Hosting\InProcessRemotingSiloTest.cs" />
     <Compile Include="Hosting\InProcessSiloTest.cs" />
     <Compile Include="LocalTest.cs" />
-    <Compile Include="Hosting\HeartbeatMonitorTest.cs" />
     <Compile Include="TestAuthenticator.cs" />
     <Compile Include="CodeGeneration\Remoting\CreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\ArrayTest.cs" />

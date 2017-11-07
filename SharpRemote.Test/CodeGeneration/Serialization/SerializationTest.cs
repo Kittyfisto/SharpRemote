@@ -20,7 +20,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		private AssemblyBuilder _assembly;
 		private string _moduleName;
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void TestFixtureSetUp()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
@@ -30,7 +30,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			_serializer = new BinarySerializer(module);
 		}
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public void TestFixtureTearDown()
 		{
 			_assembly.Save(_moduleName);

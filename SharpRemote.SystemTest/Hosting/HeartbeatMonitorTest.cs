@@ -7,8 +7,9 @@ using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.Diagnostics;
+using SharpRemote.Test;
 
-namespace SharpRemote.Test.Hosting
+namespace SharpRemote.SystemTest.Hosting
 {
 	[TestFixture]
 	public sealed class HeartbeatMonitorTest

@@ -15,7 +15,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 	public sealed class FailureRecoveryTest
 		: AbstractTest
 	{
-		private Hosting.OutOfProcessSilo _silo;
+		private SharpRemote.Hosting.OutOfProcessSilo _silo;
 		private RestartOnFailureStrategy _restartOnFailureHandler;
 		private ManualResetEvent _startHandle;
 		private FailureSettings _settings;
@@ -26,7 +26,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			{
 				return new[]
 					{
-						new LogItem(typeof (Hosting.OutOfProcessSilo))
+						new LogItem(typeof (SharpRemote.Hosting.OutOfProcessSilo))
 					};
 			}
 		}
@@ -43,7 +43,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 							Interval = TimeSpan.FromMilliseconds(100)
 						}
 				};
-			_silo = new Hosting.OutOfProcessSilo(failureSettings: _settings, failureHandler: _restartOnFailureHandler);
+			_silo = new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: _settings, failureHandler: _restartOnFailureHandler);
 
 			_startHandle = new ManualResetEvent(false);
 		}

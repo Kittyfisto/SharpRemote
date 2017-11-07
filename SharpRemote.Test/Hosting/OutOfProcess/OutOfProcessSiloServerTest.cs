@@ -11,7 +11,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 	[TestFixture]
 	public sealed class OutOfProcessSiloServerTest
 	{
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public void TestFixtureSetUp()
 		{
 			

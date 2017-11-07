@@ -17,13 +17,13 @@ namespace SharpRemote.Test.Hosting
 
 		protected abstract ISilo Create();
 
-		[TestFixtureSetUp]
+		[OneTimeSetUp]
 		public new void TestFixtureSetUp()
 		{
 			_silo = Create();
 		}
 
-		[TestFixtureTearDown]
+		[OneTimeTearDown]
 		public new void TestFixtureTearDown()
 		{
 			_silo.Dispose();

@@ -1,13 +1,13 @@
 ﻿using System.IO;
-using SharpRemote.CodeGeneration.Serialization.Json;
+using SharpRemote.CodeGeneration.Serialization.Binary;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
 {
 	/// <summary>
-	///     A serializer implementation which writes and reads json documents which carry method call invocations or results.
+	///     Shall replace <see cref="BinarySerializer" />.
 	/// </summary>
-	public sealed class JsonSerializer
+	public sealed class BinarySerializer2
 		: ISerializer2
 	{
 		/// <inheritdoc />
@@ -16,25 +16,25 @@ namespace SharpRemote
 		                                                            string methodName,
 		                                                            ulong rpcId)
 		{
-			return new JsonMethodInvocationWriter(stream, grainId, methodName, rpcId);
+			return new BinaryMethodInvocationWriter(stream, grainId, methodName, rpcId);
 		}
 
 		/// <inheritdoc />
 		public IMethodInvocationReader CreateMethodInvocationReader(Stream stream)
 		{
-			return new JsonMethodInvocationReader(stream);
+			return new BinaryMethodInvocationReader(stream);
 		}
 
 		/// <inheritdoc />
 		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId)
 		{
-			return new JsonMethodResultWriter(stream, rpcId);
+			return new BinaryMethodResultWriter(stream, rpcId);
 		}
 
 		/// <inheritdoc />
 		public IMethodResultReader CreateMethodResultReader(Stream stream)
 		{
-			return new JsonMethodResultReader(stream);
+			return new BinaryMethodResultReader(stream);
 		}
 	}
 }

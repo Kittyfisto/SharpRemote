@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.IO;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
-	internal sealed class XmlMethodInvocationReader
+	internal sealed class BinaryMethodInvocationReader
 		: IMethodInvocationReader
 	{
-		public XmlMethodInvocationReader(Stream stream)
+		public BinaryMethodInvocationReader(Stream stream)
 		{
 			throw new NotImplementedException();
 		}

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Reflection.Emit;
+using SharpRemote.CodeGeneration.Serialization.Xml;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote

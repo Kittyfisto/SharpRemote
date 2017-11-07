@@ -14,6 +14,9 @@ namespace SharpRemote
 	///     serializer object on the side of the callee of the method.
 	/// </summary>
 	/// <remarks>
+	///     Shall replace <see cref="ISerializer" />.
+	/// </remarks>
+	/// <remarks>
 	///     This interface is responsible for deciding if a type model from another endpoint can be accepted
 	///     or not (because serializers have the freedom to decide how [or if at all] compatible their messages
 	///     are with regards to changes to the type model: One serializer might not care if a property has been

@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.IO;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
-	internal sealed class XmlMethodInvocationWriter
+	internal sealed class BinaryMethodInvocationWriter
 		: IMethodInvocationWriter
 	{
-		public XmlMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
+		public BinaryMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
 			throw new NotImplementedException();
 		}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Reflection;
 using System.Runtime.Serialization;
 using log4net;
@@ -19,10 +20,10 @@ namespace SharpRemote
 		: ITypeModel
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private List<TypeDescription> _types;
 
 		private readonly Dictionary<string, TypeDescription> _typesByAssemblyQualifiedName;
 		private int _nextId;
+		private List<TypeDescription> _types;
 
 		/// <summary>
 		///     Initializes this object.
@@ -58,30 +59,69 @@ namespace SharpRemote
 		/// <exception cref="ArgumentNullException">When <paramref name="type" /> is null</exception>
 		public ITypeDescription Add(Type type)
 		{
-			var typesByAssemblyQualifiedName = new Dictionary<string, TypeDescription>(_typesByAssemblyQualifiedName.Count);
-			foreach (var pair in _typesByAssemblyQualifiedName)
-				typesByAssemblyQualifiedName.Add(pair.Key, pair.Value);
+			if (type == null)
+				throw new ArgumentNullException(nameof(type));
 
-			// We work on a local copy so that:
-			// A) In case any constraint is violated, the type model is NEVER modified
-			// B) We know exactly which types to add without having to do an O(N) search of _types
-			var typeDescription = TypeDescription.Create(type, typesByAssemblyQualifiedName);
-			typeDescription.Id = GetNextId();
+			var name = type.AssemblyQualifiedName;
+			if (name == null)
+				throw new ArgumentException();
 
-			// It's likely that we had to expand the type model beyond the given type, all of those additional types
-			// have now been added to the local dictionary, but not this type model (yet):
-			foreach (var description in typesByAssemblyQualifiedName.Values)
+			TypeDescription typeDescription;
+			if (!_typesByAssemblyQualifiedName.TryGetValue(name, out typeDescription))
 			{
-				var assemblyQualifiedName = description.AssemblyQualifiedName;
-				if (!_typesByAssemblyQualifiedName.ContainsKey(assemblyQualifiedName))
-				{
-					description.Id = GetNextId();
+				var typesByAssemblyQualifiedName = new Dictionary<string, TypeDescription>(_typesByAssemblyQualifiedName.Count);
+				foreach (var pair in _typesByAssemblyQualifiedName)
+					typesByAssemblyQualifiedName.Add(pair.Key, pair.Value);
 
-					_typesByAssemblyQualifiedName.Add(assemblyQualifiedName, description);
-					_types.Add(description);
+				// We work on a local copy so that:
+				// A) In case any constraint is violated, the type model is NEVER modified
+				// B) We know exactly which types to add without having to do an O(N) search of _types
+				typeDescription = TypeDescription.Create(type, typesByAssemblyQualifiedName);
+				typeDescription.Id = GetNextId();
+
+				// It's likely that we had to expand the type model beyond the given type, all of those additional types
+				// have now been added to the local dictionary, but not this type model (yet):
+				foreach (var description in typesByAssemblyQualifiedName.Values)
+				{
+					var assemblyQualifiedName = description.AssemblyQualifiedName;
+					if (!_typesByAssemblyQualifiedName.ContainsKey(assemblyQualifiedName))
+					{
+						description.Id = GetNextId();
+
+						_typesByAssemblyQualifiedName.Add(assemblyQualifiedName, description);
+						_types.Add(description);
+					}
 				}
 			}
+
 			return typeDescription;
+		}
+
+		/// <summary>
+		///     Tests if the given type has been added to this model.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		[Pure]
+		public bool Contains<T>()
+		{
+			return Contains(typeof(T));
+		}
+
+		/// <summary>
+		///     Tests if the given type has been added to this model.
+		/// </summary>
+		/// <param name="type"></param>
+		[Pure]
+		public bool Contains(Type type)
+		{
+			if (type == null)
+				return false;
+
+			var name = type.AssemblyQualifiedName;
+			if (name == null)
+				return false;
+
+			return _typesByAssemblyQualifiedName.ContainsKey(name);
 		}
 
 		private int GetNextId()
@@ -108,25 +148,21 @@ namespace SharpRemote
 						typesById.Add(id, type);
 					else
 						Log.WarnFormat(
-							"Found two types '{0}' and '{1}' which both claim to have the same id '{2}'. Ignoring the former type...",
-							type,
-							previousType,
-							id);
+						               "Found two types '{0}' and '{1}' which both claim to have the same id '{2}'. Ignoring the former type...",
+						               type,
+						               previousType,
+						               id);
 
 					var assemblyQualifiedName = type.AssemblyQualifiedName;
 					if (assemblyQualifiedName != null)
-					{
 						if (!_typesByAssemblyQualifiedName.TryGetValue(assemblyQualifiedName, out previousType))
 							_typesByAssemblyQualifiedName.Add(assemblyQualifiedName, type);
 						else
 							Log.WarnFormat(
-								"Found two types '{0}' and '{1}' which both claim to have the same assembly qualified name '{2}'. Ignoring the former type...",
-								type, previousType, assemblyQualifiedName);
-					}
+							               "Found two types '{0}' and '{1}' which both claim to have the same assembly qualified name '{2}'. Ignoring the former type...",
+							               type, previousType, assemblyQualifiedName);
 					else
-					{
 						Log.WarnFormat("Did not expect the assembly qualified name of the given type to be null: {0}", type);
-					}
 				}
 
 				foreach (var type in _types)

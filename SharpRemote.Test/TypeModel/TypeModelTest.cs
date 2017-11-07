@@ -191,5 +191,32 @@ namespace SharpRemote.Test.TypeModel
 			field.Name.Should().Be("Right");
 			field.FieldType.Should().BeSameAs(type, "because a recursive type model shall reference the very same object");
 		}
+
+		[Test]
+		public void TestAddNull()
+		{
+			var model = new SharpRemote.TypeModel();
+			new Action(() => model.Add(null)).ShouldThrow<ArgumentNullException>();
+		}
+
+		[Test]
+		[Description("Verifies that adding the same type again is a NOP")]
+		public void TestAddTwice()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type1 = model.Add<string>();
+			var type2 = model.Add<string>();
+			type2.Should().BeSameAs(type1);
+			model.Types.Should().HaveCount(1);
+		}
+
+		[Test]
+		public void TestContains1()
+		{
+			var model = new SharpRemote.TypeModel();
+			model.Contains<string>().Should().BeFalse();
+			model.Add<string>();
+			model.Contains<string>().Should().BeTrue();
+		}
 	}
 }

@@ -58,10 +58,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BlockingCollectionTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\AbstractSerializerAcceptanceTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
     <Compile Include="CodeGeneration\Serialization\DecimalTest.cs" />
     <Compile Include="CodeGeneration\Serialization\BinarySerializerTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonSerializerAcceptanceTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\TypeResolverTest.cs" />
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="HeartbeatSettingsTest.cs" />

@@ -1,94 +1,145 @@
 ﻿using System;
 using System.IO;
+using System.Xml;
+using SharpRemote.Extensions;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml
 {
 	internal sealed class XmlMethodResultWriter
 		: IMethodResultWriter
 	{
-		public XmlMethodResultWriter(Stream stream, ulong rpcId)
+		public const string RpcElementName = XmlMethodInvocationWriter.RpcElementName;
+		public const string RpcIdElementName = XmlMethodInvocationWriter.RpcIdElementName;
+		public const string ResultElementName = "ReturnValue";
+		public const string ExceptionElementName = "Exception";
+
+		private readonly XmlSerializer _serializer;
+		private readonly StreamWriter _textWriter;
+		private readonly XmlWriter _writer;
+		private IRemotingEndPoint _endPoint;
+
+		public XmlMethodResultWriter(XmlSerializer serializer, XmlWriterSettings settings, Stream stream, ulong rpcId, IRemotingEndPoint endPoint)
 		{
-			throw new NotImplementedException();
+			_serializer = serializer;
+			_textWriter = new StreamWriter(stream, settings.Encoding, 4096, leaveOpen: true);
+			_writer = XmlWriter.Create(_textWriter, settings);
+			_writer.WriteStartDocument();
+			_writer.WriteStartElement(RpcElementName);
+			_writer.WriteStartElement(RpcIdElementName);
+			serializer.WriteUInt64(_writer, rpcId);
+			_writer.WriteEndElement();
 		}
 
 		public void Dispose()
 		{
-			throw new NotImplementedException();
+			_writer.WriteEndElement();
+			_writer.WriteEndDocument();
+			_writer.TryDispose();
+			_textWriter.TryDispose();
 		}
 
 		public void WriteFinished()
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(object value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteObject(_writer, value, _endPoint);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(sbyte value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteSByte(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(byte value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteByte(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(ushort value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteUInt16(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(short value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteInt16(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(uint value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteUInt32(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(int value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteInt32(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(ulong value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteUInt64(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(long value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteInt64(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(float value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteFloat(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(double value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteDouble(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(string value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteString(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(byte[] value)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ResultElementName);
+			_serializer.WriteBytes(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteException(Exception e)
 		{
-			throw new NotImplementedException();
+			_writer.WriteStartElement(ExceptionElementName);
+			_serializer.WriteObject(_writer, e, _endPoint);
+			_writer.WriteEndElement();
 		}
 	}
 }

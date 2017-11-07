@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.Diagnostics.Contracts;
+using System.IO;
+using System.Runtime.Serialization;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -25,6 +28,62 @@ namespace SharpRemote
 	public interface ISerializer2
 	{
 		/// <summary>
+		///     Registers the given type <typeparamref name="T" /> with this serializer.
+		/// </summary>
+		/// <remarks>
+		///     This method can be used to verify upfront that:
+		///     - A used type can be serialized
+		///     - No intermittent compilation happens while writing / reading an object graph
+		/// </remarks>
+		/// <typeparam name="T"></typeparam>
+		/// <exception cref="ArgumentNullException">When <typeparamref name="T" /> is null</exception>
+		/// <exception cref="ArgumentException">When the type cannot be serialized</exception>
+		/// <exception cref="SerializationException">
+		///     In case there was an error while generating the code necessary for
+		///     serialization / deserialization
+		/// </exception>
+		void RegisterType<T>();
+
+		/// <summary>
+		///     Registers the given type <paramref name="type" /> with this serializer.
+		/// </summary>
+		/// <remarks>
+		///     This method can be used to verify upfront that:
+		///     - A used type can be serialized
+		///     - No intermittent compilation happens while writing / reading an object graph
+		/// </remarks>
+		/// <param name="type">The type to register</param>
+		/// <exception cref="ArgumentNullException">When <paramref name="type" /> is null</exception>
+		/// <exception cref="ArgumentException">When the type cannot be serialized</exception>
+		/// <exception cref="SerializationException">
+		///     In case there was an error while generating the code necessary for
+		///     serialization / deserialization
+		/// </exception>
+		void RegisterType(Type type);
+
+		/// <summary>
+		///     Tests if the given type <typeparamref name="T" /> has already been registered
+		///     with this serializer (either directly through <see cref="RegisterType" /> or indirectly
+		///     through <see cref="CreateMethodInvocationWriter" />, <see cref="CreateMethodInvocationReader" />,
+		///     <see cref="CreateMethodResultWriter" /> or <see cref="CreateMethodResultReader" />.
+		/// </summary>
+		/// <typeparam name="T">The type to test</typeparam>
+		/// <returns>True if the type has been registered, false otherwise</returns>
+		[Pure]
+		bool IsTypeRegistered<T>();
+
+		/// <summary>
+		///     Tests if the given type <paramref name="type" /> has already been registered
+		///     with this serializer (either directly through <see cref="RegisterType" /> or indirectly
+		///     through <see cref="CreateMethodInvocationWriter" />, <see cref="CreateMethodInvocationReader" />,
+		///     <see cref="CreateMethodResultWriter" /> or <see cref="CreateMethodResultReader" />.
+		/// </summary>
+		/// <param name="type">The type to test</param>
+		/// <returns>True if the type has been registered, false otherwise</returns>
+		[Pure]
+		bool IsTypeRegistered(Type type);
+
+		/// <summary>
 		///     Creates a new writer which writes the intention to call the given method on the given object
 		///     to the given stream.
 		/// </summary>
@@ -40,8 +99,9 @@ namespace SharpRemote
 		/// <param name="grainId"></param>
 		/// <param name="methodName"></param>
 		/// <param name="rpcId"></param>
+		/// <param name="endPoint"></param>
 		/// <returns></returns>
-		IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId);
+		IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId, IRemotingEndPoint endPoint = null);
 
 		/// <summary>
 		/// </summary>
@@ -53,8 +113,9 @@ namespace SharpRemote
 		///     It is expected that this method can read a stream written to by <see cref="CreateMethodInvocationWriter" />.
 		/// </remarks>
 		/// <param name="stream">The stream from which the details of the method invocation are read from</param>
+		/// <param name="endPoint"></param>
 		/// <returns></returns>
-		IMethodInvocationReader CreateMethodInvocationReader(Stream stream);
+		IMethodInvocationReader CreateMethodInvocationReader(Stream stream, IRemotingEndPoint endPoint = null);
 
 		/// <summary>
 		///     Creates a writer which writes the result (or exception) foa method invocation to the given
@@ -70,8 +131,9 @@ namespace SharpRemote
 		/// </remarks>
 		/// <param name="stream">The stream to which the result (or exception) of the method invocation are written to</param>
 		/// <param name="rpcId"></param>
+		/// <param name="endPoint"></param>
 		/// <returns></returns>
-		IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId);
+		IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId, IRemotingEndPoint endPoint = null);
 
 		/// <summary>
 		///     Creates a reader which consumes the given stream and reads the result of a method invocation from it.
@@ -84,7 +146,8 @@ namespace SharpRemote
 		///     the returned reader has been disposed of.
 		/// </remarks>
 		/// <param name="stream">The stream from which the result of the method invocation is read from</param>
+		/// <param name="endPoint"></param>
 		/// <returns></returns>
-		IMethodResultReader CreateMethodResultReader(Stream stream);
+		IMethodResultReader CreateMethodResultReader(Stream stream, IRemotingEndPoint endPoint = null);
 	}
 }

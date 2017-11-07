@@ -6,9 +6,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlMethodInvocationReader
 		: IMethodInvocationReader
 	{
-		public XmlMethodInvocationReader(Stream stream)
+		private readonly XmlSerializer _xmlSerializer;
+		private readonly Stream _stream;
+
+		public XmlMethodInvocationReader(XmlSerializer xmlSerializer, Stream stream)
 		{
-			throw new NotImplementedException();
+			_xmlSerializer = xmlSerializer;
+			_stream = stream;
 		}
 
 		public void Dispose()

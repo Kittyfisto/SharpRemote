@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using SharpRemote.Hosting;
 
-namespace SharpRemote.Test.Hosting
+namespace SharpRemote.Test.Hosting.OutOfProcess
 {
 	[TestFixture]
 	public sealed class OutOfProcessSiloAcceptanceTest

@@ -169,9 +169,9 @@
       <Project>{377C04C5-EE8C-4159-BDDC-37F1A8372705}</Project>
       <Name>SharpRemote.Test</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\SharpRemote.Windows\SharpRemote.Windows.csproj">
+    <ProjectReference Include="..\..\SharpRemote\SharpRemote.csproj">
       <Project>{1B908B3A-2F3B-47B8-B69F-3827B8829586}</Project>
-      <Name>SharpRemote.Windows</Name>
+      <Name>SharpRemote</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

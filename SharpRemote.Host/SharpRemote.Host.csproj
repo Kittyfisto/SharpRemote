@@ -74,12 +74,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SharpRemote.Windows\SharpRemote.Windows.csproj">
-      <Project>{1b908b3a-2f3b-47b8-b69f-3827b8829586}</Project>
-      <Name>SharpRemote.Windows</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>
       <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
@@ -90,6 +84,12 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SharpRemote\SharpRemote.csproj">
+      <Project>{1B908B3A-2F3B-47B8-B69F-3827B8829586}</Project>
+      <Name>SharpRemote</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

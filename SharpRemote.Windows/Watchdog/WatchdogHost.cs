@@ -5,12 +5,19 @@ namespace SharpRemote.Watchdog
 {
 	/// <summary>
 	///     Responsible for hosting a <see cref="IInternalWatchdog" /> instance and exposing it via
-	///     a <see cref="AbstractIPSocketRemotingEndPoint" />.
+	///     a <see cref="ISocketEndPoint" />.
 	/// </summary>
 	public sealed class WatchdogHost
 		: IDisposable
 	{
+		/// <summary>
+		/// 
+		/// </summary>
 		public const string PeerName = "SharpRemote.Watchdog";
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public const ulong ObjectId = 0;
 
 		private readonly ISocketEndPoint _endPoint;

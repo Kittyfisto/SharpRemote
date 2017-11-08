@@ -42,7 +42,7 @@
 		/// </remarks>
 		/// <remarks>
 		/// The installation is aborted if:
-		/// - <see cref="IApplicationInstaller.Dispose"/> is called before <see cref="IApplicationInstaller.Commit"/>
+		/// - The returned <see cref="IApplicationInstaller"/> is disposed of before <see cref="IApplicationInstaller.Commit"/> is called
 		/// - the connection to the watchdog is interrupted (for any reason)
 		/// - the watchdog is shut down (doesn't matter if the shutdown is intentional, due to power loss, etc..)
 		/// 
@@ -51,6 +51,10 @@
 		/// <returns></returns>
 		IApplicationInstaller StartInstallation(ApplicationDescriptor description, Installation installation = Installation.FailOnUpgrade);
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="description"></param>
 		void UninstallApplication(InstalledApplication description);
 
 		#endregion

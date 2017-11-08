@@ -32,6 +32,7 @@ namespace SharpRemote.Watchdog
 		/// </summary>
 		[DataMember] [XmlAttribute] public long Id;
 
+		/// <inheritdoc />
 		public bool Equals(InstalledFile other)
 		{
 			if (ReferenceEquals(null, other)) return false;
@@ -40,6 +41,7 @@ namespace SharpRemote.Watchdog
 			       FileLength == other.FileLength;
 		}
 
+		/// <inheritdoc />
 		public override bool Equals(object obj)
 		{
 			if (ReferenceEquals(null, obj)) return false;
@@ -47,6 +49,7 @@ namespace SharpRemote.Watchdog
 			return obj is InstalledFile && Equals((InstalledFile) obj);
 		}
 
+		/// <inheritdoc />
 		public override int GetHashCode()
 		{
 			unchecked

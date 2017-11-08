@@ -51,6 +51,7 @@ namespace SharpRemote.WebApi.HttpListener
 			{
 				// This exception is expected because we don't synchronize dispose with
 				// BeginGetContext...
+				Log.DebugFormat("Caught expected/unavaoidable exception: {0}", e);
 			}
 			catch (Exception e)
 			{
@@ -70,6 +71,7 @@ namespace SharpRemote.WebApi.HttpListener
 			{
 				// This exception is expected because we don't synchronize dispose with
 				// EndGetContext...
+				Log.DebugFormat("Caught expected/unavaoidable exception: {0}", e);
 			}
 			catch (Exception e)
 			{

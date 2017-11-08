@@ -1,5 +1,8 @@
 ﻿namespace SharpRemote.Watchdog
 {
+	/// <summary>
+	/// 
+	/// </summary>
 	public enum Installation
 	{
 		/// <summary>

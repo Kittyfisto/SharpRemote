@@ -19,9 +19,6 @@ namespace SharpRemote
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		private readonly ITypeResolver _customTypeResolver;
-		private readonly ModuleBuilder _module;
-
 		private readonly XmlWriterSettings _settings;
 		private readonly TypeModel _typeModel;
 

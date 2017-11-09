@@ -15,7 +15,7 @@ namespace SharpRemote
 		///     Equivalent of <see cref="Type.BaseType" />.
 		/// </summary>
 		ITypeDescription BaseType { get; }
-
+		
 		/// <summary>
 		///     Equivalent of <see cref="Type.AssemblyQualifiedName" />.
 		/// </summary>
@@ -56,6 +56,11 @@ namespace SharpRemote
 		///     however it's part of the .NET framework and thus serialization methods have been built-in.
 		/// </summary>
 		bool IsBuiltIn { get; }
+
+		/// <summary>
+		///     Equivalent of <see cref="Type.IsGenericType" />.
+		/// </summary>
+		bool IsGenericType { get; }
 
 		/// <summary>
 		///     The list of public non-static properties with the <see cref="DataMemberAttribute" />.

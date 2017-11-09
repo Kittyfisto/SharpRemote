@@ -47,7 +47,7 @@ namespace SharpRemote
 		///     Adds the given <typeparamref name="T" /> to this model.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
-		public ITypeDescription Add<T>()
+		public TypeDescription Add<T>()
 		{
 			return Add(typeof(T));
 		}
@@ -57,7 +57,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="type"></param>
 		/// <exception cref="ArgumentNullException">When <paramref name="type" /> is null</exception>
-		public ITypeDescription Add(Type type)
+		public TypeDescription Add(Type type)
 		{
 			if (type == null)
 				throw new ArgumentNullException(nameof(type));

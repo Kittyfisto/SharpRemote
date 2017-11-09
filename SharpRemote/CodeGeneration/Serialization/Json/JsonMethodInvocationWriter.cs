@@ -21,6 +21,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Json
 			throw new NotImplementedException();
 		}
 
+		public void WriteNamedArgument<T>(string name, T value) where T : struct
+		{
+			throw new NotImplementedException();
+		}
+
+		public void WriteNamedArgument<T>(string name, ref T value) where T : struct
+		{
+			throw new NotImplementedException();
+		}
+
 		public void WriteNamedArgument(string name, sbyte value)
 		{
 			throw new NotImplementedException();

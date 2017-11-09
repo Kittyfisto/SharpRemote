@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Xml;
 using log4net;
+using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.CodeGeneration.Serialization.Xml;
 
 // ReSharper disable once CheckNamespace
@@ -21,12 +22,28 @@ namespace SharpRemote
 
 		private readonly XmlWriterSettings _settings;
 		private readonly TypeModel _typeModel;
+		private readonly XmlSerializationCompiler _methodCompiler;
+		private readonly SerializationMethodStorage<XmlSerializationMethods> _methodStorage;
 
 		/// <summary>
 		/// </summary>
 		/// <param name="settings">The settings used to create xml documents</param>
 		public XmlSerializer(XmlWriterSettings settings = null)
+			: this(CreateModule(), settings)
 		{
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="moduleBuilder"></param>
+		/// <param name="settings">The settings used to create xml documents</param>
+		public XmlSerializer(ModuleBuilder moduleBuilder, XmlWriterSettings settings = null)
+		{
+			if (moduleBuilder == null)
+				throw new ArgumentNullException(nameof(moduleBuilder));
+
+			_methodCompiler = new XmlSerializationCompiler(moduleBuilder);
+			_methodStorage = new SerializationMethodStorage<XmlSerializationMethods>("XmlSerializer", _methodCompiler);
 			_settings = settings ?? new XmlWriterSettings();
 			_typeModel = new TypeModel();
 		}
@@ -41,7 +58,8 @@ namespace SharpRemote
 		public void RegisterType(Type type)
 		{
 			Log.DebugFormat("Registering type '{0}'", type);
-			_typeModel.Add(type);
+			var description = _typeModel.Add(type);
+			_methodStorage.Get(description);
 			Log.DebugFormat("Type '{0}' successfully registered", type);
 		}
 
@@ -89,6 +107,18 @@ namespace SharpRemote
 		/// <param name="endPoint"></param>
 		/// <exception cref="NotImplementedException"></exception>
 		public void WriteObject(XmlWriter writer, object value, IRemotingEndPoint endPoint)
+		{
+			throw new NotImplementedException();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		/// <param name="endPoint"></param>
+		/// <exception cref="NotImplementedException"></exception>
+		public void WriteStruct<T>(XmlWriter writer, T value, IRemotingEndPoint endPoint) where T : struct
 		{
 			throw new NotImplementedException();
 		}
@@ -213,5 +243,17 @@ namespace SharpRemote
 		{
 			writer.WriteValue(value);
 		}
+
+
+		private static ModuleBuilder CreateModule()
+		{
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
+			AssemblyBuilder assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
+			                                                                         AssemblyBuilderAccess.RunAndSave);
+			string moduleName = assemblyName.Name + ".dll";
+			ModuleBuilder module = assembly.DefineDynamicModule(moduleName);
+			return module;
+		}
+
 	}
 }

@@ -21,6 +21,13 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="value"></param>
+		void WriteNamedArgument<T>(string name, T value) where T : struct;
+
+		/// <summary>
+		///     Adds an argument of the given name and value to this method call.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="value"></param>
 		void WriteNamedArgument(string name, sbyte value);
 
 		/// <summary>

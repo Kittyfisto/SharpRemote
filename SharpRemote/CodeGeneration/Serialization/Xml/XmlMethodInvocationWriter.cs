@@ -52,6 +52,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			_writer.WriteEndElement();
 		}
 
+		public void WriteNamedArgument<T>(string name, T value) where T : struct
+		{
+			_writer.WriteStartElement(ArgumentElementName);
+			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
+			_serializer.WriteStruct(_writer, value, _endPoint);
+			_writer.WriteEndElement();
+		}
+
 		public void WriteNamedArgument(string name, sbyte value)
 		{
 			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));

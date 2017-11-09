@@ -22,6 +22,7 @@ namespace SharpRemote
 		private static readonly HashSet<Type> BuiltInTypes;
 
 		private TypeDescription _baseType;
+		private readonly Type _type;
 
 		static TypeDescription()
 		{
@@ -32,6 +33,26 @@ namespace SharpRemote
 				typeof(decimal)
 			};
 		}
+
+		/// <summary>
+		///     Initializes this object.
+		/// </summary>
+		public TypeDescription()
+		{ }
+
+		/// <summary>
+		///     Initializes this object.
+		/// </summary>
+		/// <param name="type"></param>
+		private TypeDescription(Type type)
+		{
+			_type = type;
+		}
+
+		/// <summary>
+		/// The type being described by this object.
+		/// </summary>
+		public Type Type => _type;
 
 		/// <summary>
 		///     An id which differentiates this object amongst all others for the same
@@ -66,7 +87,7 @@ namespace SharpRemote
 		public int BaseTypeId { get; set; }
 
 		/// <summary>
-		///     Equivalent of <see cref="Type.BaseType" />.
+		///     Equivalent of <see cref="System.Type.BaseType" />.
 		/// </summary>
 		public TypeDescription BaseType
 		{
@@ -110,6 +131,10 @@ namespace SharpRemote
 
 		/// <inheritdoc />
 		public bool IsBuiltIn { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
+		public bool IsGenericType { get; set; }
 
 		IReadOnlyList<IPropertyDescription> ITypeDescription.Properties => Properties;
 
@@ -155,7 +180,7 @@ namespace SharpRemote
 			if (assemblyQualifiedName == null)
 				throw new ArgumentException("Type.AssemblyQualifiedName should not be null");
 
-			var description = new TypeDescription
+			var description = new TypeDescription(type)
 			{
 				AssemblyQualifiedName = assemblyQualifiedName
 			};
@@ -172,6 +197,7 @@ namespace SharpRemote
 			description.IsInterface = type.IsInterface;
 			description.IsEnum = type.IsEnum;
 			description.IsSealed = type.IsSealed;
+			description.IsGenericType = type.IsGenericType;
 
 			switch (description.SerializationType)
 			{

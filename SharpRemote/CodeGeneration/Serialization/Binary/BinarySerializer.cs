@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using System.Text;
 using SharpRemote.CodeGeneration;
+using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.CodeGeneration.Serialization.Binary.Serializers;
 
 // ReSharper disable CheckNamespace
@@ -65,6 +66,7 @@ namespace SharpRemote
 
 				// These serializers provide support for more than one type (for example generics)...
 				new EnumSerializer(),
+				new NullableSerializer(),
 				new NullableSerializer(),
 				new KeyValuePairSerializer(),
 			};
@@ -659,6 +661,11 @@ namespace SharpRemote
 			RegisterType(typeof (T), out serializationMethods);
 		}
 
+		/// <summary>
+		/// TODO: Replace with <see cref="SerializationMethodStorage{T}.Get"/>.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <param name="serializationMethods"></param>
 		internal void RegisterType(Type type, out SerializationMethods serializationMethods)
 		{
 			lock (_serializationMethods)

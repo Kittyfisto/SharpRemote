@@ -11,7 +11,7 @@ namespace SharpRemote
 		/// <summary>
 		///     The type cannot be serialized.
 		/// </summary>
-		[EnumMember] NoneSerializable = 0,
+		[EnumMember] NotSerializable = 0,
 
 		/// <summary>
 		///     The type is assumed to be an acyclic graph where each node is itself one

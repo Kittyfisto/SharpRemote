@@ -36,6 +36,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new NotImplementedException();
 		}
 
+		public bool ReadNextArgumentAsStruct<T>(out string name, out T value) where T : struct
+		{
+			throw new NotImplementedException();
+		}
+
 		public bool ReadNextArgumentAsSByte(out string name, out sbyte value)
 		{
 			throw new NotImplementedException();

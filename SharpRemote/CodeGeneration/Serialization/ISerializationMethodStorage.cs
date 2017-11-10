@@ -9,10 +9,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		where T : ISerializationMethods
 	{
 		/// <summary>
-		///     Returns the serialization methods to serialize/deserialize the given .NET <paramref name="typeDescription" />.
+		///     Returns the serialization methods to serialize/deserialize the given .NET <paramref name="type" />.
 		/// </summary>
-		/// <param name="typeDescription"></param>
+		/// <param name="type"></param>
 		/// <returns></returns>
-		T Get(TypeDescription typeDescription);
+		T GetOrAdd(Type type);
 	}
 }

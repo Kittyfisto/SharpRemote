@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
 using NUnit.Framework;
+using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
@@ -400,6 +401,38 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.ReadNextArgumentAsString(out name, out value).Should().BeFalse();
 					name.Should().BeNull();
 					value.Should().Be(null);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodCallFieldDecimal()
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "GetValue"))
+				{
+					writer.WriteNamedArgument("foobar", new FieldDecimal {Value = decimal.MinusOne});
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				{
+					reader.RpcId.Should().Be(5);
+					reader.GrainId.Should().Be(6);
+					reader.MethodName.Should().Be("GetValue");
+
+					string name;
+					FieldDecimal value;
+					reader.ReadNextArgumentAsStruct(out name, out value).Should().BeTrue();
+					name.Should().Be("foobar");
+					value.Should().Be("3.14159");
+
+					reader.ReadNextArgumentAsStruct(out name, out value).Should().BeFalse();
+					name.Should().BeNull();
+					value.Should().Be(default(FieldDecimal));
 				}
 			}
 		}

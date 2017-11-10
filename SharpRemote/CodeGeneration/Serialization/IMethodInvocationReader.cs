@@ -40,6 +40,14 @@ namespace SharpRemote
 		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsStruct<T>(out string name, out T value) where T : struct;
+
+		/// <summary>
+		///     Reads the value of the next argument from the method call message.
+		/// </summary>
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
 		bool ReadNextArgumentAsSByte(out string name, out sbyte value);
 
 		/// <summary>

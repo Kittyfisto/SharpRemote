@@ -21,9 +21,8 @@ namespace SharpRemote
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly XmlWriterSettings _settings;
-		private readonly TypeModel _typeModel;
 		private readonly XmlSerializationCompiler _methodCompiler;
-		private readonly SerializationMethodStorage<XmlSerializationMethods> _methodStorage;
+		private readonly SerializationMethodStorage<XmlMethodCompiler> _methodStorage;
 
 		/// <summary>
 		/// </summary>
@@ -43,9 +42,8 @@ namespace SharpRemote
 				throw new ArgumentNullException(nameof(moduleBuilder));
 
 			_methodCompiler = new XmlSerializationCompiler(moduleBuilder);
-			_methodStorage = new SerializationMethodStorage<XmlSerializationMethods>("XmlSerializer", _methodCompiler);
+			_methodStorage = new SerializationMethodStorage<XmlMethodCompiler>("XmlSerializer", _methodCompiler);
 			_settings = settings ?? new XmlWriterSettings();
-			_typeModel = new TypeModel();
 		}
 
 		/// <inheritdoc />
@@ -58,21 +56,20 @@ namespace SharpRemote
 		public void RegisterType(Type type)
 		{
 			Log.DebugFormat("Registering type '{0}'", type);
-			var description = _typeModel.Add(type);
-			_methodStorage.Get(description);
+			_methodStorage.GetOrAdd(type);
 			Log.DebugFormat("Type '{0}' successfully registered", type);
 		}
 
 		/// <inheritdoc />
 		public bool IsTypeRegistered<T>()
 		{
-			return _typeModel.Contains<T>();
+			return IsTypeRegistered(typeof(T));
 		}
 
 		/// <inheritdoc />
 		public bool IsTypeRegistered(Type type)
 		{
-			return _typeModel.Contains(type);
+			return _methodStorage.Contains(type);
 		}
 
 		/// <inheritdoc />
@@ -120,7 +117,8 @@ namespace SharpRemote
 		/// <exception cref="NotImplementedException"></exception>
 		public void WriteStruct<T>(XmlWriter writer, T value, IRemotingEndPoint endPoint) where T : struct
 		{
-			throw new NotImplementedException();
+			var methods = _methodStorage.GetOrAdd(typeof(T));
+			methods.WriteDelegate(writer, value, this, endPoint);
 		}
 
 		/// <summary>

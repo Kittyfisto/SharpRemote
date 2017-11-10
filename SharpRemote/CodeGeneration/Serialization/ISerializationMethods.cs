@@ -15,9 +15,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 		ITypeDescription TypeDescription { get; }
 
 		/// <summary>
-		///     The method through which a value (non-null) of the described type may be serialized.
+		///     The method through which a value (possibly-null) of the described type may be serialized.
 		/// </summary>
 		MethodInfo WriteValueMethod { get; }
+
+		/// <summary>
+		///     The method through which a value (non-null) of the described type may be serialized.
+		/// </summary>
+		MethodInfo WriteValueNotNullMethod { get; }
 
 		/// <summary>
 		///     The method through which a possibly null object of the described type may be serialized.
@@ -25,9 +30,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 		MethodInfo WriteObjectMethod { get; }
 
 		/// <summary>
-		///     The method through which a value (non-null) of the described type may be deserialized.
+		///     The method through which a value (possibly null) of the described type may be deserialized.
 		/// </summary>
 		MethodInfo ReadValueMethod { get; }
+
+		/// <summary>
+		///     The method through which a value (non-null) of the described type may be deserialized.
+		/// </summary>
+		MethodInfo ReadValueNotNullMethod { get; }
 
 		/// <summary>
 		///     The method through which possibly null object of the described type may be deserialized.

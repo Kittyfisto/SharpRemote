@@ -19,6 +19,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
+		private readonly TypeModel _typeModel;
 		private readonly ISerializationMethodCompiler<T> _compiler;
 		private readonly Dictionary<Type, MethodInfo> _getSingletonInstance;
 		private readonly Dictionary<Type, T> _serializationMethods;
@@ -39,14 +40,13 @@ namespace SharpRemote.CodeGeneration.Serialization
 			_suffix = suffix;
 			_compiler = compiler;
 			_syncRoot = new object();
+			_typeModel = new TypeModel();
 			_serializationMethods = new Dictionary<Type, T>();
 			_getSingletonInstance = new Dictionary<Type, MethodInfo>();
 		}
 
-		public T Get(TypeDescription typeDescription)
+		public T GetOrAdd(Type type)
 		{
-			var type = typeDescription.Type;
-
 			lock (_syncRoot)
 			{
 				// Usually we already have generated the methods necessary to serialize / deserialize
@@ -54,6 +54,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				T serializationMethods;
 				if (!_serializationMethods.TryGetValue(type, out serializationMethods))
 				{
+					var typeDescription = _typeModel.Add(type);
+
 					// If that's not the case, then we'll have to generate them.
 					// However we need to pay special attention to certain types, for example ByReference
 					// types where the serialization method is IDENTICAL for each implementation.
@@ -207,6 +209,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 
 			return true;
+		}
+
+		public bool Contains(Type type)
+		{
+			lock (_syncRoot)
+			{
+				return _serializationMethods.ContainsKey(type);
+			}
 		}
 	}
 }

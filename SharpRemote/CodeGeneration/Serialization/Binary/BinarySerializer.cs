@@ -662,7 +662,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// TODO: Replace with <see cref="SerializationMethodStorage{T}.Get"/>.
+		/// TODO: Replace with <see cref="SerializationMethodStorage{T}.GetOrAdd"/>.
 		/// </summary>
 		/// <param name="type"></param>
 		/// <param name="serializationMethods"></param>

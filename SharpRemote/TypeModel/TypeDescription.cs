@@ -188,9 +188,10 @@ namespace SharpRemote
 			typesByAssemblyQualifiedName.Add(assemblyQualifiedName, description);
 
 			bool builtIn;
+			MethodInfo singletonAccessor;
 			if (IsInterestingBaseType(type.BaseType))
 				description.BaseType = Create(type.BaseType, typesByAssemblyQualifiedName);
-			description.SerializationType = GetSerializationType(type, out builtIn);
+			description.SerializationType = GetSerializationType(type, out builtIn, out singletonAccessor);
 			description.IsBuiltIn = builtIn;
 			description.IsValueType = type.IsValueType;
 			description.IsClass = type.IsClass;
@@ -225,10 +226,10 @@ namespace SharpRemote
 				case SerializationType.Singleton:
 					description.Fields = new FieldDescription[0];
 					description.Properties = new PropertyDescription[0];
-					description.Methods = new MethodDescription[0];
+					description.Methods = new[] {MethodDescription.Create(singletonAccessor, typesByAssemblyQualifiedName)};
 					break;
 
-				case SerializationType.NoneSerializable:
+				case SerializationType.NotSerializable:
 					// TODO: Throw proper exception with proper error message
 					throw new NotImplementedException();
 
@@ -253,11 +254,12 @@ namespace SharpRemote
 		}
 
 		[Pure]
-		private static SerializationType GetSerializationType(Type type, out bool builtIn)
+		private static SerializationType GetSerializationType(Type type, out bool builtIn, out MethodInfo singletonAccessor)
 		{
 			if (type.IsPrimitive || BuiltInTypes.Contains(type))
 			{
 				builtIn = true;
+				singletonAccessor = null;
 				return SerializationType.ByValue;
 			}
 			builtIn = false;
@@ -268,10 +270,41 @@ namespace SharpRemote
 				throw new NotImplementedException();
 
 			if (dataContract != null)
+			{
+				singletonAccessor = null;
 				return SerializationType.ByValue;
+			}
 
 			if (byReference != null)
+			{
+				singletonAccessor = null;
 				return SerializationType.ByReference;
+			}
+
+			var factories = type.GetMethods()
+			                    .Where(x => x.GetCustomAttribute<SingletonFactoryMethodAttribute>() != null)
+			                    .Concat(type.GetProperties()
+			                                .Where(x => x.GetCustomAttribute<SingletonFactoryMethodAttribute>() != null)
+			                                .Select(x => x.GetMethod)).ToList();
+
+			if (factories.Count == 0)
+				throw new NotImplementedException();
+
+			if (factories.Count > 1)
+				throw new ArgumentException(string.Format("The type '{0}' has more than one singleton factory - this is not allowed", type));
+
+			singletonAccessor = factories[0];
+			if (singletonAccessor.ReturnType != type)
+				throw new ArgumentException(string.Format("The factory method '{0}.{1}' is required to return a value of type '{0}' but doesn't", type, singletonAccessor));
+
+			var @interface = type.GetInterfaces().FirstOrDefault(x => x.GetCustomAttribute<ByReferenceAttribute>() != null);
+			if (@interface != null)
+			{
+				throw new ArgumentException(string.Format(
+				                                          "The type '{0}' both has a method marked with the SingletonFactoryMethod attribute and also implements an interface '{1}' which has the ByReference attribute: This is not allowed; they are mutually exclusive",
+				                                          type,
+				                                          @interface));
+			}
 
 			throw new NotImplementedException();
 		}

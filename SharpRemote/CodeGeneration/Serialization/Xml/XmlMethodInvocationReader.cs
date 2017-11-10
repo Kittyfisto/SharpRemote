@@ -78,6 +78,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			throw new NotImplementedException();
 		}
 
+		public bool ReadNextArgumentAsStruct<T>(out string name, out T value) where T : struct
+		{
+			throw new NotImplementedException();
+		}
+
 		public bool ReadNextArgumentAsSByte(out string name, out sbyte value)
 		{
 			string tmp;

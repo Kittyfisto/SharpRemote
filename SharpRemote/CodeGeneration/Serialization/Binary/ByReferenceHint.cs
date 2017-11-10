@@ -5,7 +5,7 @@ namespace SharpRemote
 	///     This enum is used while serializing a type that is attributed with the <see cref="ByReferenceAttribute" />.
 	///     It instructs the deserializer on what exactly it should do.
 	/// </summary>
-	internal enum ByReferenceHint : byte
+	public enum ByReferenceHint : byte
 	{
 		/// <summary>
 		///     The deserializer should create a proxy to represent the subject of the other endpoint.

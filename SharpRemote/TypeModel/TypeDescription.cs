@@ -21,8 +21,9 @@ namespace SharpRemote
 		/// </summary>
 		private static readonly HashSet<Type> BuiltInTypes;
 
-		private TypeDescription _baseType;
 		private readonly Type _type;
+		private readonly Type _byReferenceInterfaceType;
+		private TypeDescription _baseType;
 
 		static TypeDescription()
 		{
@@ -44,15 +45,22 @@ namespace SharpRemote
 		///     Initializes this object.
 		/// </summary>
 		/// <param name="type"></param>
-		private TypeDescription(Type type)
+		/// <param name="byReferenceInterfaceType"></param>
+		private TypeDescription(Type type, Type byReferenceInterfaceType)
 		{
 			_type = type;
+			_byReferenceInterfaceType = byReferenceInterfaceType;
 		}
 
 		/// <summary>
 		/// The type being described by this object.
 		/// </summary>
 		public Type Type => _type;
+
+		/// <summary>
+		/// The type being described by this object.
+		/// </summary>
+		public Type ByReferenceInterfaceType => _byReferenceInterfaceType;
 
 		/// <summary>
 		///     An id which differentiates this object amongst all others for the same
@@ -180,18 +188,21 @@ namespace SharpRemote
 			if (assemblyQualifiedName == null)
 				throw new ArgumentException("Type.AssemblyQualifiedName should not be null");
 
-			var description = new TypeDescription(type)
+			bool builtIn;
+			MethodInfo singletonAccessor;
+			Type byReferenceInterface;
+			var serializerType = GetSerializationType(type, out builtIn, out singletonAccessor, out byReferenceInterface);
+
+			var description = new TypeDescription(type, byReferenceInterface)
 			{
 				AssemblyQualifiedName = assemblyQualifiedName
 			};
 
 			typesByAssemblyQualifiedName.Add(assemblyQualifiedName, description);
 
-			bool builtIn;
-			MethodInfo singletonAccessor;
 			if (IsInterestingBaseType(type.BaseType))
 				description.BaseType = Create(type.BaseType, typesByAssemblyQualifiedName);
-			description.SerializationType = GetSerializationType(type, out builtIn, out singletonAccessor);
+			description.SerializationType = serializerType;
 			description.IsBuiltIn = builtIn;
 			description.IsValueType = type.IsValueType;
 			description.IsClass = type.IsClass;
@@ -254,12 +265,16 @@ namespace SharpRemote
 		}
 
 		[Pure]
-		private static SerializationType GetSerializationType(Type type, out bool builtIn, out MethodInfo singletonAccessor)
+		private static SerializationType GetSerializationType(Type type,
+		                                                      out bool builtIn,
+		                                                      out MethodInfo singletonAccessor,
+		                                                      out Type byReferenceInterface)
 		{
 			if (type.IsPrimitive || BuiltInTypes.Contains(type))
 			{
 				builtIn = true;
 				singletonAccessor = null;
+				byReferenceInterface = null;
 				return SerializationType.ByValue;
 			}
 			builtIn = false;
@@ -272,12 +287,14 @@ namespace SharpRemote
 			if (dataContract != null)
 			{
 				singletonAccessor = null;
+				byReferenceInterface = null;
 				return SerializationType.ByValue;
 			}
 
 			if (byReference != null)
 			{
 				singletonAccessor = null;
+				byReferenceInterface = type.GetInterfaces().FirstOrDefault(x => x.GetCustomAttribute<ByReferenceAttribute>() != null);
 				return SerializationType.ByReference;
 			}
 

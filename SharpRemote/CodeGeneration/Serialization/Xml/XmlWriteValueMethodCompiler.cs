@@ -11,12 +11,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitWriteHasValue(ILGenerator generator)
 		{
-			throw new System.NotImplementedException();
+			
 		}
 
 		protected override void EmitWriteNoValue(ILGenerator generator)
 		{
-			throw new System.NotImplementedException();
+			
 		}
 	}
 }

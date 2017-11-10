@@ -22,7 +22,7 @@ namespace SharpRemote
 
 		private readonly XmlWriterSettings _settings;
 		private readonly XmlSerializationCompiler _methodCompiler;
-		private readonly SerializationMethodStorage<XmlMethodCompiler> _methodStorage;
+		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
 
 		/// <summary>
 		/// </summary>
@@ -42,7 +42,7 @@ namespace SharpRemote
 				throw new ArgumentNullException(nameof(moduleBuilder));
 
 			_methodCompiler = new XmlSerializationCompiler(moduleBuilder);
-			_methodStorage = new SerializationMethodStorage<XmlMethodCompiler>("XmlSerializer", _methodCompiler);
+			_methodStorage = new SerializationMethodStorage<XmlMethodsCompiler>("XmlSerializer", _methodCompiler);
 			_settings = settings ?? new XmlWriterSettings();
 		}
 

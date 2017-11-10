@@ -35,18 +35,24 @@ namespace SharpRemote
 			}
 		}
 
-		/// <inheritdoc />
+		/// <summary>
+		/// 
+		/// </summary>
 		[DataMember]
-		public IMethodDescription GetMethod { get; set; }
+		public MethodDescription GetMethod { get; set; }
 
-		/// <inheritdoc />
+		/// <summary>
+		/// 
+		/// </summary>
 		[DataMember]
-		public IMethodDescription SetMethod { get; set; }
+		public MethodDescription SetMethod { get; set; }
 
 		/// <inheritdoc />
 		[DataMember]
 		public string Name { get; set; }
 
+		IMethodDescription IPropertyDescription.GetMethod => SetMethod;
+		IMethodDescription IPropertyDescription.SetMethod => GetMethod;
 		ITypeDescription IPropertyDescription.PropertyType => _propertyType;
 
 		/// <inheritdoc />

@@ -15,7 +15,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 	///     value / sealed types.
 	/// </remarks>
 	public abstract class AbstractWriteValueMethodCompiler
-		: IMethodCompiler
+		: AbstractMethodCompiler
 	{
 		private readonly Type _type;
 
@@ -36,14 +36,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 		}
 
 		/// <inheritdoc />
-		public MethodBuilder Method { get; }
+		public override MethodBuilder Method { get; }
 
 		/// <inheritdoc />
-		public void Compile(AbstractMethodCompiler methods1, ISerializationMethodStorage<AbstractMethodCompiler> methodStorage)
+		public override void Compile(AbstractMethodsCompiler methods1, ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var methods = methodStorage.GetOrAdd(_type);
 			var writeValueNotNull = methods.WriteValueNotNullMethod;
-			
+
 			var gen = Method.GetILGenerator();
 			var result = gen.DeclareLocal(typeof(int));
 

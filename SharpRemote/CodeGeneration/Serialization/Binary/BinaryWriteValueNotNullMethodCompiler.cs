@@ -1,46 +1,33 @@
 ﻿using System;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Xml;
 
-namespace SharpRemote.CodeGeneration.Serialization.Xml
+namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
-	internal sealed class XmlWriteValueNotNullMethodCompiler
+	/// <summary>
+	/// 
+	/// </summary>
+	internal sealed class BinaryWriteValueNotNullMethodCompiler
 		: AbstractWriteValueNotNullMethodCompiler
 	{
-		private static readonly MethodInfo XmlWriterWriteStartElement;
-		private static readonly MethodInfo XmlWriterWriteEndElement;
-		private static readonly MethodInfo XmlWriterWriteStringValue;
-		private static readonly MethodInfo DecimalToString;
-
-		static XmlWriteValueNotNullMethodCompiler()
-		{
-			XmlWriterWriteStartElement = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteStartElement), new [] {typeof(string)});
-			XmlWriterWriteEndElement = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteEndElement));
-			XmlWriterWriteStringValue = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteValue), new[] {typeof(string)});
-			DecimalToString = typeof(decimal).GetMethod(nameof(decimal.ToString), new [] {typeof(string), typeof(IFormatProvider)});
-		}
-
-		public XmlWriteValueNotNullMethodCompiler(CompilationContext context) : base(context)
+		public BinaryWriteValueNotNullMethodCompiler(CompilationContext context) : base(context)
 		{
 		}
 
 		protected override void EmitWriteHint(ILGenerator generator, ByReferenceHint hint)
-		{ }
+		{
+			generator.Emit(OpCodes.Ldarg_0);
+			generator.Emit(OpCodes.Ldc_I4, (int)hint);
+			generator.Emit(OpCodes.Callvirt, Methods.WriteByte);
+		}
 
 		protected override void EmitBeginWriteFieldOrProperty(ILGenerator generator, TypeDescription valueType, string name)
 		{
-			// XmlWriter.WriteStartElement(value)
-			generator.Emit(OpCodes.Ldarg_0);
-			generator.Emit(OpCodes.Ldstr, name);
-			generator.Emit(OpCodes.Call, XmlWriterWriteStartElement);
+			throw new NotImplementedException();
 		}
 
 		protected override void EmitEndWriteFieldOrProperty(ILGenerator generator, TypeDescription valueType, string name)
 		{
-			// XmlWriter.WriteEndElement()
-			generator.Emit(OpCodes.Ldarg_0);
-			generator.Emit(OpCodes.Call, XmlWriterWriteEndElement);
+			throw new NotImplementedException();
 		}
 
 		protected override void EmitWriteByte(ILGenerator gen, Action loadValue)
@@ -85,13 +72,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitWriteDecimal(ILGenerator gen, Action loadValue)
 		{
-			// XmlWriter.WriteValue(value.ToString("R", CultureInfo.InvariantCulture));
-			gen.Emit(OpCodes.Ldarg_0);
-			loadValue();
-			gen.Emit(OpCodes.Ldstr, "R");
-			gen.Emit(OpCodes.Call, CultureInfoGetInvariantCulture);
-			gen.Emit(OpCodes.Call, DecimalToString);
-			gen.Emit(OpCodes.Call, XmlWriterWriteStringValue);
+			throw new NotImplementedException();
 		}
 
 		protected override void EmitWriteFloat(ILGenerator gen, Action loadValue)
@@ -110,6 +91,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		}
 
 		protected override void EmitWriteObjectId(ILGenerator generator, LocalBuilder proxy)
-		{}
+		{
+			generator.Emit(OpCodes.Ldarg_0);
+			generator.Emit(OpCodes.Ldloc, proxy);
+			generator.Emit(OpCodes.Callvirt, Methods.GrainGetObjectId);
+			generator.Emit(OpCodes.Callvirt, Methods.WriteLong);
+		}
 	}
 }

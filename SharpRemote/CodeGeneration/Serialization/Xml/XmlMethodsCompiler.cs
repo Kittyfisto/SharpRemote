@@ -8,22 +8,24 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	///     Compiles methods to serialize/deserialize one .NET type,
 	///     <see cref="Compile" />.
 	/// </summary>
-	internal sealed class XmlMethodCompiler
-		: AbstractMethodCompiler
+	internal sealed class XmlMethodsCompiler
+		: AbstractMethodsCompiler
 	{
-		public XmlMethodCompiler(TypeBuilder typeBuilder, TypeDescription typeDescription)
+		private CompilationContext _context;
+
+		public XmlMethodsCompiler(TypeBuilder typeBuilder, TypeDescription typeDescription)
 			: this(typeBuilder,
 			       typeDescription,
 			       new CompilationContext
 			{
-				Type = typeDescription.Type,
+				TypeDescription = typeDescription,
 				ReaderType = typeof(XmlReader),
 				WriterType = typeof(XmlWriter),
 				TypeBuilder = typeBuilder
 			})
 		{}
 
-		private XmlMethodCompiler(TypeBuilder typeBuilder, TypeDescription typeDescription, CompilationContext context)
+		private XmlMethodsCompiler(TypeBuilder typeBuilder, TypeDescription typeDescription, CompilationContext context)
 			: base(typeBuilder,
 			       typeDescription,
 			       new XmlWriteValueNotNullMethodCompiler(context),
@@ -32,7 +34,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			       new XmlReadValueNotNullMethodCompiler(context),
 			       new XmlReadValueMethodCompiler(context),
 			       new XmlReadObjectMethodCompiler(context))
-		{}
+		{
+			_context = context;
+		}
 
 		protected override Type WriterType => typeof(XmlWriter);
 
@@ -42,18 +46,18 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public Func<XmlReader, ISerializer2, IRemotingEndPoint, object> ReadObjectDelegate { get; private set; }
 
-		public void Compile(ISerializationMethodStorage<XmlMethodCompiler> storage)
+		public void Compile(ISerializationMethodStorage<XmlMethodsCompiler> storage)
 		{
 			base.Compile(storage);
 
 			WriteDelegate =
 				(Action<XmlWriter, object, ISerializer2, IRemotingEndPoint>)
-				WriteObjectMethod
+				_context.TypeBuilder.GetMethod("WriteObject")
 					.CreateDelegate(typeof(Action<XmlWriter, object, ISerializer2, IRemotingEndPoint>));
 
 			ReadObjectDelegate =
 				(Func<XmlReader, ISerializer2, IRemotingEndPoint, object>)
-				ReadObjectMethod
+				_context.TypeBuilder.GetMethod("ReadObject")
 					.CreateDelegate(typeof(Func<XmlReader, ISerializer2, IRemotingEndPoint, object>));
 		}
 	}

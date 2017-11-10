@@ -13,7 +13,20 @@ namespace SharpRemote
 	public sealed class FieldDescription
 		: IFieldDescription
 	{
+		private readonly FieldInfo _field;
 		private TypeDescription _fieldType;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public FieldDescription()
+		{ }
+
+		private FieldDescription(FieldInfo field)
+		{
+			_field = field;
+			Name = field.Name;
+		}
 
 		/// <summary>
 		///     The id of the <see cref="TypeDescription" /> which describes the type of this field.
@@ -40,6 +53,11 @@ namespace SharpRemote
 
 		ITypeDescription IFieldDescription.FieldType => _fieldType;
 
+		/// <summary>
+		/// 
+		/// </summary>
+		public FieldInfo Field => _field;
+
 		/// <inheritdoc />
 		public override string ToString()
 		{
@@ -54,9 +72,8 @@ namespace SharpRemote
 		/// <returns></returns>
 		public static FieldDescription Create(FieldInfo field, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
 		{
-			return new FieldDescription
+			return new FieldDescription(field)
 			{
-				Name = field.Name,
 				FieldType = TypeDescription.GetOrCreate(field.FieldType, typesByAssemblyQualifiedName)
 			};
 		}

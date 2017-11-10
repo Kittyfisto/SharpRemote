@@ -7,7 +7,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 	/// 
 	/// </summary>
 	public abstract class AbstractReadObjectMethodCompiler
-		: IMethodCompiler
+		: AbstractMethodCompiler
 	{
 		private readonly MethodBuilder _method;
 		private readonly CompilationContext _context;
@@ -28,10 +28,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		}
 
 		/// <inheritdoc />
-		public MethodBuilder Method => _method;
+		public override MethodBuilder Method => _method;
 
 		/// <inheritdoc />
-		public void Compile(AbstractMethodCompiler methods, ISerializationMethodStorage<AbstractMethodCompiler> methodStorage)
+		public override void Compile(AbstractMethodsCompiler methods, ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var requiresBoxing = _context.Type.IsPrimitive || _context.Type.IsValueType;
 			var gen = _method.GetILGenerator();

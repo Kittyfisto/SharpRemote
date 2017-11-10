@@ -11,7 +11,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 	///     the method compiled by a <see cref="AbstractWriteValueNotNullMethodCompiler" />.
 	/// </summary>
 	public abstract class AbstractWriteObjectMethodCompiler
-		: IMethodCompiler
+		: AbstractMethodCompiler
 	{
 		/// <summary>
 		/// </summary>
@@ -34,10 +34,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		protected Type Type { get; }
 
 		/// <inheritdoc />
-		public MethodBuilder Method { get; }
+		public override MethodBuilder Method { get; }
 
 		/// <inheritdoc />
-		public void Compile(AbstractMethodCompiler methods1, ISerializationMethodStorage<AbstractMethodCompiler> methodStorage)
+		public override void Compile(AbstractMethodsCompiler methods1, ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var methods = methodStorage.GetOrAdd(Type);
 			var writeValueNotNull = methods.WriteValueNotNullMethod;

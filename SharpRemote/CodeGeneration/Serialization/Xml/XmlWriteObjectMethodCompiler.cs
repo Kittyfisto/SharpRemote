@@ -15,8 +15,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{}
 
 		protected override void EmitWriteTypeInformation(ILGenerator generator)
-		{
-			throw new NotImplementedException();
-		}
+		{}
 	}
 }

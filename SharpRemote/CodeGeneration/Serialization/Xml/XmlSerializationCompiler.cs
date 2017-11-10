@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 namespace SharpRemote.CodeGeneration.Serialization.Xml
 {
 	sealed class XmlSerializationCompiler
-		: ISerializationMethodCompiler<XmlMethodCompiler>
+		: ISerializationMethodCompiler<XmlMethodsCompiler>
 	{
 		private readonly ModuleBuilder _module;
 
@@ -13,15 +13,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			_module = moduleBuilder;
 		}
 
-		public XmlMethodCompiler Prepare(string typeName, TypeDescription typeDescription)
+		public XmlMethodsCompiler Prepare(string typeName, TypeDescription typeDescription)
 		{
 			TypeBuilder typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
-			return new XmlMethodCompiler(typeBuilder, typeDescription);
+			return new XmlMethodsCompiler(typeBuilder, typeDescription);
 		}
 
-		public void Compile(XmlMethodCompiler methods, ISerializationMethodStorage<XmlMethodCompiler> storage)
+		public void Compile(XmlMethodsCompiler methodses, ISerializationMethodStorage<XmlMethodsCompiler> storage)
 		{
-			methods.Compile(storage);
+			methodses.Compile(storage);
 		}
 	}
 }

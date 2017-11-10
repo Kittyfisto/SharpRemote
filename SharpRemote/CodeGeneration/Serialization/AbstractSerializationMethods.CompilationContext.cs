@@ -11,7 +11,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <summary>
 		/// 
 		/// </summary>
-		public Type Type { get; set; }
+		public TypeDescription TypeDescription { get; set; }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public Type Type => TypeDescription.Type;
 
 		/// <summary>
 		/// 

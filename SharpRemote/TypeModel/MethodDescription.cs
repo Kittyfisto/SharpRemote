@@ -14,9 +14,23 @@ namespace SharpRemote
 	public sealed class MethodDescription
 		: IMethodDescription
 	{
-		/// <inheritdoc />
-		[DataMember]
-		public string Name { get; set; }
+		private readonly MethodInfo _method;
+
+		/// <summary>
+		/// </summary>
+		public MethodDescription()
+		{
+		}
+
+		private MethodDescription(MethodInfo methodInfo)
+		{
+			Name = methodInfo.Name;
+			_method = methodInfo;
+		}
+
+		/// <summary>
+		/// </summary>
+		public MethodInfo Method => _method;
 
 		/// <summary>
 		///     The equivalent of <see cref="MethodInfo.ReturnParameter" />.
@@ -36,27 +50,30 @@ namespace SharpRemote
 		public ParameterDescription[] Parameters { get; set; }
 
 		/// <inheritdoc />
+		[DataMember]
+		public string Name { get; set; }
+
+		IParameterDescription IMethodDescription.ReturnParameter => ReturnParameter;
+		ITypeDescription IMethodDescription.ReturnType => ReturnType;
+		IReadOnlyList<IParameterDescription> IMethodDescription.Parameters => Parameters;
+
+		/// <inheritdoc />
 		public override string ToString()
 		{
 			var parameters = Parameters ?? Enumerable.Empty<ParameterDescription>();
 			return string.Format("{0} {1}({2})", ReturnParameter, Name, string.Join(", ", parameters));
 		}
 
-		IParameterDescription IMethodDescription.ReturnParameter => ReturnParameter;
-		ITypeDescription IMethodDescription.ReturnType => ReturnType;
-		IReadOnlyList<IParameterDescription> IMethodDescription.Parameters => Parameters;
-
 		/// <summary>
-		/// 
 		/// </summary>
 		/// <param name="methodInfo"></param>
 		/// <param name="typesByAssemblyQualifiedName"></param>
 		/// <returns></returns>
-		public static MethodDescription Create(MethodInfo methodInfo, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
+		public static MethodDescription Create(MethodInfo methodInfo,
+		                                       IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
 		{
-			var description = new MethodDescription
+			var description = new MethodDescription(methodInfo)
 			{
-				Name = methodInfo.Name,
 				ReturnParameter = ParameterDescription.Create(methodInfo.ReturnParameter, typesByAssemblyQualifiedName)
 			};
 			return description;

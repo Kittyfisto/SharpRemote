@@ -17,6 +17,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="methods">All serialization methods of the type being compiled</param>
 		/// <param name="methodStorage">Serialization methods for any other available type</param>
-		void Compile(AbstractMethodCompiler methods, ISerializationMethodStorage<AbstractMethodCompiler> methodStorage);
+		void Compile(AbstractMethodsCompiler methods, ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage);
 	}
 }

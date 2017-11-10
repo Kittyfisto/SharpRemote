@@ -406,6 +406,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		[Ignore("Not yet implemented")]
 		public void TestMethodCallFieldDecimal()
 		{
 			var serializer = Create();
@@ -428,7 +429,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					FieldDecimal value;
 					reader.ReadNextArgumentAsStruct(out name, out value).Should().BeTrue();
 					name.Should().Be("foobar");
-					value.Should().Be("3.14159");
+					value.Should().Be(decimal.MinusOne);
 
 					reader.ReadNextArgumentAsStruct(out name, out value).Should().BeFalse();
 					name.Should().BeNull();

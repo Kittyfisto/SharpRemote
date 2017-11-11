@@ -96,6 +96,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			// And finally call the PostDeserializationCallback, if available.
 			EmitCallAfterSerialization(gen);
+
+			gen.Emit(OpCodes.Ret);
 		}
 
 		private void EmitCallBeforeSerialization(ILGenerator gen)
@@ -114,7 +116,26 @@ namespace SharpRemote.CodeGeneration.Serialization
 			foreach (var field in _context.TypeDescription.Fields)
 				try
 				{
-					EmitWriteValue(gen, field.FieldType, field.Name, () => gen.Emit(OpCodes.Ldfld, field.Field));
+					EmitWriteValue(gen, field.FieldType, field.Name, () =>
+					{
+						if (_context.TypeDescription.IsValueType)
+						{
+							gen.Emit(OpCodes.Ldarga_S, 1);
+						}
+						else
+						{
+							gen.Emit(OpCodes.Ldarg_1);
+						}
+
+						if (field.FieldType.IsValueType)
+						{
+							gen.Emit(OpCodes.Ldflda, field.Field);
+						}
+						else
+						{
+							gen.Emit(OpCodes.Ldfld, field.Field);
+						}
+					});
 				}
 				catch (SerializationException)
 				{
@@ -137,7 +158,15 @@ namespace SharpRemote.CodeGeneration.Serialization
 				{
 					EmitWriteValue(gen, property.PropertyType, property.Name, () =>
 					{
-						gen.Emit(OpCodes.Ldarg_1);
+						if (_context.TypeDescription.IsValueType)
+						{
+							gen.Emit(OpCodes.Ldarga_S, 1);
+						}
+						else
+						{
+							gen.Emit(OpCodes.Ldarg_1);
+						}
+						
 						gen.Emit(OpCodes.Call, property.GetMethod.Method);
 					});
 				}

@@ -110,6 +110,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			WriteNamedArgument(name, value.ToString("R", CultureInfo.InvariantCulture));
 		}
 
+		public void WriteNamedArgument(string name, decimal value)
+		{
+			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+		}
+
 		public void WriteNamedArgument(string name, string value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);

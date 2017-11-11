@@ -16,7 +16,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public XmlMethodsCompiler Prepare(string typeName, TypeDescription typeDescription)
 		{
 			TypeBuilder typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
-			return new XmlMethodsCompiler(typeBuilder, typeDescription);
+			return XmlMethodsCompiler.Create(typeBuilder, typeDescription);
 		}
 
 		public void Compile(XmlMethodsCompiler methodses, ISerializationMethodStorage<XmlMethodsCompiler> storage)

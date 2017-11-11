@@ -37,6 +37,10 @@ namespace SharpRemote
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
+		/// <remarks>
+		/// TODO: This method doesn't make much sense in the greater scope as it still requires dynamic dispatch.
+		/// Instead, the serializer shall offer a method to emit code which eliminates dynamic dispatch alltogether (for structs/sealed types).
+		/// </remarks>
 		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
@@ -121,6 +125,14 @@ namespace SharpRemote
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
 		bool ReadNextArgumentAsDouble(out string name, out double value);
+
+		/// <summary>
+		///     Reads the value of the next argument from the method call message.
+		/// </summary>
+		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
+		/// <param name="value">The value of the next argument</param>
+		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
+		bool ReadNextArgumentAsDecimal(out string name, out decimal value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.

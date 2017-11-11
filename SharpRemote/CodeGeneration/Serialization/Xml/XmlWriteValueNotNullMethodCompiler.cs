@@ -18,7 +18,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlWriterWriteStartElement = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteStartElement), new [] {typeof(string)});
 			XmlWriterWriteEndElement = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteEndElement));
 			XmlWriterWriteStringValue = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteValue), new[] {typeof(string)});
-			DecimalToString = typeof(decimal).GetMethod(nameof(decimal.ToString), new [] {typeof(string), typeof(IFormatProvider)});
+			DecimalToString = typeof(decimal).GetMethod(nameof(decimal.ToString), new [] {typeof(IFormatProvider)});
 		}
 
 		public XmlWriteValueNotNullMethodCompiler(CompilationContext context) : base(context)
@@ -33,14 +33,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			// XmlWriter.WriteStartElement(value)
 			generator.Emit(OpCodes.Ldarg_0);
 			generator.Emit(OpCodes.Ldstr, name);
-			generator.Emit(OpCodes.Call, XmlWriterWriteStartElement);
+			generator.Emit(OpCodes.Callvirt, XmlWriterWriteStartElement);
 		}
 
 		protected override void EmitEndWriteFieldOrProperty(ILGenerator generator, TypeDescription valueType, string name)
 		{
 			// XmlWriter.WriteEndElement()
 			generator.Emit(OpCodes.Ldarg_0);
-			generator.Emit(OpCodes.Call, XmlWriterWriteEndElement);
+			generator.Emit(OpCodes.Callvirt, XmlWriterWriteEndElement);
+			generator.Emit(OpCodes.Nop);
 		}
 
 		protected override void EmitWriteByte(ILGenerator gen, Action loadValue)
@@ -85,10 +86,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitWriteDecimal(ILGenerator gen, Action loadValue)
 		{
-			// XmlWriter.WriteValue(value.ToString("R", CultureInfo.InvariantCulture));
+			// XmlWriter.WriteValue(value.ToString(CultureInfo.InvariantCulture));
 			gen.Emit(OpCodes.Ldarg_0);
 			loadValue();
-			gen.Emit(OpCodes.Ldstr, "R");
 			gen.Emit(OpCodes.Call, CultureInfoGetInvariantCulture);
 			gen.Emit(OpCodes.Call, DecimalToString);
 			gen.Emit(OpCodes.Call, XmlWriterWriteStringValue);

@@ -11,6 +11,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	public abstract class AbstractSerializerAcceptanceTest
 	{
 		protected abstract ISerializer2 Create();
+		protected abstract void Save();
 
 		[Test]
 		public void TestEmptyMethodCall([ValueSource("RpcIds")] ulong rpcId,
@@ -373,6 +374,48 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			}
 		}
 
+		public static IEnumerable<decimal> DecimalValues => new[]
+		{
+			decimal.MinValue,
+			decimal.MinusOne,
+			0,
+			decimal.One,
+			new decimal(Math.PI),
+			decimal.MaxValue
+		};
+
+		[Test]
+		public void TestMethodCallDecimal([ValueSource("DecimalValues")] decimal value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				{
+					writer.WriteNamedArgument("pi", value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				{
+					reader.RpcId.Should().Be(5);
+					reader.GrainId.Should().Be(6);
+					reader.MethodName.Should().Be("Bar");
+
+					string name;
+					decimal actualValue;
+					reader.ReadNextArgumentAsDecimal(out name, out actualValue).Should().BeTrue();
+					name.Should().Be("pi");
+					actualValue.Should().Be(value);
+
+					reader.ReadNextArgumentAsDecimal(out name, out actualValue).Should().BeFalse();
+					name.Should().BeNull();
+					actualValue.Should().Be(decimal.MinValue);
+				}
+			}
+		}
+
 		[Test]
 		public void TestMethodCallString()
 		{
@@ -406,15 +449,17 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Ignore("Not yet implemented")]
-		public void TestMethodCallFieldDecimal()
+		public void TestMethodCallFieldDecimal([ValueSource(nameof(DecimalValues))] decimal value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
+				serializer.RegisterType<FieldDecimal>();
+				Save();
+
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "GetValue"))
 				{
-					writer.WriteNamedArgument("foobar", new FieldDecimal {Value = decimal.MinusOne});
+					writer.WriteNamedArgument("foobar", new FieldDecimal {Value = value });
 				}
 
 				PrintAndRewind(stream);
@@ -426,14 +471,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.MethodName.Should().Be("GetValue");
 
 					string name;
-					FieldDecimal value;
-					reader.ReadNextArgumentAsStruct(out name, out value).Should().BeTrue();
+					FieldDecimal actualValue;
+					reader.ReadNextArgumentAsStruct(out name, out actualValue).Should().BeTrue();
 					name.Should().Be("foobar");
-					value.Should().Be(decimal.MinusOne);
+					actualValue.Value.Should().Be(value);
 
-					reader.ReadNextArgumentAsStruct(out name, out value).Should().BeFalse();
+					reader.ReadNextArgumentAsStruct(out name, out actualValue).Should().BeFalse();
 					name.Should().BeNull();
-					value.Should().Be(default(FieldDecimal));
+					actualValue.Should().Be(default(FieldDecimal));
 				}
 			}
 		}
@@ -463,7 +508,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			stream.Position.Should()
 			      .BeGreaterThan(expected: 0, because: "because some data must've been written to the stream");
 			stream.Position = 0;
-			
+
 			var formatted = Format(stream);
 			TestContext.Out.WriteLine("Message, {0} bytes", stream.Length);
 			TestContext.Out.Write(formatted);

@@ -91,6 +91,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Json
 			throw new NotImplementedException();
 		}
 
+		public bool ReadNextArgumentAsDecimal(out string name, out decimal value)
+		{
+			throw new NotImplementedException();
+		}
+
 		public bool ReadNextArgumentAsString(out string name, out string value)
 		{
 			throw new NotImplementedException();

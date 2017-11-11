@@ -81,6 +81,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Json
 			throw new NotImplementedException();
 		}
 
+		public void WriteNamedArgument(string name, decimal value)
+		{
+			throw new NotImplementedException();
+		}
+
 		public void WriteNamedArgument(string name, string value)
 		{
 			throw new NotImplementedException();

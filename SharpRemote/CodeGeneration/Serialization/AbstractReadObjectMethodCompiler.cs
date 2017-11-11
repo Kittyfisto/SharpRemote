@@ -41,7 +41,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Ldarg_2);
 			gen.Emit(OpCodes.Call, methods.ReadValueNotNullMethod);
-
+			
 			if (requiresBoxing)
 				gen.Emit(OpCodes.Box, _context.Type);
 

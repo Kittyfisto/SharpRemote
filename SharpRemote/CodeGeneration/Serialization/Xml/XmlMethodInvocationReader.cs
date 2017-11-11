@@ -18,15 +18,23 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string ArgumentValueAttributeName = XmlMethodInvocationWriter.ArgumentValueAttributeName;
 
 		private readonly XmlSerializer _xmlSerializer;
+		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
 		private readonly StreamReader _textReader;
 		private readonly XmlReader _reader;
 		private readonly ulong _id;
 		private readonly ulong _grainId;
 		private readonly string _methodName;
+		private readonly IRemotingEndPoint _endPoint;
 
-		public XmlMethodInvocationReader(XmlSerializer xmlSerializer, Encoding encoding, Stream stream)
+		public XmlMethodInvocationReader(XmlSerializer xmlSerializer,
+		                                 Encoding encoding,
+		                                 Stream stream,
+		                                 SerializationMethodStorage<XmlMethodsCompiler> methodStorage,
+		                                 IRemotingEndPoint endPoint)
 		{
 			_xmlSerializer = xmlSerializer;
+			_endPoint = endPoint;
+			_methodStorage = methodStorage;
 			_textReader = new StreamReader(stream, encoding, true, 4096, true);
 			_reader = XmlReader.Create(_textReader);
 			_reader.MoveToContent();
@@ -80,7 +88,38 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadNextArgumentAsStruct<T>(out string name, out T value) where T : struct
 		{
-			throw new NotImplementedException();
+			if (!ReadNextArgument())
+			{
+				name = null;
+				value = default(T);
+				return false;
+			}
+
+			name = null;
+			var attributeCount = _reader.AttributeCount;
+			for (int i = 0; i < attributeCount; ++i)
+			{
+				_reader.MoveToNextAttribute();
+
+				switch (_reader.Name)
+				{
+					case ArgumentNameAttributeName:
+						name = _reader.Value;
+						break;
+				}
+			}
+
+			_reader.Read();
+			if (_reader.Name != ArgumentValueAttributeName)
+				throw new NotImplementedException();
+
+			var reader = _reader.ReadSubtree();
+			var methods = _methodStorage.GetOrAdd(typeof(T));
+			var tmp = methods.ReadObjectDelegate(reader, _xmlSerializer, _endPoint);
+			value = (T) tmp;
+
+			_reader.Read();
+			return true;
 		}
 
 		public bool ReadNextArgumentAsSByte(out string name, out sbyte value)
@@ -200,6 +239,18 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				return false;
 			}
 			value = double.Parse(tmp, CultureInfo.InvariantCulture);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsDecimal(out string name, out decimal value)
+		{
+			string tmp;
+			if (!ReadNextArgument(out name, out tmp))
+			{
+				value = decimal.MinValue;
+				return false;
+			}
+			value = decimal.Parse(tmp, CultureInfo.InvariantCulture);
 			return true;
 		}
 

@@ -81,7 +81,7 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public IMethodInvocationReader CreateMethodInvocationReader(Stream stream, IRemotingEndPoint endPoint = null)
 		{
-			return new XmlMethodInvocationReader(this, _settings.Encoding, stream);
+			return new XmlMethodInvocationReader(this, _settings.Encoding, stream, _methodStorage, endPoint);
 		}
 
 		/// <inheritdoc />

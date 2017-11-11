@@ -99,7 +99,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 			foreach (var field in _context.TypeDescription.Fields)
 				try
 				{
-					gen.Emit(OpCodes.Ldloc, local);
+					if (_context.TypeDescription.IsValueType)
+					{
+						gen.Emit(OpCodes.Ldloca_S, local);
+					}
+					else
+					{
+						gen.Emit(OpCodes.Ldloc, local);
+					}
 					EmitReadValue(gen, field.FieldType, field.Name);
 					gen.Emit(OpCodes.Stfld, field.Field);
 				}
@@ -123,7 +130,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 			foreach (var property in _context.TypeDescription.Properties)
 				try
 				{
-					gen.Emit(OpCodes.Ldloc, local);
+					if (_context.TypeDescription.IsValueType)
+					{
+						gen.Emit(OpCodes.Ldloca_S, local);
+					}
+					else
+					{
+						gen.Emit(OpCodes.Ldloc, local);
+					}
 					EmitReadValue(gen, property.PropertyType, property.Name);
 					gen.Emit(OpCodes.Call, property.SetMethod.Method);
 				}

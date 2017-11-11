@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 using NUnit.Framework;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
@@ -12,9 +13,18 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 			return new BinarySerializer2();
 		}
 
+		protected override void Save()
+		{
+			
+		}
+
 		protected override string Format(MemoryStream stream)
 		{
-			throw new System.NotImplementedException();
+			var value = stream.ToArray();
+			var stringBuilder = new StringBuilder(value.Length * 2);
+			foreach (var b in value)
+				stringBuilder.AppendFormat("{0:x2}", b);
+			return stringBuilder.ToString();
 		}
 	}
 }

@@ -29,10 +29,9 @@ namespace SharpRemote
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgument(out string name, out object value);
+		bool ReadNextArgument(out object value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
@@ -41,113 +40,99 @@ namespace SharpRemote
 		/// TODO: This method doesn't make much sense in the greater scope as it still requires dynamic dispatch.
 		/// Instead, the serializer shall offer a method to emit code which eliminates dynamic dispatch alltogether (for structs/sealed types).
 		/// </remarks>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsStruct<T>(out string name, out T value) where T : struct;
+		bool ReadNextArgumentAsStruct<T>(out T value) where T : struct;
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsSByte(out string name, out sbyte value);
+		bool ReadNextArgumentAsSByte(out sbyte value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsByte(out string name, out byte value);
+		bool ReadNextArgumentAsByte(out byte value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsUInt16(out string name, out ushort value);
+		bool ReadNextArgumentAsUInt16(out ushort value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsInt16(out string name, out short value);
+		bool ReadNextArgumentAsInt16(out short value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsUInt32(out string name, out uint value);
+		bool ReadNextArgumentAsUInt32(out uint value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsInt32(out string name, out int value);
+		bool ReadNextArgumentAsInt32(out int value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsUInt64(out string name, out ulong value);
+		bool ReadNextArgumentAsUInt64(out ulong value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsInt64(out string name, out long value);
+		bool ReadNextArgumentAsInt64(out long value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsFloat(out string name, out float value);
+		bool ReadNextArgumentAsFloat(out float value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsDouble(out string name, out double value);
+		bool ReadNextArgumentAsDouble(out double value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsDecimal(out string name, out decimal value);
+		bool ReadNextArgumentAsDecimal(out decimal value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsString(out string name, out string value);
+		bool ReadNextArgumentAsString(out string value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <param name="name">The name of the next argument, if it was written to the next message.</param>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsBytes(out string name, out byte[] value);
+		bool ReadNextArgumentAsBytes(out byte[] value);
 	}
 }

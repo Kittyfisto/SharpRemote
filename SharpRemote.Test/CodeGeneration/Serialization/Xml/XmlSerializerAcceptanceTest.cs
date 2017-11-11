@@ -52,29 +52,5 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 				return reader.ReadToEnd();
 			}
 		}
-
-		public static IEnumerable<ulong> GrainIds => new ulong[]
-		{
-			ulong.MinValue,
-			1,
-			uint.MaxValue,
-			ulong.MaxValue
-		};
-
-		public static IEnumerable<ulong> RpcIds => new ulong[]
-		{
-			ulong.MinValue,
-			42,
-			1337,
-			ulong.MaxValue
-		};
-
-		public static IEnumerable<string> MethodNames => new[]
-		{
-			"",
-			"Foo",
-			"汉字",
-			"昨夜のコンサートは最高でした。"
-		};
 	}
 }

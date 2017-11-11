@@ -1,19 +1,23 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
 	internal sealed class BinaryMethodResultWriter
 		: IMethodResultWriter
 	{
+		private readonly BinaryWriter _writer;
+
 		public BinaryMethodResultWriter(Stream stream, ulong rpcId)
 		{
-			throw new NotImplementedException();
+			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
+			_writer.Write(rpcId);
 		}
 
 		public void Dispose()
 		{
-			throw new NotImplementedException();
+			_writer.Dispose();
 		}
 
 		public void WriteFinished()

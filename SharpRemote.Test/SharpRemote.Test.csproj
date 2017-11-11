@@ -63,7 +63,7 @@
     <Compile Include="AssemblySetup.cs" />
     <Compile Include="BlockingCollectionTest.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializerAcceptanceTest.cs" />
-    <None Include="CodeGeneration\Serialization\Binary\BinarySerializerAcceptanceTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver2.cs" />
     <Compile Include="CodeGeneration\Serialization\DecimalTest.cs" />

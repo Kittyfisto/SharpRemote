@@ -44,89 +44,85 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			_textWriter.TryDispose();
 		}
 
-		public void WriteNamedArgument(string name, object value)
+		public void WriteArgument(object value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
 			_serializer.WriteObject(_writer, value, _endPoint);
 			_writer.WriteEndElement();
 		}
 
-		public void WriteNamedArgument<T>(string name, T value) where T : struct
+		public void WriteArgument<T>(T value) where T : struct
 		{
 			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
 			_serializer.WriteStruct(_writer, value, _endPoint);
 			_writer.WriteEndElement();
 		}
 
-		public void WriteNamedArgument(string name, sbyte value)
+		public void WriteArgument(sbyte value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, byte value)
+		public void WriteArgument(byte value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, ushort value)
+		public void WriteArgument(ushort value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, short value)
+		public void WriteArgument(short value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, uint value)
+		public void WriteArgument(uint value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, int value)
+		public void WriteArgument(int value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, ulong value)
+		public void WriteArgument(ulong value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, long value)
+		public void WriteArgument(long value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, float value)
+		public void WriteArgument(float value)
 		{
-			WriteNamedArgument(name, value.ToString("R", CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString("R", CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, double value)
+		public void WriteArgument(double value)
 		{
-			WriteNamedArgument(name, value.ToString("R", CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString("R", CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, decimal value)
+		public void WriteArgument(decimal value)
 		{
-			WriteNamedArgument(name, value.ToString(CultureInfo.InvariantCulture));
+			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
 		}
 
-		public void WriteNamedArgument(string name, string value)
+		public void WriteArgument(string value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
 			_writer.WriteAttributeString(ArgumentValueAttributeName, value);
 			_writer.WriteEndElement();
 		}
 
-		public void WriteNamedArgument(string name, byte[] value)
+		public void WriteArgument(byte[] value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentNameAttributeName, name);
 			_serializer.WriteBytes(_writer, value);
 			_writer.WriteEndElement();
 		}

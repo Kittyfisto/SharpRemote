@@ -81,32 +81,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public string MethodName => _methodName;
 
-		public bool ReadNextArgument(out string name, out object value)
+		public bool ReadNextArgument(out object value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public bool ReadNextArgumentAsStruct<T>(out string name, out T value) where T : struct
+		public bool ReadNextArgumentAsStruct<T>(out T value) where T : struct
 		{
 			if (!ReadNextArgument())
 			{
-				name = null;
 				value = default(T);
 				return false;
-			}
-
-			name = null;
-			var attributeCount = _reader.AttributeCount;
-			for (int i = 0; i < attributeCount; ++i)
-			{
-				_reader.MoveToNextAttribute();
-
-				switch (_reader.Name)
-				{
-					case ArgumentNameAttributeName:
-						name = _reader.Value;
-						break;
-				}
 			}
 
 			_reader.Read();
@@ -122,10 +107,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsSByte(out string name, out sbyte value)
+		public bool ReadNextArgumentAsSByte(out sbyte value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = sbyte.MinValue;
 				return false;
@@ -134,10 +119,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsByte(out string name, out byte value)
+		public bool ReadNextArgumentAsByte(out byte value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = byte.MinValue;
 				return false;
@@ -146,10 +131,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsUInt16(out string name, out ushort value)
+		public bool ReadNextArgumentAsUInt16(out ushort value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = ushort.MinValue;
 				return false;
@@ -158,10 +143,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsInt16(out string name, out short value)
+		public bool ReadNextArgumentAsInt16(out short value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = short.MinValue;
 				return false;
@@ -170,10 +155,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsUInt32(out string name, out uint value)
+		public bool ReadNextArgumentAsUInt32(out uint value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = uint.MinValue;
 				return false;
@@ -182,10 +167,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsInt32(out string name, out int value)
+		public bool ReadNextArgumentAsInt32(out int value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = int.MinValue;
 				return false;
@@ -194,10 +179,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsUInt64(out string name, out ulong value)
+		public bool ReadNextArgumentAsUInt64(out ulong value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = ulong.MinValue;
 				return false;
@@ -206,10 +191,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsInt64(out string name, out long value)
+		public bool ReadNextArgumentAsInt64(out long value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = long.MinValue;
 				return false;
@@ -218,10 +203,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsFloat(out string name, out float value)
+		public bool ReadNextArgumentAsFloat(out float value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = float.MinValue;
 				return false;
@@ -230,10 +215,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsDouble(out string name, out double value)
+		public bool ReadNextArgumentAsDouble(out double value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = double.MinValue;
 				return false;
@@ -242,10 +227,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsDecimal(out string name, out decimal value)
+		public bool ReadNextArgumentAsDecimal(out decimal value)
 		{
 			string tmp;
-			if (!ReadNextArgument(out name, out tmp))
+			if (!ReadNextArgument(out tmp))
 			{
 				value = decimal.MinValue;
 				return false;
@@ -254,12 +239,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsString(out string name, out string value)
+		public bool ReadNextArgumentAsString(out string value)
 		{
-			return ReadNextArgument(out name, out value);
+			return ReadNextArgument(out value);
 		}
 
-		public bool ReadNextArgumentAsBytes(out string name, out byte[] value)
+		public bool ReadNextArgumentAsBytes(out byte[] value)
 		{
 			throw new NotImplementedException();
 		}
@@ -275,16 +260,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		private bool ReadNextArgument(out string name, out string value)
+		private bool ReadNextArgument(out string value)
 		{
 			if (!ReadNextArgument())
 			{
-				name = null;
 				value = null;
 				return false;
 			}
 
-			name = null;
 			value = null;
 			var attributeCount = _reader.AttributeCount;
 			for (int i = 0; i < attributeCount; ++i)
@@ -293,10 +276,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 				switch (_reader.Name)
 				{
-					case ArgumentNameAttributeName:
-						name = _reader.Value;
-						break;
-
 					case ArgumentValueAttributeName:
 						value = _reader.Value;
 						break;
@@ -304,8 +283,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			}
 
 			// TODO: Throw better exception
-			if (name == null)
-				throw new NotImplementedException();
 			if (value == null)
 				throw new NotImplementedException();
 			return true;

@@ -1,99 +1,101 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
 	internal sealed class BinaryMethodInvocationWriter
 		: IMethodInvocationWriter
 	{
+		private readonly BinaryWriter _writer;
+
 		public BinaryMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
-			throw new NotImplementedException();
+			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
+			_writer.Write(grainId);
+			_writer.Write(methodName);
+			_writer.Write(rpcId);
 		}
 
 		public void Dispose()
 		{
-			throw new NotImplementedException();
+			_writer.Dispose();
 		}
 
-		public void WriteNamedArgument(string name, object value)
+		public void WriteArgument(object value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public void WriteNamedArgument<T>(string name, T value) where T : struct
+		public void WriteArgument<T>(T value) where T : struct
 		{
 			throw new NotImplementedException();
 		}
 
-		public void WriteNamedArgument<T>(string name, ref T value) where T : struct
+		public void WriteArgument(sbyte value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, sbyte value)
+		public void WriteArgument(byte value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, byte value)
+		public void WriteArgument(ushort value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, ushort value)
+		public void WriteArgument(short value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, short value)
+		public void WriteArgument(uint value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, uint value)
+		public void WriteArgument(int value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, int value)
+		public void WriteArgument(ulong value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, ulong value)
+		public void WriteArgument(long value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, long value)
+		public void WriteArgument(float value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, float value)
+		public void WriteArgument(double value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, double value)
+		public void WriteArgument(decimal value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, decimal value)
+		public void WriteArgument(string value)
 		{
-			throw new NotImplementedException();
+			_writer.Write(value);
 		}
 
-		public void WriteNamedArgument(string name, string value)
+		public void WriteArgument(byte[] value)
 		{
-			throw new NotImplementedException();
-		}
-
-		public void WriteNamedArgument(string name, byte[] value)
-		{
-			throw new NotImplementedException();
+			_writer.Write(value.Length);
+			_writer.Write(value);
 		}
 	}
 }

@@ -1,25 +1,27 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
 	internal sealed class BinaryMethodResultReader
 		: IMethodResultReader
 	{
+		private readonly BinaryReader _reader;
+		private readonly ulong _rpcId;
+
 		public BinaryMethodResultReader(Stream stream)
 		{
-			throw new NotImplementedException();
+			_reader = new BinaryReader(stream, Encoding.UTF8, true);
+			_rpcId = _reader.ReadUInt64();
 		}
 
 		public void Dispose()
 		{
-			throw new NotImplementedException();
+			_reader.Dispose();
 		}
 
-		public ulong RpcId
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public ulong RpcId => _rpcId;
 
 		public object ReadResult(out Exception exception)
 		{

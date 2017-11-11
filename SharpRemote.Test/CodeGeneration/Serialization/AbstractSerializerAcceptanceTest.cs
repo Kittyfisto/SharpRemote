@@ -13,6 +13,30 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		protected abstract ISerializer2 Create();
 		protected abstract void Save();
 
+		public static IEnumerable<ulong> GrainIds => new ulong[]
+		{
+			ulong.MinValue,
+			1,
+			uint.MaxValue,
+			ulong.MaxValue
+		};
+
+		public static IEnumerable<ulong> RpcIds => new ulong[]
+		{
+			ulong.MinValue,
+			42,
+			1337,
+			ulong.MaxValue
+		};
+
+		public static IEnumerable<string> MethodNames => new[]
+		{
+			"",
+			"Foo",
+			"汉字",
+			"昨夜のコンサートは最高でした。"
+		};
+
 		[Test]
 		public void TestEmptyMethodCall([ValueSource("RpcIds")] ulong rpcId,
 		                                [ValueSource("GrainIds")] ulong grainId,
@@ -44,7 +68,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 1, 2, "Foo"))
 				{
-					writer.WriteNamedArgument("someValue", sbyte.MaxValue);
+					writer.WriteArgument(sbyte.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -55,16 +79,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(2);
 					reader.MethodName.Should().Be("Foo");
 
-					string name;
 					sbyte value;
-					reader.ReadNextArgumentAsSByte(out name, out value).Should()
+					reader.ReadNextArgumentAsSByte(out value).Should()
 					      .BeTrue("because we've written one argument to the message and should be able to read it back");
-					name.Should().Be("someValue");
 					value.Should().Be(sbyte.MaxValue);
 
-					reader.ReadNextArgumentAsSByte(out name, out value).Should()
+					reader.ReadNextArgumentAsSByte(out value).Should()
 					      .BeFalse("because we've written only one argument and thus shouldn't be able to read back a 2nd one");
-					name.Should().BeNull();
 					value.Should().Be(sbyte.MinValue);
 				}
 			}
@@ -78,7 +99,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 3, 4, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", byte.MaxValue);
+					writer.WriteArgument(byte.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -89,14 +110,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(4);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					byte value;
-					reader.ReadNextArgumentAsByte(out name, out value).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsByte(out value).Should().BeTrue();
 					value.Should().Be(byte.MaxValue);
 
-					reader.ReadNextArgumentAsByte(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsByte(out value).Should().BeFalse();
 					value.Should().Be(byte.MinValue);
 				}
 			}
@@ -110,7 +128,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", short.MaxValue);
+					writer.WriteArgument(short.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -121,14 +139,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					short value;
-					reader.ReadNextArgumentAsInt16(out name, out value).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsInt16(out value).Should().BeTrue();
 					value.Should().Be(short.MaxValue);
 
-					reader.ReadNextArgumentAsInt16(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsInt16(out value).Should().BeFalse();
 					value.Should().Be(short.MinValue);
 				}
 			}
@@ -142,7 +157,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", ushort.MaxValue);
+					writer.WriteArgument(ushort.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -153,14 +168,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					ushort value;
-					reader.ReadNextArgumentAsUInt16(out name, out value).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsUInt16(out value).Should().BeTrue();
 					value.Should().Be(ushort.MaxValue);
 
-					reader.ReadNextArgumentAsUInt16(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsUInt16(out value).Should().BeFalse();
 					value.Should().Be(ushort.MinValue);
 				}
 			}
@@ -174,7 +186,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", int.MaxValue);
+					writer.WriteArgument(int.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -185,14 +197,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					int value;
-					reader.ReadNextArgumentAsInt32(out name, out value).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsInt32(out value).Should().BeTrue();
 					value.Should().Be(int.MaxValue);
 
-					reader.ReadNextArgumentAsInt32(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsInt32(out value).Should().BeFalse();
 					value.Should().Be(int.MinValue);
 				}
 			}
@@ -206,7 +215,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", uint.MaxValue);
+					writer.WriteArgument(uint.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -217,14 +226,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					uint value;
-					reader.ReadNextArgumentAsUInt32(out name, out value).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsUInt32(out value).Should().BeTrue();
 					value.Should().Be(uint.MaxValue);
 
-					reader.ReadNextArgumentAsUInt32(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsUInt32(out value).Should().BeFalse();
 					value.Should().Be(uint.MinValue);
 				}
 			}
@@ -238,7 +244,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", long.MaxValue);
+					writer.WriteArgument(long.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -249,14 +255,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					long value;
-					reader.ReadNextArgumentAsInt64(out name, out value).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsInt64(out value).Should().BeTrue();
 					value.Should().Be(long.MaxValue);
 
-					reader.ReadNextArgumentAsInt64(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsInt64(out value).Should().BeFalse();
 					value.Should().Be(long.MinValue);
 				}
 			}
@@ -270,7 +273,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", ulong.MaxValue);
+					writer.WriteArgument(ulong.MaxValue);
 				}
 
 				PrintAndRewind(stream);
@@ -281,14 +284,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					ulong value;
-					reader.ReadNextArgumentAsUInt64(out name, out value).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsUInt64(out value).Should().BeTrue();
 					value.Should().Be(ulong.MaxValue);
 
-					reader.ReadNextArgumentAsUInt64(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsUInt64(out value).Should().BeFalse();
 					value.Should().Be(ulong.MinValue);
 				}
 			}
@@ -310,7 +310,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", value);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -321,14 +321,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					float actualValue;
-					reader.ReadNextArgumentAsFloat(out name, out actualValue).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsFloat(out actualValue).Should().BeTrue();
 					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsFloat(out name, out actualValue).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsFloat(out actualValue).Should().BeFalse();
 					actualValue.Should().Be(float.MinValue);
 				}
 			}
@@ -350,7 +347,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", value);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -361,14 +358,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					double actualValue;
-					reader.ReadNextArgumentAsDouble(out name, out actualValue).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsDouble(out actualValue).Should().BeTrue();
 					actualValue.Should().BeApproximately(value, 0.00000000000001);
 
-					reader.ReadNextArgumentAsDouble(out name, out actualValue).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsDouble(out actualValue).Should().BeFalse();
 					actualValue.Should().Be(double.MinValue);
 				}
 			}
@@ -392,7 +386,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteNamedArgument("pi", value);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -403,14 +397,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					string name;
 					decimal actualValue;
-					reader.ReadNextArgumentAsDecimal(out name, out actualValue).Should().BeTrue();
-					name.Should().Be("pi");
+					reader.ReadNextArgumentAsDecimal(out actualValue).Should().BeTrue();
 					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsDecimal(out name, out actualValue).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsDecimal(out actualValue).Should().BeFalse();
 					actualValue.Should().Be(decimal.MinValue);
 				}
 			}
@@ -424,7 +415,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			{
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "GetValue"))
 				{
-					writer.WriteNamedArgument("foobar", "3.14159");
+					writer.WriteArgument("3.14159");
 				}
 
 				PrintAndRewind(stream);
@@ -435,14 +426,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("GetValue");
 
-					string name;
 					string value;
-					reader.ReadNextArgumentAsString(out name, out value).Should().BeTrue();
-					name.Should().Be("foobar");
+					reader.ReadNextArgumentAsString(out value).Should().BeTrue();
 					value.Should().Be("3.14159");
 
-					reader.ReadNextArgumentAsString(out name, out value).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsString(out value).Should().BeFalse();
 					value.Should().Be(null);
 				}
 			}
@@ -459,7 +447,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "GetValue"))
 				{
-					writer.WriteNamedArgument("foobar", new FieldDecimal {Value = value });
+					writer.WriteArgument(new FieldDecimal {Value = value });
 				}
 
 				PrintAndRewind(stream);
@@ -470,14 +458,11 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("GetValue");
 
-					string name;
 					FieldDecimal actualValue;
-					reader.ReadNextArgumentAsStruct(out name, out actualValue).Should().BeTrue();
-					name.Should().Be("foobar");
+					reader.ReadNextArgumentAsStruct(out actualValue).Should().BeTrue();
 					actualValue.Value.Should().Be(value);
 
-					reader.ReadNextArgumentAsStruct(out name, out actualValue).Should().BeFalse();
-					name.Should().BeNull();
+					reader.ReadNextArgumentAsStruct(out actualValue).Should().BeFalse();
 					actualValue.Should().Be(default(FieldDecimal));
 				}
 			}

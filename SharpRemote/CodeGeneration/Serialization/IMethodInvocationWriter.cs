@@ -6,112 +6,97 @@ namespace SharpRemote
 	/// <summary>
 	///     Responsible for creating a serialized message out of a method invocation.
 	/// </summary>
-	public interface IMethodInvocationWriter
+	public interface  IMethodInvocationWriter
 		: IDisposable
 	{
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, object value);
+		void WriteArgument(object value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument<T>(string name, T value) where T : struct;
+		void WriteArgument<T>(T value) where T : struct;
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, sbyte value);
+		void WriteArgument(sbyte value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, byte value);
+		void WriteArgument(byte value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, ushort value);
+		void WriteArgument(ushort value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, short value);
+		void WriteArgument(short value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, uint value);
+		void WriteArgument(uint value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, int value);
+		void WriteArgument(int value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, ulong value);
+		void WriteArgument(ulong value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, long value);
+		void WriteArgument(long value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, float value);
+		void WriteArgument(float value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, double value);
+		void WriteArgument(double value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, decimal value);
+		void WriteArgument(decimal value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, string value);
+		void WriteArgument(string value);
 
 		/// <summary>
 		///     Adds an argument of the given name and value to this method call.
 		/// </summary>
-		/// <param name="name"></param>
 		/// <param name="value"></param>
-		void WriteNamedArgument(string name, byte[] value);
+		void WriteArgument(byte[] value);
 	}
 }

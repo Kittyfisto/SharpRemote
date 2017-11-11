@@ -12,6 +12,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		public BinaryMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
 			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
+			_writer.Write((byte)MessageType2.Call);
 			_writer.Write(grainId);
 			_writer.Write(methodName);
 			_writer.Write(rpcId);

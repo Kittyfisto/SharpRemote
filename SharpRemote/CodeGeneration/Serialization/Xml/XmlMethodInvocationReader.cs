@@ -17,7 +17,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string ArgumentNameAttributeName = XmlMethodInvocationWriter.ArgumentNameAttributeName;
 		public const string ArgumentValueAttributeName = XmlMethodInvocationWriter.ArgumentValueAttributeName;
 
-		private readonly XmlSerializer _xmlSerializer;
+		private readonly XmlSerializer _serializer;
 		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
 		private readonly StreamReader _textReader;
 		private readonly XmlReader _reader;
@@ -26,18 +26,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private readonly string _methodName;
 		private readonly IRemotingEndPoint _endPoint;
 
-		public XmlMethodInvocationReader(XmlSerializer xmlSerializer,
-		                                 Encoding encoding,
-		                                 Stream stream,
-		                                 SerializationMethodStorage<XmlMethodsCompiler> methodStorage,
-		                                 IRemotingEndPoint endPoint)
+		public XmlMethodInvocationReader(XmlSerializer serializer, StreamReader streamReader, XmlReader reader, SerializationMethodStorage<XmlMethodsCompiler> methodStorage, IRemotingEndPoint endPoint)
 		{
-			_xmlSerializer = xmlSerializer;
+			_serializer = serializer;
 			_endPoint = endPoint;
 			_methodStorage = methodStorage;
-			_textReader = new StreamReader(stream, encoding, true, 4096, true);
-			_reader = XmlReader.Create(_textReader);
-			_reader.MoveToContent();
+			_textReader = streamReader;
+			_reader = reader;
 
 			ulong? id = null;
 			ulong? grainId = null;
@@ -100,7 +95,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 			var reader = _reader.ReadSubtree();
 			var methods = _methodStorage.GetOrAdd(typeof(T));
-			var tmp = methods.ReadObjectDelegate(reader, _xmlSerializer, _endPoint);
+			var tmp = methods.ReadObjectDelegate(reader, _serializer, _endPoint);
 			value = (T) tmp;
 
 			_reader.Read();

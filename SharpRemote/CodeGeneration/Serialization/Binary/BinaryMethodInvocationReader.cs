@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
@@ -13,10 +12,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		private readonly string _methodName;
 		private readonly ulong _rpcId;
 
-		public BinaryMethodInvocationReader(Stream stream)
+		public BinaryMethodInvocationReader(BinaryReader reader)
 		{
-			_stream = stream;
-			_reader = new BinaryReader(stream, Encoding.UTF8, true);
+			if (reader == null)
+				throw new ArgumentNullException(nameof(reader));
+
+			_reader = reader;
+			_stream = reader.BaseStream;
 			_grainId = _reader.ReadUInt64();
 			_methodName = _reader.ReadString();
 			_rpcId = _reader.ReadUInt64();

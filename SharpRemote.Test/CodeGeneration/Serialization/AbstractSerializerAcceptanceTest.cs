@@ -51,7 +51,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(rpcId);
 					reader.GrainId.Should().Be(grainId);
@@ -73,7 +73,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(1);
 					reader.GrainId.Should().Be(2);
@@ -104,7 +104,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(3);
 					reader.GrainId.Should().Be(4);
@@ -133,7 +133,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -162,7 +162,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -191,7 +191,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -220,7 +220,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -249,7 +249,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -278,7 +278,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -315,7 +315,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -352,7 +352,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -391,7 +391,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -420,7 +420,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -452,7 +452,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodInvocationReader(stream))
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(5);
 					reader.GrainId.Should().Be(6);
@@ -479,7 +479,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 				PrintAndRewind(stream);
 
-				using (var reader = serializer.CreateMethodResultReader(stream))
+				using (var reader = CreateMethodResultReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(rpcId);
 				}
@@ -498,6 +498,22 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			TestContext.Out.WriteLine("Message, {0} bytes", stream.Length);
 			TestContext.Out.Write(formatted);
 			stream.Position = 0;
+		}
+
+		private static IMethodInvocationReader CreateMethodInvocationReader(ISerializer2 serializer, Stream stream)
+		{
+			IMethodInvocationReader invocationReader;
+			IMethodResultReader unused;
+			serializer.CreateMethodReader(stream, out invocationReader, out unused);
+			return invocationReader;
+		}
+
+		private static IMethodResultReader CreateMethodResultReader(ISerializer2 serializer, Stream stream)
+		{
+			IMethodInvocationReader unused;
+			IMethodResultReader resultReader;
+			serializer.CreateMethodReader(stream, out unused, out resultReader);
+			return resultReader;
 		}
 	}
 }

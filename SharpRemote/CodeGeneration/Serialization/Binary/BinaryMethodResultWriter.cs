@@ -12,6 +12,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		public BinaryMethodResultWriter(Stream stream, ulong rpcId)
 		{
 			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
+			_writer.Write((byte)MessageType2.Result);
 			_writer.Write(rpcId);
 		}
 

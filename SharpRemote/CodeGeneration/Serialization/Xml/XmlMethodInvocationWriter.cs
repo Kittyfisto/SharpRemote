@@ -8,7 +8,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlMethodInvocationWriter
 		: IMethodInvocationWriter
 	{
-		public const string RpcElementName = "RPC";
+		public const string RpcElementName = "Call";
 		public const string RpcIdAttributeName = "ID";
 		public const string GrainIdAttributeName = "Grain";
 		public const string MethodAttributeName = "Method";

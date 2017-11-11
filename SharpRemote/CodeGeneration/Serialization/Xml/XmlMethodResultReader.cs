@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Xml;
 using SharpRemote.Extensions;
 
@@ -12,17 +11,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	{
 		public const string RpcIdAttributeName = XmlMethodResultWriter.RpcIdAttributeName;
 
-		private readonly XmlSerializer _xmlSerializer;
+		private readonly XmlSerializer _serializer;
 		private readonly StreamReader _textReader;
 		private readonly XmlReader _reader;
 		private readonly ulong _id;
 
-		public XmlMethodResultReader(XmlSerializer xmlSerializer, Encoding encoding, Stream stream)
+		public XmlMethodResultReader(XmlSerializer serializer, StreamReader textReader, XmlReader reader, SerializationMethodStorage<XmlMethodsCompiler> methodStorage, IRemotingEndPoint endPoint)
 		{
-			_xmlSerializer = xmlSerializer;
-			_textReader = new StreamReader(stream, encoding, true, 4096, true);
-			_reader = XmlReader.Create(_textReader);
-			_reader.MoveToContent();
+			_serializer = serializer;
+			_textReader = textReader;
+			_reader = reader;
 
 			ulong? id = null;
 			var attributeCount = _reader.AttributeCount;

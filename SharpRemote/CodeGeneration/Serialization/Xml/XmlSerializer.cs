@@ -79,21 +79,35 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		public IMethodInvocationReader CreateMethodInvocationReader(Stream stream, IRemotingEndPoint endPoint = null)
-		{
-			return new XmlMethodInvocationReader(this, _settings.Encoding, stream, _methodStorage, endPoint);
-		}
-
-		/// <inheritdoc />
 		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
 			return new XmlMethodResultWriter(this, _settings, stream, rpcId, endPoint);
 		}
 
 		/// <inheritdoc />
-		public IMethodResultReader CreateMethodResultReader(Stream stream, IRemotingEndPoint endPoint = null)
+		public void CreateMethodReader(Stream stream,
+		                               out IMethodInvocationReader invocationReader,
+		                               out IMethodResultReader resultReader,
+		                               IRemotingEndPoint endPoint = null)
 		{
-			return new XmlMethodResultReader(this, _settings.Encoding, stream);
+			var textReader = new StreamReader(stream, _settings.Encoding, true, 4096, true);
+			var reader = XmlReader.Create(textReader);
+			reader.MoveToContent();
+			switch (reader.Name)
+			{
+				case XmlMethodInvocationWriter.RpcElementName:
+					invocationReader = new XmlMethodInvocationReader(this, textReader, reader, _methodStorage, endPoint);
+					resultReader = null;
+					break;
+
+				case XmlMethodResultWriter.RpcElementName:
+					invocationReader = null;
+					resultReader = new XmlMethodResultReader(this, textReader, reader, _methodStorage, endPoint);
+					break;
+
+				default:
+					throw new NotImplementedException();
+			}
 		}
 
 		/// <summary>

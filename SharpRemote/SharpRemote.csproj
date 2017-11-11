@@ -66,6 +66,7 @@
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriterObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriteValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriteValueNotNullMethodCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\MessageType2.cs" />
     <Compile Include="CodeGeneration\Serialization\IMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethods.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethodStorage.cs" />

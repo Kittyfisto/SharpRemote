@@ -42,21 +42,18 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		public IMethodInvocationReader CreateMethodInvocationReader(Stream stream, IRemotingEndPoint endPoint = null)
-		{
-			return new JsonMethodInvocationReader(stream);
-		}
-
-		/// <inheritdoc />
 		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
 			return new JsonMethodResultWriter(stream, rpcId);
 		}
 
 		/// <inheritdoc />
-		public IMethodResultReader CreateMethodResultReader(Stream stream, IRemotingEndPoint endPoint = null)
+		public void CreateMethodReader(Stream stream,
+		                               out IMethodInvocationReader invocationReader,
+		                               out IMethodResultReader resultReader,
+		                               IRemotingEndPoint endPoint = null)
 		{
-			return new JsonMethodResultReader(stream);
+			throw new NotImplementedException();
 		}
 	}
 }

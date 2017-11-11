@@ -24,40 +24,51 @@ namespace SharpRemote
 		public PropertyDescription()
 		{ }
 
-		private PropertyDescription(PropertyInfo property)
+		private PropertyDescription(TypeDescription declaringType, PropertyInfo property)
 		{
 			_property = property;
 			var type = property.DeclaringType;
-			if (!property.CanRead)
-				throw new ArgumentException(
-											string.Format(
-														  "The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no getter - this is not supported",
-														  type?.Namespace, type?.Name, property.Name));
-			if (!property.CanWrite)
-				throw new ArgumentException(
-											string.Format(
-														  "The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no setter - this is not supported",
-														  type?.Namespace, type?.Name, property.Name));
-			if (!property.GetMethod.IsPublic)
-				throw new ArgumentException(
-											string.Format(
-														  "The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public getter - this is not supported",
-														  type?.Namespace, type?.Name, property.Name));
-			if (!property.SetMethod.IsPublic)
-				throw new ArgumentException(
-											string.Format(
-														  "The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public setter - this is not supported",
-														  type?.Namespace, type?.Name, property.Name));
-			if (property.GetMethod.IsStatic)
-				throw new ArgumentException(
-											string.Format(
-														  "The property '{0}.{1}.{2}' is marked with the [DataMember] has a static getter - this is not supported",
-														  type?.Namespace, type?.Name, property.Name));
-			if (property.SetMethod.IsStatic)
-				throw new ArgumentException(
-											string.Format(
-														  "The property '{0}.{1}.{2}' is marked with the [DataMember] has a static setter - this is not supported",
-														  type?.Namespace, type?.Name, property.Name));
+			if (declaringType.SerializationType == SerializationType.ByValue)
+			{
+				if (!property.CanRead)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no getter - this is not supported",
+					                                          type?.Namespace, type?.Name, property.Name));
+				if (!property.CanWrite)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The property '{0}.{1}.{2}' is marked with the [DataMember] attribute but has no setter - this is not supported",
+					                                          type?.Namespace, type?.Name, property.Name));
+			}
+
+			if (property.GetMethod != null)
+			{
+				if (!property.GetMethod.IsPublic)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public getter - this is not supported",
+					                                          type?.Namespace, type?.Name, property.Name));
+				if (property.GetMethod.IsStatic)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The property '{0}.{1}.{2}' is marked with the [DataMember] has a static getter - this is not supported",
+					                                          type?.Namespace, type?.Name, property.Name));
+			}
+			if (property.SetMethod != null)
+			{
+				if (!property.SetMethod.IsPublic)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The property '{0}.{1}.{2}' is marked with the [DataMember] has a non-public setter - this is not supported",
+					                                          type?.Namespace, type?.Name, property.Name));
+
+				if (property.SetMethod.IsStatic)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The property '{0}.{1}.{2}' is marked with the [DataMember] has a static setter - this is not supported",
+					                                          type?.Namespace, type?.Name, property.Name));
+			}
 		}
 
 		/// <summary>
@@ -115,12 +126,13 @@ namespace SharpRemote
 		/// <summary>
 		///     Creates a new description for the given property.
 		/// </summary>
+		/// <param name="declaringType"></param>
 		/// <param name="property"></param>
 		/// <param name="typesByAssemblyQualifiedName"></param>
 		/// <returns></returns>
-		public static PropertyDescription Create(PropertyInfo property, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
+		public static PropertyDescription Create(TypeDescription declaringType, PropertyInfo property, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
 		{
-			return new PropertyDescription(property)
+			return new PropertyDescription(declaringType, property)
 			{
 				Name = property.Name,
 				PropertyType = TypeDescription.GetOrCreate(property.PropertyType, typesByAssemblyQualifiedName),

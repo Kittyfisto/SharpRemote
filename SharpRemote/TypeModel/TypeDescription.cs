@@ -212,7 +212,7 @@ namespace SharpRemote
 					                         .Select(x => FieldDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
 					description.Properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
 					                             .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
-					                             .Select(x => PropertyDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
+					                             .Select(x => PropertyDescription.Create(description, x, typesByAssemblyQualifiedName)).ToArray();
 					description.Methods = serializationCallbacks;
 					break;
 
@@ -225,7 +225,7 @@ namespace SharpRemote
 					
 					description.Fields = new FieldDescription[0];
 					description.Properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-					                             .Select(x => PropertyDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
+					                             .Select(x => PropertyDescription.Create(description, x, typesByAssemblyQualifiedName)).ToArray();
 					description.Methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
 					                          .Where(x => !x.IsSpecialName)
 					                          .Select(x => MethodDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();

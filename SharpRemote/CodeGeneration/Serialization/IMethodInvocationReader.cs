@@ -36,17 +36,6 @@ namespace SharpRemote
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.
 		/// </summary>
-		/// <remarks>
-		/// TODO: This method doesn't make much sense in the greater scope as it still requires dynamic dispatch.
-		/// Instead, the serializer shall offer a method to emit code which eliminates dynamic dispatch alltogether (for structs/sealed types).
-		/// </remarks>
-		/// <param name="value">The value of the next argument</param>
-		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsStruct<T>(out T value) where T : struct;
-
-		/// <summary>
-		///     Reads the value of the next argument from the method call message.
-		/// </summary>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
 		bool ReadNextArgumentAsSByte(out sbyte value);

@@ -28,11 +28,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new NotImplementedException();
 		}
 
-		public void WriteArgument<T>(T value) where T : struct
-		{
-			throw new NotImplementedException();
-		}
-
 		public void WriteArgument(sbyte value)
 		{
 			_writer.Write(value);

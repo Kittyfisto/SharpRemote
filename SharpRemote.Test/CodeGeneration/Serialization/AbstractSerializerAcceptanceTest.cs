@@ -63,6 +63,73 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestMethodCallTwoParameters()
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodInvocationWriter(stream, 1, 2, "Foo"))
+				{
+					writer.WriteArgument((object)null);
+					writer.WriteArgument(Math.PI);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(1);
+					reader.GrainId.Should().Be(2);
+					reader.MethodName.Should().Be("Foo");
+
+					object firstArgument;
+					reader.ReadNextArgument(out firstArgument).Should()
+					      .BeTrue();
+					firstArgument.Should().Be(null);
+
+					double secondArgument;
+					reader.ReadNextArgumentAsDouble(out secondArgument).Should()
+					      .BeTrue();
+					secondArgument.Should().Be(Math.PI);
+
+					reader.ReadNextArgument(out firstArgument).Should()
+					      .BeFalse("because there are no more arguments");
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodCallNullObject()
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodInvocationWriter(stream, 1, 2, "Foo"))
+				{
+					writer.WriteArgument((object)null);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(1);
+					reader.GrainId.Should().Be(2);
+					reader.MethodName.Should().Be("Foo");
+
+					object value;
+					reader.ReadNextArgument(out value).Should()
+					      .BeTrue("because we've written one argument to the message and should be able to read it back");
+					value.Should().Be(null);
+
+					reader.ReadNextArgument(out value).Should()
+					      .BeFalse("because we've written only one argument and thus shouldn't be able to read back a 2nd one");
+					value.Should().Be(null);
+				}
+			}
+		}
+
+		[Test]
 		public void TestMethodCallSByte()
 		{
 			var serializer = Create();
@@ -460,12 +527,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("GetValue");
 
-					FieldDecimal actualValue;
-					reader.ReadNextArgumentAsStruct(out actualValue).Should().BeTrue();
-					actualValue.Value.Should().Be(value);
+					object actualValue;
+					reader.ReadNextArgument(out actualValue).Should().BeTrue();
+					actualValue.Should().BeOfType<FieldDecimal>();
+					((FieldDecimal)actualValue).Value.Should().Be(value);
 
-					reader.ReadNextArgumentAsStruct(out actualValue).Should().BeFalse();
-					actualValue.Should().Be(default(FieldDecimal));
+					reader.ReadNextArgument(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(null);
 				}
 			}
 		}

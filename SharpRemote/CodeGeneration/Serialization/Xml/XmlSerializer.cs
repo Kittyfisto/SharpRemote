@@ -119,7 +119,8 @@ namespace SharpRemote
 		/// <exception cref="NotImplementedException"></exception>
 		public void WriteObject(XmlWriter writer, object value, IRemotingEndPoint endPoint)
 		{
-			throw new NotImplementedException();
+			var methods = _methodStorage.GetOrAdd(value.GetType());
+			methods.WriteDelegate(writer, value, this, endPoint);
 		}
 
 		/// <summary>
@@ -131,8 +132,6 @@ namespace SharpRemote
 		/// <exception cref="NotImplementedException"></exception>
 		public void WriteStruct<T>(XmlWriter writer, T value, IRemotingEndPoint endPoint) where T : struct
 		{
-			var methods = _methodStorage.GetOrAdd(typeof(T));
-			methods.WriteDelegate(writer, value, this, endPoint);
 		}
 
 		/// <summary>

@@ -15,6 +15,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string ArgumentElementName = "Argument";
 		public const string ArgumentNameAttributeName = "Name";
 		public const string ArgumentValueAttributeName = "Value";
+		public const string ArgumentTypeAttributeName = "Type";
 
 		private readonly XmlSerializer _serializer;
 		private readonly StreamWriter _textWriter;
@@ -47,14 +48,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public void WriteArgument(object value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
-			_serializer.WriteObject(_writer, value, _endPoint);
-			_writer.WriteEndElement();
-		}
-
-		public void WriteArgument<T>(T value) where T : struct
-		{
-			_writer.WriteStartElement(ArgumentElementName);
-			_serializer.WriteStruct(_writer, value, _endPoint);
+			if (value != null)
+			{
+				_writer.WriteAttributeString(ArgumentTypeAttributeName, value.GetType().AssemblyQualifiedName);
+				_serializer.WriteObject(_writer, value, _endPoint);
+			}
 			_writer.WriteEndElement();
 		}
 

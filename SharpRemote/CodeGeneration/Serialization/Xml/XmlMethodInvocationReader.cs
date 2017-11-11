@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Xml;
 using SharpRemote.Extensions;
 
@@ -14,19 +13,26 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string RpcIdAttributeName = XmlMethodInvocationWriter.RpcIdAttributeName;
 		public const string GrainIdAttributeName = XmlMethodInvocationWriter.GrainIdAttributeName;
 		public const string MethodAttributeName = XmlMethodInvocationWriter.MethodAttributeName;
+		public const string ArgumentElementName = XmlMethodInvocationWriter.ArgumentElementName;
 		public const string ArgumentNameAttributeName = XmlMethodInvocationWriter.ArgumentNameAttributeName;
 		public const string ArgumentValueAttributeName = XmlMethodInvocationWriter.ArgumentValueAttributeName;
+		public const string ArgumentTypeAttributeName = XmlMethodInvocationWriter.ArgumentTypeAttributeName;
+
+		private readonly IRemotingEndPoint _endPoint;
+		private readonly ulong _grainId;
+		private readonly ulong _id;
+		private readonly string _methodName;
+		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
+		private readonly XmlReader _reader;
 
 		private readonly XmlSerializer _serializer;
-		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
 		private readonly StreamReader _textReader;
-		private readonly XmlReader _reader;
-		private readonly ulong _id;
-		private readonly ulong _grainId;
-		private readonly string _methodName;
-		private readonly IRemotingEndPoint _endPoint;
 
-		public XmlMethodInvocationReader(XmlSerializer serializer, StreamReader streamReader, XmlReader reader, SerializationMethodStorage<XmlMethodsCompiler> methodStorage, IRemotingEndPoint endPoint)
+		public XmlMethodInvocationReader(XmlSerializer serializer,
+		                                 StreamReader streamReader,
+		                                 XmlReader reader,
+		                                 SerializationMethodStorage<XmlMethodsCompiler> methodStorage,
+		                                 IRemotingEndPoint endPoint)
 		{
 			_serializer = serializer;
 			_endPoint = endPoint;
@@ -36,8 +42,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 			ulong? id = null;
 			ulong? grainId = null;
-			int count = _reader.AttributeCount;
-			for (int i = 0; i < count; ++i)
+			var count = _reader.AttributeCount;
+			for (var i = 0; i < count; ++i)
 			{
 				_reader.MoveToNextAttribute();
 				switch (_reader.Name)
@@ -78,25 +84,44 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadNextArgument(out object value)
 		{
-			throw new NotImplementedException();
-		}
-
-		public bool ReadNextArgumentAsStruct<T>(out T value) where T : struct
-		{
 			if (!ReadNextArgument())
 			{
-				value = default(T);
+				value = null;
 				return false;
 			}
+
+			if (_reader.Name != ArgumentElementName)
+				throw new NotImplementedException();
+
+			if (_reader.IsEmptyElement)
+			{
+				value = null;
+				return true;
+			}
+
+			var count = _reader.AttributeCount;
+			Type type = null;
+			for (int i = 0; i < count; ++i)
+			{
+				_reader.MoveToAttribute(i);
+				switch (_reader.Name)
+				{
+					case ArgumentTypeAttributeName:
+						type = TypeResolver.GetType(_reader.Value, true);
+						break;
+				}
+			}
+
+			if (type == null)
+				throw new NotImplementedException();
 
 			_reader.Read();
 			if (_reader.Name != ArgumentValueAttributeName)
 				throw new NotImplementedException();
 
 			var reader = _reader.ReadSubtree();
-			var methods = _methodStorage.GetOrAdd(typeof(T));
-			var tmp = methods.ReadObjectDelegate(reader, _serializer, _endPoint);
-			value = (T) tmp;
+			var methods = _methodStorage.GetOrAdd(type);
+			value = methods.ReadObjectDelegate(reader, _serializer, _endPoint);
 
 			_reader.Read();
 			return true;
@@ -265,7 +290,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 			value = null;
 			var attributeCount = _reader.AttributeCount;
-			for (int i = 0; i < attributeCount; ++i)
+			for (var i = 0; i < attributeCount; ++i)
 			{
 				_reader.MoveToNextAttribute();
 

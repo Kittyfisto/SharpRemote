@@ -17,7 +17,9 @@ namespace SharpRemote.Attributes
 	/// </remarks>
 	[AttributeUsage(AttributeTargets.Method)]
 	public sealed class AfterDeserializeAttribute
-		: Attribute
+		: SerializationMethodAttribute
 	{
+		/// <inheritdoc />
+		public override SpecialMethod Method => SpecialMethod.AfterDeserialize;
 	}
 }

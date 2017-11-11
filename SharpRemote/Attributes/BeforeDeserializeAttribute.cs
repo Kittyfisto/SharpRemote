@@ -9,15 +9,18 @@ namespace SharpRemote.Attributes
 	/// </summary>
 	/// <remarks>
 	///     A method with this attribute must be publicly accessible, be an instance method (i.e. non-static)
-	///     and may only be part of reference types (classes, not structs) with the <see cref="DataContractAttribute"/>.
+	///     and may only be part of reference types (classes, not structs) with the <see cref="DataContractAttribute" />.
 	/// </remarks>
 	/// <remarks>
 	///     A type may contain exactly one method with these attributes. If a type hierarchy needs one per sub-type,
-	///     then it is advised that the base class declares their method virtual (or provide an additional protected virtual method).
+	///     then it is advised that the base class declares their method virtual (or provide an additional protected virtual
+	///     method).
 	/// </remarks>
 	[AttributeUsage(AttributeTargets.Method)]
 	public sealed class BeforeDeserializeAttribute
-		: Attribute
+		: SerializationMethodAttribute
 	{
+		/// <inheritdoc />
+		public override SpecialMethod Method => SpecialMethod.BeforeDeserialize;
 	}
 }

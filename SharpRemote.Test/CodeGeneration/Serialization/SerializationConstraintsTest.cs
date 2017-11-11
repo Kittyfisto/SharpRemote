@@ -7,6 +7,9 @@ using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.CodeGeneration.Serialization
 {
+	/// <summary>
+	/// TODO: REMOVE THIS CLASS ONCE THE OLD SERIALIZER IS NO MORE
+	/// </summary>
 	[TestFixture]
 	public sealed class SerializationConstraintsTest
 	{

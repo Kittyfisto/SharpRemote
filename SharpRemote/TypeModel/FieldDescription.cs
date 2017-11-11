@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -26,6 +27,23 @@ namespace SharpRemote
 		{
 			_field = field;
 			Name = field.Name;
+
+			var type = field.DeclaringType;
+			if (field.IsStatic)
+				throw new ArgumentException(
+				                            string.Format(
+				                                          "The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is static - this is not supported",
+				                                          type?.Namespace, type?.Name, field.Name));
+			if (!field.IsPublic)
+				throw new ArgumentException(
+				                            string.Format(
+				                                          "The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is not public - this is not supported",
+				                                          type?.Namespace, type?.Name, field.Name));
+			if (field.IsInitOnly)
+				throw new ArgumentException(
+				                            string.Format(
+				                                          "The field '{0}.{1}.{2}' is marked with the [DataMember] attribute but is readonly - this is not supported",
+				                                          type?.Namespace, type?.Name, field.Name));
 		}
 
 		/// <summary>

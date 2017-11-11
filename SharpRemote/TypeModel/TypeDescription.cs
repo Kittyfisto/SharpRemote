@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using SharpRemote.Attributes;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -195,37 +196,33 @@ namespace SharpRemote
 
 			var description = new TypeDescription(type, byReferenceInterface)
 			{
-				AssemblyQualifiedName = assemblyQualifiedName
+				AssemblyQualifiedName = assemblyQualifiedName,
+				SerializationType = serializerType
 			};
 
 			typesByAssemblyQualifiedName.Add(assemblyQualifiedName, description);
 
-			if (IsInterestingBaseType(type.BaseType))
-				description.BaseType = Create(type.BaseType, typesByAssemblyQualifiedName);
-			description.SerializationType = serializerType;
-			description.IsBuiltIn = builtIn;
-			description.IsValueType = type.IsValueType;
-			description.IsClass = type.IsClass;
-			description.IsInterface = type.IsInterface;
-			description.IsEnum = type.IsEnum;
-			description.IsSealed = type.IsSealed;
-			description.IsGenericType = type.IsGenericType;
-
+			var serializationCallbacks = GetSerializationCallbacks(type, typesByAssemblyQualifiedName);
 			switch (description.SerializationType)
 			{
 				case SerializationType.ByValue:
 					// TODO: Throw when ByValue rules are violated
-					description.Fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+					description.Fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
 					                         .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
 					                         .Select(x => FieldDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
 					description.Properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
 					                             .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
 					                             .Select(x => PropertyDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
-					description.Methods = new MethodDescription[0];
+					description.Methods = serializationCallbacks;
 					break;
 
 				case SerializationType.ByReference:
-					// TODO: Throw when ByReference rules are violated
+					if (serializationCallbacks.Any())
+						throw new ArgumentException(
+						                            string.Format(
+						                                          "The type '{0}.{1}' is marked with the [ByReference] attribute and thus may not contain serialization callback methods",
+						                                          type.Namespace, type.Name));
+					
 					description.Fields = new FieldDescription[0];
 					description.Properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 					                             .Select(x => PropertyDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
@@ -235,6 +232,12 @@ namespace SharpRemote
 					break;
 
 				case SerializationType.Singleton:
+					if (serializationCallbacks.Any())
+						throw new ArgumentException(
+						                            string.Format(
+						                                          "The type '{0}.{1}' is a singleton and thus may not contain any serialization callbacks",
+						                                          type.Namespace, type.Name));
+
 					description.Fields = new FieldDescription[0];
 					description.Properties = new PropertyDescription[0];
 					description.Methods = new[] {MethodDescription.Create(singletonAccessor, typesByAssemblyQualifiedName)};
@@ -248,8 +251,43 @@ namespace SharpRemote
 					throw new NotImplementedException();
 			}
 
+			if (IsInterestingBaseType(type.BaseType))
+				description.BaseType = Create(type.BaseType, typesByAssemblyQualifiedName);
+			description.IsBuiltIn = builtIn;
+			description.IsValueType = type.IsValueType;
+			description.IsClass = type.IsClass;
+			description.IsInterface = type.IsInterface;
+			description.IsEnum = type.IsEnum;
+			description.IsSealed = type.IsSealed;
+			description.IsGenericType = type.IsGenericType;
 
 			return description;
+		}
+
+		private static MethodDescription[] GetSerializationCallbacks(Type type,
+		                                                             IDictionary<string, TypeDescription>
+			                                                             typesByAssemblyQualifiedName)
+		{
+			var attributes = new HashSet<SpecialMethod>();
+			var methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+			var descriptions = new List<MethodDescription>();
+			foreach (var method in methods)
+			{
+				var attribute = method.GetCustomAttribute<SerializationMethodAttribute>();
+				if (attribute != null)
+				{
+					var methodType = attribute.Method;
+					if (attributes.Contains(methodType))
+						throw new ArgumentException(
+						                            string.Format(
+						                                          "The type '{0}.{1}' contains too many methods with the [{2}] attribute: There may not be more than one",
+						                                          type.Namespace, type.Name, methodType));
+					attributes.Add(methodType);
+					var description = MethodDescription.Create(method, typesByAssemblyQualifiedName);
+					descriptions.Add(description);
+				}
+			}
+			return descriptions.ToArray();
 		}
 
 		[Pure]
@@ -298,14 +336,17 @@ namespace SharpRemote
 				return SerializationType.ByReference;
 			}
 
-			var factories = type.GetMethods()
+			var factories = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
 			                    .Where(x => x.GetCustomAttribute<SingletonFactoryMethodAttribute>() != null)
-			                    .Concat(type.GetProperties()
+			                    .Concat(type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
 			                                .Where(x => x.GetCustomAttribute<SingletonFactoryMethodAttribute>() != null)
 			                                .Select(x => x.GetMethod)).ToList();
 
 			if (factories.Count == 0)
-				throw new NotImplementedException();
+				throw new
+					ArgumentException(string.Format("The type '{0}.{1}' is missing the [DataContract] or [ByReference] attribute, nor is there a custom-serializer available for this type",
+					                                type.Namespace,
+					                                type.Name));
 
 			if (factories.Count > 1)
 				throw new ArgumentException(string.Format("The type '{0}' has more than one singleton factory - this is not allowed", type));
@@ -323,7 +364,8 @@ namespace SharpRemote
 				                                          @interface));
 			}
 
-			throw new NotImplementedException();
+			byReferenceInterface = null;
+			return SerializationType.Singleton;
 		}
 	}
 }

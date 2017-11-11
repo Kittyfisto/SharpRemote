@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using SharpRemote.Attributes;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -15,6 +18,7 @@ namespace SharpRemote
 		: IMethodDescription
 	{
 		private readonly MethodInfo _method;
+		private readonly SpecialMethod _specialMethod;
 
 		/// <summary>
 		/// </summary>
@@ -22,10 +26,49 @@ namespace SharpRemote
 		{
 		}
 
-		private MethodDescription(MethodInfo methodInfo)
+		private MethodDescription(MethodInfo method)
 		{
-			Name = methodInfo.Name;
-			_method = methodInfo;
+			Name = method.Name;
+			_method = method;
+
+			var type = method.DeclaringType;
+			if (IsSerializationCallback(method, out _specialMethod))
+			{
+				if (type.IsValueType)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The type '{0}.{1}' may not contain methods marked with the [{2}] attribute: Only classes may have these callbacks",
+					                                          type.Namespace, type.Name, _specialMethod));
+
+				if (!method.IsPublic)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be publicly accessible",
+					                                          type.Namespace, type.Name, method.Name,
+					                                          _specialMethod));
+
+				if (method.IsStatic)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be non-static",
+					                                          type.Namespace, type.Name, method.Name,
+					                                          _specialMethod));
+
+				var parameters = method.GetParameters();
+				if (parameters.Length > 0)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be parameterless",
+					                                          type.Namespace, type.Name, method.Name,
+					                                          _specialMethod));
+
+				if (method.IsGenericMethodDefinition)
+					throw new ArgumentException(
+					                            string.Format(
+					                                          "The method '{0}.{1}.{2}()' is marked with the [{3}] attribute and must therefore be non-generic",
+					                                          type.Namespace, type.Name, method.Name,
+					                                          _specialMethod));
+			}
 		}
 
 		/// <summary>
@@ -48,6 +91,10 @@ namespace SharpRemote
 		/// </summary>
 		[DataMember]
 		public ParameterDescription[] Parameters { get; set; }
+
+		/// <summary>
+		/// </summary>
+		public SpecialMethod SpecialMethod => _specialMethod;
 
 		/// <inheritdoc />
 		[DataMember]
@@ -77,6 +124,52 @@ namespace SharpRemote
 				ReturnParameter = ParameterDescription.Create(methodInfo.ReturnParameter, typesByAssemblyQualifiedName)
 			};
 			return description;
+		}
+
+		[Pure]
+		private static string StripAttribute(string attributeTypeName)
+		{
+			const string attr = "Attribute";
+			if (attributeTypeName.EndsWith(attr))
+				return attributeTypeName.Substring(startIndex: 0, length: attributeTypeName.Length - attr.Length);
+
+			return attributeTypeName;
+		}
+
+		[Pure]
+		private static bool IsSerializationCallback(MethodInfo method, out SpecialMethod specialMethod)
+		{
+			var beforeSerialize = method.GetCustomAttribute<BeforeSerializeAttribute>();
+			var afterSerialize = method.GetCustomAttribute<AfterSerializeAttribute>();
+			var beforeDeserialize = method.GetCustomAttribute<BeforeDeserializeAttribute>();
+			var afterDeserialize = method.GetCustomAttribute<AfterDeserializeAttribute>();
+
+			if (beforeSerialize != null)
+			{
+				specialMethod = SpecialMethod.BeforeSerialize;
+				return true;
+			}
+
+			if (afterSerialize != null)
+			{
+				specialMethod = SpecialMethod.AfterSerialize;
+				return true;
+			}
+
+			if (beforeDeserialize != null)
+			{
+				specialMethod = SpecialMethod.BeforeDeserialize;
+				return true;
+			}
+
+			if (afterDeserialize != null)
+			{
+				specialMethod = SpecialMethod.AfterDeserialize;
+				return true;
+			}
+
+			specialMethod = SpecialMethod.None;
+			return false;
 		}
 	}
 }

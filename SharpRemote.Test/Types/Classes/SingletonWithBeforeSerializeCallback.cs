@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Runtime.Serialization;
 using SharpRemote.Attributes;
 
 namespace SharpRemote.Test.Types.Classes
 {
-	[DataContract]
 	public sealed class SingletonWithBeforeSerializeCallback
 	{
 		[SingletonFactoryMethod]
@@ -14,7 +12,7 @@ namespace SharpRemote.Test.Types.Classes
 		}
 
 		[BeforeSerialize]
-		public static void BeforeSerialize()
+		public void BeforeSerialize()
 		{
 
 		}

@@ -16,6 +16,11 @@ namespace SharpRemote
 		string Name { get; }
 
 		/// <summary>
+		/// 
+		/// </summary>
+		SpecialMethod SpecialMethod { get; }
+
+		/// <summary>
 		///     The equivalent of <see cref="MethodInfo.ReturnParameter" />.
 		/// </summary>
 		IParameterDescription ReturnParameter { get; }

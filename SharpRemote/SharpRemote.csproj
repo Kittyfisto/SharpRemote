@@ -53,6 +53,7 @@
     <Compile Include="Attributes\BeforeDeserializeAttribute.cs" />
     <Compile Include="Attributes\BeforeSerializeAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
+    <Compile Include="Attributes\SerializationMethodAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializationMethods.CompilationContext.cs" />
@@ -247,6 +248,7 @@
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Clock\ITimer.cs" />
     <Compile Include="TypeModel\MethodDescription.cs" />
+    <Compile Include="TypeModel\SpecialMethod.cs" />
     <Compile Include="TypeModel\TypeDescription.cs" />
     <Compile Include="TypeInformation.cs" />
     <Compile Include="Extensions\DisposableExtensions.cs" />

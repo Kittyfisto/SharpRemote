@@ -3,10 +3,10 @@ using System.IO;
 
 namespace SharpRemote.CodeGeneration.Serialization.Json
 {
-	internal sealed class JsonMethodInvocationWriter
-		: IMethodInvocationWriter
+	internal sealed class JsonMethodCallWriter
+		: IMethodCallWriter
 	{
-		public JsonMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
+		public JsonMethodCallWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
 			throw new NotImplementedException();
 		}

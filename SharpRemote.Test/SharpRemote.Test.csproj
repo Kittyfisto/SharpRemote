@@ -70,6 +70,7 @@
     <Compile Include="CodeGeneration\Serialization\BinarySerializerTest.cs" />
     <None Include="CodeGeneration\Serialization\Json\JsonSerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializerAcceptanceTest.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializerTest.cs" />
     <Compile Include="CodeGeneration\TypeResolverTest.cs" />
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="HeartbeatSettingsTest.cs" />

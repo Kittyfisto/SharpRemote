@@ -47,7 +47,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (serializer.CreateMethodInvocationWriter(stream, rpcId, grainId, methodName))
+				using (serializer.CreateMethodCallWriter(stream, rpcId, grainId, methodName))
 				{
 				}
 
@@ -63,12 +63,81 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestMethodCallByteArray1([Values(0, 1, 2)] int length)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				int seed = Environment.TickCount;
+				TestContext.Out.WriteLine("Seed: {0}", seed);
+				var rng = new Random(seed);
+				var value = new byte[length];
+				rng.NextBytes(value);
+
+				using (var writer = serializer.CreateMethodCallWriter(stream, 1, 2, "Foo"))
+				{
+					writer.WriteArgument(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(1);
+					reader.GrainId.Should().Be(2);
+					reader.MethodName.Should().Be("Foo");
+
+					byte[] actualValue;
+					reader.ReadNextArgumentAsBytes(out actualValue).Should()
+					      .BeTrue();
+					actualValue.Should().Equal(value);
+
+					reader.ReadNextArgumentAsBytes(out actualValue).Should()
+					      .BeFalse("because there are no more arguments");
+					actualValue.Should().BeNull();
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodCallByteArray2()
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				byte[] value = null;
+				using (var writer = serializer.CreateMethodCallWriter(stream, 1, 2, "Foo"))
+				{
+					writer.WriteArgument(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(1);
+					reader.GrainId.Should().Be(2);
+					reader.MethodName.Should().Be("Foo");
+
+					byte[] actualValue;
+					reader.ReadNextArgumentAsBytes(out actualValue).Should()
+					      .BeTrue();
+					actualValue.Should().BeNull();
+
+					reader.ReadNextArgumentAsBytes(out actualValue).Should()
+					      .BeFalse("because there are no more arguments");
+					actualValue.Should().BeNull();
+				}
+			}
+		}
+
+		[Test]
 		public void TestMethodCallTwoParameters()
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 1, 2, "Foo"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 1, 2, "Foo"))
 				{
 					writer.WriteArgument((object)null);
 					writer.WriteArgument(Math.PI);
@@ -104,7 +173,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 1, 2, "Foo"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 1, 2, "Foo"))
 				{
 					writer.WriteArgument((object)null);
 				}
@@ -135,7 +204,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 1, 2, "Foo"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 1, 2, "Foo"))
 				{
 					writer.WriteArgument(sbyte.MaxValue);
 				}
@@ -166,7 +235,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 3, 4, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 3, 4, "Bar"))
 				{
 					writer.WriteArgument(byte.MaxValue);
 				}
@@ -195,7 +264,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(short.MaxValue);
 				}
@@ -224,7 +293,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(ushort.MaxValue);
 				}
@@ -253,7 +322,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(int.MaxValue);
 				}
@@ -282,7 +351,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(uint.MaxValue);
 				}
@@ -311,7 +380,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(long.MaxValue);
 				}
@@ -340,7 +409,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(ulong.MaxValue);
 				}
@@ -377,7 +446,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(value);
 				}
@@ -414,7 +483,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(value);
 				}
@@ -453,7 +522,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "Bar"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
 					writer.WriteArgument(value);
 				}
@@ -477,14 +546,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestMethodCallString()
+		public void TestMethodCallString([Values("3.14159", "", null)] string value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "GetValue"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
 				{
-					writer.WriteArgument("3.14159");
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -495,12 +564,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("GetValue");
 
-					string value;
-					reader.ReadNextArgumentAsString(out value).Should().BeTrue();
-					value.Should().Be("3.14159");
+					string actualValue;
+					reader.ReadNextArgumentAsString(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsString(out value).Should().BeFalse();
-					value.Should().Be(null);
+					reader.ReadNextArgumentAsString(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(null);
 				}
 			}
 		}
@@ -514,7 +583,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				serializer.RegisterType<FieldDecimal>();
 				Save();
 
-				using (var writer = serializer.CreateMethodInvocationWriter(stream, 5, 6, "GetValue"))
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
 				{
 					writer.WriteArgument(new FieldDecimal {Value = value });
 				}
@@ -915,6 +984,38 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		#endregion
 
+		private void TestMethodInvocationRoundtrip<T>(T value) where T : class
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				serializer.RegisterType<T>();
+				//Save();
+
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
+				{
+					writer.WriteArgument(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodInvocationReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(5);
+					reader.GrainId.Should().Be(6);
+					reader.MethodName.Should().Be("GetValue");
+
+					object actualValue;
+					reader.ReadNextArgument(out actualValue).Should().BeTrue();
+					actualValue.Should().BeOfType<T>();
+					actualValue.Should().Be(value);
+
+					reader.ReadNextArgument(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(null);
+				}
+			}
+		}
+
 		private void TestFailRegister<T>(string reason)
 		{
 			var serializer = Create();
@@ -938,17 +1039,17 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			stream.Position = 0;
 		}
 
-		private static IMethodInvocationReader CreateMethodInvocationReader(ISerializer2 serializer, Stream stream)
+		private static IMethodCallReader CreateMethodInvocationReader(ISerializer2 serializer, Stream stream)
 		{
-			IMethodInvocationReader invocationReader;
+			IMethodCallReader callReader;
 			IMethodResultReader unused;
-			serializer.CreateMethodReader(stream, out invocationReader, out unused);
-			return invocationReader;
+			serializer.CreateMethodReader(stream, out callReader, out unused);
+			return callReader;
 		}
 
 		private static IMethodResultReader CreateMethodResultReader(ISerializer2 serializer, Stream stream)
 		{
-			IMethodInvocationReader unused;
+			IMethodCallReader unused;
 			IMethodResultReader resultReader;
 			serializer.CreateMethodReader(stream, out unused, out resultReader);
 			return resultReader;

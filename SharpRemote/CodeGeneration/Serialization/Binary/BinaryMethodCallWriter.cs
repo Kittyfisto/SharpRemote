@@ -4,12 +4,12 @@ using System.Text;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
-	internal sealed class BinaryMethodInvocationWriter
-		: IMethodInvocationWriter
+	internal sealed class BinaryMethodCallWriter
+		: IMethodCallWriter
 	{
 		private readonly BinaryWriter _writer;
 
-		public BinaryMethodInvocationWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
+		public BinaryMethodCallWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
 		{
 			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
 			_writer.Write((byte)MessageType2.Call);

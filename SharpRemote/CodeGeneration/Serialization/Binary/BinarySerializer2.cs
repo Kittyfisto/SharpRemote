@@ -37,9 +37,9 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		public IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong rpcId, ulong grainId, string methodName, IRemotingEndPoint endPoint = null)
+		public IMethodCallWriter CreateMethodCallWriter(Stream stream, ulong rpcId, ulong grainId, string methodName, IRemotingEndPoint endPoint = null)
 		{
-			return new BinaryMethodInvocationWriter(stream, grainId, methodName, rpcId);
+			return new BinaryMethodCallWriter(stream, grainId, methodName, rpcId);
 		}
 
 		/// <inheritdoc />
@@ -50,7 +50,7 @@ namespace SharpRemote
 
 		/// <inheritdoc />
 		public void CreateMethodReader(Stream stream,
-		                               out IMethodInvocationReader invocationReader,
+		                               out IMethodCallReader callReader,
 		                               out IMethodResultReader resultReader,
 		                               IRemotingEndPoint endPoint = null)
 		{
@@ -59,12 +59,12 @@ namespace SharpRemote
 			switch (type)
 			{
 				case MessageType2.Call:
-					invocationReader = new BinaryMethodInvocationReader(reader);
+					callReader = new BinaryMethodCallReader(reader);
 					resultReader = null;
 					break;
 
 				case MessageType2.Result:
-					invocationReader = null;
+					callReader = null;
 					resultReader = new BinaryMethodResultReader(reader);
 					break;
 

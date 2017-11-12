@@ -6,17 +6,17 @@ using SharpRemote.Extensions;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml
 {
-	internal sealed class XmlMethodInvocationReader
-		: IMethodInvocationReader
+	internal sealed class XmlMethodCallReader
+		: IMethodCallReader
 	{
-		public const string RpcElementName = XmlMethodInvocationWriter.RpcElementName;
-		public const string RpcIdAttributeName = XmlMethodInvocationWriter.RpcIdAttributeName;
-		public const string GrainIdAttributeName = XmlMethodInvocationWriter.GrainIdAttributeName;
-		public const string MethodAttributeName = XmlMethodInvocationWriter.MethodAttributeName;
-		public const string ArgumentElementName = XmlMethodInvocationWriter.ArgumentElementName;
-		public const string ArgumentNameAttributeName = XmlMethodInvocationWriter.ArgumentNameAttributeName;
-		public const string ArgumentValueAttributeName = XmlMethodInvocationWriter.ArgumentValueAttributeName;
-		public const string ArgumentTypeAttributeName = XmlMethodInvocationWriter.ArgumentTypeAttributeName;
+		public const string RpcElementName = XmlMethodCallWriter.RpcElementName;
+		public const string RpcIdAttributeName = XmlMethodCallWriter.RpcIdAttributeName;
+		public const string GrainIdAttributeName = XmlMethodCallWriter.GrainIdAttributeName;
+		public const string MethodAttributeName = XmlMethodCallWriter.MethodAttributeName;
+		public const string ArgumentElementName = XmlMethodCallWriter.ArgumentElementName;
+		public const string ArgumentNameAttributeName = XmlMethodCallWriter.ArgumentNameAttributeName;
+		public const string ArgumentValueAttributeName = XmlMethodCallWriter.ArgumentValueAttributeName;
+		public const string ArgumentTypeAttributeName = XmlMethodCallWriter.ArgumentTypeAttributeName;
 
 		private readonly IRemotingEndPoint _endPoint;
 		private readonly ulong _grainId;
@@ -28,7 +28,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private readonly XmlSerializer _serializer;
 		private readonly StreamReader _textReader;
 
-		public XmlMethodInvocationReader(XmlSerializer serializer,
+		public XmlMethodCallReader(XmlSerializer serializer,
 		                                 StreamReader streamReader,
 		                                 XmlReader reader,
 		                                 SerializationMethodStorage<XmlMethodsCompiler> methodStorage,
@@ -266,7 +266,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadNextArgumentAsBytes(out byte[] value)
 		{
-			throw new NotImplementedException();
+			string hexString;
+			if (!ReadNextArgument(out hexString))
+			{
+				value = null;
+				return false;
+			}
+
+			value = XmlSerializer.BytesFromHex(hexString);
+			return true;
 		}
 
 		private bool ReadNextArgument()
@@ -302,9 +310,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				}
 			}
 
-			// TODO: Throw better exception
-			if (value == null)
-				throw new NotImplementedException();
 			return true;
 		}
 	}

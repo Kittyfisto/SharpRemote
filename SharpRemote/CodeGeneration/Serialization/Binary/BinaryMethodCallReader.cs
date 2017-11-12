@@ -3,8 +3,8 @@ using System.IO;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
-	internal sealed class BinaryMethodInvocationReader
-		: IMethodInvocationReader
+	internal sealed class BinaryMethodCallReader
+		: IMethodCallReader
 	{
 		private readonly Stream _stream;
 		private readonly BinaryReader _reader;
@@ -12,7 +12,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		private readonly string _methodName;
 		private readonly ulong _rpcId;
 
-		public BinaryMethodInvocationReader(BinaryReader reader)
+		public BinaryMethodCallReader(BinaryReader reader)
 		{
 			if (reader == null)
 				throw new ArgumentNullException(nameof(reader));

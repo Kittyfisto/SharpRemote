@@ -5,9 +5,9 @@ namespace SharpRemote
 {
 	/// <summary>
 	///     A forward-only reader which reads the invocation of a method from a stream which has been previously
-	///     created using a <see cref="IMethodInvocationWriter" />.
+	///     created using a <see cref="IMethodCallWriter" />.
 	/// </summary>
-	public interface IMethodInvocationReader
+	public interface IMethodCallReader
 		: IDisposable
 	{
 		/// <summary>

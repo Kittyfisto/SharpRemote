@@ -13,7 +13,7 @@ namespace SharpRemote
 		/// <summary>
 		///     The id of this remote procedure call.
 		///     This value matches a previous call which has been created using
-		///     <see cref="ISerializer2.CreateMethodInvocationWriter" />.
+		///     <see cref="ISerializer2.CreateMethodCallWriter" />.
 		/// </summary>
 		ulong RpcId { get; }
 

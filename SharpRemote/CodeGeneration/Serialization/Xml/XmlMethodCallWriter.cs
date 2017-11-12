@@ -5,8 +5,8 @@ using SharpRemote.Extensions;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml
 {
-	internal sealed class XmlMethodInvocationWriter
-		: IMethodInvocationWriter
+	internal sealed class XmlMethodCallWriter
+		: IMethodCallWriter
 	{
 		public const string RpcElementName = "Call";
 		public const string RpcIdAttributeName = "ID";
@@ -22,7 +22,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private readonly XmlWriter _writer;
 		private readonly IRemotingEndPoint _endPoint;
 
-		public XmlMethodInvocationWriter(XmlSerializer serializer, XmlWriterSettings settings, Stream stream, ulong grainId, string methodName, ulong rpcId, IRemotingEndPoint endPoint = null)
+		public XmlMethodCallWriter(XmlSerializer serializer, XmlWriterSettings settings, Stream stream, ulong grainId, string methodName, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
 			_serializer = serializer;
 			_endPoint = endPoint;
@@ -114,7 +114,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public void WriteArgument(string value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
-			_writer.WriteAttributeString(ArgumentValueAttributeName, value);
+			if (value != null)
+				_writer.WriteAttributeString(ArgumentValueAttributeName, value);
 			_writer.WriteEndElement();
 		}
 

@@ -58,8 +58,8 @@
     <Compile Include="CodeGeneration\Serialization\AbstractMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializationMethods.CompilationContext.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractMethodsCompiler.cs" />
-    <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodInvocationReader.cs" />
-    <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodInvocationWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodCallReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodCallWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodResultReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodResultWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryReadValueNotNullMethodCompiler.cs" />
@@ -72,8 +72,8 @@
     <Compile Include="CodeGeneration\Serialization\ISerializationMethods.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethodStorage.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializerCompiler.cs" />
-    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodInvocationReader.cs" />
-    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodInvocationWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodCallReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodCallWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Json\JsonMethodResultReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Json\JsonMethodResultWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Json\JsonSerializer.cs" />
@@ -85,8 +85,8 @@
     <Compile Include="CodeGeneration\Serialization\AbstractWriteObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractWriteValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractWriteValueNotNullMethodCompiler.cs" />
-    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodInvocationReader.cs" />
-    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodInvocationWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodCallReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodCallWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlReadObjectMethodCompiler.cs" />
@@ -126,8 +126,8 @@
     <Compile Include="HandshakeAck.cs" />
     <Compile Include="HandshakeSynack.cs" />
     <Compile Include="CodeGeneration\Serialization\IMethodResultReader.cs" />
-    <Compile Include="CodeGeneration\Serialization\IMethodInvocationWriter.cs" />
-    <Compile Include="CodeGeneration\Serialization\IMethodInvocationReader.cs" />
+    <Compile Include="CodeGeneration\Serialization\IMethodCallWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\IMethodCallReader.cs" />
     <Compile Include="CodeGeneration\Serialization\IMethodResultWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializer2.cs" />
     <Compile Include="ProtocolVersion.cs" />

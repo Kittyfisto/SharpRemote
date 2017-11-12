@@ -6,7 +6,7 @@ namespace SharpRemote
 	/// <summary>
 	///     Responsible for creating a serialized message out of a method invocation.
 	/// </summary>
-	public interface  IMethodInvocationWriter
+	public interface  IMethodCallWriter
 		: IDisposable
 	{
 		/// <summary>

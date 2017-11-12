@@ -10,7 +10,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		: IMethodResultWriter
 	{
 		public const string RpcElementName = "Result";
-		public const string RpcIdAttributeName = XmlMethodInvocationWriter.RpcIdAttributeName;
+		public const string RpcIdAttributeName = XmlMethodCallWriter.RpcIdAttributeName;
 		public const string ResultElementName = "ReturnValue";
 		public const string ExceptionElementName = "Exception";
 

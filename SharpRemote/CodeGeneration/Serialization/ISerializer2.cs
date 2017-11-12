@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// <summary>
 	///     The interface a serializer needs to implement:
 	///     An RPC call is modelled by the following sequence of methods:
-	///     - <see cref="CreateMethodInvocationWriter" /> [Caller]
+	///     - <see cref="CreateMethodCallWriter" /> [Caller]
 	///     - <see cref="CreateMethodReader" /> [Callee]
 	///     - <see cref="CreateMethodResultWriter" /> [Callee]
 	///     - <see cref="CreateMethodReader" /> [Caller]
@@ -64,7 +64,7 @@ namespace SharpRemote
 		/// <summary>
 		///     Tests if the given type <typeparamref name="T" /> has already been registered
 		///     with this serializer (either directly through <see cref="RegisterType" /> or indirectly
-		///     through <see cref="CreateMethodInvocationWriter" />, <see cref="CreateMethodReader" /> or
+		///     through <see cref="CreateMethodCallWriter" />, <see cref="CreateMethodReader" /> or
 		///     <see cref="CreateMethodResultWriter" />.
 		/// </summary>
 		/// <typeparam name="T">The type to test</typeparam>
@@ -75,7 +75,7 @@ namespace SharpRemote
 		/// <summary>
 		///     Tests if the given type <paramref name="type" /> has already been registered
 		///     with this serializer (either directly through <see cref="RegisterType" /> or indirectly
-		///     through <see cref="CreateMethodInvocationWriter" />, <see cref="CreateMethodResultWriter" /> or
+		///     through <see cref="CreateMethodCallWriter" />, <see cref="CreateMethodResultWriter" /> or
 		///     <see cref="CreateMethodReader" />.
 		/// </summary>
 		/// <param name="type">The type to test</param>
@@ -97,7 +97,7 @@ namespace SharpRemote
 		/// </remarks>
 		/// <remarks>
 		///     The given <paramref name="stream" /> should NOT be disposed of when the returned
-		///     <see cref="IMethodInvocationWriter" /> is disposed of:
+		///     <see cref="IMethodCallWriter" /> is disposed of:
 		///     That writer does NOT own the stream and should NOT close it either.
 		/// </remarks>
 		/// <param name="stream"></param>
@@ -106,7 +106,7 @@ namespace SharpRemote
 		/// <param name="methodName"></param>
 		/// <param name="endPoint"></param>
 		/// <returns></returns>
-		IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream,
+		IMethodCallWriter CreateMethodCallWriter(Stream stream,
 		                                                     ulong rpcId,
 		                                                     ulong grainId,
 		                                                     string methodName,
@@ -136,8 +136,8 @@ namespace SharpRemote
 		IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId, IRemotingEndPoint endPoint = null);
 
 		/// <summary>
-		///     Creates a reader which consumes the given stream and either creates a <see cref="IMethodInvocationReader" />
-		///     if the stream was written by a compatible <see cref="IMethodInvocationWriter" /> or a
+		///     Creates a reader which consumes the given stream and either creates a <see cref="IMethodCallReader" />
+		///     if the stream was written by a compatible <see cref="IMethodCallWriter" /> or a
 		///     <see cref="IMethodResultReader" /> if it was written by a <see cref="IMethodResultWriter" />.
 		/// </summary>
 		/// <remarks>
@@ -148,10 +148,10 @@ namespace SharpRemote
 		/// <param name="stream">The stream from which the result of the method invocation is read from</param>
 		/// <param name="resultReader"></param>
 		/// <param name="endPoint"></param>
-		/// <param name="invocationReader"></param>
+		/// <param name="callReader"></param>
 		/// <returns></returns>
 		void CreateMethodReader(Stream stream,
-		                        out IMethodInvocationReader invocationReader,
+		                        out IMethodCallReader callReader,
 		                        out IMethodResultReader resultReader,
 		                        IRemotingEndPoint endPoint = null);
 	}

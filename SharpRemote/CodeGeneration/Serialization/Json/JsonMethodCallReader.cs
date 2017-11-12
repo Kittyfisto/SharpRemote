@@ -3,10 +3,10 @@ using System.IO;
 
 namespace SharpRemote.CodeGeneration.Serialization.Json
 {
-	internal sealed class JsonMethodInvocationReader
-		: IMethodInvocationReader
+	internal sealed class JsonMethodCallReader
+		: IMethodCallReader
 	{
-		public JsonMethodInvocationReader(Stream stream)
+		public JsonMethodCallReader(Stream stream)
 		{
 			throw new NotImplementedException();
 		}

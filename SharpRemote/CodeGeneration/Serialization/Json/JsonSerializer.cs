@@ -36,9 +36,9 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		public IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong rpcId, ulong grainId, string methodName, IRemotingEndPoint endPoint = null)
+		public IMethodCallWriter CreateMethodCallWriter(Stream stream, ulong rpcId, ulong grainId, string methodName, IRemotingEndPoint endPoint = null)
 		{
-			return new JsonMethodInvocationWriter(stream, grainId, methodName, rpcId);
+			return new JsonMethodCallWriter(stream, grainId, methodName, rpcId);
 		}
 
 		/// <inheritdoc />
@@ -49,7 +49,7 @@ namespace SharpRemote
 
 		/// <inheritdoc />
 		public void CreateMethodReader(Stream stream,
-		                               out IMethodInvocationReader invocationReader,
+		                               out IMethodCallReader callReader,
 		                               out IMethodResultReader resultReader,
 		                               IRemotingEndPoint endPoint = null)
 		{

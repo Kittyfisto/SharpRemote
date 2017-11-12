@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -19,10 +20,10 @@ namespace SharpRemote
 		: ISerializer2
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
-		private readonly XmlWriterSettings _settings;
 		private readonly XmlSerializationCompiler _methodCompiler;
 		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
+
+		private readonly XmlWriterSettings _settings;
 
 		/// <summary>
 		/// </summary>
@@ -73,9 +74,13 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		public IMethodInvocationWriter CreateMethodInvocationWriter(Stream stream, ulong rpcId, ulong grainId, string methodName, IRemotingEndPoint endPoint = null)
+		public IMethodCallWriter CreateMethodCallWriter(Stream stream,
+		                                                ulong rpcId,
+		                                                ulong grainId,
+		                                                string methodName,
+		                                                IRemotingEndPoint endPoint = null)
 		{
-			return new XmlMethodInvocationWriter(this, _settings, stream, grainId, methodName, rpcId);
+			return new XmlMethodCallWriter(this, _settings, stream, grainId, methodName, rpcId);
 		}
 
 		/// <inheritdoc />
@@ -86,22 +91,23 @@ namespace SharpRemote
 
 		/// <inheritdoc />
 		public void CreateMethodReader(Stream stream,
-		                               out IMethodInvocationReader invocationReader,
+		                               out IMethodCallReader callReader,
 		                               out IMethodResultReader resultReader,
 		                               IRemotingEndPoint endPoint = null)
 		{
-			var textReader = new StreamReader(stream, _settings.Encoding, true, 4096, true);
+			var textReader = new StreamReader(stream, _settings.Encoding, detectEncodingFromByteOrderMarks: true,
+			                                  bufferSize: 4096, leaveOpen: true);
 			var reader = XmlReader.Create(textReader);
 			reader.MoveToContent();
 			switch (reader.Name)
 			{
-				case XmlMethodInvocationWriter.RpcElementName:
-					invocationReader = new XmlMethodInvocationReader(this, textReader, reader, _methodStorage, endPoint);
+				case XmlMethodCallWriter.RpcElementName:
+					callReader = new XmlMethodCallReader(this, textReader, reader, _methodStorage, endPoint);
 					resultReader = null;
 					break;
 
 				case XmlMethodResultWriter.RpcElementName:
-					invocationReader = null;
+					callReader = null;
 					resultReader = new XmlMethodResultReader(this, textReader, reader, _methodStorage, endPoint);
 					break;
 
@@ -111,7 +117,6 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// 
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
@@ -124,35 +129,14 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		/// <param name="endPoint"></param>
-		/// <exception cref="NotImplementedException"></exception>
-		public void WriteStruct<T>(XmlWriter writer, T value, IRemotingEndPoint endPoint) where T : struct
-		{
-		}
-
-		/// <summary>
-		/// 
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
 		public void WriteBytes(XmlWriter writer, byte[] value)
 		{
-			writer.WriteAttributeString("Type", typeof(byte).AssemblyQualifiedName);
-			if (value == null)
+			if (value != null)
 			{
-				writer.WriteAttributeString("IsNull", "True");
-			}
-			else
-			{
-				// TODO: Replace with a fast version sometime in the future...
-				var stringBuilder = new StringBuilder(value.Length * 2);
-				foreach (var b in value)
-					stringBuilder.AppendFormat("{0:x2}", b);
-				writer.WriteAttributeString("Value", stringBuilder.ToString());
+				writer.WriteAttributeString("Value", HexFromBytes(value));
 			}
 		}
 
@@ -255,16 +239,97 @@ namespace SharpRemote
 			writer.WriteValue(value);
 		}
 
-
 		private static ModuleBuilder CreateModule()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
-			AssemblyBuilder assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
-			                                                                         AssemblyBuilderAccess.RunAndSave);
-			string moduleName = assemblyName.Name + ".dll";
-			ModuleBuilder module = assembly.DefineDynamicModule(moduleName);
+			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
+			                                                             AssemblyBuilderAccess.RunAndSave);
+			var moduleName = assemblyName.Name + ".dll";
+			var module = assembly.DefineDynamicModule(moduleName);
 			return module;
 		}
 
+		#region Hexadecimal Conversion
+
+		private static readonly string[] LookupTable;
+
+		static XmlSerializer()
+		{
+			LookupTable = new string[256];
+			for (var i = 0; i < 256; i++)
+			{
+				LookupTable[i] = i.ToString("X2");
+			}
+		}
+
+		/// <summary>
+		///     Returns a byte array with the given hex-coded content
+		///     or null if <paramref name="value" /> is null.
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		[Pure]
+		public static byte[] BytesFromHex(string value)
+		{
+			if (value == null)
+				return null;
+
+			if ((value.Length %2) != 0)
+				throw new ArgumentException("The given array must have a multiple length of 2");
+
+			var ret = new byte[value.Length / 2];
+			for (int i = 0; i < value.Length; i += 2)
+			{
+				var upper = GetValue(value[i]);
+				var lower = GetValue(value[i + 1]);
+				ret[i/2] = (byte) (upper * 16 + lower);
+			}
+			return ret;
+		}
+
+		[Pure]
+		private static byte GetValue(char value)
+		{
+			switch (value)
+			{
+				case '0': return 0;
+				case '1': return 1;
+				case '2': return 2;
+				case '3': return 3;
+				case '4': return 4;
+				case '5': return 5;
+				case '6': return 6;
+				case '7': return 7;
+				case '8': return 8;
+				case '9': return 9;
+				case 'A': return 10;
+				case 'B': return 11;
+				case 'C': return 12;
+				case 'D': return 13;
+				case 'E': return 14;
+				case 'F': return 15;
+				default: throw new ArgumentException(string.Format("Invalid value: '{0}'", value));
+			}
+		}
+
+		/// <summary>
+		///     Returns a hex-string with the given content or null
+		///     if <paramref name="value" /> is null.
+		/// </summary>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		[Pure]
+		public static string HexFromBytes(byte[] value)
+		{
+			if (value == null)
+				return null;
+
+			var builder = new StringBuilder(value.Length * 2);
+			for (var i = 0; i < value.Length; ++i)
+				builder.Append(LookupTable[value[i]]);
+			return builder.ToString();
+		}
+
+		#endregion
 	}
 }

@@ -9,6 +9,19 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		{
 		}
 
+		protected override void EmitEndReadProperty(ILGenerator gen, PropertyDescription property)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		protected override void EmitBeginRead(ILGenerator gen)
+		{
+		}
+
+		protected override void EmitEndRead(ILGenerator gen)
+		{
+		}
+
 		protected override void EmitReadByte(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();
@@ -69,12 +82,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitBeginReadFieldOrProperty(ILGenerator gen, TypeDescription valueType, string name)
+		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)
 		{
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitEndReadFieldOrProperty(ILGenerator gen, TypeDescription valueType, string name)
+		protected override void EmitEndReadField(ILGenerator gen, FieldDescription field)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		protected override void EmitBeginReadProperty(ILGenerator gen, PropertyDescription property)
 		{
 			throw new System.NotImplementedException();
 		}

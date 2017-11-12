@@ -582,7 +582,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Ignore("")]
 		public void TestMethodCallFieldDecimal([ValueSource(nameof(DecimalValues))] decimal value)
 		{
 			MethodCallRoundtripDataContract(new FieldDecimal { Value = value });

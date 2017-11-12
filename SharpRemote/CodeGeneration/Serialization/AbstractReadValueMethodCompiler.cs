@@ -94,6 +94,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				gen.Emit(OpCodes.Stloc, tmp);
 			}
 
+			EmitBeginRead(gen);
+
 			// tmp.BeforeDeserializationCallback();
 			EmitCallBeforeDeserialization(gen, tmp);
 
@@ -102,6 +104,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			// tmp.AfterDeserializationCallback();
 			EmitCallAfterSerialization(gen, tmp);
+
+			EmitEndRead(gen);
 
 			// return tmp
 			gen.Emit(OpCodes.Ldloc, tmp);
@@ -113,6 +117,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			foreach (var field in _context.TypeDescription.Fields)
 				try
 				{
+					EmitBeginReadField(gen, field);
 					if (_context.TypeDescription.IsValueType)
 					{
 						gen.Emit(OpCodes.Ldloca_S, local);
@@ -123,6 +128,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					}
 					EmitReadValue(gen, field.FieldType, field.Name);
 					gen.Emit(OpCodes.Stfld, field.Field);
+					EmitEndReadField(gen, field);
 				}
 				catch (SerializationException)
 				{
@@ -144,6 +150,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			foreach (var property in _context.TypeDescription.Properties)
 				try
 				{
+					EmitBeginReadProperty(gen, property);
 					if (_context.TypeDescription.IsValueType)
 					{
 						gen.Emit(OpCodes.Ldloca_S, local);
@@ -154,6 +161,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					}
 					EmitReadValue(gen, property.PropertyType, property.Name);
 					gen.Emit(OpCodes.Call, property.SetMethod.Method);
+					EmitEndReadProperty(gen, property);
 				}
 				catch (SerializationException)
 				{
@@ -173,7 +181,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		private void EmitReadValue(ILGenerator gen, TypeDescription valueType, string name)
 		{
-			EmitBeginReadFieldOrProperty(gen, valueType, name);
 			var type = valueType.Type;
 			if (type == typeof(byte))
 				EmitReadByte(gen);
@@ -201,8 +208,47 @@ namespace SharpRemote.CodeGeneration.Serialization
 				EmitReadString(gen);
 			else
 				throw new NotImplementedException();
-			EmitEndReadFieldOrProperty(gen, valueType, name);
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="field"></param>
+		protected abstract void EmitBeginReadField(ILGenerator gen, FieldDescription field);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="field"></param>
+		protected abstract void EmitEndReadField(ILGenerator gen, FieldDescription field);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="property"></param>
+		protected abstract void EmitBeginReadProperty(ILGenerator gen, PropertyDescription property);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="property"></param>
+		protected abstract void EmitEndReadProperty(ILGenerator gen, PropertyDescription property);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		protected abstract void EmitBeginRead(ILGenerator gen);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		protected abstract void EmitEndRead(ILGenerator gen);
 
 		/// <summary>
 		/// 
@@ -275,22 +321,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		protected abstract void EmitReadString(ILGenerator gen);
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="gen"></param>
-		/// <param name="valueType"></param>
-		/// <param name="name"></param>
-		protected abstract void EmitBeginReadFieldOrProperty(ILGenerator gen, TypeDescription valueType, string name);
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="gen"></param>
-		/// <param name="valueType"></param>
-		/// <param name="name"></param>
-		protected abstract void EmitEndReadFieldOrProperty(ILGenerator gen, TypeDescription valueType, string name);
 
 		private void EmitCallBeforeDeserialization(ILGenerator gen, LocalBuilder tmp)
 		{

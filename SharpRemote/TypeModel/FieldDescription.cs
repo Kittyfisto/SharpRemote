@@ -69,6 +69,12 @@ namespace SharpRemote
 		[DataMember]
 		public string Name { get; set; }
 
+		/// <inheritdoc />
+		public ITypeDescription Type => _fieldType;
+
+		/// <inheritdoc />
+		public MemberInfo MemberInfo => _field;
+
 		ITypeDescription IFieldDescription.FieldType => _fieldType;
 
 		/// <summary>

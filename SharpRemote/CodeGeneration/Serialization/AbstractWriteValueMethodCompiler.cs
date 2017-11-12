@@ -103,10 +103,18 @@ namespace SharpRemote.CodeGeneration.Serialization
 				gen.Emit(OpCodes.Call, methods.WriteValueMethod);
 			}
 
+			Action loadValue = () =>
+			{
+				if (_context.TypeDescription.IsValueType)
+					gen.Emit(OpCodes.Ldarga_S, arg: 1);
+				else
+					gen.Emit(OpCodes.Ldarg_1);
+			};
+
 			//Followed by the list of serializable fields
-			EmitWriteFields(gen);
+			EmitWriteFields(gen, loadValue);
 			// Then the serializable properties
-			EmitWriteProperties(gen);
+			EmitWriteProperties(gen, loadValue);
 
 			// And finally call the PostDeserializationCallback, if available.
 			EmitCallAfterSerialization(gen);
@@ -125,25 +133,22 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 		}
 
-		private void EmitWriteFields(ILGenerator gen)
+		private void EmitWriteFields(ILGenerator gen, Action loadValue)
 		{
 			foreach (var field in _context.TypeDescription.Fields)
 				try
 				{
-					EmitBeginWriteField(gen, field, field.Name);
-					EmitWriteValue(gen, field.FieldType, field.Name, () =>
+					EmitBeginWriteField(gen, field);
+					EmitWriteValue(gen, field, () =>
 					{
-						if (_context.TypeDescription.IsValueType)
-							gen.Emit(OpCodes.Ldarga_S, arg: 1);
-						else
-							gen.Emit(OpCodes.Ldarg_1);
-
-						if (field.FieldType.IsValueType)
-							gen.Emit(OpCodes.Ldflda, field.Field);
-						else
-							gen.Emit(OpCodes.Ldfld, field.Field);
+						loadValue();
+						gen.Emit(OpCodes.Ldfld, field.Field);
+					}, () =>
+					{
+						loadValue();
+						gen.Emit(OpCodes.Ldflda, field.Field);
 					});
-					EmitEndWriteField(gen, field, field.Name);
+					EmitEndWriteField(gen, field);
 				}
 				catch (SerializationException)
 				{
@@ -159,22 +164,24 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitWriteProperties(ILGenerator gen)
+		private void EmitWriteProperties(ILGenerator gen, Action loadValue)
 		{
 			foreach (var property in _context.TypeDescription.Properties)
 				try
 				{
-					EmitBeginWriteProperty(gen, property, property.Name);
-					EmitWriteValue(gen, property.PropertyType, property.Name, () =>
-					{
-						if (_context.TypeDescription.IsValueType)
-							gen.Emit(OpCodes.Ldarga_S, arg: 1);
-						else
-							gen.Emit(OpCodes.Ldarg_1);
-
-						gen.Emit(OpCodes.Call, property.GetMethod.Method);
-					});
-					EmitEndWriterProperty(gen, property, property.Name);
+					EmitBeginWriteProperty(gen, property);
+					EmitWriteValue(gen, property, () =>
+					               {
+						               loadValue();
+						               gen.Emit(OpCodes.Call, property.GetMethod.Method);
+					               },
+					               () =>
+					               {
+						               // TODO: This isn't finihed
+						               loadValue();
+						               gen.Emit(OpCodes.Call, property.GetMethod.Method);
+					               });
+					EmitEndWriteProperty(gen, property);
 				}
 				catch (SerializationException)
 				{
@@ -192,33 +199,33 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitWriteValue(ILGenerator gen, TypeDescription valueType, string name, Action loadValue)
+		private void EmitWriteValue(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
 		{
-			var type = valueType.Type;
+			var type = member.Type.Type;
 			if (type == typeof(byte))
-				EmitWriteByte(gen, loadValue);
+				EmitWriteByte(gen, loadMember);
 			else if (type == typeof(sbyte))
-				EmitWriteSByte(gen, loadValue);
+				EmitWriteSByte(gen, loadMember);
 			else if (type == typeof(ushort))
-				EmitWriteUShort(gen, loadValue);
+				EmitWriteUShort(gen, loadMember);
 			else if (type == typeof(short))
-				EmitWriteShort(gen, loadValue);
+				EmitWriteShort(gen, loadMember);
 			else if (type == typeof(uint))
-				EmitWriteUInt(gen, loadValue);
+				EmitWriteUInt(gen, loadMember);
 			else if (type == typeof(int))
-				EmitWriteInt(gen, loadValue);
+				EmitWriteInt(gen, loadMember);
 			else if (type == typeof(ulong))
-				EmitWriteULong(gen, loadValue);
+				EmitWriteULong(gen, loadMember);
 			else if (type == typeof(long))
-				EmitWriteLong(gen, loadValue);
+				EmitWriteLong(gen, loadMember);
 			else if (type == typeof(decimal))
-				EmitWriteDecimal(gen, loadValue);
+				EmitWriteDecimal(gen, member, loadMember, loadMemberAddress);
 			else if (type == typeof(float))
-				EmitWriteFloat(gen, loadValue);
+				EmitWriteFloat(gen, loadMember);
 			else if (type == typeof(double))
-				EmitWriteDouble(gen, loadValue);
+				EmitWriteDouble(gen, loadMember);
 			else if (type == typeof(string))
-				EmitWriteString(gen, loadValue);
+				EmitWriteString(gen, loadMember);
 			else
 				throw new NotImplementedException();
 		}
@@ -228,32 +235,28 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="field"></param>
-		/// <param name="fieldName"></param>
-		protected abstract void EmitBeginWriteField(ILGenerator gen, FieldDescription field, string fieldName);
+		protected abstract void EmitBeginWriteField(ILGenerator gen, FieldDescription field);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="field"></param>
-		/// <param name="fieldName"></param>
-		protected abstract void EmitEndWriteField(ILGenerator gen, FieldDescription field, string fieldName);
+		protected abstract void EmitEndWriteField(ILGenerator gen, FieldDescription field);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="property"></param>
-		/// <param name="propertyName"></param>
-		protected abstract void EmitEndWriterProperty(ILGenerator gen, PropertyDescription property, string propertyName);
+		protected abstract void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="property"></param>
-		/// <param name="propertyName"></param>
-		protected abstract void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property, string propertyName);
+		protected abstract void EmitEndWriteProperty(ILGenerator gen, PropertyDescription property);
 
 		/// <summary>
 		/// </summary>
@@ -329,12 +332,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 		/// <summary>
 		/// </summary>
-		/// <param name="gen"></param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="decimal" /> to
-		///     be serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteDecimal(ILGenerator gen, Action loadValue);
+		/// <param name="gen">The code generator to use to emit new code</param>
+		/// <param name="member">The field or property that shall be written</param>
+		/// <param name="loadMember">An operation which emits code to the given <paramref name="gen"/> which pushes the value of the field or property onto the evaluation stack</param>
+		/// <param name="loadMemberAddress">An operation which emits code to the given <paramref name="gen"/> which pushes the address of the value of the field or property onto the evaluation stack</param>
+		protected abstract void EmitWriteDecimal(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>

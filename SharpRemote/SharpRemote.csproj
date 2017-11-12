@@ -140,6 +140,7 @@
     <Compile Include="Hosting\OutOfProcess\IFailureHandler.cs" />
     <Compile Include="Hosting\OutOfProcess\ZeroFailureToleranceStrategy.cs" />
     <Compile Include="TypeModel\IFieldDescription.cs" />
+    <Compile Include="TypeModel\IMemberDescription.cs" />
     <Compile Include="TypeModel\IMethodDescription.cs" />
     <Compile Include="TypeModel\IParameterDescription.cs" />
     <Compile Include="TypeModel\IPropertyDescription.cs" />

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
@@ -20,22 +21,22 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			generator.Emit(OpCodes.Callvirt, Methods.WriteByte);
 		}
 
-		protected override void EmitBeginWriteField(ILGenerator gen, FieldDescription field, string fieldName)
+		protected override void EmitBeginWriteField(ILGenerator gen, FieldDescription field)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitEndWriteField(ILGenerator gen, FieldDescription field, string fieldName)
+		protected override void EmitEndWriteField(ILGenerator gen, FieldDescription field)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitEndWriterProperty(ILGenerator gen, PropertyDescription property, string propertyName)
+		protected override void EmitEndWriteProperty(ILGenerator gen, PropertyDescription property)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property, string propertyName)
+		protected override void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property)
 		{
 			throw new NotImplementedException();
 		}
@@ -80,7 +81,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteDecimal(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteDecimal(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}

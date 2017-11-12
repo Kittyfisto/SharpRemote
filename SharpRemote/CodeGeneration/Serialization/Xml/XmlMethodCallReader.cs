@@ -119,10 +119,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			if (_reader.Name != ArgumentValueAttributeName)
 				throw new NotImplementedException();
 
-			var reader = _reader.ReadSubtree();
 			var methods = _methodStorage.GetOrAdd(type);
-			value = methods.ReadObjectDelegate(reader, _serializer, _endPoint);
+			value = methods.ReadObjectDelegate(_reader, _serializer, _endPoint);
 
+			_reader.MoveToElement();
 			_reader.Read();
 			return true;
 		}

@@ -8,6 +8,7 @@ namespace SharpRemote
 	///     describes its static structure that is important to a <see cref="ISerializer" />.
 	/// </summary>
 	public interface IPropertyDescription
+		: IMemberDescription
 	{
 		/// <summary>
 		///     The type of this property, equivalent of <see cref="PropertyInfo.PropertyType" />.
@@ -25,10 +26,5 @@ namespace SharpRemote
 		///     Equivalent of <see cref="PropertyInfo.SetMethod" />.
 		/// </summary>
 		IMethodDescription SetMethod { get; }
-
-		/// <summary>
-		///     The equivalent of <see cref="MemberInfo.Name" />.
-		/// </summary>
-		string Name { get; }
 	}
 }

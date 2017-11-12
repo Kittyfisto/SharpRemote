@@ -12,12 +12,17 @@ namespace SharpRemote
 	public interface ITypeDescription
 	{
 		/// <summary>
-		///     Equivalent of <see cref="Type.BaseType" />.
+		/// The type being described by this object.
+		/// </summary>
+		Type Type { get; }
+
+		/// <summary>
+		///     Equivalent of <see cref="System.Type.BaseType" />.
 		/// </summary>
 		ITypeDescription BaseType { get; }
-		
+
 		/// <summary>
-		///     Equivalent of <see cref="Type.AssemblyQualifiedName" />.
+		///     Equivalent of <see cref="System.Type.AssemblyQualifiedName" />.
 		/// </summary>
 		string AssemblyQualifiedName { get; }
 
@@ -27,27 +32,27 @@ namespace SharpRemote
 		SerializationType SerializationType { get; }
 
 		/// <summary>
-		///     Equivalent of <see cref="Type.IsClass" />.
+		///     Equivalent of <see cref="System.Type.IsClass" />.
 		/// </summary>
 		bool IsClass { get; }
 
 		/// <summary>
-		///     Equivalent of <see cref="Type.IsEnum" />.
+		///     Equivalent of <see cref="System.Type.IsEnum" />.
 		/// </summary>
 		bool IsEnum { get; }
 
 		/// <summary>
-		///     Equivalent of <see cref="Type.IsInterface" />.
+		///     Equivalent of <see cref="System.Type.IsInterface" />.
 		/// </summary>
 		bool IsInterface { get; }
 
 		/// <summary>
-		///     Equivalent of <see cref="Type.IsValueType" />.
+		///     Equivalent of <see cref="System.Type.IsValueType" />.
 		/// </summary>
 		bool IsValueType { get; }
 
 		/// <summary>
-		///     Equivalent of <see cref="Type.IsSealed" />.
+		///     Equivalent of <see cref="System.Type.IsSealed" />.
 		/// </summary>
 		bool IsSealed { get; }
 
@@ -58,7 +63,7 @@ namespace SharpRemote
 		bool IsBuiltIn { get; }
 
 		/// <summary>
-		///     Equivalent of <see cref="Type.IsGenericType" />.
+		///     Equivalent of <see cref="System.Type.IsGenericType" />.
 		/// </summary>
 		bool IsGenericType { get; }
 

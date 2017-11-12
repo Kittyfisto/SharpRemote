@@ -435,7 +435,9 @@ namespace SharpRemote
 				switch (reader.Name)
 				{
 					case ValueAttributeName:
-						return reader.Value;
+						var value = reader.Value;
+						reader.MoveToElement();
+						return value;
 				}
 			}
 

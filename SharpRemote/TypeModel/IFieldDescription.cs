@@ -8,15 +8,11 @@ namespace SharpRemote
 	///     describes its static structure that is important to a <see cref="ISerializer" />.
 	/// </summary>
 	public interface IFieldDescription
+		: IMemberDescription
 	{
 		/// <summary>
 		///     The type of this field, equivalent of <see cref="FieldInfo.FieldType" />.
 		/// </summary>
 		ITypeDescription FieldType { get; }
-
-		/// <summary>
-		///     The equivalent of <see cref="MemberInfo.Name" />.
-		/// </summary>
-		string Name { get; }
 	}
 }

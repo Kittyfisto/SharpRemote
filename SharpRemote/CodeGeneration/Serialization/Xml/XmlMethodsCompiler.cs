@@ -16,35 +16,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private XmlMethodsCompiler(TypeBuilder typeBuilder,
 		                           TypeDescription typeDescription,
 		                           CompilationContext context,
-		                           XmlWriteValueNotNullMethodCompiler writeValueNotNullMethodCompiler,
 		                           XmlWriteValueMethodCompiler writeValueMethodCompiler,
 		                           XmlWriteObjectMethodCompiler writeObjectMethodCompiler,
-		                           XmlReadValueNotNullMethodCompiler readValueNotNullMethodCompiler,
 		                           XmlReadValueMethodCompiler readValueMethodCompiler,
-		                           XmlReadObjectMethodCompiler readObjectMethodCompiler)
-			: base(typeBuilder, typeDescription,
-			       writeValueNotNullMethodCompiler,
-			       writeValueMethodCompiler,
-			       writeObjectMethodCompiler,
-			       readValueNotNullMethodCompiler,
-			       readValueMethodCompiler,
-			       readObjectMethodCompiler)
-		{
-			_context = context;
-		}
-
-		private XmlMethodsCompiler(TypeBuilder typeBuilder,
-		                           TypeDescription typeDescription,
-		                           CompilationContext context,
-		                           XmlWriteValueNotNullMethodCompiler writeValueNotNullMethodCompiler,
-		                           XmlWriteObjectMethodCompiler writeObjectMethodCompiler,
-		                           XmlReadValueNotNullMethodCompiler readValueNotNullMethodCompiler,
 		                           XmlReadObjectMethodCompiler readObjectMethodCompiler)
 			: base(typeBuilder,
 			       typeDescription,
-			       writeValueNotNullMethodCompiler,
+			       writeValueMethodCompiler,
 			       writeObjectMethodCompiler,
-			       readValueNotNullMethodCompiler,
+			       readValueMethodCompiler,
 			       readObjectMethodCompiler)
 		{
 			_context = context;
@@ -68,22 +48,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				TypeBuilder = typeBuilder
 			};
 
-			if (context.TypeDescription.IsValueType)
-				return new XmlMethodsCompiler(typeBuilder,
-				                              typeDescription,
-				                              context,
-				                              new XmlWriteValueNotNullMethodCompiler(context),
-				                              new XmlWriteObjectMethodCompiler(context),
-				                              new XmlReadValueNotNullMethodCompiler(context),
-				                              new XmlReadObjectMethodCompiler(context));
-
 			return new XmlMethodsCompiler(typeBuilder,
 			                              typeDescription,
 			                              context,
-			                              new XmlWriteValueNotNullMethodCompiler(context),
 			                              new XmlWriteValueMethodCompiler(context),
 			                              new XmlWriteObjectMethodCompiler(context),
-			                              new XmlReadValueNotNullMethodCompiler(context),
 			                              new XmlReadValueMethodCompiler(context),
 			                              new XmlReadObjectMethodCompiler(context));
 		}

@@ -14,7 +14,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string MethodAttributeName = "Method";
 		public const string ArgumentElementName = "Argument";
 		public const string ArgumentNameAttributeName = "Name";
-		public const string ArgumentValueAttributeName = "Value";
+		public const string ArgumentValueName = "Value";
 		public const string ArgumentTypeAttributeName = "Type";
 
 		private readonly XmlSerializer _serializer;
@@ -51,7 +51,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			if (value != null)
 			{
 				_writer.WriteAttributeString(ArgumentTypeAttributeName, value.GetType().AssemblyQualifiedName);
+				_writer.WriteStartElement(ArgumentValueName);
 				_serializer.WriteObject(_writer, value, _endPoint);
+				_writer.WriteEndElement();
 			}
 			_writer.WriteEndElement();
 		}
@@ -115,7 +117,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 			_writer.WriteStartElement(ArgumentElementName);
 			if (value != null)
-				_writer.WriteAttributeString(ArgumentValueAttributeName, value);
+				_writer.WriteAttributeString(ArgumentValueName, value);
 			_writer.WriteEndElement();
 		}
 

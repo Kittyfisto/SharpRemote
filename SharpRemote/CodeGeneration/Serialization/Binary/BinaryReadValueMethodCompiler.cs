@@ -2,10 +2,10 @@
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
-	internal sealed class BinaryReadValueNotNullMethodCompiler
-		: AbstractReadValueNotNullMethodCompiler
+	internal sealed class BinaryReadValueMethodCompiler
+		: AbstractReadValueMethodCompiler
 	{
-		public BinaryReadValueNotNullMethodCompiler(CompilationContext context) : base(context)
+		public BinaryReadValueMethodCompiler(CompilationContext context) : base(context)
 		{
 		}
 

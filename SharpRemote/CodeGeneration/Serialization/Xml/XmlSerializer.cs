@@ -23,28 +23,38 @@ namespace SharpRemote
 		private readonly XmlSerializationCompiler _methodCompiler;
 		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
 
-		private readonly XmlWriterSettings _settings;
+		private readonly XmlWriterSettings _writerSettings;
+		private readonly XmlReaderSettings _readerSettings;
 
 		/// <summary>
 		/// </summary>
-		/// <param name="settings">The settings used to create xml documents</param>
-		public XmlSerializer(XmlWriterSettings settings = null)
-			: this(CreateModule(), settings)
+		/// <param name="writerSettings">The settings used to create xml documents</param>
+		public XmlSerializer(XmlWriterSettings writerSettings = null)
+			: this(CreateModule(), writerSettings)
 		{
 		}
 
 		/// <summary>
 		/// </summary>
 		/// <param name="moduleBuilder"></param>
-		/// <param name="settings">The settings used to create xml documents</param>
-		public XmlSerializer(ModuleBuilder moduleBuilder, XmlWriterSettings settings = null)
+		/// <param name="writerSettings">The settings used to create xml documents</param>
+		public XmlSerializer(ModuleBuilder moduleBuilder, XmlWriterSettings writerSettings = null)
 		{
 			if (moduleBuilder == null)
 				throw new ArgumentNullException(nameof(moduleBuilder));
 
 			_methodCompiler = new XmlSerializationCompiler(moduleBuilder);
 			_methodStorage = new SerializationMethodStorage<XmlMethodsCompiler>("XmlSerializer", _methodCompiler);
-			_settings = settings ?? new XmlWriterSettings();
+			_writerSettings = writerSettings ?? new XmlWriterSettings
+			{
+				Indent = true,
+				NewLineHandling = NewLineHandling.Replace,
+				NewLineChars = "\n"
+			};
+			_readerSettings = new XmlReaderSettings
+			{
+				IgnoreWhitespace = true
+			};
 		}
 
 		/// <inheritdoc />
@@ -80,13 +90,13 @@ namespace SharpRemote
 		                                                string methodName,
 		                                                IRemotingEndPoint endPoint = null)
 		{
-			return new XmlMethodCallWriter(this, _settings, stream, grainId, methodName, rpcId);
+			return new XmlMethodCallWriter(this, _writerSettings, stream, grainId, methodName, rpcId);
 		}
 
 		/// <inheritdoc />
 		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
-			return new XmlMethodResultWriter(this, _settings, stream, rpcId, endPoint);
+			return new XmlMethodResultWriter(this, _writerSettings, stream, rpcId, endPoint);
 		}
 
 		/// <inheritdoc />
@@ -95,9 +105,9 @@ namespace SharpRemote
 		                               out IMethodResultReader resultReader,
 		                               IRemotingEndPoint endPoint = null)
 		{
-			var textReader = new StreamReader(stream, _settings.Encoding, detectEncodingFromByteOrderMarks: true,
+			var textReader = new StreamReader(stream, _writerSettings.Encoding, detectEncodingFromByteOrderMarks: true,
 			                                  bufferSize: 4096, leaveOpen: true);
-			var reader = XmlReader.Create(textReader);
+			var reader = XmlReader.Create(textReader, _readerSettings);
 			reader.MoveToContent();
 			switch (reader.Name)
 			{

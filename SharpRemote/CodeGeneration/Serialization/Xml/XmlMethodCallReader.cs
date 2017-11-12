@@ -15,7 +15,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public const string MethodAttributeName = XmlMethodCallWriter.MethodAttributeName;
 		public const string ArgumentElementName = XmlMethodCallWriter.ArgumentElementName;
 		public const string ArgumentNameAttributeName = XmlMethodCallWriter.ArgumentNameAttributeName;
-		public const string ArgumentValueAttributeName = XmlMethodCallWriter.ArgumentValueAttributeName;
+		public const string ArgumentValueAttributeName = XmlMethodCallWriter.ArgumentValueName;
 		public const string ArgumentTypeAttributeName = XmlMethodCallWriter.ArgumentTypeAttributeName;
 
 		private readonly IRemotingEndPoint _endPoint;
@@ -93,7 +93,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			if (_reader.Name != ArgumentElementName)
 				throw new NotImplementedException();
 
-			if (_reader.IsEmptyElement)
+			if (_reader.IsEmptyElement && !_reader.HasAttributes)
 			{
 				value = null;
 				return true;

@@ -22,6 +22,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		protected AbstractWriteValueMethodCompiler(CompilationContext context)
 		{
+			if (context == null)
+				throw new ArgumentNullException(nameof(context));
+			if (!typeof(ISerializer2).IsAssignableFrom(context.SerializerType))
+				throw new ArgumentException();
+
 			_context = context;
 			Method = context.TypeBuilder.DefineMethod("WriteValueNotNull",
 			                                          MethodAttributes.Public | MethodAttributes.Static,
@@ -29,7 +34,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			                                          {
 				                                          context.WriterType,
 				                                          context.Type,
-				                                          typeof(ISerializer2),
+				                                          context.SerializerType,
 				                                          typeof(IRemotingEndPoint)
 			                                          });
 		}

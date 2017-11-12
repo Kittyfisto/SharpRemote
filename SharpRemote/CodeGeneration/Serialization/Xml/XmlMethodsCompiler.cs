@@ -34,15 +34,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override Type ReaderType => typeof(XmlReader);
 
-		public Action<XmlWriter, object, ISerializer2, IRemotingEndPoint> WriteDelegate { get; private set; }
+		public Action<XmlWriter, object, XmlSerializer, IRemotingEndPoint> WriteDelegate { get; private set; }
 
-		public Func<XmlReader, ISerializer2, IRemotingEndPoint, object> ReadObjectDelegate { get; private set; }
+		public Func<XmlReader, XmlSerializer, IRemotingEndPoint, object> ReadObjectDelegate { get; private set; }
 
 		public static XmlMethodsCompiler Create(TypeBuilder typeBuilder, TypeDescription typeDescription)
 		{
 			var context = new CompilationContext
 			{
 				TypeDescription = typeDescription,
+				SerializerType = typeof(XmlSerializer),
 				ReaderType = typeof(XmlReader),
 				WriterType = typeof(XmlWriter),
 				TypeBuilder = typeBuilder
@@ -62,14 +63,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			base.Compile(storage);
 
 			WriteDelegate =
-				(Action<XmlWriter, object, ISerializer2, IRemotingEndPoint>)
+				(Action<XmlWriter, object, XmlSerializer, IRemotingEndPoint>)
 				_context.TypeBuilder.GetMethod("WriteObject")
-				        .CreateDelegate(typeof(Action<XmlWriter, object, ISerializer2, IRemotingEndPoint>));
+				        .CreateDelegate(typeof(Action<XmlWriter, object, XmlSerializer, IRemotingEndPoint>));
 
 			ReadObjectDelegate =
-				(Func<XmlReader, ISerializer2, IRemotingEndPoint, object>)
+				(Func<XmlReader, XmlSerializer, IRemotingEndPoint, object>)
 				_context.TypeBuilder.GetMethod("ReadObject")
-				        .CreateDelegate(typeof(Func<XmlReader, ISerializer2, IRemotingEndPoint, object>));
+				        .CreateDelegate(typeof(Func<XmlReader, XmlSerializer, IRemotingEndPoint, object>));
 		}
 	}
 }

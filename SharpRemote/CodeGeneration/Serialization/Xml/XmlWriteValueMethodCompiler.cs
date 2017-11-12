@@ -12,11 +12,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlWriterWriteEndElement;
 		private static readonly MethodInfo XmlWriterWriteStringValue;
 		private static readonly MethodInfo XmlWriterWriteAttributeString;
+		private static readonly MethodInfo XmlSerializerWriteDecimal;
 		private static readonly MethodInfo DecimalToString;
-
-		public const string FieldElementName = "Field";
-		public const string PropertyElementName = "Property";
-		public const string NameAttributeName = "Name";
 
 		static XmlWriteValueMethodCompiler()
 		{
@@ -24,6 +21,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlWriterWriteEndElement = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteEndElement));
 			XmlWriterWriteStringValue = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteValue), new[] {typeof(string)});
 			XmlWriterWriteAttributeString = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteAttributeString), new [] {typeof(string), typeof(string)});
+			XmlSerializerWriteDecimal = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new [] {typeof(XmlWriter), typeof(decimal)});
 			DecimalToString = typeof(decimal).GetMethod(nameof(decimal.ToString), new [] {typeof(IFormatProvider)});
 		}
 
@@ -38,10 +36,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 			// XmlWriter.WriteStartElement("Field")
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldstr, FieldElementName);
+			gen.Emit(OpCodes.Ldstr, XmlSerializer.FieldElementName);
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteStartElement);
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldstr, NameAttributeName);
+			gen.Emit(OpCodes.Ldstr, XmlSerializer.NameAttributeName);
 			gen.Emit(OpCodes.Ldstr, fieldName);
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteAttributeString);
 		}
@@ -57,10 +55,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 			// XmlWriter.WriteEndElement()
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldstr, PropertyElementName);
+			gen.Emit(OpCodes.Ldstr, XmlSerializer.PropertyElementName);
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteStartElement);
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldstr, NameAttributeName);
+			gen.Emit(OpCodes.Ldstr, XmlSerializer.NameAttributeName);
 			gen.Emit(OpCodes.Ldstr, propertyName);
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteAttributeString);
 		}
@@ -114,12 +112,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitWriteDecimal(ILGenerator gen, Action loadValue)
 		{
-			// XmlWriter.WriteValue(value.ToString(CultureInfo.InvariantCulture));
+			// XmlSerializer.WriteValue(decimal)
 			gen.Emit(OpCodes.Ldarg_0);
 			loadValue();
-			gen.Emit(OpCodes.Call, CultureInfoGetInvariantCulture);
-			gen.Emit(OpCodes.Call, DecimalToString);
-			gen.Emit(OpCodes.Call, XmlWriterWriteStringValue);
+			gen.Emit(OpCodes.Call, XmlSerializerWriteDecimal);
 		}
 
 		protected override void EmitWriteFloat(ILGenerator gen, Action loadValue)

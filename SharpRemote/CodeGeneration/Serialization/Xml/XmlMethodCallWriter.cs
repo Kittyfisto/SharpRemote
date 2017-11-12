@@ -60,71 +60,93 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public void WriteArgument(sbyte value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(byte value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(ushort value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(short value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(uint value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(int value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(ulong value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(long value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(float value)
 		{
-			WriteArgument(value.ToString("R", CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(double value)
 		{
-			WriteArgument(value.ToString("R", CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(decimal value)
 		{
-			WriteArgument(value.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(string value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
 			if (value != null)
-				_writer.WriteAttributeString(ArgumentValueName, value);
+				XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteArgument(byte[] value)
 		{
 			_writer.WriteStartElement(ArgumentElementName);
-			_serializer.WriteBytes(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 	}

@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization
@@ -16,12 +17,17 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="context"></param>
 		protected AbstractReadObjectMethodCompiler(CompilationContext context)
 		{
+			if (context == null)
+				throw new ArgumentNullException(nameof(context));
+			if (!typeof(ISerializer2).IsAssignableFrom(context.SerializerType))
+				throw new ArgumentException();
+			
 			_context = context;
 			_method = context.TypeBuilder.DefineMethod("ReadObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                           CallingConventions.Standard, typeof(object), new[]
 			                                           {
 				                                           context.ReaderType,
-				                                           typeof(ISerializer2),
+				                                           context.SerializerType,
 				                                           typeof(IRemotingEndPoint)
 			                                           });
 		}
@@ -62,12 +68,5 @@ namespace SharpRemote.CodeGeneration.Serialization
 			//gen.MarkLabel(end);
 			gen.Emit(OpCodes.Ret);
 		}
-
-		/// <summary>
-		///     Shall emit code which pushes an int32 onto the evaluation stack where
-		///     0 means the value is null and anything else means a value is present.
-		/// </summary>
-		/// <param name="gen"></param>
-		protected abstract void EmitReadIsNull(ILGenerator gen);
 	}
 }

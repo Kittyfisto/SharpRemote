@@ -82,10 +82,12 @@
     <Compile Include="CodeGeneration\Serialization\ISerializationMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractWriteObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractWriteValueMethodCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\ParseException.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodCallReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodCallWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlParseException.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlReadObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlReadValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializationCompiler.cs" />

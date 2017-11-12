@@ -19,6 +19,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		protected AbstractReadValueMethodCompiler(CompilationContext context)
 		{
+			if (context == null)
+				throw new ArgumentNullException(nameof(context));
+			if (!typeof(ISerializer2).IsAssignableFrom(context.SerializerType))
+				throw new ArgumentException();
+
 			_context = context;
 			Method = context.TypeBuilder.DefineMethod("ReadValueNotNull",
 			                                          MethodAttributes.Public | MethodAttributes.Static,
@@ -27,7 +32,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			                                          new[]
 			                                          {
 				                                          context.ReaderType,
-				                                          typeof(ISerializer2),
+				                                          context.SerializerType,
 				                                          typeof(IRemotingEndPoint)
 			                                          });
 		}

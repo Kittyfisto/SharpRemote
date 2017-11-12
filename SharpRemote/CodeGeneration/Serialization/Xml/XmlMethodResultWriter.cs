@@ -54,84 +54,84 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public void WriteResult(sbyte value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteSByte(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(byte value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteByte(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(ushort value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteUInt16(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(short value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteInt16(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(uint value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteUInt32(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(int value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteInt32(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(ulong value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteUInt64(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(long value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteInt64(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(float value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteFloat(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(double value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteDouble(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(string value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteString(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(byte[] value)
 		{
 			_writer.WriteStartElement(ResultElementName);
-			_serializer.WriteBytes(_writer, value);
+			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 

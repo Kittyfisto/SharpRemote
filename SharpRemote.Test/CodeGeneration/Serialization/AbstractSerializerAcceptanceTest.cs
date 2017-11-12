@@ -582,7 +582,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Ignore("Broken again")]
+		[Ignore("")]
 		public void TestMethodCallFieldDecimal([ValueSource(nameof(DecimalValues))] decimal value)
 		{
 			MethodCallRoundtripDataContract(new FieldDecimal { Value = value });
@@ -971,7 +971,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			using (var stream = new MemoryStream())
 			{
 				serializer.RegisterType<T>();
-				//Save();
+				Save();
 
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
 				{

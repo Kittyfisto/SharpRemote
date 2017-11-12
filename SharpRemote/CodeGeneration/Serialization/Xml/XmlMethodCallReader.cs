@@ -129,151 +129,146 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadNextArgumentAsSByte(out sbyte value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = sbyte.MinValue;
 				return false;
 			}
-			value = sbyte.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsSByte(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsByte(out byte value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = byte.MinValue;
 				return false;
 			}
-			value = byte.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsByte(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsUInt16(out ushort value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = ushort.MinValue;
 				return false;
 			}
-			value = ushort.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsUInt16(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsInt16(out short value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = short.MinValue;
 				return false;
 			}
-			value = short.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsInt16(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsUInt32(out uint value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = uint.MinValue;
 				return false;
 			}
-			value = uint.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsUInt32(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsInt32(out int value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = int.MinValue;
 				return false;
 			}
-			value = int.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsInt32(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsUInt64(out ulong value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = ulong.MinValue;
 				return false;
 			}
-			value = ulong.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsUInt64(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsInt64(out long value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = long.MinValue;
 				return false;
 			}
-			value = long.Parse(tmp, NumberStyles.Integer, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsInt64(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsFloat(out float value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = float.MinValue;
 				return false;
 			}
-			value = float.Parse(tmp, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsFloat(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsDouble(out double value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = double.MinValue;
 				return false;
 			}
-			value = double.Parse(tmp, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsDouble(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsDecimal(out decimal value)
 		{
-			string tmp;
-			if (!ReadNextArgument(out tmp))
+			if (!ReadNextArgument())
 			{
 				value = decimal.MinValue;
 				return false;
 			}
-			value = decimal.Parse(tmp, CultureInfo.InvariantCulture);
+			value = XmlSerializer.ReadValueAsDecimal(_reader);
 			return true;
 		}
 
 		public bool ReadNextArgumentAsString(out string value)
 		{
-			return ReadNextArgument(out value);
-		}
-
-		public bool ReadNextArgumentAsBytes(out byte[] value)
-		{
-			string hexString;
-			if (!ReadNextArgument(out hexString))
+			if (!ReadNextArgument())
 			{
 				value = null;
 				return false;
 			}
 
-			value = XmlSerializer.BytesFromHex(hexString);
+			value = XmlSerializer.ReadValueAsString(_reader);
+			return true;
+		}
+
+		public bool ReadNextArgumentAsBytes(out byte[] value)
+		{
+			if (!ReadNextArgument())
+			{
+				value = null;
+				return false;
+			}
+
+			value = XmlSerializer.ReadValueAsBytes(_reader);
 			return true;
 		}
 
@@ -284,31 +279,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 			if (_reader.NodeType == XmlNodeType.EndElement && _reader.Name == RpcElementName)
 				return false;
-
-			return true;
-		}
-
-		private bool ReadNextArgument(out string value)
-		{
-			if (!ReadNextArgument())
-			{
-				value = null;
-				return false;
-			}
-
-			value = null;
-			var attributeCount = _reader.AttributeCount;
-			for (var i = 0; i < attributeCount; ++i)
-			{
-				_reader.MoveToNextAttribute();
-
-				switch (_reader.Name)
-				{
-					case ArgumentValueAttributeName:
-						value = _reader.Value;
-						break;
-				}
-			}
 
 			return true;
 		}

@@ -27,6 +27,26 @@ namespace SharpRemote
 		private readonly XmlReaderSettings _readerSettings;
 
 		/// <summary>
+		/// 
+		/// </summary>
+		internal const string FieldElementName = "Field";
+
+		/// <summary>
+		/// 
+		/// </summary>
+		internal const string PropertyElementName = "Property";
+
+		/// <summary>
+		/// 
+		/// </summary>
+		internal const string NameAttributeName = "Name";
+
+		/// <summary>
+		/// 
+		/// </summary>
+		internal const string ValueAttributeName = "Value";
+
+		/// <summary>
 		/// </summary>
 		/// <param name="writerSettings">The settings used to create xml documents</param>
 		public XmlSerializer(XmlWriterSettings writerSettings = null)
@@ -126,6 +146,8 @@ namespace SharpRemote
 			}
 		}
 
+		#region Writing
+
 		/// <summary>
 		/// </summary>
 		/// <param name="writer"></param>
@@ -142,11 +164,110 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
-		public void WriteBytes(XmlWriter writer, byte[] value)
+		public static void WriteValue(XmlWriter writer, sbyte value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, byte value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, ushort value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, short value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, uint value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, int value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, ulong value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, long value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, float value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString("R", CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, double value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString("R", CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, decimal value)
+		{
+			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, string value)
 		{
 			if (value != null)
 			{
-				writer.WriteAttributeString("Value", HexFromBytes(value));
+				writer.WriteAttributeString(ValueAttributeName, value);
 			}
 		}
 
@@ -154,100 +275,192 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
-		public void WriteSByte(XmlWriter writer, sbyte value)
+		public static void WriteValue(XmlWriter writer, byte[] value)
 		{
-			writer.WriteValue(value);
+			if (value != null)
+			{
+				writer.WriteAttributeString("Value", HexFromBytes(value));
+			}
+		}
+
+		#endregion
+
+		#region Reading
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static sbyte ReadValueAsSByte(XmlReader reader)
+		{
+			var value = ReadValue(reader);
+			return sbyte.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteByte(XmlWriter writer, byte value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static byte ReadValueAsByte(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return byte.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteUInt16(XmlWriter writer, ushort value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static ushort ReadValueAsUInt16(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return ushort.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteInt16(XmlWriter writer, short value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static short ReadValueAsInt16(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return short.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteUInt32(XmlWriter writer, uint value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static uint ReadValueAsUInt32(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return uint.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteInt32(XmlWriter writer, int value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static int ReadValueAsInt32(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return int.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteUInt64(XmlWriter writer, ulong value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static long ReadValueAsInt64(XmlReader reader)
 		{
-			writer.WriteValue(value.ToString(CultureInfo.InvariantCulture));
+			var value = ReadValue(reader);
+			return long.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteInt64(XmlWriter writer, long value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static ulong ReadValueAsUInt64(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return ulong.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteFloat(XmlWriter writer, float value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static float ReadValueAsFloat(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return float.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteDouble(XmlWriter writer, double value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static double ReadValueAsDouble(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return double.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		/// <summary>
+		/// 
 		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="value"></param>
-		public void WriteString(XmlWriter writer, string value)
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static decimal ReadValueAsDecimal(XmlReader reader)
 		{
-			writer.WriteValue(value);
+			var value = ReadValue(reader);
+			return decimal.Parse(value, CultureInfo.InvariantCulture);
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static string ReadValueAsString(XmlReader reader)
+		{
+			var value = ReadValue(reader, allowNull: true);
+			return value;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <param name="allowNull"></param>
+		/// <returns></returns>
+		private static string ReadValue(XmlReader reader, bool allowNull = false)
+		{
+			var attributeCount = reader.AttributeCount;
+			for (var i = 0; i < attributeCount; ++i)
+			{
+				reader.MoveToNextAttribute();
+
+				switch (reader.Name)
+				{
+					case ValueAttributeName:
+						return reader.Value;
+				}
+			}
+
+			if (!allowNull)
+			{
+				var info = (IXmlLineInfo) reader;
+				throw new XmlParseException(string.Format("Expected to find attribute '{0}'",  ValueAttributeName),
+				                            info.LineNumber, info.LinePosition);
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
+		public static byte[] ReadValueAsBytes(XmlReader reader)
+		{
+			var value = ReadValue(reader, allowNull: true);
+			return BytesFromHex(value);
+		}
+
+		#endregion
 
 		private static ModuleBuilder CreateModule()
 		{

@@ -7,8 +7,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 	/// <summary>
 	///     Responsible for emitting a method with the following signature:
 	///     static void (WriterType, <see cref="object" />, <see cref="ISerializer2" />, <see cref="IRemotingEndPoint" />);
-	///     The method writes full type information about the passed object to the writer and then calls
-	///     the method compiled by a <see cref="AbstractWriteValueMethodCompiler" />.
+	///     The method casts/unboxes the given value and forwards it to the method compiled by
+	///     <see cref="AbstractWriteValueMethodCompiler" />.
 	/// </summary>
 	public abstract class AbstractWriteObjectMethodCompiler
 		: AbstractMethodCompiler
@@ -17,13 +17,18 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		protected AbstractWriteObjectMethodCompiler(CompilationContext context)
 		{
+			if (context == null)
+				throw new ArgumentNullException(nameof(context));
+			if (!typeof(ISerializer2).IsAssignableFrom(context.SerializerType))
+				throw new ArgumentException();
+
 			Type = context.Type;
 			Method = context.TypeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
 			                                          CallingConventions.Standard, typeof(void), new[]
 			                                          {
 				                                          context.WriterType,
 				                                          typeof(object),
-				                                          typeof(ISerializer2),
+				                                          context.SerializerType,
 				                                          typeof(IRemotingEndPoint)
 			                                          });
 		}
@@ -37,7 +42,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 		public override MethodBuilder Method { get; }
 
 		/// <inheritdoc />
-		public override void Compile(AbstractMethodsCompiler methods1, ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
+		public override void Compile(AbstractMethodsCompiler methods1,
+		                             ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var methods = methodStorage.GetOrAdd(Type);
 			var writeValueNotNull = methods.WriteValueMethod;

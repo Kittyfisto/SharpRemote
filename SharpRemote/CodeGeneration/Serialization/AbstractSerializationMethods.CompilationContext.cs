@@ -26,6 +26,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <summary>
 		/// 
 		/// </summary>
+		public Type SerializerType { get; set; }
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public Type WriterType { get; set; }
 
 		/// <summary>

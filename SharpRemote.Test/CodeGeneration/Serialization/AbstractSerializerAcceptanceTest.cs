@@ -39,6 +39,10 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			"昨夜のコンサートは最高でした。"
 		};
 
+		public static IEnumerable<string> StringValues => new[] {"3.14159", "", null};
+		public static IEnumerable<int> Int32Values => new[] {int.MinValue, -1, 0, 1, int.MaxValue };
+		public static IEnumerable<uint> UInt32Values => new uint[] { uint.MinValue, 1, uint.MaxValue };
+
 		[Test]
 		[Description("Verifies that a method call which gets passed a singleton roundtrips")]
 		public void TestMethodCallSingleton()
@@ -324,14 +328,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestMethodCallInt32()
+		public void TestMethodCallInt32([ValueSource(nameof(Int32Values))] int value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteArgument(int.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -342,25 +346,25 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					int value;
-					reader.ReadNextArgumentAsInt32(out value).Should().BeTrue();
-					value.Should().Be(int.MaxValue);
+					int actualValue;
+					reader.ReadNextArgumentAsInt32(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsInt32(out value).Should().BeFalse();
-					value.Should().Be(int.MinValue);
+					reader.ReadNextArgumentAsInt32(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(int.MinValue);
 				}
 			}
 		}
 
 		[Test]
-		public void TestMethodCallUInt32()
+		public void TestMethodCallUInt32([ValueSource(nameof(UInt32Values))] uint value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteArgument(uint.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -371,12 +375,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					uint value;
-					reader.ReadNextArgumentAsUInt32(out value).Should().BeTrue();
-					value.Should().Be(uint.MaxValue);
+					uint actualValue;
+					reader.ReadNextArgumentAsUInt32(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsUInt32(out value).Should().BeFalse();
-					value.Should().Be(uint.MinValue);
+					reader.ReadNextArgumentAsUInt32(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(uint.MinValue);
 				}
 			}
 		}
@@ -588,6 +592,24 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestMethodCallFieldString([ValueSource(nameof(StringValues))] string value)
+		{
+			MethodCallRoundtripDataContract(new FieldString { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldInt32([ValueSource(nameof(Int32Values))] int value)
+		{
+			MethodCallRoundtripDataContract(new FieldInt32 { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldUInt32([ValueSource(nameof(UInt32Values))] uint value)
+		{
+			MethodCallRoundtripDataContract(new FieldUInt32 { Value = value });
+		}
+
+		[Test]
 		public void TestEmptyMethodResult([ValueSource(nameof(RpcIds))] ulong rpcId)
 		{
 			var serializer = Create();
@@ -604,6 +626,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				}
 			}
 		}
+
+		#region Constraint violations
 
 		[Test]
 		[Description("Verifies that registering a type without a [DataContract] attribute is not allowed")]
@@ -961,6 +985,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			TestFailRegister<SingletonByReference>(
 				"The type 'SharpRemote.Test.Types.Classes.SingletonByReference' both has a method marked with the SingletonFactoryMethod attribute and also implements an interface 'SharpRemote.Test.Types.Interfaces.IByReferenceType' which has the ByReference attribute: This is not allowed; they are mutually exclusive");
 		}
+
+		#endregion
 
 		#endregion
 

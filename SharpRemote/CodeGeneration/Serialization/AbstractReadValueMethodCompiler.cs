@@ -187,17 +187,17 @@ namespace SharpRemote.CodeGeneration.Serialization
 			else if (type == typeof(sbyte))
 				EmitReadSByte(gen);
 			else if (type == typeof(ushort))
-				EmitReadUShort(gen);
+				EmitReadUInt16(gen);
 			else if (type == typeof(short))
-				EmitReadShort(gen);
+				EmitReadInt16(gen);
 			else if (type == typeof(uint))
-				EmitReadUInt(gen);
+				EmitReadUInt32(gen);
 			else if (type == typeof(int))
-				EmitReadInt(gen);
+				EmitReadInt32(gen);
 			else if (type == typeof(ulong))
-				EmitReadULong(gen);
+				EmitReadUInt64(gen);
 			else if (type == typeof(long))
-				EmitReadLong(gen);
+				EmitReadInt64(gen);
 			else if (type == typeof(decimal))
 				EmitReadDecimal(gen);
 			else if (type == typeof(float))
@@ -266,37 +266,37 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitReadUShort(ILGenerator gen);
+		protected abstract void EmitReadUInt16(ILGenerator gen);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitReadShort(ILGenerator gen);
+		protected abstract void EmitReadInt16(ILGenerator gen);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitReadUInt(ILGenerator gen);
+		protected abstract void EmitReadUInt32(ILGenerator gen);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitReadInt(ILGenerator gen);
+		protected abstract void EmitReadInt32(ILGenerator gen);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitReadULong(ILGenerator gen);
+		protected abstract void EmitReadUInt64(ILGenerator gen);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitReadLong(ILGenerator gen);
+		protected abstract void EmitReadInt64(ILGenerator gen);
 
 		/// <summary>
 		/// 

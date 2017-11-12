@@ -51,32 +51,32 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteUShort(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteUInt16(ILGenerator gen, Action loadValue)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteShort(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteInt16(ILGenerator gen, Action loadValue)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteUInt(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteUInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteInt(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteULong(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteUInt64(ILGenerator gen, Action loadValue)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteLong(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteInt64(ILGenerator gen, Action loadValue)
 		{
 			throw new NotImplementedException();
 		}
@@ -96,7 +96,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteString(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteString(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}

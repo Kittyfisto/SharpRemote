@@ -32,32 +32,32 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitReadUShort(ILGenerator gen)
+		protected override void EmitReadUInt16(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitReadShort(ILGenerator gen)
+		protected override void EmitReadInt16(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitReadUInt(ILGenerator gen)
+		protected override void EmitReadUInt32(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitReadInt(ILGenerator gen)
+		protected override void EmitReadInt32(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitReadULong(ILGenerator gen)
+		protected override void EmitReadUInt64(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();
 		}
 
-		protected override void EmitReadLong(ILGenerator gen)
+		protected override void EmitReadInt64(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();
 		}

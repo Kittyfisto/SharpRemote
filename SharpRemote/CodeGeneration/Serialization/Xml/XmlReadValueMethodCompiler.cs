@@ -8,13 +8,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlReadValueMethodCompiler
 		: AbstractReadValueMethodCompiler
 	{
-		private static readonly MethodInfo XmlReaderMoveToContent;
 		private static readonly MethodInfo XmlReaderRead;
 		private static readonly MethodInfo XmlReaderGetName;
 		private static readonly MethodInfo XmlReaderReadElementContentAsString;
 		private static readonly MethodInfo XmlReaderMoveToAttributeByName;
 		private static readonly MethodInfo XmlSerializerReadDecimal;
-		private static readonly MethodInfo DecimalParse;
+		private static readonly MethodInfo XmlSerializerReadString;
+		private static readonly MethodInfo XmlSerializerReadInt32;
+		private static readonly MethodInfo XmlSerializerReadUInt32;
 		private static readonly ConstructorInfo XmlParseExceptionCtor;
 		private static readonly MethodInfo XmlLineInfoGetLineNumber;
 		private static readonly MethodInfo XmlLineInfoGetLinePosition;
@@ -23,13 +24,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 			XmlReaderRead = typeof(XmlReader).GetMethod(nameof(XmlReader.Read));
 			XmlReaderGetName = typeof(XmlReader).GetProperty(nameof(XmlReader.Name)).GetMethod;
-			XmlReaderMoveToContent = typeof(XmlReader).GetMethod(nameof(XmlReader.MoveToContent));
 			XmlReaderReadElementContentAsString = typeof(XmlReader).GetMethod(nameof(XmlReader.ReadElementContentAsString), new Type[0]);
 			XmlReaderMoveToAttributeByName = typeof(XmlReader).GetMethod(nameof(XmlReader.MoveToAttribute), new [] {typeof(string)});
 			XmlSerializerReadDecimal = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsDecimal));
+			XmlSerializerReadString = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsString));
+			XmlSerializerReadInt32 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsInt32));
+			XmlSerializerReadUInt32 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsUInt32));
 			XmlLineInfoGetLineNumber = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LineNumber)).GetMethod;
 			XmlLineInfoGetLinePosition = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LinePosition)).GetMethod;
-			DecimalParse = typeof(decimal).GetMethod(nameof(decimal.Parse), new [] {typeof(string), typeof(IFormatProvider)});
 			XmlParseExceptionCtor = typeof(XmlParseException).GetConstructor(new [] {typeof(string), typeof(int), typeof(int), typeof(Exception)});
 		}
 
@@ -63,27 +65,31 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 		}
 
-		protected override void EmitReadUShort(ILGenerator gen)
+		protected override void EmitReadUInt16(ILGenerator gen)
 		{
 		}
 
-		protected override void EmitReadShort(ILGenerator gen)
+		protected override void EmitReadInt16(ILGenerator gen)
 		{
 		}
 
-		protected override void EmitReadUInt(ILGenerator gen)
+		protected override void EmitReadUInt32(ILGenerator gen)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadUInt32);
+		}
+
+		protected override void EmitReadInt32(ILGenerator gen)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadInt32);
+		}
+
+		protected override void EmitReadUInt64(ILGenerator gen)
 		{
 		}
 
-		protected override void EmitReadInt(ILGenerator gen)
-		{
-		}
-
-		protected override void EmitReadULong(ILGenerator gen)
-		{
-		}
-
-		protected override void EmitReadLong(ILGenerator gen)
+		protected override void EmitReadInt64(ILGenerator gen)
 		{
 		}
 
@@ -103,6 +109,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitReadString(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadString);
 		}
 
 		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)

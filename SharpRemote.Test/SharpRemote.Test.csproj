@@ -257,12 +257,15 @@
     <Compile Include="Types\Interfaces\Web\IGetStringList.cs" />
     <Compile Include="Types\Interfaces\Web\ITwoIdenticalRoutes.cs" />
     <Compile Include="Types\Structs\FieldDecimal.cs" />
+    <Compile Include="Types\Structs\FieldInt32.cs" />
     <Compile Include="Types\Structs\FieldObjectStruct.cs" />
     <Compile Include="Types\Structs\FieldOptionalDecimal.cs" />
+    <Compile Include="Types\Structs\FieldString.cs" />
     <Compile Include="Types\Structs\FieldStruct.cs" />
     <Compile Include="CodeGeneration\Remoting\ProxyCreatorTest.cs" />
     <Compile Include="Types\Classes\FieldSealedClass.cs" />
     <Compile Include="Types\Classes\Tree.cs" />
+    <Compile Include="Types\Structs\FieldUInt32.cs" />
     <Compile Include="Types\Structs\MissingDataContractStruct.cs" />
     <Compile Include="Types\Structs\MissingPropertyGetterStruct.cs" />
     <Compile Include="Types\Structs\MissingPropertySetterStruct.cs" />

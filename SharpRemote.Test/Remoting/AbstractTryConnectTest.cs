@@ -120,7 +120,7 @@ namespace SharpRemote.Test.Remoting
 				bool success = true;
 				new Action(
 					() => success = TryConnect(rep, EndPoint2, timeout))
-					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
+					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(2));
 
 				success.Should().BeFalse();
 				const string reason = "because no successfull connection could be established";

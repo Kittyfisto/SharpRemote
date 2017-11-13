@@ -40,8 +40,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		};
 
 		public static IEnumerable<string> StringValues => new[] {"3.14159", "", null};
-		public static IEnumerable<int> Int32Values => new[] {int.MinValue, -1, 0, 1, int.MaxValue };
-		public static IEnumerable<uint> UInt32Values => new uint[] { uint.MinValue, 1, uint.MaxValue };
+		public static IEnumerable<sbyte> SByteValues => new sbyte[] {sbyte.MinValue, -1, 0, 1, sbyte.MaxValue};
+		public static IEnumerable<byte> ByteValues => new byte[] {byte.MinValue, 1, byte.MaxValue};
+		public static IEnumerable<short> Int16Values => new short[] {short.MinValue, -1, 0, 1, short.MaxValue};
+		public static IEnumerable<ushort> UInt16Values => new ushort[] {ushort.MinValue, 1, ushort.MaxValue};
+		public static IEnumerable<int> Int32Values => new[] {int.MinValue, -1, 0, 1, int.MaxValue};
+		public static IEnumerable<uint> UInt32Values => new uint[] {uint.MinValue, 1, uint.MaxValue};
+		public static IEnumerable<long> Int64Values => new[] {long.MinValue, -1, 0, 1, long.MaxValue};
+		public static IEnumerable<ulong> UInt64Values => new ulong[] {ulong.MinValue, 1, ulong.MaxValue};
+		public static IEnumerable<float> FloatValues => new[] { float.MinValue, 0, (float) Math.PI, float.MaxValue };
+		public static IEnumerable<double> DoubleValues => new[] { double.MinValue, 0, Math.PI, double.MaxValue };
 
 		[Test]
 		[Description("Verifies that a method call which gets passed a singleton roundtrips")]
@@ -210,14 +218,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestMethodCallSByte()
+		public void TestMethodCallSByte([ValueSource(nameof(SByteValues))] sbyte value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 1, 2, "Foo"))
 				{
-					writer.WriteArgument(sbyte.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -228,27 +236,27 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(2);
 					reader.MethodName.Should().Be("Foo");
 
-					sbyte value;
-					reader.ReadNextArgumentAsSByte(out value).Should()
+					sbyte actualValue;
+					reader.ReadNextArgumentAsSByte(out actualValue).Should()
 					      .BeTrue("because we've written one argument to the message and should be able to read it back");
-					value.Should().Be(sbyte.MaxValue);
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsSByte(out value).Should()
+					reader.ReadNextArgumentAsSByte(out actualValue).Should()
 					      .BeFalse("because we've written only one argument and thus shouldn't be able to read back a 2nd one");
-					value.Should().Be(sbyte.MinValue);
+					actualValue.Should().Be(sbyte.MinValue);
 				}
 			}
 		}
 
 		[Test]
-		public void TestMethodCallByte()
+		public void TestMethodCallByte([ValueSource(nameof(ByteValues))] byte value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 3, 4, "Bar"))
 				{
-					writer.WriteArgument(byte.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -259,25 +267,25 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(4);
 					reader.MethodName.Should().Be("Bar");
 
-					byte value;
-					reader.ReadNextArgumentAsByte(out value).Should().BeTrue();
-					value.Should().Be(byte.MaxValue);
+					byte actualValue;
+					reader.ReadNextArgumentAsByte(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsByte(out value).Should().BeFalse();
-					value.Should().Be(byte.MinValue);
+					reader.ReadNextArgumentAsByte(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(byte.MinValue);
 				}
 			}
 		}
 
 		[Test]
-		public void TestMethodCallInt16()
+		public void TestMethodCallInt16([ValueSource(nameof(Int16Values))] short value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteArgument(short.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -288,25 +296,25 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					short value;
-					reader.ReadNextArgumentAsInt16(out value).Should().BeTrue();
-					value.Should().Be(short.MaxValue);
+					short actualValue;
+					reader.ReadNextArgumentAsInt16(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsInt16(out value).Should().BeFalse();
-					value.Should().Be(short.MinValue);
+					reader.ReadNextArgumentAsInt16(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(short.MinValue);
 				}
 			}
 		}
 
 		[Test]
-		public void TestMethodCallUInt16()
+		public void TestMethodCallUInt16([ValueSource(nameof(UInt16Values))] ushort value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteArgument(ushort.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -317,12 +325,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					ushort value;
-					reader.ReadNextArgumentAsUInt16(out value).Should().BeTrue();
-					value.Should().Be(ushort.MaxValue);
+					ushort actualValue;
+					reader.ReadNextArgumentAsUInt16(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsUInt16(out value).Should().BeFalse();
-					value.Should().Be(ushort.MinValue);
+					reader.ReadNextArgumentAsUInt16(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(ushort.MinValue);
 				}
 			}
 		}
@@ -386,14 +394,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestMethodCallInt64()
+		public void TestMethodCallInt64([ValueSource(nameof(Int64Values))] long value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteArgument(long.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -404,25 +412,25 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					long value;
-					reader.ReadNextArgumentAsInt64(out value).Should().BeTrue();
-					value.Should().Be(long.MaxValue);
+					long actualValue;
+					reader.ReadNextArgumentAsInt64(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsInt64(out value).Should().BeFalse();
-					value.Should().Be(long.MinValue);
+					reader.ReadNextArgumentAsInt64(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(long.MinValue);
 				}
 			}
 		}
 
 		[Test]
-		public void TestMethodCallUInt64()
+		public void TestMethodCallUInt64([ValueSource(nameof(UInt64Values))] ulong value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "Bar"))
 				{
-					writer.WriteArgument(ulong.MaxValue);
+					writer.WriteArgument(value);
 				}
 
 				PrintAndRewind(stream);
@@ -433,23 +441,15 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.GrainId.Should().Be(6);
 					reader.MethodName.Should().Be("Bar");
 
-					ulong value;
-					reader.ReadNextArgumentAsUInt64(out value).Should().BeTrue();
-					value.Should().Be(ulong.MaxValue);
+					ulong actualValue;
+					reader.ReadNextArgumentAsUInt64(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsUInt64(out value).Should().BeFalse();
-					value.Should().Be(ulong.MinValue);
+					reader.ReadNextArgumentAsUInt64(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(ulong.MinValue);
 				}
 			}
 		}
-
-		public static IEnumerable<float> FloatValues => new[]
-		{
-			float.MinValue,
-			0,
-			(float)Math.PI,
-			float.MaxValue
-		};
 
 		[Test]
 		public void TestMethodCallFloat([ValueSource(nameof(FloatValues))] float value)
@@ -479,14 +479,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				}
 			}
 		}
-
-		public static IEnumerable<double> DoubleValues => new[]
-		{
-			double.MinValue,
-			0,
-			Math.PI,
-			double.MaxValue
-		};
 
 		[Test]
 		public void TestMethodCallDouble([ValueSource(nameof(DoubleValues))] double value)

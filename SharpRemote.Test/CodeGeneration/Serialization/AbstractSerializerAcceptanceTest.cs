@@ -51,6 +51,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public static IEnumerable<float> FloatValues => new[] { float.MinValue, 0, (float) Math.PI, float.MaxValue };
 		public static IEnumerable<double> DoubleValues => new[] { double.MinValue, 0, Math.PI, double.MaxValue };
 
+		#region Method Call Roundtrips
+
 		[Test]
 		[Description("Verifies that a method call which gets passed a singleton roundtrips")]
 		public void TestMethodCallSingleton()
@@ -549,7 +551,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestMethodCallString([Values("3.14159", "", null)] string value)
+		public void TestMethodCallString([ValueSource(nameof(StringValues))] string value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
@@ -601,6 +603,10 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			MethodCallRoundtripDataContract(new FieldUInt32 { Value = value });
 		}
 
+		#endregion
+
+		#region Method Result callback
+
 		[Test]
 		public void TestEmptyMethodResult([ValueSource(nameof(RpcIds))] ulong rpcId)
 		{
@@ -618,6 +624,310 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				}
 			}
 		}
+
+		[Test]
+		[Ignore("not yet implemented")]
+		public void TestMethodResultException()
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteException(new ArgumentException("Foo"));
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					Exception exception;
+					reader.ReadException(out exception).Should().BeTrue();
+					exception.Should().BeOfType<ArgumentException>();
+					exception.Message.Should().Be("Foo");
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultByte([ValueSource(nameof(ByteValues))] byte value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					byte actualValue;
+					reader.ReadResultByte(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultSByte([ValueSource(nameof(SByteValues))] sbyte value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					sbyte actualValue;
+					reader.ReadResultSByte(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultUInt16([ValueSource(nameof(UInt16Values))] ushort value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					ushort actualValue;
+					reader.ReadResultUInt16(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultInt16([ValueSource(nameof(Int16Values))] short value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					short actualValue;
+					reader.ReadResultInt16(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultUInt32([ValueSource(nameof(UInt32Values))] uint value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					uint actualValue;
+					reader.ReadResultUInt32(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultInt32([ValueSource(nameof(Int32Values))] int value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					int actualValue;
+					reader.ReadResultInt32(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultUInt64([ValueSource(nameof(UInt64Values))] ulong value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					ulong actualValue;
+					reader.ReadResultUInt64(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultInt64([ValueSource(nameof(Int64Values))] long value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					long actualValue;
+					reader.ReadResultInt64(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultFloat([ValueSource(nameof(FloatValues))] float value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					float actualValue;
+					reader.ReadResultFloat(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultDouble([ValueSource(nameof(DoubleValues))] double value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					double actualValue;
+					reader.ReadResultDouble(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		[Test]
+		public void TestMethodResultString([ValueSource(nameof(StringValues))] string value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				const int rpcId = 10;
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					string actualValue;
+					reader.ReadResultString(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+				}
+			}
+		}
+
+		#endregion
 
 		#region Constraint violations
 
@@ -982,6 +1292,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		#endregion
 
+		#region Helper methods
+
 		private void MethodCallRoundtripDataContract<T>(T value)
 		{
 			var serializer = Create();
@@ -1085,5 +1397,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			serializer.CreateMethodReader(stream, out unused, out resultReader);
 			return resultReader;
 		}
+
+		#endregion
 	}
 }

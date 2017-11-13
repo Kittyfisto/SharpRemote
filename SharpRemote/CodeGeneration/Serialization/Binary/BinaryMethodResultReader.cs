@@ -25,67 +25,72 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public ulong RpcId => _rpcId;
 
-		public object ReadResult(out Exception exception)
+		public bool ReadException(out Exception exception)
 		{
 			throw new NotImplementedException();
 		}
 
-		public sbyte ReadResultAsSByte(out Exception exception)
+		public bool ReadResult(out object value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public byte ReadResultAsByte(out Exception exception)
+		public bool ReadResultSByte(out sbyte value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ushort ReadResultAsUInt16(out Exception exception)
+		public bool ReadResultByte(out byte value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public short ReadResultAsInt16(out Exception exception)
+		public bool ReadResultUInt16(out ushort value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public uint ReadResultUInt32(out Exception exception)
+		public bool ReadResultInt16(out short value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public int ReadResultAsInt32(out Exception exception)
+		public bool ReadResultUInt32(out uint value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public ulong ReadResultAsUInt64(out Exception exception)
+		public bool ReadResultInt32(out int value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public long ReadResultAsInt64(out Exception exception)
+		public bool ReadResultUInt64(out ulong value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public float ReadResultAsFloat(out Exception exception)
+		public bool ReadResultInt64(out long value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public double ReadResultAsDouble(out Exception exception)
+		public bool ReadResultFloat(out float value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public string ReadResultAsString(out Exception exception)
+		public bool ReadResultDouble(out double value)
 		{
 			throw new NotImplementedException();
 		}
 
-		public byte[] ReadResultAsBytes(out Exception exception)
+		public bool ReadResultString(out string value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool ReadResultBytes(out byte[] value)
 		{
 			throw new NotImplementedException();
 		}

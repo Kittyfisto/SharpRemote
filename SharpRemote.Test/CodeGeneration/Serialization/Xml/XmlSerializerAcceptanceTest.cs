@@ -23,7 +23,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 			string moduleName = assemblyName.Name + ".dll";
 			_module = _assembly.DefineDynamicModule(moduleName);
 		}
-		
+
 		protected override ISerializer2 Create()
 		{
 			return new XmlSerializer(_module);

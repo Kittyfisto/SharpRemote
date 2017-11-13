@@ -18,17 +18,20 @@ namespace SharpRemote
 		ulong RpcId { get; }
 
 		/// <summary>
+		///     Reads an exception, if an exception was written using a <see cref="ISerializer2.CreateMethodCallWriter" />.
+		/// </summary>
+		/// <param name="exception"></param>
+		/// <returns>True if an exception was written to- and thus read from, false if no exception is present</returns>
+		bool ReadException(out Exception exception);
+
+		/// <summary>
 		///     Returns the result of the method call as an <see cref="Object" />.
 		///     Returns null if the method doesn't return any value (because it's return type is <see cref="Void" />)
 		///     or if it actually returned null.
 		/// </summary>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		object ReadResult(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResult(out object value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="sbyte" />.
@@ -38,13 +41,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		sbyte ReadResultAsSByte(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultSByte(out sbyte value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="byte" />.
@@ -54,13 +53,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		byte ReadResultAsByte(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultByte(out byte value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="ushort" />.
@@ -70,13 +65,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		ushort ReadResultAsUInt16(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultUInt16(out ushort value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="short" />.
@@ -86,13 +77,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		short ReadResultAsInt16(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultInt16(out short value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="uint" />.
@@ -102,13 +89,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		uint ReadResultUInt32(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultUInt32(out uint value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="int" />.
@@ -118,13 +101,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		int ReadResultAsInt32(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultInt32(out int value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="ulong" />.
@@ -134,13 +113,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		ulong ReadResultAsUInt64(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultUInt64(out ulong value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="long" />.
@@ -150,13 +125,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		long ReadResultAsInt64(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultInt64(out long value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="float" />.
@@ -166,13 +137,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		float ReadResultAsFloat(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultFloat(out float value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="double" />.
@@ -182,13 +149,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		double ReadResultAsDouble(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultDouble(out double value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="string" />.
@@ -198,13 +161,9 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		string ReadResultAsString(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultString(out string value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="string" />.
@@ -214,12 +173,8 @@ namespace SharpRemote
 		///     It's the responsibility of the caller of this method to call the correct GetResultXYZ method
 		///     which matches the signature of the method being called.
 		/// </remarks>
-		/// <remarks>
-		///     When <paramref name="exception" /> is set to a non-null value, then the returned value may not be used
-		///     as the method call did not produce a return value.
-		/// </remarks>
-		/// <param name="exception">The exception (if any) which occured during the method call</param>
-		/// <returns></returns>
-		byte[] ReadResultAsBytes(out Exception exception);
+		/// <param name="value"></param>
+		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
+		bool ReadResultBytes(out byte[] value);
 	}
 }

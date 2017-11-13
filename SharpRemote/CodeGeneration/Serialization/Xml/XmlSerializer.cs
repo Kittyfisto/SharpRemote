@@ -47,6 +47,16 @@ namespace SharpRemote
 		internal const string ValueAttributeName = "Value";
 
 		/// <summary>
+		/// 
+		/// </summary>
+		internal const string ReturnValueElementName = "ReturnValue";
+
+		/// <summary>
+		/// 
+		/// </summary>
+		internal const string ExceptionElementName = "Exception";
+
+		/// <summary>
 		/// </summary>
 		/// <param name="writerSettings">The settings used to create xml documents</param>
 		public XmlSerializer(XmlWriterSettings writerSettings = null)

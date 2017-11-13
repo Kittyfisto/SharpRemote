@@ -11,8 +11,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	{
 		public const string RpcElementName = "Result";
 		public const string RpcIdAttributeName = XmlMethodCallWriter.RpcIdAttributeName;
-		public const string ResultElementName = "ReturnValue";
-		public const string ExceptionElementName = "Exception";
 
 		private readonly XmlSerializer _serializer;
 		private readonly StreamWriter _textWriter;
@@ -40,104 +38,104 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public void WriteFinished()
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(object value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			_serializer.WriteObject(_writer, value, _endPoint);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(sbyte value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(byte value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(ushort value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(short value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(uint value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(int value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(ulong value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(long value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(float value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(double value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(string value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteResult(byte[] value)
 		{
-			_writer.WriteStartElement(ResultElementName);
+			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
 			XmlSerializer.WriteValue(_writer, value);
 			_writer.WriteEndElement();
 		}
 
 		public void WriteException(Exception e)
 		{
-			_writer.WriteStartElement(ExceptionElementName);
+			_writer.WriteStartElement(XmlSerializer.ExceptionElementName);
 			_serializer.WriteObject(_writer, e, _endPoint);
 			_writer.WriteEndElement();
 		}

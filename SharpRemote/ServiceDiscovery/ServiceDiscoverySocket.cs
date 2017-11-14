@@ -5,30 +5,32 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Reflection;
 using log4net;
+using Exception = System.Exception;
 
 namespace SharpRemote.ServiceDiscovery
 {
 	/// <summary>
-	///    Service discovery socket implementation that is bound to a single address (and thus to a single network interface).
+	///     Service discovery socket implementation that is bound to a single address (and thus to a single network interface).
 	/// </summary>
 	internal sealed class ServiceDiscoverySocket
 		: IServiceDiscoverySocket
-		, IDisposable
+			, IDisposable
 	{
-		private readonly INetworkServiceRegisty _services;
 		private const int MaxLength = 508;
 		private const string NoName = "";
 
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly NetworkInterface _iface;
-		private readonly string _networkInterfaceId;
-		private readonly Socket _socket;
 		private readonly IPAddress _localAddress;
 		private readonly IPEndPoint _localEndPoint;
-		private readonly IPEndPoint _multicastEndPoint;
 		private readonly IPAddress _multicastAddress;
+		private readonly IPEndPoint _multicastEndPoint;
+		private readonly string _name;
+		private readonly string _networkInterfaceId;
 		private readonly bool _sendLegacyResponse;
+		private readonly INetworkServiceRegisty _services;
+		private readonly Socket _socket;
 
 		private bool _isDisposed;
 
@@ -41,6 +43,7 @@ namespace SharpRemote.ServiceDiscovery
 		                              bool sendLegacyResponse)
 		{
 			_iface = iface;
+			_name = iface.Name;
 			_networkInterfaceId = iface.Id;
 			_services = services;
 			_localAddress = localAddress;
@@ -50,17 +53,16 @@ namespace SharpRemote.ServiceDiscovery
 			_sendLegacyResponse = sendLegacyResponse;
 
 			_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)
-				{
-					MulticastLoopback = true,
-				};
+			{
+				MulticastLoopback = true
+			};
 			_socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, ttl);
 			_socket.SetSocketOption(SocketOptionLevel.Socket,
-			                        SocketOptionName.ReuseAddress, true);
+			                        SocketOptionName.ReuseAddress, optionValue: true);
 			_socket.Bind(new IPEndPoint(localAddress, port));
 
 			var addressFamily = _localAddress.AddressFamily;
 			if (addressFamily == AddressFamily.InterNetwork)
-			{
 				try
 				{
 					_socket.SetSocketOption(SocketOptionLevel.IP,
@@ -81,14 +83,62 @@ namespace SharpRemote.ServiceDiscovery
 					                iface.Name,
 					                e);
 				}
-			}
 			else
-			{
-				throw new ArgumentOutOfRangeException(string.Format("Service discovery is not implemented for '{0}'", addressFamily));
-			}
+				throw new ArgumentOutOfRangeException(string.Format("Service discovery is not implemented for '{0}'",
+				                                                    addressFamily));
 
 			BeginReceive();
 		}
+
+		/// <summary>
+		///     The name of the network interface this socket is bound to.
+		/// </summary>
+		public string InterfaceName => _name;
+
+		/// <summary>
+		///     The current status of the network interface this socket is bound to.
+		/// </summary>
+		public OperationalStatus InterfaceStatus
+		{
+			get
+			{
+				try
+				{
+					return _iface.OperationalStatus;
+				}
+				catch (Exception e)
+				{
+					Log.InfoFormat("Caught unexpected exception while querying status of interface '{0}': {1}",
+					               _name,
+					               e);
+					return OperationalStatus.Unknown;
+				}
+			}
+		}
+
+		public void Dispose()
+		{
+			lock (_socket)
+			{
+				_socket.Dispose();
+				_isDisposed = true;
+			}
+		}
+
+		public void Query(string serviceName)
+		{
+			var query = Message.CreateQuery(serviceName ?? NoName);
+
+			lock (_socket)
+			{
+				if (_isDisposed)
+					return;
+
+				_socket.SendTo(query, _multicastEndPoint);
+			}
+		}
+
+		public event Action<Service> OnResponseReceived;
 
 		private void BeginReceive()
 		{
@@ -99,10 +149,10 @@ namespace SharpRemote.ServiceDiscovery
 
 				var buffer = new byte[MaxLength];
 				EndPoint endPoint = _localEndPoint;
-				_socket.BeginReceiveFrom(buffer, 0, buffer.Length,
-				                         SocketFlags.None,
-				                         ref endPoint,
-				                         OnReceived, buffer);
+				_socket.BeginReceiveFrom(buffer, offset: 0, size: buffer.Length,
+				                         socketFlags: SocketFlags.None,
+				                         remoteEP: ref endPoint,
+				                         callback: OnReceived, state: buffer);
 			}
 		}
 
@@ -112,7 +162,7 @@ namespace SharpRemote.ServiceDiscovery
 			{
 				EndPoint remoteEndPoint = _localEndPoint;
 				int length;
-				var buffer = (byte[])ar.AsyncState;
+				var buffer = (byte[]) ar.AsyncState;
 				lock (_socket)
 				{
 					if (_isDisposed)
@@ -136,21 +186,19 @@ namespace SharpRemote.ServiceDiscovery
 						case Message.P2PResponse2Token:
 						case Message.P2PResponseLegacyToken:
 							OnResponseReceived?.Invoke(new Service(name,
-								endPoint,
-								_localAddress,
-								_networkInterfaceId,
-								payload));
+							                                       endPoint,
+							                                       _localAddress,
+							                                       _networkInterfaceId,
+							                                       payload));
 							break;
 					}
 				}
 				else
 				{
 					if (Log.IsDebugEnabled)
-					{
 						Log.DebugFormat("Received invalid response ({0} bytes) from '{1}', ignoring it",
 						                length,
 						                remoteEndPoint);
-					}
 				}
 			}
 			catch (SocketException e)
@@ -170,11 +218,9 @@ namespace SharpRemote.ServiceDiscovery
 		private void SendResponse(string name, EndPoint remoteEndPoint)
 		{
 			if (Log.IsDebugEnabled)
-			{
 				Log.DebugFormat("Received query (name: {0}) from '{1}', answering...",
 				                name,
 				                remoteEndPoint);
-			}
 
 			var services = new List<RegisteredService>();
 			lock (_socket)
@@ -193,9 +239,7 @@ namespace SharpRemote.ServiceDiscovery
 					var endPoint = service.EndPoint;
 					if (Equals(endPoint.Address, IPAddress.Any) ||
 					    Equals(endPoint.Address, IPAddress.IPv6Any))
-					{
 						endPoint = new IPEndPoint(_localAddress, endPoint.Port);
-					}
 
 					SendResponse(service.Name, endPoint, payload);
 				}
@@ -207,34 +251,11 @@ namespace SharpRemote.ServiceDiscovery
 			var buffer = Message.CreateResponse2(serviceName, endPoint, payload);
 			_socket.SendTo(buffer, _multicastEndPoint);
 
-			if (_sendLegacyResponse) //< If the user requests to support super old SharpRemote versions, then we'll oblige and send responses understood by them
+			if (_sendLegacyResponse
+			) //< If the user requests to support super old SharpRemote versions, then we'll oblige and send responses understood by them
 			{
 				buffer = Message.CreateLegacyResponse(serviceName, endPoint);
 				_socket.SendTo(buffer, _multicastEndPoint);
-			}
-		}
-
-		public void Query(string serviceName)
-		{
-			byte[] query = Message.CreateQuery(serviceName ?? NoName);
-
-			lock (_socket)
-			{
-				if (_isDisposed)
-					return;
-
-				_socket.SendTo(query, _multicastEndPoint);
-			}
-		}
-
-		public event Action<Service> OnResponseReceived;
-
-		public void Dispose()
-		{
-			lock (_socket)
-			{
-				_socket.Dispose();
-				_isDisposed = true;
 			}
 		}
 	}

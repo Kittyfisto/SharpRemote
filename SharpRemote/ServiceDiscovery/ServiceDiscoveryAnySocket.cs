@@ -124,6 +124,11 @@ namespace SharpRemote.ServiceDiscovery
 									ServiceDiscoverySocket socket;
 									if (!_sockets.TryGetValue(address, out socket))
 									{
+										if (Log.IsDebugEnabled)
+											Log.DebugFormat("Creating service discovery socket for {0}@{1}",
+											                address,
+											                iface.Name);
+
 										try
 										{
 											socket = new ServiceDiscoverySocket(iface,
@@ -144,12 +149,12 @@ namespace SharpRemote.ServiceDiscovery
 
 										if (socket != null)
 										{
-											Log.InfoFormat("Created service discovery socket for {0}@{1}",
-													   address,
-													   iface.Name);
-
 											_sockets.Add(address, socket);
 											socket.OnResponseReceived += SocketOnResponseReceived;
+
+											Log.InfoFormat("Created service discovery socket for {0}@{1}",
+											               address,
+											               iface.Name);
 										}
 									}
 
@@ -164,11 +169,24 @@ namespace SharpRemote.ServiceDiscovery
 					//
 					foreach (var pair in _sockets.ToList())
 					{
-						if (!currentAddresses.Contains(pair.Key))
+						var socket = pair.Value;
+						var address = pair.Key;
+						if (!currentAddresses.Contains(address))
 						{
-							pair.Value.Dispose();
-							pair.Value.OnResponseReceived -= SocketOnResponseReceived;
-							_sockets.Remove(pair.Key);
+							if (Log.IsDebugEnabled)
+								Log.DebugFormat("Removing service discovery socket for {0}@{1}",
+								                address,
+								                socket.InterfaceName);
+
+							_sockets.Remove(address);
+
+							Log.InfoFormat("Removed service discovery socket for {0}@{1}, current status: {2}",
+							               address,
+							               socket.InterfaceName,
+							               socket.InterfaceStatus);
+
+							socket.Dispose();
+							socket.OnResponseReceived -= SocketOnResponseReceived;
 						}
 					}
 				}

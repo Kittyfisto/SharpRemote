@@ -14,8 +14,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlReaderMoveToAttributeByName;
 		private static readonly MethodInfo XmlSerializerReadDecimal;
 		private static readonly MethodInfo XmlSerializerReadString;
+		private static readonly MethodInfo XmlSerializerReadByte;
+		private static readonly MethodInfo XmlSerializerReadSByte;
+		private static readonly MethodInfo XmlSerializerReadInt16;
+		private static readonly MethodInfo XmlSerializerReadUInt16;
 		private static readonly MethodInfo XmlSerializerReadInt32;
 		private static readonly MethodInfo XmlSerializerReadUInt32;
+		private static readonly MethodInfo XmlSerializerReadInt64;
+		private static readonly MethodInfo XmlSerializerReadUInt64;
+		private static readonly MethodInfo XmlSerializerReadSingle;
+		private static readonly MethodInfo XmlSerializerReadDouble;
 		private static readonly ConstructorInfo XmlParseExceptionCtor;
 		private static readonly MethodInfo XmlLineInfoGetLineNumber;
 		private static readonly MethodInfo XmlLineInfoGetLinePosition;
@@ -28,8 +36,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlReaderMoveToAttributeByName = typeof(XmlReader).GetMethod(nameof(XmlReader.MoveToAttribute), new [] {typeof(string)});
 			XmlSerializerReadDecimal = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsDecimal));
 			XmlSerializerReadString = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsString));
+			XmlSerializerReadByte = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsByte));
+			XmlSerializerReadSByte = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsSByte));
+			XmlSerializerReadInt16 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsInt16));
+			XmlSerializerReadUInt16 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsUInt16));
 			XmlSerializerReadInt32 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsInt32));
 			XmlSerializerReadUInt32 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsUInt32));
+			XmlSerializerReadInt64 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsInt64));
+			XmlSerializerReadUInt64 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsUInt64));
+			XmlSerializerReadSingle = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsSingle));
+			XmlSerializerReadDouble = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsDouble));
 			XmlLineInfoGetLineNumber = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LineNumber)).GetMethod;
 			XmlLineInfoGetLinePosition = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LinePosition)).GetMethod;
 			XmlParseExceptionCtor = typeof(XmlParseException).GetConstructor(new [] {typeof(string), typeof(int), typeof(int), typeof(Exception)});
@@ -59,18 +75,26 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitReadByte(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadByte);
 		}
 
 		protected override void EmitReadSByte(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadSByte);
 		}
 
 		protected override void EmitReadUInt16(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadUInt16);
 		}
 
 		protected override void EmitReadInt16(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadInt16);
 		}
 
 		protected override void EmitReadUInt32(ILGenerator gen)
@@ -87,10 +111,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitReadUInt64(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadUInt64);
 		}
 
 		protected override void EmitReadInt64(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadInt64);
 		}
 
 		protected override void EmitReadDecimal(ILGenerator gen)
@@ -101,10 +129,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitReadFloat(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadSingle);
 		}
 
 		protected override void EmitReadDouble(ILGenerator gen)
 		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadDouble);
 		}
 
 		protected override void EmitReadString(ILGenerator gen)

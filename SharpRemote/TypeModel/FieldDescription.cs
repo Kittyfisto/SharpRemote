@@ -47,7 +47,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		///     The id of the <see cref="TypeDescription" /> which describes the type of this field.
+		///     The id of the <see cref="SharpRemote.TypeDescription" /> which describes the type of this field.
 		/// </summary>
 		[DataMember]
 		public int FieldTypeId { get; set; }
@@ -70,7 +70,12 @@ namespace SharpRemote
 		public string Name { get; set; }
 
 		/// <inheritdoc />
-		public ITypeDescription Type => _fieldType;
+		public ITypeDescription TypeDescription => _fieldType;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public Type Type => _field.FieldType;
 
 		/// <inheritdoc />
 		public MemberInfo MemberInfo => _field;
@@ -98,7 +103,7 @@ namespace SharpRemote
 		{
 			return new FieldDescription(field)
 			{
-				FieldType = TypeDescription.GetOrCreate(field.FieldType, typesByAssemblyQualifiedName)
+				FieldType = SharpRemote.TypeDescription.GetOrCreate(field.FieldType, typesByAssemblyQualifiedName)
 			};
 		}
 	}

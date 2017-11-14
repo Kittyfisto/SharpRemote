@@ -67,6 +67,7 @@
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriterObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriteValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\MessageType2.cs" />
+    <Compile Include="CodeGeneration\Serialization\ExceptionCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\IMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethods.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethodStorage.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="CodeGeneration\Serialization\AbstractWriteObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractWriteValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\ParseException.cs" />
+    <Compile Include="CodeGeneration\Serialization\Xml\XmlFormatter.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodCallReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodCallWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlMethodResultReader.cs" />

@@ -14,8 +14,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlWriterWriteAttributeString;
 		private static readonly MethodInfo XmlSerializerWriteDecimal;
 		private static readonly MethodInfo XmlSerializerWriteString;
+		private static readonly MethodInfo XmlSerializerWriteByte;
+		private static readonly MethodInfo XmlSerializerWriteSByte;
+		private static readonly MethodInfo XmlSerializerWriteInt16;
+		private static readonly MethodInfo XmlSerializerWriteUInt16;
 		private static readonly MethodInfo XmlSerializerWriteInt32;
 		private static readonly MethodInfo XmlSerializerWriteUInt32;
+		private static readonly MethodInfo XmlSerializerWriteInt64;
+		private static readonly MethodInfo XmlSerializerWriteUInt64;
+		private static readonly MethodInfo XmlSerializerWriteSingle;
+		private static readonly MethodInfo XmlSerializerWriteDouble;
 		private static readonly MethodInfo DecimalToString;
 		private readonly CompilationContext _context;
 
@@ -27,8 +35,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlWriterWriteAttributeString = typeof(XmlWriter).GetMethod(nameof(XmlWriter.WriteAttributeString), new [] {typeof(string), typeof(string)});
 			XmlSerializerWriteDecimal = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new [] {typeof(XmlWriter), typeof(decimal)});
 			XmlSerializerWriteString = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(string) });
+			XmlSerializerWriteByte = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] {typeof(XmlWriter), typeof(byte)});
+			XmlSerializerWriteSByte = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(sbyte) });
+			XmlSerializerWriteInt16 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(short) });
+			XmlSerializerWriteUInt16 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(ushort) });
 			XmlSerializerWriteInt32 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(int) });
 			XmlSerializerWriteUInt32 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(uint) });
+			XmlSerializerWriteInt64 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(long) });
+			XmlSerializerWriteUInt64 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(ulong) });
+			XmlSerializerWriteSingle = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(float) });
+			XmlSerializerWriteDouble = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(double) });
 			DecimalToString = typeof(decimal).GetMethod(nameof(decimal.ToString), new [] {typeof(IFormatProvider)});
 		}
 
@@ -78,51 +94,63 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteEndElement);
 		}
 
-		protected override void EmitWriteByte(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteByte);
 		}
 
-		protected override void EmitWriteSByte(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteSByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteSByte);
 		}
 
-		protected override void EmitWriteUInt16(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteUInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteUInt16);
 		}
 
-		protected override void EmitWriteInt16(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteInt16);
 		}
 
-		protected override void EmitWriteUInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteUInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			gen.Emit(OpCodes.Ldarg_0);
 			loadMember();
 			gen.Emit(OpCodes.Call, XmlSerializerWriteUInt32);
 		}
 
-		protected override void EmitWriteInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			gen.Emit(OpCodes.Ldarg_0);
 			loadMember();
 			gen.Emit(OpCodes.Call, XmlSerializerWriteInt32);
 		}
 
-		protected override void EmitWriteUInt64(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteUInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteUInt64);
 		}
 
-		protected override void EmitWriteInt64(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteInt64);
 		}
 
-		protected override void EmitWriteDecimal(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteDecimal(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			// XmlSerializer.WriteValue(decimal)
 			gen.Emit(OpCodes.Ldarg_0);
@@ -130,17 +158,23 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Call, XmlSerializerWriteDecimal);
 		}
 
-		protected override void EmitWriteFloat(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteSingle(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			// XmlSerializer.WriteValue(decimal)
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteSingle);
 		}
 
-		protected override void EmitWriteDouble(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteDouble(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			// XmlSerializer.WriteValue(decimal)
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteDouble);
 		}
 
-		protected override void EmitWriteString(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteString(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			gen.Emit(OpCodes.Ldarg_0);
 			loadMember();

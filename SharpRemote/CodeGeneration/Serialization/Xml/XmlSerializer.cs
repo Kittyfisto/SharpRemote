@@ -24,6 +24,7 @@ namespace SharpRemote
 		private readonly XmlSerializationCompiler _methodCompiler;
 		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
 
+		private readonly ITypeResolver _typeResolver;
 		private readonly XmlWriterSettings _writerSettings;
 		private readonly XmlReaderSettings _readerSettings;
 
@@ -90,27 +91,32 @@ namespace SharpRemote
 		internal const string ExceptionElementName = "Exception";
 
 		/// <summary>
-		/// 
+		///     The name of the attribute to hold the .NET type of a value, often
+		///     the <see cref="Type.AssemblyQualifiedName" /> unless it happens to be a built-in
+		///     type for which shorter names are used.
 		/// </summary>
-		internal const string ArgumentTypeAttributeName = "Type";
+		internal const string TypeAttributeName = "Type";
 
 		/// <summary>
 		/// </summary>
+		/// <param name="typeResolver"></param>
 		/// <param name="writerSettings">The settings used to create xml documents</param>
-		public XmlSerializer(XmlWriterSettings writerSettings = null)
-			: this(CreateModule(), writerSettings)
+		public XmlSerializer(ITypeResolver typeResolver = null, XmlWriterSettings writerSettings = null)
+			: this(CreateModule(), typeResolver, writerSettings)
 		{
 		}
 
 		/// <summary>
 		/// </summary>
 		/// <param name="moduleBuilder"></param>
+		/// <param name="typeResolver"></param>
 		/// <param name="writerSettings">The settings used to create xml documents</param>
-		public XmlSerializer(ModuleBuilder moduleBuilder, XmlWriterSettings writerSettings = null)
+		public XmlSerializer(ModuleBuilder moduleBuilder, ITypeResolver typeResolver = null, XmlWriterSettings writerSettings = null)
 		{
 			if (moduleBuilder == null)
 				throw new ArgumentNullException(nameof(moduleBuilder));
 
+			_typeResolver = typeResolver;
 			_methodCompiler = new XmlSerializationCompiler(moduleBuilder);
 			_methodStorage = new SerializationMethodStorage<XmlMethodsCompiler>("XmlSerializer", _methodCompiler);
 			_writerSettings = writerSettings ?? new XmlWriterSettings
@@ -204,6 +210,9 @@ namespace SharpRemote
 		/// <exception cref="NotImplementedException"></exception>
 		public void WriteObject(XmlWriter writer, object value, IRemotingEndPoint endPoint)
 		{
+			// TODO: Built-in types should not be denoted using their full assembly qualified name but instead
+			//       by using custom names, such as "UInt16", "SByte" or "String" for short.
+			writer.WriteAttributeString(TypeAttributeName, value.GetType().AssemblyQualifiedName);
 			var methods = _methodStorage.GetOrAdd(value.GetType());
 			methods.WriteDelegate(writer, value, this, endPoint);
 		}
@@ -340,10 +349,74 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="reader"></param>
 		/// <returns></returns>
+		public object ReadObject(XmlReader reader)
+		{
+			var attributeCount = reader.AttributeCount;
+			string typeName = null;
+			string value = null;
+			for (var i = 0; i < attributeCount; ++i)
+			{
+				reader.MoveToNextAttribute();
+
+				switch (reader.Name)
+				{
+					case TypeAttributeName:
+						typeName = reader.Value;
+						break;
+					
+					case ValueName:
+						value = reader.Value;
+						break;
+				}
+			}
+
+			if (typeName == null)
+				throw new NotImplementedException();
+			if (value == null)
+				throw new NotImplementedException();
+
+			var type = _typeResolver?.GetType(typeName) ?? Type.GetType(typeName);
+			return ReadValue(type, value);
+		}
+
+		private static object ReadValue(Type type, string value)
+		{
+			if (type == typeof(string))
+				return value;
+			if (type == typeof(byte))
+				return ParseByte(value);
+			if (type == typeof(sbyte))
+				return ParseSByte(value);
+			if (type == typeof(ushort))
+				return ParseUInt16(value);
+			if (type == typeof(short))
+				return ParseInt16(value);
+			if (type == typeof(uint))
+				return ParseUInt32(value);
+			if (type == typeof(int))
+				return ParseInt32(value);
+			if (type == typeof(ulong))
+				return ParseUInt64(value);
+			if (type == typeof(long))
+				return ParseInt64(value);
+			if (type == typeof(float))
+				return ParseSingle(value);
+			if (type == typeof(double))
+				return ParseDouble(value);
+			if (type == typeof(decimal))
+				return ParseDecimal(value);
+			throw new NotImplementedException();
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static sbyte ReadValueAsSByte(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return sbyte.Parse(value, CultureInfo.InvariantCulture);
+			return ParseSByte(value);
 		}
 
 		/// <summary>
@@ -354,7 +427,7 @@ namespace SharpRemote
 		public static byte ReadValueAsByte(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return byte.Parse(value, CultureInfo.InvariantCulture);
+			return ParseByte(value);
 		}
 
 		/// <summary>
@@ -365,7 +438,7 @@ namespace SharpRemote
 		public static ushort ReadValueAsUInt16(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return ushort.Parse(value, CultureInfo.InvariantCulture);
+			return ParseUInt16(value);
 		}
 
 		/// <summary>
@@ -376,7 +449,7 @@ namespace SharpRemote
 		public static short ReadValueAsInt16(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return short.Parse(value, CultureInfo.InvariantCulture);
+			return ParseInt16(value);
 		}
 
 		/// <summary>
@@ -387,7 +460,7 @@ namespace SharpRemote
 		public static uint ReadValueAsUInt32(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return uint.Parse(value, CultureInfo.InvariantCulture);
+			return ParseUInt32(value);
 		}
 
 		/// <summary>
@@ -398,7 +471,7 @@ namespace SharpRemote
 		public static int ReadValueAsInt32(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return int.Parse(value, CultureInfo.InvariantCulture);
+			return ParseInt32(value);
 		}
 
 		/// <summary>
@@ -409,7 +482,7 @@ namespace SharpRemote
 		public static long ReadValueAsInt64(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return long.Parse(value, CultureInfo.InvariantCulture);
+			return ParseInt64(value);
 		}
 
 		/// <summary>
@@ -420,7 +493,7 @@ namespace SharpRemote
 		public static ulong ReadValueAsUInt64(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return ulong.Parse(value, CultureInfo.InvariantCulture);
+			return ParseUInt64(value);
 		}
 
 		/// <summary>
@@ -428,10 +501,10 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="reader"></param>
 		/// <returns></returns>
-		public static float ReadValueAsFloat(XmlReader reader)
+		public static float ReadValueAsSingle(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return float.Parse(value, CultureInfo.InvariantCulture);
+			return ParseSingle(value);
 		}
 
 		/// <summary>
@@ -442,7 +515,7 @@ namespace SharpRemote
 		public static double ReadValueAsDouble(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return double.Parse(value, CultureInfo.InvariantCulture);
+			return ParseDouble(value);
 		}
 
 		/// <summary>
@@ -453,7 +526,7 @@ namespace SharpRemote
 		public static decimal ReadValueAsDecimal(XmlReader reader)
 		{
 			var value = ReadValue(reader);
-			return decimal.Parse(value, CultureInfo.InvariantCulture);
+			return ParseDecimal(value);
 		}
 
 		/// <summary>
@@ -508,6 +581,75 @@ namespace SharpRemote
 		{
 			var value = ReadValue(reader, allowNull: true);
 			return BytesFromHex(value);
+		}
+
+		#endregion
+
+		#region Parsing
+
+		[Pure]
+		private static sbyte ParseSByte(string value)
+		{
+			return sbyte.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static byte ParseByte(string value)
+		{
+			return byte.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static ushort ParseUInt16(string value)
+		{
+			return ushort.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		private static short ParseInt16(string value)
+		{
+			return short.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static uint ParseUInt32(string value)
+		{
+			return uint.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static int ParseInt32(string value)
+		{
+			return int.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static ulong ParseUInt64(string value)
+		{
+			return ulong.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static long ParseInt64(string value)
+		{
+			return long.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static float ParseSingle(string value)
+		{
+			return float.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static double ParseDouble(string value)
+		{
+			return double.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static decimal ParseDecimal(string value)
+		{
+			return decimal.Parse(value, CultureInfo.InvariantCulture);
 		}
 
 		#endregion

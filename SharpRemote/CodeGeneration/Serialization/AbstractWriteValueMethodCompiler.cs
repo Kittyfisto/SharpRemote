@@ -79,9 +79,29 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ret);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
 		private void EmitWriteBuiltInType()
 		{
-			throw new NotImplementedException();
+			var gen = Method.GetILGenerator();
+
+			var type = _context.Type;
+			Action loadMember = () =>
+			{
+				gen.Emit(OpCodes.Ldarg_1);
+			};
+			Action loadMemberAddress = () =>
+			{
+				if (type.IsValueType)
+					gen.Emit(OpCodes.Ldarga_S, 1);
+				else
+					gen.Emit(OpCodes.Ldarg_1);
+			};
+
+			EmitWriteValue(gen, type, loadMember, loadMemberAddress);
+
+			gen.Emit(OpCodes.Ret);
 		}
 
 		private void EmitWriteByValue(ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
@@ -139,7 +159,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				try
 				{
 					EmitBeginWriteField(gen, field);
-					EmitWriteValue(gen, field, () =>
+					EmitWriteValue(gen, field.Type, () =>
 					{
 						loadValue();
 						gen.Emit(OpCodes.Ldfld, field.Field);
@@ -170,7 +190,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				try
 				{
 					EmitBeginWriteProperty(gen, property);
-					EmitWriteValue(gen, property, () =>
+					EmitWriteValue(gen, property.Type, () =>
 					               {
 						               loadValue();
 						               gen.Emit(OpCodes.Call, property.GetMethod.Method);
@@ -199,33 +219,32 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitWriteValue(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		private void EmitWriteValue(ILGenerator gen, Type type, Action loadMember, Action loadMemberAddress)
 		{
-			var type = member.Type.Type;
 			if (type == typeof(byte))
-				EmitWriteByte(gen, loadMember);
+				EmitWriteByte(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(sbyte))
-				EmitWriteSByte(gen, loadMember);
+				EmitWriteSByte(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(ushort))
-				EmitWriteUInt16(gen, loadMember);
+				EmitWriteUInt16(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(short))
-				EmitWriteInt16(gen, loadMember);
+				EmitWriteInt16(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(uint))
-				EmitWriteUInt32(gen, member, loadMember, loadMemberAddress);
+				EmitWriteUInt32(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(int))
-				EmitWriteInt32(gen, member, loadMember, loadMemberAddress);
+				EmitWriteInt32(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(ulong))
-				EmitWriteUInt64(gen, loadMember);
+				EmitWriteUInt64(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(long))
-				EmitWriteInt64(gen, loadMember);
+				EmitWriteInt64(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(decimal))
-				EmitWriteDecimal(gen, member, loadMember, loadMemberAddress);
+				EmitWriteDecimal(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(float))
-				EmitWriteFloat(gen, loadMember);
+				EmitWriteSingle(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(double))
-				EmitWriteDouble(gen, loadMember);
+				EmitWriteDouble(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(string))
-				EmitWriteString(gen, member, loadMember, loadMemberAddress);
+				EmitWriteString(gen, loadMember, loadMemberAddress);
 			else
 				throw new NotImplementedException();
 		}
@@ -261,106 +280,86 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="byte" /> to be
-		///     serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteByte(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteByte(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="sbyte" /> to be
-		///     serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteSByte(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteSByte(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="ushort" /> to
-		///     be serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteUInt16(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteUInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="short" /> to be
-		///     serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteInt16(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="member">The field or property that shall be written</param>
 		/// <param name="loadMember">An operation which emits code to the given <paramref name="gen"/> which pushes the value of the field or property onto the evaluation stack</param>
 		/// <param name="loadMemberAddress">An operation which emits code to the given <paramref name="gen"/> which pushes the address of the value of the field or property onto the evaluation stack</param>
-		protected abstract void EmitWriteUInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress);
+		protected abstract void EmitWriteUInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="member">The field or property that shall be written</param>
 		/// <param name="loadMember">An operation which emits code to the given <paramref name="gen"/> which pushes the value of the field or property onto the evaluation stack</param>
 		/// <param name="loadMemberAddress">An operation which emits code to the given <paramref name="gen"/> which pushes the address of the value of the field or property onto the evaluation stack</param>
-		protected abstract void EmitWriteInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress);
+		protected abstract void EmitWriteInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="ulong" /> to be
-		///     serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteUInt64(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteUInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="long" /> to be
-		///     serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteInt64(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="member">The field or property that shall be written</param>
 		/// <param name="loadMember">An operation which emits code to the given <paramref name="gen"/> which pushes the value of the field or property onto the evaluation stack</param>
 		/// <param name="loadMemberAddress">An operation which emits code to the given <paramref name="gen"/> which pushes the address of the value of the field or property onto the evaluation stack</param>
-		protected abstract void EmitWriteDecimal(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress);
+		protected abstract void EmitWriteDecimal(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="float" /> to be
-		///     serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteFloat(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteSingle(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="loadValue">
-		///     A method which, when executed, emits opcodes to push a value of type <see cref="double" /> to
-		///     be serialized onto the evaluation stack
-		/// </param>
-		protected abstract void EmitWriteDouble(ILGenerator gen, Action loadValue);
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteDouble(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
-		/// <param name="member">The field or property that shall be written</param>
 		/// <param name="loadMember">An operation which emits code to the given <paramref name="gen"/> which pushes the value of the field or property onto the evaluation stack</param>
 		/// <param name="loadMemberAddress">An operation which emits code to the given <paramref name="gen"/> which pushes the address of the value of the field or property onto the evaluation stack</param>
-		protected abstract void EmitWriteString(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress);
+		protected abstract void EmitWriteString(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		private void EmitCallAfterSerialization(ILGenerator gen)
 		{

@@ -47,7 +47,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 			switch (serializationType)
 			{
 				case SerializationType.ByValue:
-					EmitReadByValue();
+					if (_context.TypeDescription.IsBuiltIn)
+						EmitReadBuiltInType();
+					else
+						EmitReadByValue();
 					break;
 
 				case SerializationType.ByReference:
@@ -64,6 +67,13 @@ namespace SharpRemote.CodeGeneration.Serialization
 				default:
 					throw new InvalidEnumArgumentException("", (int)serializationType, typeof(SerializationType));
 			}
+		}
+
+		private void EmitReadBuiltInType()
+		{
+			var gen = Method.GetILGenerator();
+			EmitReadValue(gen, _context.TypeDescription, null);
+			gen.Emit(OpCodes.Ret);
 		}
 
 		private void EmitReadSingleton()

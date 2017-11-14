@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reflection;
 using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
@@ -41,62 +40,62 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteByte(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteSByte(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteSByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteUInt16(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteUInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteInt16(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteUInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteUInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteInt32(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteUInt64(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteUInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteInt64(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteDecimal(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteDecimal(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteFloat(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteSingle(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteDouble(ILGenerator gen, Action loadValue)
+		protected override void EmitWriteDouble(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitWriteString(ILGenerator gen, IMemberDescription member, Action loadMember, Action loadMemberAddress)
+		protected override void EmitWriteString(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
 			throw new NotImplementedException();
 		}

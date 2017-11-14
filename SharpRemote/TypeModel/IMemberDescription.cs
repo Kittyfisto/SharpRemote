@@ -15,7 +15,7 @@ namespace SharpRemote
 		/// <summary>
 		///     The type of this field/property.
 		/// </summary>
-		ITypeDescription Type { get; }
+		ITypeDescription TypeDescription { get; }
 
 		/// <summary>
 		/// </summary>

@@ -48,7 +48,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public static IEnumerable<uint> UInt32Values => new uint[] {uint.MinValue, 1, uint.MaxValue};
 		public static IEnumerable<long> Int64Values => new[] {long.MinValue, -1, 0, 1, long.MaxValue};
 		public static IEnumerable<ulong> UInt64Values => new ulong[] {ulong.MinValue, 1, ulong.MaxValue};
-		public static IEnumerable<float> FloatValues => new[] { float.MinValue, 0, (float) Math.PI, float.MaxValue };
+		public static IEnumerable<float> SingleValues => new[] { float.MinValue, 0, (float) Math.PI, float.MaxValue };
 		public static IEnumerable<double> DoubleValues => new[] { double.MinValue, 0, Math.PI, double.MaxValue };
 
 		#region Method Call Roundtrips
@@ -81,6 +81,73 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.MethodName.Should().Be(methodName);
 				}
 			}
+		}
+
+		[Test]
+		public void TestMethodCallObjectString([ValueSource(nameof(StringValues))] string value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectByte([ValueSource(nameof(ByteValues))] byte value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectSByte([ValueSource(nameof(SByteValues))] sbyte value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectUInt16([ValueSource(nameof(UInt16Values))] ushort value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectInt16([ValueSource(nameof(Int16Values))] short value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectUInt32([ValueSource(nameof(UInt32Values))] uint value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectInt32([ValueSource(nameof(Int32Values))] int value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+
+		[Test]
+		public void TestMethodCallObjectUInt64([ValueSource(nameof(UInt64Values))] ulong value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectInt64([ValueSource(nameof(Int64Values))] long value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectSingle([ValueSource(nameof(SingleValues))] float value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectDouble([ValueSource(nameof(DoubleValues))] double value)
+		{
+			MethodCallRoundtripObject(value);
 		}
 
 		[Test]
@@ -454,7 +521,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestMethodCallFloat([ValueSource(nameof(FloatValues))] float value)
+		public void TestMethodCallFloat([ValueSource(nameof(SingleValues))] float value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
@@ -582,25 +649,25 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[Test]
 		public void TestMethodCallFieldDecimal([ValueSource(nameof(DecimalValues))] decimal value)
 		{
-			MethodCallRoundtripDataContract(new FieldDecimal { Value = value });
+			MethodCallRoundtripObject(new FieldDecimal { Value = value });
 		}
 
 		[Test]
 		public void TestMethodCallFieldString([ValueSource(nameof(StringValues))] string value)
 		{
-			MethodCallRoundtripDataContract(new FieldString { Value = value });
+			MethodCallRoundtripObject(new FieldString { Value = value });
 		}
 
 		[Test]
 		public void TestMethodCallFieldInt32([ValueSource(nameof(Int32Values))] int value)
 		{
-			MethodCallRoundtripDataContract(new FieldInt32 { Value = value });
+			MethodCallRoundtripObject(new FieldInt32 { Value = value });
 		}
 
 		[Test]
 		public void TestMethodCallFieldUInt32([ValueSource(nameof(UInt32Values))] uint value)
 		{
-			MethodCallRoundtripDataContract(new FieldUInt32 { Value = value });
+			MethodCallRoundtripObject(new FieldUInt32 { Value = value });
 		}
 
 		#endregion
@@ -879,7 +946,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		public void TestMethodResultFloat([ValueSource(nameof(FloatValues))] float value)
+		public void TestMethodResultFloat([ValueSource(nameof(SingleValues))] float value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
@@ -1320,7 +1387,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		#region Helper methods
 
-		private void MethodCallRoundtripDataContract<T>(T value)
+		private void MethodCallRoundtripObject<T>(T value)
 		{
 			var serializer = Create();
 			using (var stream = new MemoryStream())
@@ -1343,9 +1410,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 					object actualValue;
 					reader.ReadNextArgument(out actualValue).Should().BeTrue();
-					actualValue.Should().BeOfType<T>();
+					if (value != null)
+					{
+						actualValue.Should().BeOfType<T>();
+						if (!ReferenceEquals(value, string.Empty))
+							actualValue.Should().NotBeSameAs(value);
+					}
 					actualValue.Should().Be(value);
-					actualValue.Should().NotBeSameAs(value);
 
 					reader.ReadNextArgument(out actualValue).Should().BeFalse();
 					actualValue.Should().Be(null);

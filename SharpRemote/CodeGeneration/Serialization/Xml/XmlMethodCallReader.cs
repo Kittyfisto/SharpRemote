@@ -97,7 +97,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				_reader.MoveToAttribute(i);
 				switch (_reader.Name)
 				{
-					case XmlSerializer.ArgumentTypeAttributeName:
+					case XmlSerializer.TypeAttributeName:
 						type = TypeResolver.GetType(_reader.Value, true);
 						break;
 				}
@@ -213,7 +213,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				value = float.MinValue;
 				return false;
 			}
-			value = XmlSerializer.ReadValueAsFloat(_reader);
+			value = XmlSerializer.ReadValueAsSingle(_reader);
 			return true;
 		}
 

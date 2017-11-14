@@ -72,7 +72,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		///     The id of the <see cref="TypeDescription" /> which describes the type of this property.
+		///     The id of the <see cref="SharpRemote.TypeDescription" /> which describes the type of this property.
 		/// </summary>
 		[DataMember]
 		public int PropertyTypeId { get; set; }
@@ -93,6 +93,11 @@ namespace SharpRemote
 		/// <summary>
 		/// 
 		/// </summary>
+		public Type Type => _property.PropertyType;
+
+		/// <summary>
+		/// 
+		/// </summary>
 		[DataMember]
 		public MethodDescription GetMethod { get; set; }
 
@@ -107,7 +112,7 @@ namespace SharpRemote
 		public string Name { get; set; }
 
 		/// <inheritdoc />
-		public ITypeDescription Type => _propertyType;
+		public ITypeDescription TypeDescription => _propertyType;
 
 		/// <inheritdoc />
 		public MemberInfo MemberInfo => _property;
@@ -141,7 +146,7 @@ namespace SharpRemote
 			return new PropertyDescription(declaringType, property)
 			{
 				Name = property.Name,
-				PropertyType = TypeDescription.GetOrCreate(property.PropertyType, typesByAssemblyQualifiedName),
+				PropertyType = SharpRemote.TypeDescription.GetOrCreate(property.PropertyType, typesByAssemblyQualifiedName),
 				GetMethod = property.GetMethod != null ? MethodDescription.Create(property.GetMethod, typesByAssemblyQualifiedName) : null,
 				SetMethod = property.SetMethod != null ? MethodDescription.Create(property.SetMethod, typesByAssemblyQualifiedName) : null
 			};

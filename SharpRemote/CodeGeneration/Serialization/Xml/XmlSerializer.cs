@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
@@ -21,6 +22,9 @@ namespace SharpRemote
 		: ISerializer2
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly IReadOnlyDictionary<Type, string> BuiltInTypeToTypeName;
+		private static readonly IReadOnlyDictionary<string, Type> TypeNameTobuiltInType;
+
 		private readonly XmlSerializationCompiler _methodCompiler;
 		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
 
@@ -96,6 +100,40 @@ namespace SharpRemote
 		///     type for which shorter names are used.
 		/// </summary>
 		internal const string TypeAttributeName = "Type";
+
+		static XmlSerializer()
+		{
+			var forward = new Dictionary<Type, string>();
+			var reverse = new Dictionary<string, Type>();
+
+			AddBuiltInType<byte>("Byte", forward, reverse);
+			AddBuiltInType<sbyte>("SByte", forward, reverse);
+			AddBuiltInType<ushort>("UInt16", forward, reverse);
+			AddBuiltInType<short>("Int16", forward, reverse);
+			AddBuiltInType<uint>("UInt32", forward, reverse);
+			AddBuiltInType<int>("Int32", forward, reverse);
+			AddBuiltInType<ulong>("UInt64", forward, reverse);
+			AddBuiltInType<long>("Int64", forward, reverse);
+			AddBuiltInType<float>("Single", forward, reverse);
+			AddBuiltInType<double>("Double", forward, reverse);
+			AddBuiltInType<string>("String", forward, reverse);
+			AddBuiltInType<decimal>("Decimal", forward, reverse);
+
+			BuiltInTypeToTypeName = forward;
+			TypeNameTobuiltInType = reverse;
+
+			LookupTable = new string[256];
+			for (var i = 0; i < 256; i++)
+			{
+				LookupTable[i] = i.ToString("X2");
+			}
+		}
+
+		private static void AddBuiltInType<T>(string name, Dictionary<Type, string> builtInTypeToTypeName, Dictionary<string, Type> typeNameTobuiltInType)
+		{
+			builtInTypeToTypeName.Add(typeof(T), name);
+			typeNameTobuiltInType.Add(name, typeof(T));
+		}
 
 		/// <summary>
 		/// </summary>
@@ -212,9 +250,28 @@ namespace SharpRemote
 		{
 			// TODO: Built-in types should not be denoted using their full assembly qualified name but instead
 			//       by using custom names, such as "UInt16", "SByte" or "String" for short.
-			writer.WriteAttributeString(TypeAttributeName, value.GetType().AssemblyQualifiedName);
+			writer.WriteAttributeString(TypeAttributeName, GetTypeName(value.GetType()));
 			var methods = _methodStorage.GetOrAdd(value.GetType());
 			methods.WriteDelegate(writer, value, this, endPoint);
+		}
+
+		/// <summary>
+		///     Returns the typename for the given type.
+		/// </summary>
+		/// <remarks>
+		///     Exists because this serializer reserves very short names for built-in types
+		///     so they are easier to read and take up less space in a message.
+		/// </remarks>
+		[Pure]
+		internal static string GetTypeName(Type type)
+		{
+			string typeName;
+			if (BuiltInTypeToTypeName.TryGetValue(type, out typeName))
+			{
+				return typeName;
+			}
+
+			return type.AssemblyQualifiedName;
 		}
 
 		/// <summary>
@@ -375,8 +432,24 @@ namespace SharpRemote
 			if (value == null)
 				throw new NotImplementedException();
 
-			var type = _typeResolver?.GetType(typeName) ?? Type.GetType(typeName);
+			var type = ResolveTypeName(typeName);
 			return ReadValue(type, value);
+		}
+
+		/// <summary>
+		///     Tries to resolve the given type-name to a .NET <see cref="Type" />.
+		/// </summary>
+		/// <param name="typeName"></param>
+		/// <returns></returns>
+		[Pure]
+		private Type ResolveTypeName(string typeName)
+		{
+			Type type;
+			if (TypeNameTobuiltInType.TryGetValue(typeName, out type))
+				return type;
+
+			type = _typeResolver?.GetType(typeName) ?? Type.GetType(typeName);
+			return type;
 		}
 
 		private static object ReadValue(Type type, string value)
@@ -667,15 +740,6 @@ namespace SharpRemote
 		#region Hexadecimal Conversion
 
 		private static readonly string[] LookupTable;
-
-		static XmlSerializer()
-		{
-			LookupTable = new string[256];
-			for (var i = 0; i < 256; i++)
-			{
-				LookupTable[i] = i.ToString("X2");
-			}
-		}
 
 		/// <summary>
 		///     Returns a byte array with the given hex-coded content

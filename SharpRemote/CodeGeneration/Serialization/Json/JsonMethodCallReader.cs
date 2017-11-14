@@ -81,7 +81,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Json
 			throw new NotImplementedException();
 		}
 
-		public bool ReadNextArgumentAsFloat(out float value)
+		public bool ReadNextArgumentAsSingle(out float value)
 		{
 			throw new NotImplementedException();
 		}

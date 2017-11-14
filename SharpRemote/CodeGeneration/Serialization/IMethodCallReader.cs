@@ -94,7 +94,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="value">The value of the next argument</param>
 		/// <returns>True if the next argument could be read, false when the end of arguments has been reached.</returns>
-		bool ReadNextArgumentAsFloat(out float value);
+		bool ReadNextArgumentAsSingle(out float value);
 
 		/// <summary>
 		///     Reads the value of the next argument from the method call message.

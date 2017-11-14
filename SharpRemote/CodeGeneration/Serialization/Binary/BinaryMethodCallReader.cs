@@ -149,7 +149,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			return true;
 		}
 
-		public bool ReadNextArgumentAsFloat(out float value)
+		public bool ReadNextArgumentAsSingle(out float value)
 		{
 			if (EndOfStream)
 			{

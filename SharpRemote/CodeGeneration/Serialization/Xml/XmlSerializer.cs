@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
 using log4net;
@@ -27,6 +28,31 @@ namespace SharpRemote
 		private readonly XmlReaderSettings _readerSettings;
 
 		/// <summary>
+		/// Name of the XML element which represents a method call.
+		/// </summary>
+		internal const string MethodCallElementName = "Call";
+
+		/// <summary>
+		/// Name of the XML element which represents a method result.
+		/// </summary>
+		internal const string MethodResultElementName = "Result";
+
+		/// <summary>
+		/// Name of the XML attribute which carries the id of the remote procedure call.
+		/// </summary>
+		internal const string RpcIdAttributeName = "ID";
+
+		/// <summary>
+		/// Name of the XML attribute which carries the id of the grain (proxy/servant).
+		/// </summary>
+		internal const string GrainIdAttributeName = "Grain";
+
+		/// <summary>
+		/// 
+		/// </summary>
+		internal const string MethodAttributeName = "Method";
+
+		/// <summary>
 		/// 
 		/// </summary>
 		internal const string FieldElementName = "Field";
@@ -42,9 +68,16 @@ namespace SharpRemote
 		internal const string NameAttributeName = "Name";
 
 		/// <summary>
+		/// Name of the XML element (or attribute) which holds the return value or that of an argument.
+		/// The value of built-in types is stored in an attribute and stored as child-elements in case for any
+		/// other <see cref="DataContractAttribute"/> types.
+		/// </summary>
+		internal const string ValueName = "Value";
+
+		/// <summary>
 		/// 
 		/// </summary>
-		internal const string ValueAttributeName = "Value";
+		internal const string ArgumentElementName = "Argument";
 
 		/// <summary>
 		/// 
@@ -55,6 +88,11 @@ namespace SharpRemote
 		/// 
 		/// </summary>
 		internal const string ExceptionElementName = "Exception";
+
+		/// <summary>
+		/// 
+		/// </summary>
+		internal const string ArgumentTypeAttributeName = "Type";
 
 		/// <summary>
 		/// </summary>
@@ -141,12 +179,12 @@ namespace SharpRemote
 			reader.MoveToContent();
 			switch (reader.Name)
 			{
-				case XmlMethodCallWriter.RpcElementName:
+				case MethodCallElementName:
 					callReader = new XmlMethodCallReader(this, textReader, reader, _methodStorage, endPoint);
 					resultReader = null;
 					break;
 
-				case XmlMethodResultWriter.RpcElementName:
+				case MethodResultElementName:
 					callReader = null;
 					resultReader = new XmlMethodResultReader(this, textReader, reader, _methodStorage, endPoint);
 					break;
@@ -176,7 +214,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, sbyte value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -185,7 +223,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, byte value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -194,7 +232,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, ushort value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -203,7 +241,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, short value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -212,7 +250,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, uint value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -221,7 +259,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, int value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -230,7 +268,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, ulong value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -239,7 +277,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, long value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -248,7 +286,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, float value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString("R", CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString("R", CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -257,7 +295,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, double value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString("R", CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString("R", CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -266,7 +304,7 @@ namespace SharpRemote
 		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, decimal value)
 		{
-			writer.WriteAttributeString(ValueAttributeName, value.ToString(CultureInfo.InvariantCulture));
+			writer.WriteAttributeString(ValueName, value.ToString(CultureInfo.InvariantCulture));
 		}
 
 		/// <summary>
@@ -277,7 +315,7 @@ namespace SharpRemote
 		{
 			if (value != null)
 			{
-				writer.WriteAttributeString(ValueAttributeName, value);
+				writer.WriteAttributeString(ValueName, value);
 			}
 		}
 
@@ -444,7 +482,7 @@ namespace SharpRemote
 
 				switch (reader.Name)
 				{
-					case ValueAttributeName:
+					case ValueName:
 						var value = reader.Value;
 						reader.MoveToElement();
 						return value;
@@ -454,7 +492,7 @@ namespace SharpRemote
 			if (!allowNull)
 			{
 				var info = (IXmlLineInfo) reader;
-				throw new XmlParseException(string.Format("Expected to find attribute '{0}'",  ValueAttributeName),
+				throw new XmlParseException(string.Format("Expected to find attribute '{0}'",  ValueName),
 				                            info.LineNumber, info.LinePosition);
 			}
 

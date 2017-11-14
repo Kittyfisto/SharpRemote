@@ -473,10 +473,10 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.MethodName.Should().Be("Bar");
 
 					float actualValue;
-					reader.ReadNextArgumentAsFloat(out actualValue).Should().BeTrue();
+					reader.ReadNextArgumentAsSingle(out actualValue).Should().BeTrue();
 					actualValue.Should().Be(value);
 
-					reader.ReadNextArgumentAsFloat(out actualValue).Should().BeFalse();
+					reader.ReadNextArgumentAsSingle(out actualValue).Should().BeFalse();
 					actualValue.Should().Be(float.MinValue);
 				}
 			}
@@ -621,6 +621,32 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				using (var reader = CreateMethodResultReader(serializer, stream))
 				{
 					reader.RpcId.Should().Be(rpcId);
+					Exception exception;
+					reader.ReadException(out exception).Should().BeFalse("because the method call didn't return an exception");
+
+					const string reason = "because the method call didn't return a value";
+					byte byteValue;
+					reader.ReadResultByte(out byteValue).Should().BeFalse(reason);
+					short int16Value;
+					reader.ReadResultInt16(out int16Value).Should().BeFalse(reason);
+					int int32Value;
+					reader.ReadResultInt32(out int32Value).Should().BeFalse(reason);
+					long int64Value;
+					reader.ReadResultInt64(out int64Value).Should().BeFalse(reason);
+					ushort uint16Value;
+					reader.ReadResultUInt16(out uint16Value).Should().BeFalse(reason);
+					uint uint32Value;
+					reader.ReadResultUInt32(out uint32Value).Should().BeFalse(reason);
+					ulong uint64Value;
+					reader.ReadResultUInt64(out uint64Value).Should().BeFalse(reason);
+					float floatValue;
+					reader.ReadResultSingle(out floatValue).Should().BeFalse(reason);
+					double doubleValue;
+					reader.ReadResultDouble(out doubleValue).Should().BeFalse(reason);
+					string stringValue;
+					reader.ReadResultString(out stringValue).Should().BeFalse(reason);
+					object value;
+					reader.ReadResult(out value).Should().BeFalse(reason);
 				}
 			}
 		}
@@ -871,7 +897,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.RpcId.Should().Be(rpcId);
 
 					float actualValue;
-					reader.ReadResultFloat(out actualValue).Should().BeTrue();
+					reader.ReadResultSingle(out actualValue).Should().BeTrue();
 					actualValue.Should().Be(value);
 				}
 			}

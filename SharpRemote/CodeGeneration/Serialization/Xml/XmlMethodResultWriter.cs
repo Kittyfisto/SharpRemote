@@ -9,8 +9,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlMethodResultWriter
 		: IMethodResultWriter
 	{
-		public const string RpcElementName = "Result";
-		public const string RpcIdAttributeName = XmlMethodCallWriter.RpcIdAttributeName;
+		
 
 		private readonly XmlSerializer _serializer;
 		private readonly StreamWriter _textWriter;
@@ -24,8 +23,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			_textWriter = new StreamWriter(stream, settings.Encoding, 4096, leaveOpen: true);
 			_writer = XmlWriter.Create(_textWriter, settings);
 			_writer.WriteStartDocument();
-			_writer.WriteStartElement(RpcElementName);
-			_writer.WriteAttributeString(RpcIdAttributeName, rpcId.ToString(CultureInfo.InvariantCulture));
+			_writer.WriteStartElement(XmlSerializer.MethodResultElementName);
+			_writer.WriteAttributeString(XmlSerializer.RpcIdAttributeName, rpcId.ToString(CultureInfo.InvariantCulture));
 		}
 
 		public void Dispose()

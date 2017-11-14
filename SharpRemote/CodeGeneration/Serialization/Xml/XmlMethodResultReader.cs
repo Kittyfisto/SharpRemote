@@ -9,19 +9,25 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlMethodResultReader
 		: IMethodResultReader
 	{
-		public const string RpcIdAttributeName = XmlMethodResultWriter.RpcIdAttributeName;
-
 		private readonly XmlSerializer _serializer;
 		private readonly StreamReader _textReader;
 		private readonly XmlReader _reader;
+		private readonly SerializationMethodStorage<XmlMethodsCompiler> _methodStorage;
+		private readonly IRemotingEndPoint _endPoint;
 		private readonly ulong _id;
 		private readonly bool _isEmpty;
 
-		public XmlMethodResultReader(XmlSerializer serializer, StreamReader textReader, XmlReader reader, SerializationMethodStorage<XmlMethodsCompiler> methodStorage, IRemotingEndPoint endPoint)
+		public XmlMethodResultReader(XmlSerializer serializer,
+		                             StreamReader textReader,
+		                             XmlReader reader,
+		                             SerializationMethodStorage<XmlMethodsCompiler> methodStorage,
+		                             IRemotingEndPoint endPoint)
 		{
 			_serializer = serializer;
 			_textReader = textReader;
 			_reader = reader;
+			_methodStorage = methodStorage;
+			_endPoint = endPoint;
 
 			ulong? id = null;
 			var attributeCount = _reader.AttributeCount;
@@ -30,7 +36,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				_reader.MoveToNextAttribute();
 				switch (_reader.Name)
 				{
-					case RpcIdAttributeName:
+					case XmlSerializer.RpcIdAttributeName:
 						id = ulong.Parse(_reader.Value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 						break;
 				}
@@ -78,7 +84,38 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResult(out object value)
 		{
-			throw new NotImplementedException();
+			if (!TryReadResult())
+			{
+				value = null;
+				return false;
+			}
+
+			var count = _reader.AttributeCount;
+			Type type = null;
+			for (int i = 0; i < count; ++i)
+			{
+				_reader.MoveToAttribute(i);
+				switch (_reader.Name)
+				{
+					case XmlSerializer.ArgumentTypeAttributeName:
+						type = TypeResolver.GetType(_reader.Value, true);
+						break;
+				}
+			}
+
+			if (type == null)
+				throw new NotImplementedException();
+
+			_reader.Read();
+			if (_reader.Name != XmlSerializer.ValueName)
+				throw new NotImplementedException();
+
+			var methods = _methodStorage.GetOrAdd(type);
+			value = methods.ReadObjectDelegate(_reader, _serializer, _endPoint);
+
+			_reader.MoveToElement();
+			_reader.Read();
+			return true;
 		}
 
 		public bool ReadResultSByte(out sbyte value)
@@ -103,9 +140,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultUInt16(out ushort value)
 		{
-			value = ushort.MinValue;
 			if (!TryReadResult())
+			{
+				value = ushort.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsUInt16(_reader);
 			return true;
@@ -113,9 +152,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultInt16(out short value)
 		{
-			value = short.MinValue;
 			if (!TryReadResult())
+			{
+				value = short.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsInt16(_reader);
 			return true;
@@ -123,9 +164,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultUInt32(out uint value)
 		{
-			value = uint.MinValue;
 			if (!TryReadResult())
+			{
+				value = uint.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsUInt32(_reader);
 			return true;
@@ -133,9 +176,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultInt32(out int value)
 		{
-			value = int.MinValue;
 			if (!TryReadResult())
+			{
+				value = int.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsInt32(_reader);
 			return true;
@@ -143,9 +188,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultUInt64(out ulong value)
 		{
-			value = ulong.MinValue;
 			if (!TryReadResult())
+			{
+				value = ulong.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsUInt64(_reader);
 			return true;
@@ -153,19 +200,23 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultInt64(out long value)
 		{
-			value = long.MinValue;
 			if (!TryReadResult())
+			{
+				value = long.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsInt64(_reader);
 			return true;
 		}
 
-		public bool ReadResultFloat(out float value)
+		public bool ReadResultSingle(out float value)
 		{
-			value = long.MinValue;
 			if (!TryReadResult())
+			{
+				value = long.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsFloat(_reader);
 			return true;
@@ -173,9 +224,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultDouble(out double value)
 		{
-			value = long.MinValue;
 			if (!TryReadResult())
+			{
+				value = long.MinValue;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsDouble(_reader);
 			return true;
@@ -183,9 +236,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public bool ReadResultString(out string value)
 		{
-			value = null;
 			if (!TryReadResult())
+			{
+				value = null;
 				return false;
+			}
 
 			value = XmlSerializer.ReadValueAsString(_reader);
 			return true;

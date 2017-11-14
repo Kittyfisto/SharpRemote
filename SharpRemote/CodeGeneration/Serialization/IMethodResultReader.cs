@@ -7,6 +7,11 @@ namespace SharpRemote
 	///     Responsible for reading a message from a stream about the result of a method call.
 	///     Reads the output from <see cref="IMethodResultWriter" />.
 	/// </summary>
+	/// <remarks>
+	///     Usage:
+	///     After having obtained a newly created reader, you may call <see cref="ReadException" /> and **one**
+	///     of the other ReadXYZ methods in no particular order.
+	/// </remarks>
 	public interface IMethodResultReader
 		: IDisposable
 	{
@@ -139,7 +144,7 @@ namespace SharpRemote
 		/// </remarks>
 		/// <param name="value"></param>
 		/// <returns>True if a value was written to- and thus read from, false if no result is present</returns>
-		bool ReadResultFloat(out float value);
+		bool ReadResultSingle(out float value);
 
 		/// <summary>
 		///     Returns the result of the method as an <see cref="double" />.

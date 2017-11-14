@@ -9,15 +9,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlMethodCallReader
 		: IMethodCallReader
 	{
-		public const string RpcElementName = XmlMethodCallWriter.RpcElementName;
-		public const string RpcIdAttributeName = XmlMethodCallWriter.RpcIdAttributeName;
-		public const string GrainIdAttributeName = XmlMethodCallWriter.GrainIdAttributeName;
-		public const string MethodAttributeName = XmlMethodCallWriter.MethodAttributeName;
-		public const string ArgumentElementName = XmlMethodCallWriter.ArgumentElementName;
-		public const string ArgumentNameAttributeName = XmlMethodCallWriter.ArgumentNameAttributeName;
-		public const string ArgumentValueAttributeName = XmlMethodCallWriter.ArgumentValueName;
-		public const string ArgumentTypeAttributeName = XmlMethodCallWriter.ArgumentTypeAttributeName;
-
 		private readonly IRemotingEndPoint _endPoint;
 		private readonly ulong _grainId;
 		private readonly ulong _id;
@@ -48,15 +39,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				_reader.MoveToNextAttribute();
 				switch (_reader.Name)
 				{
-					case RpcIdAttributeName:
+					case XmlSerializer.RpcIdAttributeName:
 						id = ulong.Parse(_reader.Value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 						break;
 
-					case GrainIdAttributeName:
+					case XmlSerializer.GrainIdAttributeName:
 						grainId = ulong.Parse(_reader.Value, NumberStyles.Integer, CultureInfo.InvariantCulture);
 						break;
 
-					case MethodAttributeName:
+					case XmlSerializer.MethodAttributeName:
 						_methodName = _reader.Value;
 						break;
 
@@ -90,7 +81,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				return false;
 			}
 
-			if (_reader.Name != ArgumentElementName)
+			if (_reader.Name != XmlSerializer.ArgumentElementName)
 				throw new NotImplementedException();
 
 			if (_reader.IsEmptyElement && !_reader.HasAttributes)
@@ -106,7 +97,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				_reader.MoveToAttribute(i);
 				switch (_reader.Name)
 				{
-					case ArgumentTypeAttributeName:
+					case XmlSerializer.ArgumentTypeAttributeName:
 						type = TypeResolver.GetType(_reader.Value, true);
 						break;
 				}
@@ -116,7 +107,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				throw new NotImplementedException();
 
 			_reader.Read();
-			if (_reader.Name != ArgumentValueAttributeName)
+			if (_reader.Name != XmlSerializer.ValueName)
 				throw new NotImplementedException();
 
 			var methods = _methodStorage.GetOrAdd(type);
@@ -215,7 +206,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
-		public bool ReadNextArgumentAsFloat(out float value)
+		public bool ReadNextArgumentAsSingle(out float value)
 		{
 			if (!ReadNextArgument())
 			{
@@ -277,7 +268,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			if (!_reader.Read())
 				return false;
 
-			if (_reader.NodeType == XmlNodeType.EndElement && _reader.Name == RpcElementName)
+			if (_reader.NodeType == XmlNodeType.EndElement && _reader.Name == XmlSerializer.MethodCallElementName)
 				return false;
 
 			return true;

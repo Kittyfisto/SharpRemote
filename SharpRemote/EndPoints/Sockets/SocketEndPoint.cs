@@ -10,6 +10,7 @@ using SharpRemote.CodeGeneration;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.ServiceDiscovery;
+using SharpRemote.Sockets;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -25,7 +26,7 @@ namespace SharpRemote
 	///     See issue #36 on github for more information on how a true server endpoint will be implemented.
 	/// </remarks>
 	public sealed class SocketEndPoint
-		: AbstractBinaryStreamEndPoint<Socket>
+		: AbstractBinaryStreamEndPoint<ISocket>
 			, ISocketEndPoint
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -34,7 +35,7 @@ namespace SharpRemote
 		private bool _isConnecting;
 		private RegisteredService _peerNameRegistration;
 
-		private Socket _serverSocket;
+		private ISocket _serverSocket;
 
 		/// <summary>
 		///     Creates a new socket end point that (optionally) is bound to the given
@@ -206,7 +207,7 @@ namespace SharpRemote
 			                timeout.TotalMilliseconds);
 
 			var success = false;
-			Socket socket = null;
+			ISocket socket = null;
 			try
 			{
 				var started = DateTime.Now;
@@ -216,7 +217,7 @@ namespace SharpRemote
 					{
 						Log.DebugFormat("Task to connect to '{0}' started", endPoint);
 
-						socket = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+						socket = new Socket2(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
 						{
 							ExclusiveAddressUse = true,
 							Blocking = true
@@ -439,7 +440,7 @@ namespace SharpRemote
 		{
 			if (ep == null) throw new ArgumentNullException(nameof(ep));
 
-			var socket = new Socket(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+			var socket = new Socket2(ep.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
 			{
 				ExclusiveAddressUse = true
 			};
@@ -509,13 +510,13 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		protected override void Send(Socket socket, byte[] data, int offset, int size)
+		protected override void Send(ISocket socket, byte[] data, int offset, int size)
 		{
 			socket.Send(data, offset, size, SocketFlags.None);
 		}
 
 		/// <inheritdoc />
-		protected override bool SynchronizedWrite(Socket socket, byte[] data, int length, out SocketError err)
+		protected override bool SynchronizedWrite(ISocket socket, byte[] data, int length, out SocketError err)
 		{
 			if (!socket.Connected)
 			{
@@ -537,7 +538,7 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		protected override bool SynchronizedRead(Socket socket, byte[] buffer, TimeSpan timeout, out SocketError err)
+		protected override bool SynchronizedRead(ISocket socket, byte[] buffer, TimeSpan timeout, out SocketError err)
 		{
 			var start = DateTime.Now;
 			while (socket.Available < buffer.Length)
@@ -579,7 +580,7 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		protected override bool SynchronizedRead(Socket socket, byte[] buffer, out SocketError err)
+		protected override bool SynchronizedRead(ISocket socket, byte[] buffer, out SocketError err)
 		{
 			err = SocketError.Success;
 
@@ -604,20 +605,20 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		protected override EndPoint GetRemoteEndPointOf(Socket socket)
+		protected override EndPoint GetRemoteEndPointOf(ISocket socket)
 		{
 			var remoteEndPoint = socket.RemoteEndPoint;
 			return remoteEndPoint;
 		}
 
 		/// <inheritdoc />
-		protected override void DisconnectTransport(Socket socket, bool reuseSocket)
+		protected override void DisconnectTransport(ISocket socket, bool reuseSocket)
 		{
 			socket.Disconnect(reuseSocket: false);
 		}
 
 		/// <inheritdoc />
-		protected override void DisposeAfterDisconnect(Socket socket)
+		protected override void DisposeAfterDisconnect(ISocket socket)
 		{
 			socket.TryDispose();
 		}
@@ -629,7 +630,7 @@ namespace SharpRemote
 		/// <param name="rpcId"></param>
 		/// <param name="waitTime"></param>
 		/// <returns>True when the goodbye message could be sent, false otherwise</returns>
-		protected override bool SendGoodbye(Socket socket, long rpcId, TimeSpan waitTime)
+		protected override bool SendGoodbye(ISocket socket, long rpcId, TimeSpan waitTime)
 		{
 			var task = new Task(() =>
 			{
@@ -698,7 +699,7 @@ namespace SharpRemote
 					return;
 			}
 
-			Socket socket = null;
+			ISocket socket = null;
 			var success = false;
 			try
 			{
@@ -772,7 +773,7 @@ namespace SharpRemote
 			}
 		}
 
-		internal static Socket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
+		internal static ISocket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
 		{
 			const ushort firstSocket = 49152;
 			const ushort lastSocket = 65535;
@@ -780,13 +781,13 @@ namespace SharpRemote
 			return CreateSocketAndBindToAnyPort(address, firstSocket, lastSocket, out localAddress);
 		}
 
-		internal static Socket CreateSocketAndBindToAnyPort(IPAddress address,
+		internal static ISocket CreateSocketAndBindToAnyPort(IPAddress address,
 		                                                    ushort firstSocket,
 		                                                    ushort lastSocket,
 		                                                    out IPEndPoint localAddress)
 		{
 			var family = address.AddressFamily;
-			var socket = new Socket(family, SocketType.Stream, ProtocolType.Tcp);
+			var socket = new Socket2(family, SocketType.Stream, ProtocolType.Tcp);
 			try
 			{
 				socket.ExclusiveAddressUse = true;

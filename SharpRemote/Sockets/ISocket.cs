@@ -13,7 +13,7 @@ namespace SharpRemote.Sockets
 	/// <remarks>
 	///     This should be part of the System.Extensions project and be publicly available.
 	/// </remarks>
-	internal interface ISocket
+	public interface ISocket
 		: IDisposable
 	{
 		/// <summary>
@@ -3098,23 +3098,20 @@ namespace SharpRemote.Sockets
 		///     A caller in the call stack does not have the required permissions.
 		int SendTo(byte[] buffer, int offset, int size, SocketFlags socketFlags, EndPoint remoteEP);
 
-		///
 		///<Summary>
 		///     Sends data asynchronously to a specific remote host.
-		///
-		/// Parameters:
-		///   e:
+		///</Summary>
+		/// <param name="e">
 		///     The System.Net.Sockets.SocketAsyncEventArgs object to use for this asynchronous
 		///     socket operation.
-		///
-		///</Summary><Returns>
+		/// </param>
+		/// <Returns>
 		///     Returns true if the I/O operation is pending. The System.Net.Sockets.SocketAsyncEventArgs.Completed
 		///     event on the e parameter will be raised upon completion of the operation. Returns
 		///     false if the I/O operation completed synchronously. In this case, The System.Net.Sockets.SocketAsyncEventArgs.Completed
 		///     event on the e parameter will not be raised and the e object passed as a parameter
 		///     may be examined immediately after the method call returns to retrieve the result
 		///     of the operation.
-		///
 		/// </Returns>
 		///   <exception cref="System.ArgumentNullException"></exception>
 		///     The System.Net.Sockets.SocketAsyncEventArgs.RemoteEndPoint cannot be null.
@@ -3127,18 +3124,14 @@ namespace SharpRemote.Sockets
 		///     Windows XP or later is required for this method.
 		///
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     The protocol specified is connection-oriented, but the System.Net.Sockets.Socket
 		///     is not yet connected.
+		/// </exception>
 		bool SendToAsync(SocketAsyncEventArgs e);
 
-		///
 		///<Summary>
 		///     Set the IP protection level on a socket.
-		///
-		/// Parameters:
-		///   level:
-		/// 
 		/// </Summary>
 		/// <param name="level">The IP protection level to set on this socket.</param>
 		///   <exception cref="System.ArgumentException">
@@ -3151,22 +3144,13 @@ namespace SharpRemote.Sockets
 		/// </exception>
 		void SetIPProtectionLevel(IPProtectionLevel level);
 
-		//
-		//<Summary>
-		//     Sets the specified System.Net.Sockets.Socket option to the specified integer
-		//     value.
-		//
-		// Parameters:
-		//   optionLevel:
-		//     One of the System.Net.Sockets.SocketOptionLevel values.
-		//
-		//   optionName:
-		//     One of the System.Net.Sockets.SocketOptionName values.
-		//
-		//   optionValue:
-		//     A value of the option.
-		//
-
+		///<Summary>
+		///     Sets the specified System.Net.Sockets.Socket option to the specified integer
+		///     value.
+		///</Summary>
+		/// <param name="optionLevel">One of the System.Net.Sockets.SocketOptionLevel values.</param>
+		/// <param name="optionName">One of the System.Net.Sockets.SocketOptionName values.</param>
+		/// <param name="optionValue">A value of the option.</param>
 		/// <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
 		///     for more information.
@@ -3175,22 +3159,14 @@ namespace SharpRemote.Sockets
 		/// The System.Net.Sockets.Socket has been closed.
 		/// </exception>
 		void SetSocketOption(SocketOptionLevel optionLevel, SocketOptionName optionName, int optionValue);
-		//
-		//<Summary>
-		//     Sets the specified System.Net.Sockets.Socket option to the specified value, represented
-		//     as a byte array.
-		//
-		// Parameters:
-		//   optionLevel:
-		//     One of the System.Net.Sockets.SocketOptionLevel values.
-		//
-		//   optionName:
-		//     One of the System.Net.Sockets.SocketOptionName values.
-		//
-		//   optionValue:
-		//     An array of type System.Byte that represents the value of the option.
-		//
 
+		///<Summary>
+		///     Sets the specified System.Net.Sockets.Socket option to the specified value, represented
+		///     as a byte array.
+		/// </Summary>
+		///<param name="optionLevel">One of the System.Net.Sockets.SocketOptionLevel values.</param>
+		/// <param name="optionName">One of the System.Net.Sockets.SocketOptionName values.</param>
+		/// <param name="optionValue">An array of type System.Byte that represents the value of the option.</param>
 		/// <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
 		///     for more information.
@@ -3199,29 +3175,28 @@ namespace SharpRemote.Sockets
 		/// The System.Net.Sockets.Socket has been closed.
 		/// </exception>
 		void SetSocketOption(SocketOptionLevel optionLevel, SocketOptionName optionName, byte[] optionValue);
-		//
-		//<Summary>
-		//     Sets the specified System.Net.Sockets.Socket option to the specified value, represented
-		//     as an object.
-		//
-		// Parameters:
-		//   optionLevel:
-		//     One of the System.Net.Sockets.SocketOptionLevel values.
-		//
-		//   optionName:
-		//     One of the System.Net.Sockets.SocketOptionName values.
-		//
-		//   optionValue:
-		//     A System.Net.Sockets.LingerOption or System.Net.Sockets.MulticastOption that
-		//     contains the value of the option.
-		//
-		// </Returns>
-		//   <exception cref="System.ArgumentNullException"></exception>
-		//     optionValue is null.
-		//
-		//   <exception cref="System.Net.Sockets.SocketException"></exception>
-		//     An error occurred when attempting to access the socket. See the Remarks section
-		//     for more information.
+
+		/// <Summary>
+		///     Sets the specified System.Net.Sockets.Socket option to the specified value, represented
+		///     as an object.
+		/// </Summary>
+		/// <param name="optionLevel">
+		///     One of the System.Net.Sockets.SocketOptionLevel values.
+		/// </param>
+		/// <param name="optionName">
+		///     One of the System.Net.Sockets.SocketOptionName values.
+		/// </param>
+		/// <param name="optionValue">
+		///     A System.Net.Sockets.LingerOption or System.Net.Sockets.MulticastOption that
+		///     contains the value of the option.
+		/// </param>
+		/// <exception cref="System.ArgumentNullException">
+		///     optionValue is null.
+		/// </exception>
+		/// <exception cref="System.Net.Sockets.SocketException">
+		///     An error occurred when attempting to access the socket. See the Remarks section
+		///     for more information.
+		/// </exception>
 		void SetSocketOption(SocketOptionLevel optionLevel, SocketOptionName optionName, object optionValue);
 
 		//

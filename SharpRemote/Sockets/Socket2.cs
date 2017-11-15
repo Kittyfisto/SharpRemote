@@ -8,6 +8,9 @@ namespace SharpRemote.Sockets
 	/// <summary>
 	///     Proxy around a <see cref="Socket" /> object.
 	/// </summary>
+	/// <remarks>
+	///     This should be part of the System.Extensions project and be publicly available.
+	/// </remarks>
 	internal sealed class Socket2
 		: ISocket
 	{

@@ -28,7 +28,7 @@ namespace SharpRemote
 		: AbstractBinaryStreamEndPoint<Socket>
 			, ISocketEndPoint
 	{
-		private new static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly INetworkServiceDiscoverer _networkServiceDiscoverer;
 		private bool _isConnecting;

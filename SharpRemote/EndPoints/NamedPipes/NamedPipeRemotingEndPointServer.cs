@@ -1,5 +1,7 @@
 using System;
 using System.IO.Pipes;
+using System.Reflection;
+using log4net;
 using SharpRemote.CodeGeneration;
 using SharpRemote.Exceptions;
 
@@ -13,6 +15,8 @@ namespace SharpRemote
 	internal sealed class NamedPipeRemotingEndPointServer
 		: AbstractNamedPipeEndPoint<NamedPipeServerStream>
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+	
 		private NamedPipeServerStream _pipe;
 		private bool _isConnecting;
 

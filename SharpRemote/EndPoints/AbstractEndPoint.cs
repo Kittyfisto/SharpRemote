@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
-using log4net;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -14,11 +12,6 @@ namespace SharpRemote
 	/// </summary>
 	public abstract class AbstractEndPoint
 	{
-		/// <summary>
-		/// log4net logger...
-		/// </summary>
-		protected static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
 		#region Static Methods
 
 #if !WINDOWS_PHONE_APP

@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using log4net;
 using SharpRemote.CodeGeneration;
 using SharpRemote.EndPoints;
 using SharpRemote.Exceptions;
@@ -35,6 +37,8 @@ namespace SharpRemote
 		  , IEndPointChannel
 		where TTransport : class, IDisposable
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private const ulong ServerLatencyServantId = ulong.MaxValue - 1;
 		private const ulong ServerHeartbeatServantId = ulong.MaxValue - 2;
 		private const ulong ClientLatencyServantId = ulong.MaxValue - 3;

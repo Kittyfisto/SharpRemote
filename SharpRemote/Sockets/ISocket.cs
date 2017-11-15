@@ -141,163 +141,153 @@ namespace SharpRemote.Sockets
 		/// </Returns>
 		IntPtr Handle { get; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets a value that indicates whether the System.Net.Sockets.Socket is bound to
 		///     a specific local port.
-		///
-		///</Summary>
+		/// </Summary>
 		/// <Returns>
 		///     true if the System.Net.Sockets.Socket is bound to a local port; otherwise, false.
 		/// </Returns>
 		bool IsBound { get; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a value that specifies whether the System.Net.Sockets.Socket will
 		///     delay closing a socket in an attempt to send all pending data.
-		///
-		///</Summary>
+		/// </Summary>
 		/// <Returns>
 		///     A System.Net.Sockets.LingerOption that specifies how to linger while closing
 		///     a socket.
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException">
-		/// An error occurred when attempting to access the socket.
+		/// <exception cref="System.Net.Sockets.SocketException">
+		///     An error occurred when attempting to access the socket.
 		/// </exception>
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		LingerOption LingerState { get; set; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets the local endpoint.
-		///
-		///</Summary><Returns>
+		/// </Summary>
+		/// <Returns>
 		///     The System.Net.EndPoint that the System.Net.Sockets.Socket is using for communications.
-		///
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException">
-		/// An error occurred when attempting to access the socket. See the Remarks section
+		/// <exception cref="System.Net.Sockets.SocketException">
+		///     An error occurred when attempting to access the socket. See the Remarks section
 		///     for more information.
 		/// </exception>
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		EndPoint LocalEndPoint { get; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a value that specifies whether outgoing multicast packets are delivered
 		///     to the sending application.
-		///
-		///</Summary><Returns>
+		/// </Summary>
+		/// <Returns>
 		///     true if the System.Net.Sockets.Socket receives outgoing multicast packets; otherwise,
 		///     false.
-		///
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket.
-		///
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// </exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		bool MulticastLoopback { get; set; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a System.Boolean value that specifies whether the stream System.Net.Sockets.Socket
 		///     is using the Nagle algorithm.
-		///
-		///</Summary><Returns>
+		/// </Summary>
+		/// <Returns>
 		///     false if the System.Net.Sockets.Socket uses the Nagle algorithm; otherwise, true.
 		///     The default is false.
-		///
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
-		///     An error occurred when attempting to access the System.Net.Sockets.Socket. See
-		///     the Remarks section for more information.
-		///
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		
+		/// <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// An error occurred when attempting to access the System.Net.Sockets.Socket. See
+		/// the Remarks section for more information.
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		bool NoDelay { get; set; }
-		///
-		///<Summary>
+
+		/// <Summary>
 		///     Gets the protocol type of the System.Net.Sockets.Socket.
-		///
-		///</Summary>
+		/// </Summary>
 		/// <Returns>
 		///     One of the System.Net.Sockets.ProtocolType values.
 		/// </Returns>
 		ProtocolType ProtocolType { get; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a value that specifies the size of the receive buffer of the System.Net.Sockets.Socket.
-		///
-		///</Summary><Returns>
+		/// </Summary>
+		/// <Returns>
 		///     An System.Int32 that contains the size, in bytes, of the receive buffer. The
 		///     default is 8192.
-		///
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket.
-		///
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// </exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException">
-		/// The value specified for a set operation is less than 0.
+		///     The value specified for a set operation is less than 0.
 		/// </exception>
 		int ReceiveBufferSize { get; set; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a value that specifies the amount of time after which a synchronous
 		///     Overload:System.Net.Sockets.Socket.Receive call will time out.
-		///
-		///</Summary><Returns>
+		/// </Summary>
+		/// <Returns>
 		///     The time-out value, in milliseconds. The default value is 0, which indicates
 		///     an infinite time-out period. Specifying -1 also indicates an infinite time-out
 		///     period.
-		///
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket.
-		///
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// </exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		/// <exception cref="System.ArgumentOutOfRangeException">
-		/// The value specified for a set operation is less than -1.
+		///     The value specified for a set operation is less than -1.
 		/// </exception>
 		int ReceiveTimeout { get; set; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets the remote endpoint.
-		///</Summary>
+		/// </Summary>
 		/// <Returns>
 		///     The System.Net.EndPoint with which the System.Net.Sockets.Socket is communicating.
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException">
-		/// An error occurred when attempting to access the socket. See the Remarks section
+		/// <exception cref="System.Net.Sockets.SocketException">
+		///     An error occurred when attempting to access the socket. See the Remarks section
 		///     for more information.
 		/// </exception>
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		EndPoint RemoteEndPoint { get; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a value that specifies the size of the send buffer of the System.Net.Sockets.Socket.
-		///</Summary>
+		/// </Summary>
 		/// <Returns>
 		///     An System.Int32 that contains the size, in bytes, of the send buffer. The default
 		///     is 8192.
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException">An error occurred when attempting to access the socket.</exception>
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///   <exception cref="System.ArgumentOutOfRangeException">
-		/// The value specified for a set operation is less than 0.
+		/// <exception cref="System.Net.Sockets.SocketException">An error occurred when attempting to access the socket.</exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException">
+		///     The value specified for a set operation is less than 0.
 		/// </exception>
 		int SendBufferSize { get; set; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a value that specifies the amount of time after which a synchronous
 		///     Overload:System.Net.Sockets.Socket.Send call will time out.
-		///</Summary>
+		/// </Summary>
 		/// <Returns>
 		///     The time-out value, in milliseconds. If you set the property with a value between
 		///     1 and 499, the value will be changed to 500. The default value is 0, which indicates
 		///     an infinite time-out period. Specifying -1 also indicates an infinite time-out
 		///     period.
 		/// </Returns>
-		///   <exception cref="System.Net.Sockets.SocketException">An error occurred when attempting to access the socket.</exception>
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///<exception cref="System.ArgumentOutOfRangeException">
-		/// The value specified for a set operation is less than -1.
+		/// <exception cref="System.Net.Sockets.SocketException">An error occurred when attempting to access the socket.</exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// <exception cref="System.ArgumentOutOfRangeException">
+		///     The value specified for a set operation is less than -1.
 		/// </exception>
 		int SendTimeout { get; set; }
 
@@ -309,24 +299,24 @@ namespace SharpRemote.Sockets
 		/// </Returns>
 		SocketType SocketType { get; }
 
-		///<Summary>
+		/// <Summary>
 		///     Gets or sets a value that specifies the Time To Live (TTL) value of Internet
 		///     Protocol (IP) packets sent by the System.Net.Sockets.Socket.
-		///</Summary>
+		/// </Summary>
 		/// <Returns>
 		///     The TTL value.
 		/// </Returns>
 		/// <exception cref="System.ArgumentOutOfRangeException">
-		/// The TTL value can't be set to a negative number.
+		///     The TTL value can't be set to a negative number.
 		/// </exception>
 		/// <exception cref="System.NotSupportedException">
-		/// This property can be set only for sockets in the System.Net.Sockets.AddressFamily.InterNetwork
+		///     This property can be set only for sockets in the System.Net.Sockets.AddressFamily.InterNetwork
 		///     or System.Net.Sockets.AddressFamily.InterNetworkV6 families.
 		/// </exception>
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
-		///     An error occurred when attempting to access the socket. This error is also returned
-		///     when an attempt was made to set TTL to a value higher than 255.
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// An error occurred when attempting to access the socket. This error is also returned
+		/// when an attempt was made to set TTL to a value higher than 255.
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		short Ttl { get; set; }
 
 		///<Summary>
@@ -358,7 +348,6 @@ namespace SharpRemote.Sockets
 		/// </exception>
 		ISocket Accept();
 
-		///
 		///<Summary>
 		///     Begins an asynchronous operation to accept an incoming connection attempt.
 		///</Summary>
@@ -372,7 +361,6 @@ namespace SharpRemote.Sockets
 		///     event on the e parameter will not be raised and the e object passed as a parameter
 		///     may be examined immediately after the method call returns to retrieve the result
 		///     of the operation.
-		///
 		/// </Returns>
 		/// <exception cref="System.ArgumentException">
 		/// An argument is not valid. This exception occurs if the buffer provided is not
@@ -429,356 +417,271 @@ namespace SharpRemote.Sockets
 		/// </exception>
 		IAsyncResult BeginAccept(AsyncCallback callback, object state);
 
-		///
 		///<Summary>
 		///     Begins an asynchronous operation to accept an incoming connection attempt and
 		///     receives the first block of data sent by the client application.
-		///
-		/// Parameters:
-		///   receiveSize:
-		///     The number of bytes to accept from the sender.
-		///
-		///   callback:
-		///     The System.AsyncCallback delegate.
-		///
-		///   state:
-		///     An object that contains state information for this request.
-		///
-		///</Summary><Returns>
+		///</Summary>
+		/// <param name="receiveSize">The number of bytes to accept from the sender.</param>
+		/// <param name="callback">The System.AsyncCallback delegate.</param>
+		/// <param name="state">An object that contains state information for this request.</param>
+		/// <Returns>
 		///     An System.IAsyncResult that references the asynchronous System.Net.Sockets.Socket
 		///     creation.
-		///
 		/// </Returns>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///     The System.Net.Sockets.Socket object has been closed.
-		///
-		///   <exception cref="System.NotSupportedException"></exception>
+		///   <exception cref="System.NotSupportedException">
 		///     Windows NT is required for this method.
-		///
-		///   <exception cref="System.InvalidOperationException"></exception>
+		/// </exception>
+		///   <exception cref="System.InvalidOperationException">
 		///     The accepting socket is not listening for connections. You must call System.Net.Sockets.Socket.Bind(System.Net.EndPoint)
 		///     and System.Net.Sockets.Socket.Listen(System.Int32) before calling System.Net.Sockets.Socket.BeginAccept(System.AsyncCallback,System.Object).-or-
 		///     The accepted socket is bound.
-		///
-		///   <exception cref="System.ArgumentOutOfRangeException"></exception>
+		/// </exception>
+		///   <exception cref="System.ArgumentOutOfRangeException">
 		///     receiveSize is less than 0.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// </exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
 		///     for more information.
+		/// </exception>
 		IAsyncResult BeginAccept(int receiveSize, AsyncCallback callback, object state);
 
-		///
-		///<Summary>
+		/// <Summary>
 		///     Begins an asynchronous operation to accept an incoming connection attempt from
 		///     a specified socket and receives the first block of data sent by the client application.
-		///
-		/// Parameters:
-		///   acceptSocket:
-		///     The accepted System.Net.Sockets.Socket object. This value may be null.
-		///
-		///   receiveSize:
-		///     The maximum number of bytes to receive.
-		///
-		///   callback:
-		///     The System.AsyncCallback delegate.
-		///
-		///   state:
-		///     An object that contains state information for this request.
-		///
-		///</Summary><Returns>
+		/// </Summary>
+		/// <param name="acceptSocket">The accepted System.Net.Sockets.Socket object. This value may be null.</param>
+		/// <param name="receiveSize">The maximum number of bytes to receive.</param>
+		/// <param name="callback">The System.AsyncCallback delegate.</param>
+		/// <param name="state">An object that contains state information for this request.</param>
+		/// <Returns>
 		///     An System.IAsyncResult object that references the asynchronous System.Net.Sockets.Socket
 		///     object creation.
-		///
 		/// </Returns>
-		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///     The System.Net.Sockets.Socket object has been closed.
-		///
-		///   <exception cref="System.NotSupportedException"></exception>
+		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
+		/// The System.Net.Sockets.Socket object has been closed.
+		/// <exception cref="System.NotSupportedException">
 		///     Windows NT is required for this method.
-		///
-		///   <exception cref="System.InvalidOperationException"></exception>
-		///     The accepting socket is not listening for connections. You must call System.Net.Sockets.Socket.Bind(System.Net.EndPoint)
-		///     and System.Net.Sockets.Socket.Listen(System.Int32) before calling System.Net.Sockets.Socket.BeginAccept(System.AsyncCallback,System.Object).-or-
+		/// </exception>
+		/// <exception cref="System.InvalidOperationException">
+		///     The accepting socket is not listening for connections. You must call
+		///     System.Net.Sockets.Socket.Bind(System.Net.EndPoint)
+		///     and System.Net.Sockets.Socket.Listen(System.Int32) before calling
+		///     System.Net.Sockets.Socket.BeginAccept(System.AsyncCallback,System.Object).-or-
 		///     The accepted socket is bound.
-		///
-		///   <exception cref="System.ArgumentOutOfRangeException"></exception>
+		/// </exception>
+		/// <exception cref="System.ArgumentOutOfRangeException">
 		///     receiveSize is less than 0.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// </exception>
+		/// <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
 		///     for more information.
+		/// </exception>
 		IAsyncResult BeginAccept(Socket acceptSocket, int receiveSize, AsyncCallback callback, object state);
-		///
+
 		///<Summary>
 		///     Begins an asynchronous request for a remote host connection.
-		///
-		/// Parameters:
-		///   remoteEP:
-		///     An System.Net.EndPoint that represents the remote host.
-		///
-		///   callback:
-		///     The System.AsyncCallback delegate.
-		///
-		///   state:
-		///     An object that contains state information for this request.
-		///
-		///</Summary><Returns>
+		///</Summary>
+		/// <param name="remoteEP">An System.Net.EndPoint that represents the remote host.</param>
+		/// <param name="callback">The System.AsyncCallback delegate.</param>
+		/// <param name="state">An object that contains state information for this request.</param>
+		/// <Returns>
 		///     An System.IAsyncResult that references the asynchronous connection.
-		///
 		/// </Returns>
-		///   <exception cref="System.ArgumentNullException"></exception>
+		///   <exception cref="System.ArgumentNullException">
 		///     remoteEP is null.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// </exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
-		///     for more information.
-		///
+		///     for more information.</exception>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		
-		///
-		///   <exception cref="System.Security.SecurityException"></exception>
+		///   <exception cref="System.Security.SecurityException">
 		///     A caller higher in the call stack does not have permission for the requested
 		///     operation.
-		///
-		///   <exception cref="System.InvalidOperationException"></exception>
+		/// </exception>
+		///   <exception cref="System.InvalidOperationException">
 		///     The System.Net.Sockets.Socket is System.Net.Sockets.Socket.Listen(System.Int32)ing.
+		/// </exception>
 		IAsyncResult BeginConnect(EndPoint remoteEP, AsyncCallback callback, object state);
-		///
+
 		///<Summary>
 		///     Begins an asynchronous request for a remote host connection. The host is specified
 		///     by an System.Net.IPAddress array and a port number.
-		///
-		/// Parameters:
-		///   addresses:
-		///     At least one System.Net.IPAddress, designating the remote host.
-		///
-		///   port:
-		///     The port number of the remote host.
-		///
-		///   requestCallback:
+		///</Summary>
+		/// <param name="addresses">At least one System.Net.IPAddress, designating the remote host.</param>
+		/// <param name="port">The port number of the remote host.</param>
+		/// <param name="requestCallback">
 		///     An System.AsyncCallback delegate that references the method to invoke when the
 		///     connect operation is complete.
-		///
-		///   state:
+		/// </param>
+		/// <param name="state">
 		///     A user-defined object that contains information about the connect operation.
 		///     This object is passed to the requestCallback delegate when the operation is complete.
-		///
-		///</Summary><Returns>
+		/// </param>
+		/// <Returns>
 		///     An System.IAsyncResult that references the asynchronous connections.
-		///
 		/// </Returns>
-		///   <exception cref="System.ArgumentNullException"></exception>
+		///   <exception cref="System.ArgumentNullException">
 		///     addresses is null.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// </exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
-		///     for more information.
-		///
+		///     for more information.</exception>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		
-		///
-		///   <exception cref="System.NotSupportedException"></exception>
+		///   <exception cref="System.NotSupportedException">
 		///     This method is valid for sockets that use System.Net.Sockets.AddressFamily.InterNetwork
 		///     or System.Net.Sockets.AddressFamily.InterNetworkV6.
-		///
-		///   <exception cref="System.ArgumentOutOfRangeException"></exception>
-		///     The port number is not valid.
-		///
-		///   <exception cref="System.ArgumentException"></exception>
-		///     The length of address is zero.
-		///
-		///   <exception cref="System.InvalidOperationException"></exception>
-		///     The System.Net.Sockets.Socket is System.Net.Sockets.Socket.Listen(System.Int32)ing.
+		/// </exception>
+		///   <exception cref="System.ArgumentOutOfRangeException">
+		///     The port number is not valid.</exception>
+		///   <exception cref="System.ArgumentException">
+		///     The length of address is zero.</exception>
+		///   <exception cref="System.InvalidOperationException">
+		///     The System.Net.Sockets.Socket is System.Net.Sockets.Socket.Listen(System.Int32)ing.</exception>
 		IAsyncResult BeginConnect(IPAddress[] addresses, int port, AsyncCallback requestCallback, object state);
-		///
+
 		///<Summary>
 		///     Begins an asynchronous request for a remote host connection. The host is specified
 		///     by an System.Net.IPAddress and a port number.
-		///
-		/// Parameters:
-		///   address:
-		///     The System.Net.IPAddress of the remote host.
-		///
-		///   port:
-		///     The port number of the remote host.
-		///
-		///   requestCallback:
+		///</Summary>
+		/// <param name="address">The System.Net.IPAddress of the remote host.</param>
+		/// <param name="port">The port number of the remote host.</param>
+		/// <param name="requestCallback">
 		///     An System.AsyncCallback delegate that references the method to invoke when the
 		///     connect operation is complete.
-		///
-		///   state:
+		/// </param>
+		/// <param name="state">
 		///     A user-defined object that contains information about the connect operation.
 		///     This object is passed to the requestCallback delegate when the operation is complete.
-		///
-		///</Summary><Returns>
+		/// </param>
+		/// <Returns>
 		///     An System.IAsyncResult that references the asynchronous connection.
-		///
 		/// </Returns>
-		///   <exception cref="System.ArgumentNullException"></exception>
-		///     address is null.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		///   <exception cref="System.ArgumentNullException">
+		///     address is null.</exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
-		///     for more information.
-		///
+		///     for more information.</exception>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		
-		///
-		///   <exception cref="System.NotSupportedException"></exception>
-		///     The System.Net.Sockets.Socket is not in the socket family.
-		///
-		///   <exception cref="System.ArgumentOutOfRangeException"></exception>
+		///   <exception cref="System.NotSupportedException">
+		///     The System.Net.Sockets.Socket is not in the socket family.</exception>
+		///   <exception cref="System.ArgumentOutOfRangeException">
 		///     The port number is not valid.
-		///
-		///   <exception cref="System.ArgumentException"></exception>
-		///     The length of address is zero.
-		///
-		///   <exception cref="System.InvalidOperationException"></exception>
-		///     The System.Net.Sockets.Socket is System.Net.Sockets.Socket.Listen(System.Int32)ing.
+		/// </exception>
+		///   <exception cref="System.ArgumentException">
+		///     The length of address is zero.</exception>
+		///   <exception cref="System.InvalidOperationException">
+		///     The System.Net.Sockets.Socket is System.Net.Sockets.Socket.Listen(System.Int32)ing.</exception>
 		IAsyncResult BeginConnect(IPAddress address, int port, AsyncCallback requestCallback, object state);
-		///
+
 		///<Summary>
 		///     Begins an asynchronous request for a remote host connection. The host is specified
 		///     by a host name and a port number.
-		///
-		/// Parameters:
-		///   host:
-		///     The name of the remote host.
-		///
-		///   port:
-		///     The port number of the remote host.
-		///
-		///   requestCallback:
+		///</Summary>
+		/// <param name="host">The name of the remote host.</param>
+		/// <param name="port">The port number of the remote host.</param>
+		/// <param name="requestCallback">
 		///     An System.AsyncCallback delegate that references the method to invoke when the
-		///     connect operation is complete.
-		///
-		///   state:
+		///     connect operation is complete.</param>
+		/// <param name="state">
 		///     A user-defined object that contains information about the connect operation.
 		///     This object is passed to the requestCallback delegate when the operation is complete.
-		///
-		///</Summary><Returns>
+		/// </param>
+		/// <Returns>
 		///     An System.IAsyncResult that references the asynchronous connection.
-		///
 		/// </Returns>
-		///   <exception cref="System.ArgumentNullException"></exception>
-		///     host is null.
-		///
+		///   <exception cref="System.ArgumentNullException">
+		///     host is null.</exception>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		
-		///
-		///   <exception cref="System.NotSupportedException"></exception>
+		///   <exception cref="System.NotSupportedException">
 		///     This method is valid for sockets in the System.Net.Sockets.AddressFamily.InterNetwork
 		///     or System.Net.Sockets.AddressFamily.InterNetworkV6 families.
-		///
-		///   <exception cref="System.ArgumentOutOfRangeException"></exception>
+		/// </exception>
+		///   <exception cref="System.ArgumentOutOfRangeException">
 		///     The port number is not valid.
-		///
-		///   <exception cref="System.InvalidOperationException"></exception>
+		/// </exception>
+		///   <exception cref="System.InvalidOperationException">
 		///     The System.Net.Sockets.Socket is System.Net.Sockets.Socket.Listen(System.Int32)ing.
+		/// </exception>
 		IAsyncResult BeginConnect(string host, int port, AsyncCallback requestCallback, object state);
-		///
+
 		///<Summary>
 		///     Begins an asynchronous request to disconnect from a remote endpoint.
-		///
-		/// Parameters:
-		///   reuseSocket:
+		///</Summary>
+		/// <param name="reuseSocket">
 		///     true if this socket can be reused after the connection is closed; otherwise,
-		///     false.
-		///
-		///   callback:
-		///     The System.AsyncCallback delegate.
-		///
-		///   state:
-		///     An object that contains state information for this request.
-		///
-		///</Summary><Returns>
+		///     false.</param>
+		/// <param name="callback">The System.AsyncCallback delegate.</param>
+		/// <param name="state">An object that contains state information for this request.</param>
+		/// <Returns>
 		///     An System.IAsyncResult object that references the asynchronous operation.
-		///
 		/// </Returns>
-		///   <exception cref="System.NotSupportedException"></exception>
+		///   <exception cref="System.NotSupportedException">
 		///     The operating system is Windows 2000 or earlier, and this method requires Windows
-		///     XP.
-		///
+		///     XP.</exception>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///     The System.Net.Sockets.Socket object has been closed.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
-		///     for more information.
+		///     for more information.</exception>
 		IAsyncResult BeginDisconnect(bool reuseSocket, AsyncCallback callback, object state);
-		///
+
 		///<Summary>
 		///     Begins to asynchronously receive data from a connected System.Net.Sockets.Socket.
-		///
-		/// Parameters:
-		///   buffers:
-		///     An array of type System.Byte that is the storage location for the received data.
-		///
-		///   socketFlags:
-		///     A bitwise combination of the System.Net.Sockets.SocketFlags values.
-		///
-		///   callback:
+		///</Summary>
+		/// <param name="buffers">An array of type System.Byte that is the storage location for the received data.</param>
+		/// <param name="socketFlags">A bitwise combination of the System.Net.Sockets.SocketFlags values.</param>
+		/// <param name="callback">
 		///     An System.AsyncCallback delegate that references the method to invoke when the
-		///     operation is complete.
-		///
-		///   state:
+		///     operation is complete.</param>
+		/// <param name="state">
 		///     A user-defined object that contains information about the receive operation.
 		///     This object is passed to the System.Net.Sockets.Socket.EndReceive(System.IAsyncResult)
 		///     delegate when the operation is complete.
-		///
-		///</Summary><Returns>
+		/// </param>
+		/// <Returns>
 		///     An System.IAsyncResult that references the asynchronous read.
-		///
 		/// </Returns>
-		///   <exception cref="System.ArgumentNullException"></exception>
+		///   <exception cref="System.ArgumentNullException">
 		///     buffer is null.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		/// </exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
-		///     for more information.
-		///
+		///     for more information.</exception>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///     System.Net.Sockets.Socket has been closed.
 		IAsyncResult BeginReceive(IList<ArraySegment<byte>> buffers, SocketFlags socketFlags, AsyncCallback callback, object state);
-		///
+
 		///<Summary>
 		///     Begins to asynchronously receive data from a connected System.Net.Sockets.Socket.
-		///
-		/// Parameters:
-		///   buffers:
+		///</Summary>
+		/// <param name="buffers">
 		///     An array of type System.Byte that is the storage location for the received data.
-		///
-		///   socketFlags:
+		/// </param>
+		/// <param name="socketFlags">
 		///     A bitwise combination of the System.Net.Sockets.SocketFlags values.
-		///
-		///   errorCode:
+		/// </param>
+		/// <param name="errorCode">
 		///     A System.Net.Sockets.SocketError object that stores the socket error.
-		///
-		///   callback:
+		/// </param>
+		/// <param name="callback">
 		///     An System.AsyncCallback delegate that references the method to invoke when the
 		///     operation is complete.
-		///
-		///   state:
+		/// </param>
+		/// <param name="state">
 		///     A user-defined object that contains information about the receive operation.
 		///     This object is passed to the System.Net.Sockets.Socket.EndReceive(System.IAsyncResult)
 		///     delegate when the operation is complete.
-		///
-		///</Summary><Returns>
+		/// </param>
+		/// <Returns>
 		///     An System.IAsyncResult that references the asynchronous read.
-		///
 		/// </Returns>
-		///   <exception cref="System.ArgumentNullException"></exception>
-		///     buffer is null.
-		///
-		///   <exception cref="System.Net.Sockets.SocketException"></exception>
+		///   <exception cref="System.ArgumentNullException">
+		///     buffer is null.</exception>
+		///   <exception cref="System.Net.Sockets.SocketException">
 		///     An error occurred when attempting to access the socket. See the Remarks section
-		///     for more information.
-		///
+		///     for more information.</exception>
 		///   <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
-		///     System.Net.Sockets.Socket has been closed.
 		IAsyncResult BeginReceive(IList<ArraySegment<byte>> buffers, SocketFlags socketFlags, out SocketError errorCode, AsyncCallback callback, object state);
-		///
+
 		///<Summary>
 		///     Begins to asynchronously receive data from a connected System.Net.Sockets.Socket.
 		///

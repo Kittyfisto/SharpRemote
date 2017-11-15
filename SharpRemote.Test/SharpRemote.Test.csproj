@@ -99,8 +99,8 @@
     <Compile Include="Remoting\NamePipe\ConnectTest.cs" />
     <Compile Include="Remoting\Sockets\ConnectTest.cs" />
     <Compile Include="Remoting\Sockets\DisconnectTest.cs" />
-    <Compile Include="Remoting\Sockets\SocketRemotingEndPointClientTest.cs" />
-    <Compile Include="Remoting\Sockets\SocketRemotingEndPointServerTest.cs" />
+    <Compile Include="Remoting\Sockets\SocketEndPointClientTest.cs" />
+    <Compile Include="Remoting\Sockets\SocketEndPointServerTest.cs" />
     <Compile Include="Remoting\Sockets\TryConnectTest.cs" />
     <Compile Include="ServiceDiscovery\MessageTest.cs" />
     <Compile Include="TypeModel\TypeModelTest.cs" />

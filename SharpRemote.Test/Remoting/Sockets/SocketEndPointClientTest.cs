@@ -7,7 +7,7 @@ using SharpRemote.ServiceDiscovery;
 namespace SharpRemote.Test.Remoting.Sockets
 {
 	[TestFixture]
-	public sealed class SocketRemotingEndPointClientTest
+	public sealed class SocketEndPointClientTest
 	{
 		[Test]
 		public void TestConnect1()

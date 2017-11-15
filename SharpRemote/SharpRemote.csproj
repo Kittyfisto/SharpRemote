@@ -131,6 +131,8 @@
     <Compile Include="CodeGeneration\Serialization\ISerializer2.cs" />
     <Compile Include="ProtocolVersion.cs" />
     <Compile Include="Serializer.cs" />
+    <Compile Include="Sockets\ISocket.cs" />
+    <Compile Include="Sockets\Socket2.cs" />
     <Compile Include="TypeModel\FieldDescription.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />

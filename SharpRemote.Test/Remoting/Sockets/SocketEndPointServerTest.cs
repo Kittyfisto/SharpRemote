@@ -9,7 +9,7 @@ using SharpRemote.ServiceDiscovery;
 namespace SharpRemote.Test.Remoting.Sockets
 {
 	[TestFixture]
-	public sealed class SocketRemotingEndPointServerTest
+	public sealed class SocketEndPointServerTest
 	{
 		[Test]
 		[Description("Verifies that any INetworkServiceDiscoverer implementation can be used")]

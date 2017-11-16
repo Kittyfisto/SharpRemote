@@ -33,7 +33,6 @@ namespace SharpRemote.Test.Remoting.Sockets
 		}
 
 		[Test]
-		[Ignore("Bugfix not yet implemented")]
 		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/41")]
 		[Description("Verifies that the connection to an already successfully connected client is not disconnected just because EndConnect for a new client throws")]
 		public void TestEndConnectException()
@@ -77,7 +76,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 				// This causes the actual failure: SocketEndPoint should not disconnect
 				// the existing connection just because a new connection couldn't be established
-				// after alll....
+				// after all....
 				serverSocket.Setup(x => x.EndAccept(It.IsAny<IAsyncResult>())).Throws<SocketException>();
 				callbacks[1](results[1]);
 

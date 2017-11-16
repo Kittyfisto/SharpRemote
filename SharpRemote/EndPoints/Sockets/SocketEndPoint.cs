@@ -734,31 +734,30 @@ namespace SharpRemote
 				}
 				else
 				{
-					Log.DebugFormat("{0}: Incoming connection from '{1}', starting handshake...",
-					                Name,
-					                socket.RemoteEndPoint);
-
-					var connectionId = PerformIncomingHandshake(socket, socket.RemoteEndPoint);
-					FireOnConnected(socket.RemoteEndPoint, connectionId);
-
-					success = true;
+					// We don't have any client yet => Try to establish a connection
+					// with it (handshake, authenticate each other, etc...)
+					TryEstablishConnectionWith(socket, ref success);
 				}
 			}
-			catch (AuthenticationException e)
+			catch (SocketException e)
 			{
-				Log.WarnFormat("{0}: Closing connection: {1}",
+				Log.WarnFormat("{0}: Caught exception while accepting incoming connection: {1}",
 				               Name,
 				               e);
-
-				Disconnect();
+				// NOTE: We don't want to disconnect anything here because we might already have a
+				//       working connection with another client. It's just that this new client
+				//       caused us trouble (which is why we dispose of the socket in the finally
+				//       statement below)
 			}
 			catch (Exception e)
 			{
-				Log.ErrorFormat("{0}: Caught exception while accepting incoming connection - disconnecting again: {1}",
+				Log.ErrorFormat("{0}: Caught exception while accepting incoming connection: {1}",
 				                Name,
 				                e);
-
-				Disconnect();
+				// NOTE: We don't want to disconnect anything here because we might already have a
+				//       working connection with another client. It's just that this new client
+				//       caused us trouble (which is why we dispose of the socket in the finally
+				//       statement below)
 			}
 			finally
 			{
@@ -787,6 +786,40 @@ namespace SharpRemote
 					if (!IsDisposed)
 						_serverSocket.BeginAccept(OnIncomingConnection, state: null);
 				}
+			}
+		}
+
+		private void TryEstablishConnectionWith(ISocket socket, ref bool success)
+		{
+			try
+			{
+				Log.DebugFormat("{0}: Incoming connection from '{1}', starting handshake...",
+				                Name,
+				                socket.RemoteEndPoint);
+
+				var connectionId = PerformIncomingHandshake(socket, socket.RemoteEndPoint);
+				FireOnConnected(socket.RemoteEndPoint, connectionId);
+
+				// DO NOT PUT ANY MORE CODE AFTER THIS LINE. YOU WILL BREAK STUFF
+				success = true;
+			}
+			catch (AuthenticationException e)
+			{
+				Log.WarnFormat("{0}: Closing connection: {1}",
+				               Name,
+				               e);
+
+				// We need to undo anything we did above
+				Disconnect();
+			}
+			catch (Exception e)
+			{
+				Log.ErrorFormat("{0}: Caught exception while accepting incoming connection - disconnecting again: {1}",
+				                Name,
+				                e);
+
+				// We need to undo anything we did above
+				Disconnect();
 			}
 		}
 

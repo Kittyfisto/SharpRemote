@@ -10,6 +10,14 @@ namespace SharpRemote
 	public class LatencySettings
 	{
 		/// <summary>
+		/// 
+		/// </summary>
+		public static LatencySettings DontMeasure => new LatencySettings
+		{
+			PerformLatencyMeasurements = false
+		};
+
+		/// <summary>
 		/// The interval at which latency measurements are performed.
 		/// </summary>
 		/// <remarks>

@@ -118,19 +118,13 @@ namespace SharpRemote
 		///     The configured heartbeat interval, e.g. the amount of time that shall pass before
 		///     a new heartbeat is started.
 		/// </summary>
-		public TimeSpan Interval
-		{
-			get { return _interval; }
-		}
+		public TimeSpan Interval => _interval;
 
 		/// <summary>
 		///     The amount of time for which a heartbeat may not return (e.g. fail) before the connection is assumed
 		///     to be dead.
 		/// </summary>
-		public TimeSpan FailureInterval
-		{
-			get { return _failureInterval; }
-		}
+		public TimeSpan FailureInterval => _failureInterval;
 
 		/// <summary>
 		///     The total number of heartbeats performed since <see cref="Start" />.
@@ -149,34 +143,22 @@ namespace SharpRemote
 		/// <summary>
 		///     The point in time where the last heartbeat was performed.
 		/// </summary>
-		public DateTime? LastHeartbeat
-		{
-			get { return _lastHeartbeat; }
-		}
+		public DateTime? LastHeartbeat => _lastHeartbeat;
 
 		/// <summary>
 		///     Whether or not this heartbeat is disposed of.
 		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		public bool IsDisposed => _isDisposed;
 
 		/// <summary>
 		///     Whether or not <see cref="Start()" /> has been called (and <see cref="Stop()" /> has not since then).
 		/// </summary>
-		public bool IsStarted
-		{
-			get { return _isStarted; }
-		}
+		public bool IsStarted => _isStarted;
 
 		/// <summary>
 		///     Whether or not a failure has been detected.
 		/// </summary>
-		public bool FailureDetected
-		{
-			get { return _failureDetected; }
-		}
+		public bool FailureDetected => _failureDetected;
 
 		/// <summary>
 		///     Whether or not a failure shall currently be reported - or ignored

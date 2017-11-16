@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Runtime.Remoting.Messaging;
+using System.Threading;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -33,13 +33,14 @@ namespace SharpRemote.Test.Remoting.Sockets
 		}
 
 		[Test]
-		[Ignore("Test not finished yet")]
+		[Ignore("Bugfix not yet implemented")]
 		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/41")]
 		[Description("Verifies that the connection to an already successfully connected client is not disconnected just because EndConnect for a new client throws")]
 		public void TestEndConnectException()
 		{
 			using (var server = new SocketEndPoint(EndPointType.Server,
-			                                       heartbeatSettings: HeartbeatSettings.Dont))
+			                                       heartbeatSettings: HeartbeatSettings.Dont,
+			                                       latencySettings: LatencySettings.DontMeasure))
 			{
 				var serverSocket = new Mock<ISocket>();
 				var callbacks = new List<AsyncCallback>();
@@ -58,13 +59,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				      });
 				serverSocket.Setup(x => x.EndAccept(It.IsAny<IAsyncResult>())).Returns(() =>
 				{
-					var socket = new Mock<ISocket>();
-					socket.Setup(x => x.Poll(It.IsAny<int>(), It.IsAny<SelectMode>()))
-					                .Returns(true);
-					socket.Setup(x => x.Connected).Returns(true);
-					socket.Setup(x => x.Disconnect(It.IsAny<bool>()))
-					      .Callback(() => socket.Setup(x => x.Connected).Returns(false));
-					// TOOD: Setup methods so it appears a valid connection handshake is being performed
+					var socket = CreateSocket();
 					sockets.Add(socket);
 					return socket.Object;
 				});
@@ -145,6 +140,85 @@ namespace SharpRemote.Test.Remoting.Sockets
 			using (var socket = SocketEndPoint.CreateSocketAndBindToAnyPort(IPAddress.Any, out address))
 			{
 				socket.ExclusiveAddressUse.Should().BeTrue();
+			}
+		}
+
+		enum ConnectionStage
+		{
+			HandshakeLength = 0,
+			Handshake = 1,
+			Other = 2
+		}
+		
+		private static Mock<ISocket> CreateSocket()
+		{
+			var socket = new Mock<ISocket>();
+			socket.Setup(x => x.Poll(It.IsAny<int>(), It.IsAny<SelectMode>()))
+			      .Returns(true);
+			socket.Setup(x => x.Connected).Returns(true);
+			socket.Setup(x => x.RemoteEndPoint).Returns(new IPEndPoint(IPAddress.Loopback, 1234));
+			socket.Setup(x => x.Disconnect(It.IsAny<bool>()))
+			      .Callback(() => socket.Setup(x => x.Connected).Returns(false));
+			socket.Setup(x => x.Send(It.IsAny<byte[]>()))
+			      .Returns((byte[] buffer) => buffer.Length);
+			socket.Setup(x => x.Send(It.IsAny<byte[]>(), It.IsAny<SocketFlags>()))
+			      .Returns((byte[] buffer, SocketFlags flags) => buffer.Length);
+			socket.Setup(x => x.Send(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<SocketFlags>()))
+			      .Returns((byte[] buffer, int size, SocketFlags flags) => size);
+			socket.Setup(x => x.Send(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<SocketFlags>()))
+			      .Returns((byte[] buffer, int offset, int size, SocketFlags flags) => size);
+			SocketError errorCode;
+			socket.Setup(x => x.Send(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<SocketFlags>(), out errorCode))
+			      .Returns((byte[] buffer, int offset, int size, SocketFlags flags, SocketError unused) => size);
+
+			bool isDisposed = false;
+			socket.Setup(x => x.Dispose()).Callback(() => isDisposed = true);
+
+			var message = CreateMessage(AbstractBinaryStreamEndPoint<ISocket>.NoAuthenticationRequiredMessage,
+			                            string.Empty);
+			ConnectionStage stage = ConnectionStage.HandshakeLength;
+			socket.Setup(x => x.Available).Returns(4);
+			socket.Setup(x => x.Receive(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<SocketFlags>(), out errorCode))
+			      .Returns((byte[] buffer, int offset, int size, SocketFlags flags, SocketError unused) =>
+			      {
+				      switch (stage)
+				      {
+						  case ConnectionStage.HandshakeLength:
+							  using (var stream = new MemoryStream(buffer, true))
+							  using (var writer = new BinaryWriter(stream))
+							  {
+								  writer.Write(message.Length);
+								  writer.Flush();
+							  }
+							  socket.Setup(x => x.Available).Returns(message.Length);
+							  stage = ConnectionStage.Handshake;
+							  return 4;
+
+						  case ConnectionStage.Handshake:
+							  message.CopyTo(buffer, 0);
+							  stage = ConnectionStage.Other;
+							  return message.Length;
+
+						  default:
+							  while (!isDisposed)
+							  {
+								  Thread.Sleep(100);
+							  }
+							  return 0;
+				      }
+			      });
+			return socket;
+		}
+
+		private static byte[] CreateMessage(string messageType, string message)
+		{
+			using (var stream = new MemoryStream())
+			using (var writer = new BinaryWriter(stream))
+			{
+				writer.Write(messageType);
+				writer.Write(message);
+				writer.Flush();
+				return stream.ToArray();
 			}
 		}
 	}

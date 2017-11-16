@@ -13,7 +13,12 @@ namespace SharpRemote
 		/// <summary>
 		///     NEVER, EVER USE THIS SETTING IN PRODUCTION CODE. NEVER!!!!
 		/// </summary>
-		public static HeartbeatSettings Dont => new HeartbeatSettings {UseHeartbeatFailureDetection = false};
+		public static HeartbeatSettings Dont => new HeartbeatSettings
+		{
+			AllowRemoteHeartbeatDisable = false,
+			UseHeartbeatFailureDetection = false,
+			ReportDebuggerAttached = false
+		};
 
 		/// <summary>
 		///     Whether or not a remote endpoint can request to disable heartbeat detection on this
@@ -37,6 +42,15 @@ namespace SharpRemote
 		///     Is set to 1 second by default.
 		/// </remarks>
 		public TimeSpan Interval;
+
+		/// <summary>
+		///     When set to true, the other endpoint is notified if a debugger is attached to this endpoint.
+		///     When set to false, the other endpoint is never notified of this fact.
+		/// </summary>
+		/// <remarks>
+		///     Is set to true by default.
+		/// </remarks>
+		public bool ReportDebuggerAttached;
 
 		/// <summary>
 		///     Whether or not skipped heartbeats are reported as failures when the debugger
@@ -63,6 +77,9 @@ namespace SharpRemote
 		///     Whether or not a "heartbeat" is used to regularly check the status of the host process.
 		///     If the host process should fail to check in, then it is assumed to have faulted and is killed.
 		/// </summary>
+		/// <remarks>
+		///     This value should always be set to true in production environments.
+		/// </remarks>
 		public bool UseHeartbeatFailureDetection;
 
 		/// <summary>
@@ -70,6 +87,7 @@ namespace SharpRemote
 		/// </summary>
 		public HeartbeatSettings()
 		{
+			ReportDebuggerAttached = true;
 			ReportSkippedHeartbeatsAsFailureWithDebuggerAttached = false;
 			AllowRemoteHeartbeatDisable = false;
 			UseHeartbeatFailureDetection = true;

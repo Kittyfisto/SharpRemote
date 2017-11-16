@@ -49,12 +49,12 @@ namespace SharpRemote
 		private const string AuthenticationVerification = "auth verification";
 		private const string AuthenticationFinished = "auth finished";
 
-		private const string AuthenticationRequiredMessage = "Authentication required";
-		private const string NoAuthenticationRequiredMessage = "No Authentication required";
-		private const string AuthenticationResponseMessage = "Authentication";
-		private const string AuthenticationFailedMessage = "Authentication failed";
-		private const string AuthenticationSucceedMessage = "Authentication succeeded";
-		private const string HandshakeSucceedMessage = "Handshake succeeded";
+		internal const string AuthenticationRequiredMessage = "Authentication required";
+		internal const string NoAuthenticationRequiredMessage = "No Authentication required";
+		internal const string AuthenticationResponseMessage = "Authentication";
+		internal const string AuthenticationFailedMessage = "Authentication failed";
+		internal const string AuthenticationSucceedMessage = "Authentication succeeded";
+		internal const string HandshakeSucceedMessage = "Handshake succeeded";
 
 		#region Statistics
 
@@ -216,7 +216,7 @@ namespace SharpRemote
 			_garbageCollectionTimer = new Timer(CollectGarbage, null, TimeSpan.FromMilliseconds(100),
 			                                    TimeSpan.FromMilliseconds(100));
 
-			_localHeartbeat = new Heartbeat(Debugger.Instance, this);
+			_localHeartbeat = new Heartbeat(Debugger.Instance, this, heartbeatSettings != null ? heartbeatSettings.ReportDebuggerAttached : true);
 			_localLatency = new Latency();
 			switch (type)
 			{

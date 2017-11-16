@@ -15,7 +15,7 @@ namespace SharpRemote.Test
 		{
 			_debugger = new Mock<IDebugger>();
 			_remotingEndPoint = new Mock<IRemotingEndPoint>();
-			_heartbeat = new Heartbeat(_debugger.Object, _remotingEndPoint.Object);
+			_heartbeat = new Heartbeat(_debugger.Object, _remotingEndPoint.Object, true);
 		}
 
 		[TearDown]

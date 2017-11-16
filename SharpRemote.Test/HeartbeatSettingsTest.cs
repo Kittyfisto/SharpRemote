@@ -17,6 +17,7 @@ namespace SharpRemote.Test
 			@default.AllowRemoteHeartbeatDisable.Should().BeFalse();
 			@default.UseHeartbeatFailureDetection.Should().BeTrue();
 			@default.SkippedHeartbeatThreshold.Should().Be(10);
+			@default.ReportDebuggerAttached.Should().BeTrue();
 		}
 	}
 }

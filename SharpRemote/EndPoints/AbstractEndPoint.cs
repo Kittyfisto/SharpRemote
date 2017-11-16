@@ -43,7 +43,12 @@ namespace SharpRemote
 
 		internal static Exception ReadException(BinaryReader reader)
 		{
-			var formatter = new BinaryFormatter();
+			// I will never understand why the remote stacktrace is ONLY ever preserved for
+			// exceptions which cross app domains. Wouldn't it also be useful when traversing machines?!
+			// Anyways, this feature is super important when working with distributed software so we'll
+			// have to lie here in order to get what we want...
+			// (Proof: https://referencesource.microsoft.com/#mscorlib/system/exception.cs)
+			var formatter = new BinaryFormatter(null, new StreamingContext(StreamingContextStates.CrossAppDomain));
 			var e = (Exception)formatter.Deserialize(reader.BaseStream);
 			// TODO: Catch both exceptions and throw an appropriate replacement informing the user of this problem
 			return e;

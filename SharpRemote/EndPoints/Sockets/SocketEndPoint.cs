@@ -466,6 +466,19 @@ namespace SharpRemote
 			Listen();
 		}
 
+		/// <summary>
+		///     Binds this endpoint endpoint to the given socket.
+		/// </summary>
+		/// <param name="serverSocket"></param>
+		internal void Bind(ISocket serverSocket)
+		{
+			if (IsConnected)
+				throw new InvalidOperationException("A socket may only bound to a particular port when its not already connected");
+
+			_serverSocket = serverSocket;
+			LocalEndPoint = (IPEndPoint) serverSocket.LocalEndPoint;
+			Listen();
+		}
 
 		private bool TryConnect(string endPointName, TimeSpan timeout, out Exception exception, out ConnectionId connectionId)
 		{
@@ -750,7 +763,9 @@ namespace SharpRemote
 			finally
 			{
 				if (!success)
+				{
 					if (socket != null)
+					{
 						try
 						{
 							socket.Shutdown(SocketShutdown.Both);
@@ -763,6 +778,8 @@ namespace SharpRemote
 							               Name,
 							               e);
 						}
+					}
+				}
 
 				lock (SyncRoot)
 				{

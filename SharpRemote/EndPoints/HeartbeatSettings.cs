@@ -11,6 +11,11 @@ namespace SharpRemote
 	public sealed class HeartbeatSettings
 	{
 		/// <summary>
+		///     NEVER, EVER USE THIS SETTING IN PRODUCTION CODE. NEVER!!!!
+		/// </summary>
+		public static HeartbeatSettings Dont => new HeartbeatSettings {UseHeartbeatFailureDetection = false};
+
+		/// <summary>
 		///     Whether or not a remote endpoint can request to disable heartbeat detection on this
 		///     endpoint.
 		/// </summary>

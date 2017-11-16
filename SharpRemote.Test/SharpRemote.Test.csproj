@@ -75,6 +75,7 @@
     <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlSerializerTest.cs" />
     <Compile Include="CodeGeneration\TypeResolverTest.cs" />
+    <Compile Include="DefectAttribute.cs" />
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="HeartbeatSettingsTest.cs" />
     <Compile Include="HeartbeatTest.cs" />

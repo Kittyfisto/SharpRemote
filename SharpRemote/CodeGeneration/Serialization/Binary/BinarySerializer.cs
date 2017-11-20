@@ -63,6 +63,7 @@ namespace SharpRemote
 				new DecimalSerializer(),
 				new UriSerializer(),
 				new GuidSerializer(),
+				new LevelSerializer(),
 
 				// These serializers provide support for more than one type (for example generics)...
 				new EnumSerializer(),

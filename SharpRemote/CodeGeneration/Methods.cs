@@ -20,6 +20,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo ObjectCtor;
 		public static readonly ConstructorInfo MemoryStreamCtor;
 		public static readonly ConstructorInfo BinaryWriterCtor;
+		public static readonly MethodInfo ObjectReferenceEquals;
 		public static readonly MethodInfo WriteBytes;
 		public static readonly MethodInfo WriteString;
 		public static readonly MethodInfo BinaryWriterFlush;
@@ -112,6 +113,8 @@ namespace SharpRemote.CodeGeneration
 			ObjectCtor = typeof(object).GetConstructor(new Type[0]);
 			ChannelCallRemoteMethod = typeof(IEndPointChannel).GetMethod("CallRemoteMethod");
 			ChannelCallRemoteAsyncMethod = typeof (IEndPointChannel).GetMethod("CallRemoteMethodAsync");
+
+			ObjectReferenceEquals = typeof(object).GetMethod(nameof(ReferenceEquals));
 
 			ReadBytes = typeof (BinaryReader).GetMethod("ReadBytes");
 			ReadString = typeof(BinaryReader).GetMethod("ReadString");

@@ -274,14 +274,27 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Ignore("Not yet implemented")]
 		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
-		public void TestLevel([ValueSource(nameof(LevelValues))] Level level)
+		public void TestLevel1([ValueSource(nameof(LevelValues))] Level level)
 		{
 			_serializer.RegisterType<Level>();
+			
 			var actualLevel = _serializer.Roundtrip(level);
 			actualLevel.Should().NotBeNull();
 			actualLevel.Should().BeSameAs(level);
+		}
+
+		[Test]
+		[Ignore("Reading/Writing custom level values is not supported yet - will NOT be supported by this serializer")]
+		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
+		public void TestLevel2()
+		{
+			_serializer.RegisterType<Level>();
+
+			var level = new Level(42, "foo", "bar");
+			var actualLevel = _serializer.Roundtrip(level);
+			actualLevel.Should().NotBeNull();
+			actualLevel.Should().Be(level);
 		}
 
 		[Test]

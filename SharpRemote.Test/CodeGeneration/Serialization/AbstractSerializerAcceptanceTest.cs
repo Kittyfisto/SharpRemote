@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
+using log4net.Core;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
@@ -50,6 +51,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public static IEnumerable<ulong> UInt64Values => new ulong[] {ulong.MinValue, 1, ulong.MaxValue};
 		public static IEnumerable<float> SingleValues => new[] { float.MinValue, 0, (float) Math.PI, float.MaxValue };
 		public static IEnumerable<double> DoubleValues => new[] { double.MinValue, 0, Math.PI, double.MaxValue };
+		public static IEnumerable<Level> LevelValues => new[]
+		{
+			Level.Error, Level.Alert, Level.All, Level.Critical, Level.Debug,
+			Level.Emergency, Level.Error, Level.Fatal, Level.Fine, Level.Finer,
+			Level.Finest, Level.Info, Level.Notice, Level.Off, Level.Debug,
+			Level.Severe, Level.Trace, Level.Verbose, Level.Warn,
+			Level.Log4Net_Debug
+		};
 
 		#region Method Call Roundtrips
 
@@ -668,6 +677,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestMethodCallFieldUInt32([ValueSource(nameof(UInt32Values))] uint value)
 		{
 			MethodCallRoundtripObject(new FieldUInt32 { Value = value });
+		}
+
+		[Test]
+		[Ignore("Not yet implemented yet")]
+		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
+		public void TestMethodCallLevel([ValueSource(nameof(LevelValues))] Level value)
+		{
+			MethodCallRoundtripSingleton(value);
 		}
 
 		#endregion

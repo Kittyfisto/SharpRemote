@@ -4,9 +4,9 @@ using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using FluentAssertions;
+using log4net.Core;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.CodeGeneration.Serialization;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Structs;
@@ -35,6 +35,15 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		{
 			_assembly.Save(_moduleName);
 		}
+
+		public static IEnumerable<Level> LevelValues => new[]
+		{
+			Level.Error, Level.Alert, Level.All, Level.Critical, Level.Debug,
+			Level.Emergency, Level.Error, Level.Fatal, Level.Fine, Level.Finer,
+			Level.Finest, Level.Info, Level.Notice, Level.Off, Level.Debug,
+			Level.Severe, Level.Trace, Level.Verbose, Level.Warn,
+			Level.Log4Net_Debug
+		};
 
 		[Test]
 		public void TestBinaryTree()
@@ -262,6 +271,17 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		{
 			_serializer.RegisterType<byte>();
 			_serializer.ShouldRoundtrip((byte) 255);
+		}
+
+		[Test]
+		[Ignore("Not yet implemented")]
+		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
+		public void TestLevel([ValueSource(nameof(LevelValues))] Level level)
+		{
+			_serializer.RegisterType<Level>();
+			var actualLevel = _serializer.Roundtrip(level);
+			actualLevel.Should().NotBeNull();
+			actualLevel.Should().BeSameAs(level);
 		}
 
 		[Test]

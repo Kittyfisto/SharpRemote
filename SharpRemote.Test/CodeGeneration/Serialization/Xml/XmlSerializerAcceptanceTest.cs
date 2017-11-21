@@ -8,6 +8,7 @@ using NUnit.Framework;
 namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 {
 	[TestFixture]
+	[LocalTest("I don't want to figure out how to combine InternalsVisible+StrongNaming and DefineDynamicAssembly....")]
 	public sealed class XmlSerializerAcceptanceTest
 		: AbstractSerializerAcceptanceTest
 	{

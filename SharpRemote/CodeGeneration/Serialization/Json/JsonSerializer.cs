@@ -8,7 +8,7 @@ namespace SharpRemote
 	/// <summary>
 	///     A serializer implementation which writes and reads json documents which carry method call invocations or results.
 	/// </summary>
-	public sealed class JsonSerializer
+	internal sealed class JsonSerializer
 		: ISerializer2
 	{
 		/// <inheritdoc />

@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Reflection.Emit;
 using System.Xml;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml

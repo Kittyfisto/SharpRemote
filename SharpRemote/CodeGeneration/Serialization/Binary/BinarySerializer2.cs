@@ -9,7 +9,7 @@ namespace SharpRemote
 	/// <summary>
 	///     Shall replace <see cref="BinarySerializer" />.
 	/// </summary>
-	public sealed class BinarySerializer2
+	internal sealed class BinarySerializer2
 		: ISerializer2
 	{
 		/// <inheritdoc />

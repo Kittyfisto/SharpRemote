@@ -3,7 +3,7 @@ using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml
 {
-	sealed class XmlSerializationCompiler
+	internal sealed class XmlSerializationCompiler
 		: ISerializationMethodCompiler<XmlMethodsCompiler>
 	{
 		private readonly ModuleBuilder _module;

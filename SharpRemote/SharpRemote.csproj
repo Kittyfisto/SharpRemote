@@ -54,6 +54,7 @@
     <Compile Include="Attributes\BeforeSerializeAttribute.cs" />
     <Compile Include="Attributes\ByReferenceAttribute.cs" />
     <Compile Include="Attributes\SerializationMethodAttribute.cs" />
+    <Compile Include="Attributes\SerializationSurrogateForAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializationMethods.CompilationContext.cs" />
@@ -70,6 +71,7 @@
     <Compile Include="CodeGeneration\Serialization\Binary\MessageType2.cs" />
     <Compile Include="CodeGeneration\Serialization\ExceptionCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\IMethodCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\IPAddressSurrogate.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethods.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethodStorage.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializerCompiler.cs" />
@@ -80,6 +82,7 @@
     <Compile Include="CodeGeneration\Serialization\Json\JsonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractReadObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractReadValueMethodCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\KeyValuePairSurrogate.cs" />
     <Compile Include="CodeGeneration\Serialization\SerializationMethodStorage.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractWriteObjectMethodCompiler.cs" />

@@ -698,6 +698,37 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		[Ignore("Not yet implemented")]
+		public void TestMethodCallKeyValuePair()
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
+				{
+					writer.WriteArgument(new KeyValuePair<int, string>(42, "foo"));
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodCallReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(5);
+					reader.GrainId.Should().Be(6);
+					reader.MethodName.Should().Be("GetValue");
+
+					object actualValue;
+					reader.ReadNextArgument(out actualValue).Should().BeTrue();
+					actualValue.Should().BeOfType<KeyValuePair<int, string>>();
+					actualValue.Should().Be(new KeyValuePair<int, string>(42, "foo"));
+
+					reader.ReadNextArgument(out actualValue).Should().BeFalse();
+					actualValue.Should().BeNull();
+				}
+			}
+		}
+
+		[Test]
 		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
 		public void TestMethodCallLevel([ValueSource(nameof(LevelValues))] Level value)
 		{

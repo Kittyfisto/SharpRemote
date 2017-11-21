@@ -87,7 +87,25 @@ No. Currently, a class or interface must be attributed with the [ByReference] at
 Contact me if this is an essential feature for you.
 
 **How do you handle polymorphism?**  
-An object's true type is queried (in case the method parameter / return type is non sealed) and then dynamic dispatch (if necessary) is used to invoke the class'es serialization behaviour.
+When an object is serialized, then its true type is queried and then its serialization behaviour is looked up (this lookup happens in constant time for every lookup besides the first one). If the type happens to implement an interface which is attributed with the [ByReference] attribute, then the object is serialized by reference. If it's attributed with the [DataContract] attribute or it is a built-in type, then it is serialized by value. Otherwise an exception is thrown at runtime.
+If you have an interface such as the following:
+
+    interface IFoo
+    {
+        void Process(object data);
+    }
+
+Then invoking it as follows:
+
+    foo.Process(42);
+    foo.Process(DateTime.UtcNow);
+
+Will just work as expected.
+However if you pass an object which is not serializable, then an ArgumentException is thrown:
+
+    foo.Process(Thread.CurrentThread);
+
+Please note that this behaviour is identical for both synchronous as well as asynchronous method calls.
 
 ## Samples
 

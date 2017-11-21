@@ -82,6 +82,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new System.NotImplementedException();
 		}
 
+		protected override void EmitReadDateTime(ILGenerator gen)
+		{
+			throw new System.NotImplementedException();
+		}
+
 		protected override void EmitReadLevel(ILGenerator gen)
 		{
 			throw new System.NotImplementedException();

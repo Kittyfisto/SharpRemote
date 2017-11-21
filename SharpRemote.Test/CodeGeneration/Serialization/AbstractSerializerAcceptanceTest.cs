@@ -59,6 +59,23 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			Level.Severe, Level.Trace, Level.Verbose, Level.Warn,
 			Level.Log4Net_Debug
 		};
+		public static IEnumerable<DateTime> DateTimeValues => new[]
+		{
+			DateTime.MinValue, DateTime.MaxValue,
+			new DateTime(2017, 11, 21, 20, 27, 38, DateTimeKind.Local),
+			new DateTime(2017, 11, 21, 20, 27, 38, DateTimeKind.Utc),
+			new DateTime(2017, 11, 21, 20, 27, 38, DateTimeKind.Unspecified),
+			DateTime.Now, DateTime.UtcNow
+		};
+		public static IEnumerable<decimal> DecimalValues => new[]
+		{
+			decimal.MinValue,
+			decimal.MinusOne,
+			0,
+			decimal.One,
+			new decimal(Math.PI),
+			decimal.MaxValue
+		};
 
 		#region Method Call Roundtrips
 
@@ -155,6 +172,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		[Test]
 		public void TestMethodCallObjectDouble([ValueSource(nameof(DoubleValues))] double value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		public void TestMethodCallObjectDateTime([ValueSource(nameof(DateTimeValues))] DateTime value)
 		{
 			MethodCallRoundtripObject(value);
 		}
@@ -587,16 +610,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			}
 		}
 
-		public static IEnumerable<decimal> DecimalValues => new[]
-		{
-			decimal.MinValue,
-			decimal.MinusOne,
-			0,
-			decimal.One,
-			new decimal(Math.PI),
-			decimal.MaxValue
-		};
-
 		[Test]
 		public void TestMethodCallDecimal([ValueSource(nameof(DecimalValues))] decimal value)
 		{
@@ -656,6 +669,42 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestMethodCallDateTime([ValueSource(nameof(DateTimeValues))] DateTime value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
+				{
+					writer.WriteArgument(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodCallReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(5);
+					reader.GrainId.Should().Be(6);
+					reader.MethodName.Should().Be("GetValue");
+
+					DateTime actualValue;
+					reader.ReadNextArgumentAsDateTime(out actualValue).Should().BeTrue();
+					actualValue.Should().Be(value);
+
+					reader.ReadNextArgumentAsDateTime(out actualValue).Should().BeFalse();
+					actualValue.Should().Be(DateTime.MinValue);
+				}
+			}
+		}
+
+		[Test]
+		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
+		public void TestMethodCallLevel([ValueSource(nameof(LevelValues))] Level value)
+		{
+			MethodCallRoundtripSingleton(value);
+		}
+
+		[Test]
 		public void TestMethodCallFieldDecimal([ValueSource(nameof(DecimalValues))] decimal value)
 		{
 			MethodCallRoundtripObject(new FieldDecimal { Value = value });
@@ -677,13 +726,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestMethodCallFieldUInt32([ValueSource(nameof(UInt32Values))] uint value)
 		{
 			MethodCallRoundtripObject(new FieldUInt32 { Value = value });
-		}
-
-		[Test]
-		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
-		public void TestMethodCallLevel([ValueSource(nameof(LevelValues))] Level value)
-		{
-			MethodCallRoundtripSingleton(value);
 		}
 
 		#endregion

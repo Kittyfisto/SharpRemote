@@ -239,6 +239,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return true;
 		}
 
+		public bool ReadNextArgumentAsDateTime(out DateTime value)
+		{
+			if (!ReadNextArgument())
+			{
+				value = DateTime.MinValue;
+				return false;
+			}
+			value = XmlSerializer.ReadValueAsDateTime(_reader);
+			return true;
+		}
+
 		public bool ReadNextArgumentAsString(out string value)
 		{
 			if (!ReadNextArgument())

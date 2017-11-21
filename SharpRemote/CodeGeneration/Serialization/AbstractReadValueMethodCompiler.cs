@@ -217,6 +217,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				EmitReadDouble(gen);
 			else if (type == typeof(string))
 				EmitReadString(gen);
+			else if (type == typeof(DateTime))
+				EmitReadDateTime(gen);
 			else if (type == typeof(Level))
 				EmitReadLevel(gen);
 			else
@@ -334,6 +336,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		protected abstract void EmitReadString(ILGenerator gen);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		protected abstract void EmitReadDateTime(ILGenerator gen);
 
 		/// <summary>
 		/// 

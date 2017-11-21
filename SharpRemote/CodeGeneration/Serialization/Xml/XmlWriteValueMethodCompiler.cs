@@ -24,8 +24,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlSerializerWriteUInt64;
 		private static readonly MethodInfo XmlSerializerWriteSingle;
 		private static readonly MethodInfo XmlSerializerWriteDouble;
-		private static readonly MethodInfo DecimalToString;
-		private readonly CompilationContext _context;
+		private static readonly MethodInfo XmlSerializerWriteDateTime;
 
 		static XmlWriteValueMethodCompiler()
 		{
@@ -45,13 +44,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlSerializerWriteUInt64 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(ulong) });
 			XmlSerializerWriteSingle = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(float) });
 			XmlSerializerWriteDouble = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(double) });
-			DecimalToString = typeof(decimal).GetMethod(nameof(decimal.ToString), new [] {typeof(IFormatProvider)});
+			XmlSerializerWriteDateTime = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new [] {typeof(XmlWriter), typeof(DateTime)});
 		}
 
 		public XmlWriteValueMethodCompiler(CompilationContext context) : base(context)
-		{
-			_context = context;
-		}
+		{}
 
 		protected override void EmitWriteHint(ILGenerator generator, ByReferenceHint hint)
 		{ }
@@ -181,8 +178,18 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Call, XmlSerializerWriteString);
 		}
 
+		protected override void EmitWriteDateTime(ILGenerator gen, Action loadMember, Action loadMemberAddress)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, XmlSerializerWriteDateTime);
+		}
+
 		protected override void EmitWriteLevel(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
+			// TODO: How can we avoid inlining this method call?
+			// There's just no point in duplicating that many instructions...
+
 			var end = gen.DefineLabel();
 
 			for (int i = 0; i < HardcodedLevels.Count; ++i)

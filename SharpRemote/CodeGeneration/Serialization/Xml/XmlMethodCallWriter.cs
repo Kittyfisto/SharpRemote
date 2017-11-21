@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Xml;
 using SharpRemote.Extensions;
@@ -8,9 +9,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlMethodCallWriter
 		: IMethodCallWriter
 	{
-		
-		
-
 		private readonly XmlSerializer _serializer;
 		private readonly StreamWriter _textWriter;
 		private readonly XmlWriter _writer;
@@ -123,6 +121,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		}
 
 		public void WriteArgument(decimal value)
+		{
+			_writer.WriteStartElement(XmlSerializer.ArgumentElementName);
+			XmlSerializer.WriteValue(_writer, value);
+			_writer.WriteEndElement();
+		}
+
+		public void WriteArgument(DateTime value)
 		{
 			_writer.WriteStartElement(XmlSerializer.ArgumentElementName);
 			XmlSerializer.WriteValue(_writer, value);

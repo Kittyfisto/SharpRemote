@@ -34,6 +34,7 @@ namespace SharpRemote
 				typeof(void),
 				typeof(string),
 				typeof(decimal),
+				typeof(DateTime),
 				typeof(Level)
 			};
 		}

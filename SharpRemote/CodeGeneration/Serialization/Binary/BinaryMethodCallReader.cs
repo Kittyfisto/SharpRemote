@@ -185,6 +185,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			return true;
 		}
 
+		public bool ReadNextArgumentAsDateTime(out DateTime value)
+		{
+			throw new NotImplementedException();
+		}
+
 		public bool ReadNextArgumentAsString(out string value)
 		{
 			if (EndOfStream)

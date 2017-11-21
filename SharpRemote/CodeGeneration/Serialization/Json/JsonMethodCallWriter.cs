@@ -76,6 +76,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Json
 			throw new NotImplementedException();
 		}
 
+		public void WriteArgument(DateTime value)
+		{
+			throw new NotImplementedException();
+		}
+
 		public void WriteArgument(string value)
 		{
 			throw new NotImplementedException();

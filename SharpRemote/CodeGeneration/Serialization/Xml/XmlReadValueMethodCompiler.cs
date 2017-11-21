@@ -25,6 +25,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlSerializerReadUInt64;
 		private static readonly MethodInfo XmlSerializerReadSingle;
 		private static readonly MethodInfo XmlSerializerReadDouble;
+		private static readonly MethodInfo XmlSerializerReadDateTime;
 		private static readonly ConstructorInfo XmlParseExceptionCtor;
 		private static readonly MethodInfo XmlLineInfoGetLineNumber;
 		private static readonly MethodInfo XmlLineInfoGetLinePosition;
@@ -48,6 +49,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlSerializerReadUInt64 = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsUInt64));
 			XmlSerializerReadSingle = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsSingle));
 			XmlSerializerReadDouble = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsDouble));
+			XmlSerializerReadDateTime = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsDateTime));
 			XmlLineInfoGetLineNumber = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LineNumber)).GetMethod;
 			XmlLineInfoGetLinePosition = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LinePosition)).GetMethod;
 			XmlParseExceptionCtor = typeof(XmlParseException).GetConstructor(new [] {typeof(string), typeof(int), typeof(int), typeof(Exception)});
@@ -147,8 +149,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Call, XmlSerializerReadString);
 		}
 
+		protected override void EmitReadDateTime(ILGenerator gen)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadDateTime);
+		}
+
 		protected override void EmitReadLevel(ILGenerator gen)
 		{
+			// TODO: How can we avoid inlining this method call?
+			// There's just no point in duplicating that many instructions...
+
 			var noSpecialValue = gen.DefineLabel();
 			var defaultCase = gen.DefineLabel();
 			var end = gen.DefineLabel();

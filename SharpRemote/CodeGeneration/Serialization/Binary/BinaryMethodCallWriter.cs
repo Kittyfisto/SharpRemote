@@ -83,6 +83,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			_writer.Write(value);
 		}
 
+		public void WriteArgument(DateTime value)
+		{
+			throw new NotImplementedException();
+		}
+
 		public void WriteArgument(string value)
 		{
 			_writer.Write(value);

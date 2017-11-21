@@ -96,6 +96,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Json
 			throw new NotImplementedException();
 		}
 
+		public bool ReadNextArgumentAsDateTime(out DateTime value)
+		{
+			throw new NotImplementedException();
+		}
+
 		public bool ReadNextArgumentAsString(out string value)
 		{
 			throw new NotImplementedException();

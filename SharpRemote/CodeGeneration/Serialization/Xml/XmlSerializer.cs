@@ -377,6 +377,15 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
+		public static void WriteValue(XmlWriter writer, DateTime value)
+		{
+			writer.WriteAttributeString(ValueName, value.ToString("o", CultureInfo.InvariantCulture));
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(XmlWriter writer, string value)
 		{
 			if (value != null)
@@ -607,6 +616,17 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="reader"></param>
 		/// <returns></returns>
+		public static DateTime ReadValueAsDateTime(XmlReader reader)
+		{
+			var value = ReadValue(reader);
+			return ParseDateTime(value);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static string ReadValueAsString(XmlReader reader)
 		{
 			var value = ReadValue(reader, allowNull: true);
@@ -723,6 +743,12 @@ namespace SharpRemote
 		private static decimal ParseDecimal(string value)
 		{
 			return decimal.Parse(value, CultureInfo.InvariantCulture);
+		}
+
+		[Pure]
+		private static DateTime ParseDateTime(string value)
+		{
+			return DateTime.ParseExact(value, "O", CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
 		}
 
 		#endregion

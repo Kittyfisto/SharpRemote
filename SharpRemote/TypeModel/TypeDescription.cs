@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using log4net.Core;
 using SharpRemote.Attributes;
 
 // ReSharper disable once CheckNamespace
@@ -32,7 +33,8 @@ namespace SharpRemote
 			{
 				typeof(void),
 				typeof(string),
-				typeof(decimal)
+				typeof(decimal),
+				typeof(Level)
 			};
 		}
 

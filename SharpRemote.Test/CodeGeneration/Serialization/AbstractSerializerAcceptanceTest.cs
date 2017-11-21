@@ -680,7 +680,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Ignore("Not yet implemented yet")]
 		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/44")]
 		public void TestMethodCallLevel([ValueSource(nameof(LevelValues))] Level value)
 		{

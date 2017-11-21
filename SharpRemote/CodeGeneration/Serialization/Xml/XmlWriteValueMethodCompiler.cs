@@ -181,6 +181,33 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Call, XmlSerializerWriteString);
 		}
 
+		protected override void EmitWriteLevel(ILGenerator gen, Action loadMember, Action loadMemberAddress)
+		{
+			var end = gen.DefineLabel();
+
+			for (int i = 0; i < HardcodedLevels.Count; ++i)
+			{
+				var next = gen.DefineLabel();
+
+				// if (ReferenceEquals(value, <fld>))
+				loadMember();
+				gen.Emit(OpCodes.Ldsfld, HardcodedLevels[i].Field);
+				gen.Emit(OpCodes.Call, Methods.ObjectReferenceEquals);
+				gen.Emit(OpCodes.Brfalse, next);
+
+				// writer.WriteByte(<constant>)
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldstr, "SpecialValue");
+				gen.Emit(OpCodes.Ldstr, HardcodedLevels[i].Name);
+				gen.Emit(OpCodes.Callvirt, XmlWriterWriteAttributeString);
+				gen.Emit(OpCodes.Br, end);
+
+				gen.MarkLabel(next);
+			}
+
+			gen.MarkLabel(end);
+		}
+
 		protected override void EmitWriteObjectId(ILGenerator generator, LocalBuilder proxy)
 		{}
 	}

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using log4net.Core;
 using SharpRemote.Attributes;
 using SharpRemote.Exceptions;
 
@@ -216,6 +217,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				EmitReadDouble(gen);
 			else if (type == typeof(string))
 				EmitReadString(gen);
+			else if (type == typeof(Level))
+				EmitReadLevel(gen);
 			else
 				throw new NotImplementedException();
 		}
@@ -331,6 +334,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		protected abstract void EmitReadString(ILGenerator gen);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		protected abstract void EmitReadLevel(ILGenerator gen);
 
 		private void EmitCallBeforeDeserialization(ILGenerator gen, LocalBuilder tmp)
 		{

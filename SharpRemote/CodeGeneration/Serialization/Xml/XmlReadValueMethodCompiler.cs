@@ -12,6 +12,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlReaderGetName;
 		private static readonly MethodInfo XmlReaderReadElementContentAsString;
 		private static readonly MethodInfo XmlReaderMoveToAttributeByName;
+		private static readonly MethodInfo XmlReaderGetValue;
 		private static readonly MethodInfo XmlSerializerReadDecimal;
 		private static readonly MethodInfo XmlSerializerReadString;
 		private static readonly MethodInfo XmlSerializerReadByte;
@@ -34,6 +35,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlReaderGetName = typeof(XmlReader).GetProperty(nameof(XmlReader.Name)).GetMethod;
 			XmlReaderReadElementContentAsString = typeof(XmlReader).GetMethod(nameof(XmlReader.ReadElementContentAsString), new Type[0]);
 			XmlReaderMoveToAttributeByName = typeof(XmlReader).GetMethod(nameof(XmlReader.MoveToAttribute), new [] {typeof(string)});
+			XmlReaderGetValue = typeof(XmlReader).GetProperty(nameof(XmlReader.Value)).GetMethod;
 			XmlSerializerReadDecimal = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsDecimal));
 			XmlSerializerReadString = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsString));
 			XmlSerializerReadByte = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.ReadValueAsByte));
@@ -143,6 +145,45 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, XmlSerializerReadString);
+		}
+
+		protected override void EmitReadLevel(ILGenerator gen)
+		{
+			var noSpecialValue = gen.DefineLabel();
+			var defaultCase = gen.DefineLabel();
+			var end = gen.DefineLabel();
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldstr, "SpecialValue");
+			gen.Emit(OpCodes.Callvirt, XmlReaderMoveToAttributeByName);
+			gen.Emit(OpCodes.Brfalse, noSpecialValue);
+
+			var value = gen.DeclareLocal(typeof(string));
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Callvirt, XmlReaderGetValue);
+			gen.Emit(OpCodes.Stloc, value);
+
+			for (int i = 0; i < HardcodedLevels.Count; ++i)
+			{
+				var next = gen.DefineLabel();
+				
+				gen.Emit(OpCodes.Ldloc, value);
+				gen.Emit(OpCodes.Ldstr, HardcodedLevels[i].Name);
+				gen.Emit(OpCodes.Call, Methods.StringEquality);
+				gen.Emit(OpCodes.Brfalse, next);
+
+				gen.Emit(OpCodes.Ldsfld, HardcodedLevels[i].Field);
+				gen.Emit(OpCodes.Br, end);
+				
+				gen.MarkLabel(next);
+			}
+
+			gen.MarkLabel(defaultCase);
+			gen.MarkLabel(noSpecialValue);
+			gen.Emit(OpCodes.Newobj, Methods.NotImplementedCtor);
+			gen.Emit(OpCodes.Throw);
+
+			gen.MarkLabel(end);
 		}
 
 		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)

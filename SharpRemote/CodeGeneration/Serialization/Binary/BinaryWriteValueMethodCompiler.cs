@@ -100,6 +100,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			throw new NotImplementedException();
 		}
 
+		protected override void EmitWriteLevel(ILGenerator gen, Action loadMember, Action loadMemberAddress)
+		{
+			throw new NotImplementedException();
+		}
+
 		protected override void EmitWriteObjectId(ILGenerator generator, LocalBuilder proxy)
 		{
 			generator.Emit(OpCodes.Ldarg_0);

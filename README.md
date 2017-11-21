@@ -1,7 +1,6 @@
 # SharpRemote
 
 Master: [![Build status](https://ci.appveyor.com/api/projects/status/e4s3he430y1a27cb?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote)  
-Dev:    [![Build status](https://ci.appveyor.com/api/projects/status/8icg92xvgfhp1tnf?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote-2j0wg)  
 
 SharpRemote is a free and active open-source project aimed at developing distributed applications that run accross different processes, machines and networks.
 
@@ -45,9 +44,16 @@ By default, method calls are dispatched using TaskScheduler.Default and thus may
 **Can I specify the degree of parallelism to which method calls are invoked?**  
 Yes. This can be done by attributing the method with the [Invoke] attribute. The degree can be limited to "per-method", "per-object" and "per-type".
 
-**How are failures handled?**  
-SharpRemote promises that each and every remote method call is eventually executed. Individual remote method calls can never time out, instead the health of the entire connection is used to determine whether a failure occured. A connection is said to have failed when the underlying socket reports a failure or when the connection doesn't process any method call for a certain amount of time.
-As soon as a failure happens, SharpRemote tears down the connection and notifies all pending or currently executing calls by throwing the following exceptions on the calling thread:
+**How are methods executed?**  
+SharpRemote promises that each and every remote call is either eventually executed or an exception is thrown in case a failure occured.
+Individual remote method calls can never time out: This means that if a non-async method blocks for an hour, then its caller will be stuck for an hour (unless a failure occured, see below). If you specifically want methods to time out, then the remoting interface should be changed to use asynchronous methods (those which return Task/Task<T>).
+
+**How are unhandled exceptions handled?**
+If a method throws an exception, then said exception is serialized and re-thrown on the caller's side. For synchronous methods, this means that the method call throws an exception, for asynchronous methods, the returned task will fail and return the original exception.
+Please note that exceptions thrown by synchronous method calls are currently NOT wrapped in an AggregateException. If an exception isn't serializable, then an UnserializableException with the original message is thrown instead. See https://blogs.msdn.microsoft.com/agileer/2013/05/17/the-correct-way-to-code-a-custom-exception-class/ for how to write a custom exception which can be serialized.
+
+**How are failures handled?**
+SharpRemote monitors the health of the entire connection: If the other endpoint stops processing messages, or the underlying connection (currently only a socket is used) is disconnected, then it is assumed that the connection is dead and must be disconnected. All pending or currently executing remote method calls throw the following exceptions on their calling thread:
 
 *SharpRemote.ConnectionLostException*  
 The connection was interrupted **while** the method call occured **or** was pending. The method may or may not have been executed in the remote process.
@@ -56,7 +62,9 @@ The connection was interrupted **while** the method call occured **or** was pend
 The method call was performed *after* a connection was lost or *before* a connection was established. Either way the method was definately not executed in the remote process.
 
 **How can I avoid running into "failures" introduced by pausing the involved processes with a debugger?**  
-You can either deactivate the timeout detection of a connection completely by setting the HeartbeatSettings.UseHeartbeatForFaultDetection property to false or by attaching a debugger to **every** process involved and setting the HeartbeatSettings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached property to false.
+You should set HeartbeatSettings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached, HeartbeatSettings.ReportDebuggerAttached and
+HeartbeatSettings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached to true. Doing so will allow you to attach a debugger to one process which will in turn tell the other endpoint to disable timeout detecting until the debugger is detached again. You shouldn't do this in production environments however, as at will allow malicious clients to consume server resources without ever getting disconnected.
+For the sake of completion, it is possible, but heavily discouraged as per reason above, to disable timeout detection using HeartbeatSettings.Dont.
 
 **What types are supported for serialization?**  
 A lot of native .NET types are supported out of the box (integer, floating-point, string, datetime, etc...). User defined types must either be attributed with the [ByReference] or [DataContract] attribute. The latter requires all fields / properties that shall be serializable be marked with the [DataMember] attribute.
@@ -79,7 +87,25 @@ No. Currently, a class or interface must be attributed with the [ByReference] at
 Contact me if this is an essential feature for you.
 
 **How do you handle polymorphism?**  
-An object's true type is queried (in case the method parameter / return type is non sealed) and then dynamic dispatch (if necessary) is used to invoke the class'es serialization behaviour.
+When an object is serialized, then its true type is queried and then its serialization behaviour is looked up (this lookup happens in constant time for every lookup besides the first one). If the type happens to implement an interface which is attributed with the [ByReference] attribute, then the object is serialized by reference. If it's attributed with the [DataContract] attribute or it is a built-in type, then it is serialized by value. Otherwise an exception is thrown at runtime.
+If you have an interface such as the following:
+
+    interface IFoo
+    {
+        void Process(object data);
+    }
+
+Then invoking it as follows:
+
+    foo.Process(42);
+    foo.Process(DateTime.UtcNow);
+
+Will just work as expected.
+However if you pass an object which is not serializable, then an ArgumentException is thrown:
+
+    foo.Process(Thread.CurrentThread);
+
+Please note that this behaviour is identical for both synchronous as well as asynchronous method calls.
 
 ## Samples
 

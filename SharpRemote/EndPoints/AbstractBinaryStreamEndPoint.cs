@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -1117,22 +1117,22 @@ namespace SharpRemote
 			{
 				if (!HandleResponse(rpcId, type, reader))
 				{
-					// We only log a true error when we're neither disconnecting, nor disconnected - 
-					// because if either is true then this is quite expected because we've already cleared
-					// the list of pending messages, thus not finding a certain pending call is...
-					// expected.
+					// This is quite bad: Why did we get a response to an RPC that we did not send?
+					// However it shouldn't cause us to immediately abort the connection. Instead
+					// we log a sensible error and try to continue (we can rely on the heartbeat
+					// mechanism to abort the connection when too many messages don't ping back).
 					lock (_syncRoot)
 					{
 						if (InternalRemoteEndPoint != null)
 						{
-							Log.ErrorFormat("{0}: There is no pending RPC #{1}, disconnecting...",
+							Log.ErrorFormat("{0}: There is no pending RPC #{1}. This shouldn't happend and might be indicative of a bug. Please contact the library author if this issue persists.",
 							                Name,
 							                rpcId);
 						}
 					}
 
-					reason = EndPointDisconnectReason.RpcInvalidResponse;
-					return false;
+					reason = null;
+					return true;
 				}
 			}
 			else if ((type & MessageType.Goodbye) != 0)

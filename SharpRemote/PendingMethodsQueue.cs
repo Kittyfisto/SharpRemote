@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
+using log4net;
 using SharpRemote.ETW;
 
 namespace SharpRemote
@@ -14,6 +16,8 @@ namespace SharpRemote
 	internal sealed class PendingMethodsQueue
 		: IDisposable
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		internal const int MaxNumRecycledCalls = 20;
 
 		private readonly string _endPointName;
@@ -129,9 +133,13 @@ namespace SharpRemote
 				PendingMethodCall methodCall;
 				if (_pendingCalls.TryGetValue(rpcId, out methodCall))
 				{
+					Log.DebugFormat("Found pending method '#{0}'", rpcId);
+
 					methodCall.HandleResponse(messageType, reader);
 					return true;
 				}
+
+				Log.DebugFormat("No pending method '#{0}'!", rpcId);
 			}
 
 			return false;
@@ -163,7 +171,11 @@ namespace SharpRemote
 						PendingMethodsEventSource.Instance.Dequeued(_endPointName, call.RpcId);
 						PendingMethodsEventSource.Instance.QueueCountChanged(_endPointName, _pendingCalls.Count);
 					}
+
+					var count = _pendingCalls.Count;
+					Log.DebugFormat("Removing all '{0}' pending method calls...", count);
 					_pendingCalls.Clear();
+					Log.DebugFormat("All '{0}' pending method calls removed", count);
 				}
 
 				DisposePendingWrites();
@@ -178,7 +190,14 @@ namespace SharpRemote
 		{
 			lock (_syncRoot)
 			{
-				_pendingCalls.Remove(methodCall.RpcId);
+				var id = methodCall.RpcId;
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat("Removing method call '#{0}'...", id);
+
+				_pendingCalls.Remove(id);
+
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat("Method call '#{0}' removed", id);
 
 				// We do not want to recycle thousands of messages because that can require
 				// lots of memory ("big" messages may take 1Mb of memory or even more).
@@ -186,7 +205,16 @@ namespace SharpRemote
 				// In the future, we might want to limit the amount of used memory instead?
 				if (_recycledMessages.Count < MaxNumRecycledCalls)
 				{
+					Log.Debug("Recycling method call object...");
+
 					_recycledMessages.Enqueue(methodCall);
+
+					if (Log.IsDebugEnabled)
+						Log.DebugFormat("Method call object recycled, {0} objects available for re-use", _recycledMessages.Count);
+				}
+				else
+				{
+					Log.DebugFormat("Method call object won't be recycled: We're keeping enough alive already!");
 				}
 			}
 		}

@@ -677,6 +677,9 @@ namespace SharpRemote
 						                numServantsRemoved);
 					}
 				}
+
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat("Total GC time: {0}ms", _garbageCollectionTime.ElapsedMilliseconds);
 			}
 			catch (Exception e)
 			{
@@ -740,6 +743,13 @@ namespace SharpRemote
 				{
 					foreach (ulong key in toRemove)
 					{
+						if (Log.IsDebugEnabled)
+						{
+							Log.DebugFormat("{0}: Removing proxy '#{1}' from list of available proxies because it is no longer reachable (it has been garbage collected)",
+							                Name,
+							                key);
+						}
+						
 						_proxiesById.Remove(key);
 					}
 					_numProxiesCollected += toRemove.Count;

@@ -458,6 +458,9 @@ namespace SharpRemote
 		{
 			lock (_proxiesById)
 			{
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat("{0}: Adding proxy '#{1}' of type '{2}'", Name, objectId, typeof(T).FullName);
+
 				var proxy = _codeGenerator.CreateProxy<T>(this, this, objectId);
 				var grain = new WeakReference<IProxy>((IProxy) proxy);
 				_proxiesById.Add(objectId, grain);
@@ -468,6 +471,9 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public T GetProxy<T>(ulong objectId) where T : class
 		{
+			if (Log.IsDebugEnabled)
+				Log.DebugFormat("{0}: Retrieving proxy '#{1}' of type '{2}'", Name, objectId, typeof(T).FullName);
+
 			IProxy proxy;
 			lock (_proxiesById)
 			{
@@ -528,13 +534,17 @@ namespace SharpRemote
 
 			if (interfaceType != null)
 			{
-				Log.WarnFormat("Unable to retrieve subject with id '{0}' as {1}: It was registered as {2}", objectId,
-					typeof(T),
-					interfaceType);
+				Log.WarnFormat("{0}: Unable to retrieve subject with id '{1}' as {2}: It was registered as {3}",
+				               Name,
+				               objectId,
+				               typeof(T),
+				               interfaceType);
 			}
 			else
 			{
-				Log.WarnFormat("Unable to retrieve subject with id '{0}', it might have been garbage collected already", objectId);
+				Log.WarnFormat("{0}: Unable to retrieve subject with id '{1}', it might have been garbage collected already",
+				               Name,
+				               objectId);
 			}
 
 			return null;
@@ -679,7 +689,7 @@ namespace SharpRemote
 				}
 
 				if (Log.IsDebugEnabled)
-					Log.DebugFormat("Total GC time: {0}ms", _garbageCollectionTime.ElapsedMilliseconds);
+					Log.DebugFormat("{0}: Total GC time: {1}ms", Name, _garbageCollectionTime.ElapsedMilliseconds);
 			}
 			catch (Exception e)
 			{

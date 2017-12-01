@@ -43,14 +43,16 @@ namespace SharpRemote.CodeGeneration.Remoting
 			return module;
 		}
 
-		public ISerializer BinarySerializer
-		{
-			get { return _serializer; }
-		}
+		public ISerializer BinarySerializer => _serializer;
 
 		public Type GenerateServant<T>()
 		{
 			var interfaceType = typeof(T);
+			return GenerateServant(interfaceType);
+		}
+
+		public Type GenerateServant(Type interfaceType)
+		{
 			if (!interfaceType.IsInterface)
 				throw new ArgumentException(string.Format("Proxies can only be created for interfaces: {0} is not an interface", interfaceType));
 
@@ -71,8 +73,8 @@ namespace SharpRemote.CodeGeneration.Remoting
 					catch (Exception e)
 					{
 						var message = string.Format("Unable to create servant for type '{0}': {1}",
-													interfaceType.Name,
-													e.Message);
+						                            interfaceType.Name,
+						                            e.Message);
 						throw new ArgumentException(message, e);
 					}
 				}
@@ -83,11 +85,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 		public IServant CreateServant<T>(IRemotingEndPoint endPoint, IEndPointChannel channel, ulong objectId, T subject)
 		{
 			var interfaceType = typeof(T);
-			Type subjectType;
-			if (!_interfaceToSubject.TryGetValue(interfaceType, out subjectType))
-			{
-				subjectType = GenerateServant<T>();
-			}
+			var subjectType = GenerateServant<T>();
 
 			ConstructorInfo ctor = subjectType.GetConstructor(new[]
 				{

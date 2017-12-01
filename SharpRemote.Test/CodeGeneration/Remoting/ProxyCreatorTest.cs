@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
@@ -1161,6 +1162,19 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			proxy.Do(254);
 			doCalled.Should().BeTrue();
+		}
+		
+		[Test]
+		[LocalTest("")]
+		[Repeat(500)]
+		public void TestConcurrency()
+		{
+			var tasks = Enumerable.Range(0, 8).Select(unused => Task.Factory.StartNew(() =>
+			{
+				_creator.CreateProxy<IActionEventStringArray>(_endPoint.Object, _channel.Object, 1);
+			}, TaskCreationOptions.LongRunning)).ToArray();
+			new Action(() => Task.WaitAll(tasks))
+				.ShouldNotThrow();
 		}
 	}
 }

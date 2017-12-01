@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
@@ -403,6 +404,20 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
 			// we need to keep the subject alive.
 			GC.KeepAlive(subject.Object);
+		}
+
+		[Test]
+		[LocalTest("")]
+		[Repeat(500)]
+		public void TestConcurrency()
+		{
+			var subject = new Mock<IActionEventStringArray>();
+			var tasks = Enumerable.Range(0, 8).Select(unused => Task.Factory.StartNew(() =>
+			{
+				_creator.CreateServant(_endPoint.Object, _channel.Object, 1, subject.Object);
+			}, TaskCreationOptions.LongRunning)).ToArray();
+			new Action(() => Task.WaitAll(tasks))
+				.ShouldNotThrow();
 		}
 	}
 }

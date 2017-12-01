@@ -56,26 +56,29 @@ namespace SharpRemote.CodeGeneration.Remoting
 			if (!interfaceType.IsInterface)
 				throw new ArgumentException(string.Format("Proxies can only be created for interfaces: {0} is not an interface", interfaceType));
 
-			Type proxyType;
-			if (!_interfaceToProxy.TryGetValue(interfaceType, out proxyType))
+			lock (_interfaceToProxy)
 			{
-				try
+				Type proxyType;
+				if (!_interfaceToProxy.TryGetValue(interfaceType, out proxyType))
 				{
-					var proxyTypeName = GetProxyTypeName(interfaceType);
+					try
+					{
+						var proxyTypeName = GetProxyTypeName(interfaceType);
 
-					var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
-					proxyType = generator.Generate();
+						var generator = new ProxyCompiler(_serializer, _module, proxyTypeName, interfaceType);
+						proxyType = generator.Generate();
+					}
+					catch (Exception e)
+					{
+						var message = string.Format("Unable to create proxy for type '{0}': {1}",
+						                            interfaceType.Name,
+						                            e.Message);
+						throw new ArgumentException(message, e);
+					}
+					_interfaceToProxy.Add(interfaceType, proxyType);
 				}
-				catch (Exception e)
-				{
-					var message = string.Format("Unable to create proxy for type '{0}': {1}",
-					                            interfaceType.Name,
-					                            e.Message);
-					throw new ArgumentException(message, e);
-				}
-				_interfaceToProxy.Add(interfaceType, proxyType);
+				return proxyType;
 			}
-			return proxyType;
 		}
 
 		/// <summary>
@@ -89,12 +92,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 		/// <returns></returns>
 		public T CreateProxy<T>(IRemotingEndPoint endPoint, IEndPointChannel channel, ulong objectId)
 		{
-			var interfaceType = typeof (T);
-			Type proxyType;
-			if (!_interfaceToProxy.TryGetValue(interfaceType, out proxyType))
-			{
-				proxyType = GenerateProxy<T>();
-			}
+			var proxyType = GenerateProxy<T>();
 
 			ConstructorInfo ctor = proxyType.GetConstructor(new[]
 				{

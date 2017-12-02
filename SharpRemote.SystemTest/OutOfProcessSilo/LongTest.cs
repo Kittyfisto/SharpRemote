@@ -108,12 +108,12 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 					if (now - last > TimeSpan.FromSeconds(10))
 					{
-						Console.WriteLine("#{0} calls, {1}μs rtt, {2} received, {3} sent",
-						                  numCalls,
-										  rtt.Ticks/10,
-						                  FormatSize(received),
-						                  FormatSize(sent)
-							);
+						TestContext.Progress.WriteLine("#{0} calls, {1}μs rtt, {2} received, {3} sent",
+						                               numCalls,
+						                               rtt.Ticks / 10,
+						                               FormatSize(received),
+						                               FormatSize(sent)
+						                              );
 
 						last = now;
 					}
@@ -161,12 +161,12 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 					if (now - last > TimeSpan.FromSeconds(10))
 					{
-						Console.WriteLine("#{0} calls, {1}μs rtt, {2} received, {3} sent",
-						                  numCalls,
-						                  rtt.Ticks/10,
-						                  FormatSize(received),
-						                  FormatSize(sent)
-							);
+						TestContext.Progress.WriteLine("#{0} calls, {1}μs rtt, {2} received, {3} sent",
+						                               numCalls,
+						                               rtt.Ticks / 10,
+						                               FormatSize(received),
+						                               FormatSize(sent)
+						                              );
 
 						last = now;
 					}
@@ -217,12 +217,12 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 					if (now - last > TimeSpan.FromSeconds(10))
 					{
-						Console.WriteLine("#{0} calls, {1}μs rtt, {2} received, {3} sent",
-										  numCalls,
-										  rtt.Ticks / 10,
-										  FormatSize(received),
-										  FormatSize(sent)
-							);
+						TestContext.Progress.WriteLine("#{0} calls, {1}μs rtt, {2} received, {3} sent",
+						                               numCalls,
+						                               rtt.Ticks / 10,
+						                               FormatSize(received),
+						                               FormatSize(sent)
+						                              );
 
 						last = now;
 					}

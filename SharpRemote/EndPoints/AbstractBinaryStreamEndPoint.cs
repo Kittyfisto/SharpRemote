@@ -203,7 +203,7 @@ namespace SharpRemote
 			_servantsBySubject = new WeakKeyDictionary<object, IServant>();
 
 			_proxiesById = new Dictionary<ulong, WeakReference<IProxy>>();
-			_codeGenerator = codeGenerator ?? new CodeGenerator();
+			_codeGenerator = codeGenerator ?? CodeGeneration.CodeGenerator.Default;
 
 			_endpointSettings = endPointSettings ?? new EndPointSettings();
 			_pendingMethodCalls = new PendingMethodsQueue(_name, _endpointSettings.MaxConcurrentCalls);
@@ -240,6 +240,8 @@ namespace SharpRemote
 			_heartbeatSettings = heartbeatSettings ?? new HeartbeatSettings();
 			_latencySettings = latencySettings ?? new LatencySettings();
 		}
+
+		internal ICodeGenerator CodeGenerator => _codeGenerator;
 
 		/// <summary>
 		///     The socket used to communicate with the other endpoint.

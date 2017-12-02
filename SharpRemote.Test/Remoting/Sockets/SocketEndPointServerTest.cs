@@ -7,8 +7,10 @@ using System.Threading;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
+using SharpRemote.CodeGeneration;
 using SharpRemote.ServiceDiscovery;
 using SharpRemote.Sockets;
+using SharpRemote.Test.Types.Interfaces;
 
 namespace SharpRemote.Test.Remoting.Sockets
 {
@@ -139,6 +141,36 @@ namespace SharpRemote.Test.Remoting.Sockets
 			using (var socket = SocketEndPoint.CreateSocketAndBindToAnyPort(IPAddress.Any, out address))
 			{
 				socket.ExclusiveAddressUse.Should().BeTrue();
+			}
+		}
+
+		[Test]
+		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/43")]
+		[Description("Verifies that two end points share the same code generator if none has been specified by the creator")]
+		public void TestSharedCodeGenerator()
+		{
+			using (var endPoint1 = new SocketEndPoint(EndPointType.Server))
+			using (var endPoint2 = new SocketEndPoint(EndPointType.Server))
+			{
+				var codeGenerator1 = endPoint1.CodeGenerator;
+				var codeGenerator2 = endPoint2.CodeGenerator;
+
+				codeGenerator2.Should().BeSameAs(codeGenerator1, "because endpoints must share their code generator");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that when a code generator is specified, then it is used in favour of the default generator")]
+		public void TestUseGivenCodeGenerator()
+		{
+			var codeGenerator = new Mock<ICodeGenerator>();
+			using (var endPoint = new SocketEndPoint(EndPointType.Server, codeGenerator: codeGenerator.Object))
+			{
+				endPoint.CreateProxy<IEmpty>(42);
+				codeGenerator.Verify(x => x.CreateProxy<IEmpty>(It.Is<IRemotingEndPoint>(y => y == endPoint),
+				                                                It.Is<IEndPointChannel>(y => y == endPoint),
+				                                                It.Is<ulong>(y => y == 42)),
+				                     Times.Once);
 			}
 		}
 

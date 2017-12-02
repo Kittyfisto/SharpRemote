@@ -12,6 +12,30 @@ namespace SharpRemote.CodeGeneration
 	public sealed class CodeGenerator
 		: ICodeGenerator
 	{
+		private static ICodeGenerator _defaultGenerator;
+		private static readonly object DefaultGeneratorConstructionSyncRoot = new object();
+
+		/// <summary>
+		///     The default code generator which is shared between all endpoints unless a user supplied
+		///     code generator is given.
+		/// </summary>
+		/// <remarks>
+		///     This property is internal because there is no need for a user to have acccess to
+		///     this property. Either don't specify code generator, in which case this instance is used,
+		///     or create your own code generator if you need your own stuff.
+		/// </remarks>
+		internal static ICodeGenerator Default
+		{
+			get
+			{
+				lock (DefaultGeneratorConstructionSyncRoot)
+				{
+					return _defaultGenerator ?? (_defaultGenerator = new CodeGenerator());
+				}
+			}
+			
+		}
+
 		private readonly ProxyCreator _proxyCreator;
 		private readonly ServantCreator _servantCreator;
 
@@ -26,9 +50,15 @@ namespace SharpRemote.CodeGeneration
 		}
 
 		/// <summary>
-		/// 
+		///     Initializes this object.
 		/// </summary>
-		/// <param name="customTypeResolver">Type resolver that should be used instead of <see cref="TypeResolver"/></param>
+		/// <remarks>
+		///     Creating a new instance of this type means loading a new dynamic assembly into the
+		///     <see cref="AppDomain.CurrentDomain" />. THIS ASSEMBLY CANNOT BE UNLOADED UNLESS THE APPDOMAIN IS.
+		///     Do not create new instances of this type if you can easily re-use an existing instance or
+		///     you will consume more and more memory.
+		/// </remarks>
+		/// <param name="customTypeResolver">Type resolver that should be used instead of <see cref="TypeResolver" /></param>
 		public CodeGenerator(ITypeResolver customTypeResolver = null)
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");

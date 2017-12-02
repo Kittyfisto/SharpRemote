@@ -1084,6 +1084,7 @@ namespace SharpRemote.Test.Remoting
 					called = true;
 				}
 			};
+
 			var subject = new Mock<IInvokeAttributeEvents>();
 			_server.CreateServant(servantId, subject.Object);
 			Task t = Task.Factory.StartNew(() =>
@@ -1104,6 +1105,7 @@ namespace SharpRemote.Test.Remoting
 			// in turn would unregister the servant from the server, thus making the test
 			// fail sporadically.
 			GC.KeepAlive(subject);
+			GC.KeepAlive(proxy);
 		}
 
 		[Test]

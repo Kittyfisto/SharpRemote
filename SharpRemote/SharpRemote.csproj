@@ -69,6 +69,7 @@
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriteValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\LevelSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\MessageType2.cs" />
+    <Compile Include="CodeGeneration\Serialization\TypeResolverAdapter.cs" />
     <Compile Include="CodeGeneration\Serialization\ExceptionCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\IMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\IPAddressSurrogate.cs" />

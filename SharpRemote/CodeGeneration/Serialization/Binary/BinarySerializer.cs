@@ -44,7 +44,7 @@ namespace SharpRemote
 			if (module == null) throw new ArgumentNullException(nameof(module));
 
 			_module = module;
-			_customTypeResolver = customTypeResolver;
+			_customTypeResolver = new TypeResolverAdapter(customTypeResolver);
 			_serializationMethods = new Dictionary<Type, SerializationMethods>();
 
 			_customSerializers = new List<IBuiltInTypeSerializer>
@@ -91,10 +91,7 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public Type GetType(string assemblyQualifiedTypeName)
 		{
-			if (_customTypeResolver != null)
-				return _customTypeResolver.GetType(assemblyQualifiedTypeName);
-
-			return TypeResolver.GetType(assemblyQualifiedTypeName);
+			return _customTypeResolver.GetType(assemblyQualifiedTypeName);
 		}
 
 		/// <inheritdoc />

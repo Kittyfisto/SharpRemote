@@ -437,9 +437,10 @@ namespace SharpRemote
 			}
 
 			if (typeName == null)
-				throw new NotImplementedException();
+				return null;
+
 			if (value == null)
-				throw new NotImplementedException();
+				return null;
 
 			var type = ResolveTypeName(typeName);
 			return ReadValue(type, value);

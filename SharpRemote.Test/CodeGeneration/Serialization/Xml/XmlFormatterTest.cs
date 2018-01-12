@@ -50,7 +50,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 		}
 
 		[Test]
-		[Ignore("Not yet implemented")]
+		[Description("Verifies that an Exception can be roundtripped")]
 		public void TestRoundtripException1()
 		{
 			var actual = Roundtrip(new Exception("Hello, World!"));

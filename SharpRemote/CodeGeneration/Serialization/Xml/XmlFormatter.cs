@@ -121,6 +121,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 			var name = reader.Name;
 			var value = serializer.ReadObject(reader);
+			info.AddValue(name, value);
 		}
 
 		private sealed class Formatter

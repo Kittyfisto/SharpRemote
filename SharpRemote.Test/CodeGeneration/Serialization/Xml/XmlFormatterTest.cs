@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Xml;
 using FluentAssertions;
@@ -55,6 +56,29 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 		{
 			var actual = Roundtrip(new Exception("Hello, World!"));
 			actual.Message.Should().Be("Hello, World!");
+		}
+
+		[Test]
+		[Description("Verifies that a custom Exception can be roundtripped")]
+		public void TestRoundtripCustomException()
+		{
+			var actual = Roundtrip(new SomeException("You forgot to implement this!"));
+			actual.Message.Should().Be("You forgot to implement this!");
+		}
+
+		[Serializable]
+		public class SomeException
+			: NotImplementedException
+		{
+			public SomeException(string message)
+				: base(message)
+			{
+
+			}
+
+			public SomeException(SerializationInfo info, StreamingContext context)
+				: base(info, context)
+			{ }
 		}
 	}
 }

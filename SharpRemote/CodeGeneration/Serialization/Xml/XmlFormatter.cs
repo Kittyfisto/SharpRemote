@@ -90,7 +90,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			{
 				var type = typeResolver.GetType(exceptionType);
 				if (!typeof(Exception).IsAssignableFrom(type))
-					throw new UnserializableException();
+					throw new UnserializableException(string.Format("Unable to find type '{0}'", exceptionType));
 
 				var info = new SerializationInfo(type, new Formatter());
 				int depth = reader.Depth;
@@ -98,11 +98,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 				{
 					ReadValue(reader, serializer, info);
 				}
-				
+
 				var context = new StreamingContext(StreamingContextStates.CrossMachine |
 				                                   StreamingContextStates.CrossProcess |
 				                                   StreamingContextStates.CrossAppDomain);
-				var tmp = type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault();
+				var tmp = GetConstructor(type);
+				if (tmp == null)
+					throw new UnserializableException(string.Format("The type '{0}' is missing a deserialization constructor", exceptionType));
+
 				var exception = tmp.Invoke(new object[] {info, context});
 				return (Exception) exception;
 			}
@@ -112,9 +115,24 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			}
 			catch (Exception e)
 			{
-				Log.ErrorFormat("Caught unexpected exception while trying to deserialize exception: {0}", e);
-				throw new UnserializableException();
+				var message = string.Format("Caught unexpected exception while trying to deserialize an exception: {0}", e);
+				Log.ErrorFormat(message);
+				throw new UnserializableException(message, e);
 			}
+		}
+
+		private static ConstructorInfo GetConstructor(Type type)
+		{
+			var ctor = type.GetConstructor(new[]
+			{
+				typeof(SerializationInfo),
+				typeof(StreamingContext)
+			});
+			if (ctor != null)
+				return ctor;
+
+			ctor = type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault();
+			return ctor;
 		}
 
 		private static void ReadValue(XmlReader reader, XmlSerializer serializer, SerializationInfo info)

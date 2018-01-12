@@ -27,6 +27,25 @@ namespace SharpRemote
 #endif
 
 		private readonly string _originalTypename;
+		
+		/// <summary>
+		/// Creates a new UnserializableException.
+		/// </summary>
+		/// <param name="message"></param>
+		public UnserializableException(string message)
+			: this(message, null)
+		{ }
+
+		/// <summary>
+		/// Creates a new UnserializableException that tries to capture
+		/// as much information about the original (unserializable) exception
+		/// as possible to ease debugging.
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="innerException"></param>
+		public UnserializableException(string message, Exception innerException)
+			: base(message, innerException)
+		{ }
 
 		/// <summary>
 		/// Creates a new UnserializableException that tries to capture
@@ -35,6 +54,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="originalException"></param>
 		public UnserializableException(Exception originalException)
+			: base(originalException.Message)
 		{
 			_originalMessage = originalException.Message;
 			_originalStacktrace = originalException.StackTrace;

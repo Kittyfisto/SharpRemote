@@ -221,6 +221,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				EmitReadDateTime(gen);
 			else if (type == typeof(Level))
 				EmitReadLevel(gen);
+			else if (TypeDescription.IsException(type))
+				EmitReadException(gen, type);
 			else
 				throw new NotImplementedException();
 		}
@@ -348,6 +350,13 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		protected abstract void EmitReadLevel(ILGenerator gen);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="exceptionType"></param>
+		protected abstract void EmitReadException(ILGenerator gen, Type exceptionType);
 
 		private void EmitCallBeforeDeserialization(ILGenerator gen, LocalBuilder tmp)
 		{

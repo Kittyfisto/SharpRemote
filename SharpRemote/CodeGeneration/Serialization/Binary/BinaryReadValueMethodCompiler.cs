@@ -1,4 +1,5 @@
-﻿using System.Reflection.Emit;
+﻿using System;
+using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
@@ -88,6 +89,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		}
 
 		protected override void EmitReadLevel(ILGenerator gen)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		protected override void EmitReadException(ILGenerator gen, Type exceptionType)
 		{
 			throw new System.NotImplementedException();
 		}

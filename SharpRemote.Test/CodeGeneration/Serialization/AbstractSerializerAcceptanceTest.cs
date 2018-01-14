@@ -5,6 +5,7 @@ using FluentAssertions;
 using log4net.Core;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
+using SharpRemote.Test.Types.Exceptions;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Structs;
 
@@ -808,30 +809,31 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
-		[Ignore("not yet implemented")]
-		public void TestMethodResultException()
+		public void TestMethodResultException1()
 		{
-			var serializer = Create();
-			using (var stream = new MemoryStream())
-			{
-				const int rpcId = 10;
-				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
-				{
-					writer.WriteException(new ArgumentException("Foo"));
-				}
+			const int rpcId = 10;
+			var exception = MethodResultRoundtripException(rpcId, new ArgumentException("You passed a wrong argument"));
+			exception.Should().BeOfType<ArgumentException>();
+			exception.Message.Should().Be("You passed a wrong argument");
+		}
 
-				PrintAndRewind(stream);
+		[Test]
+		public void TestMethodResultException2()
+		{
+			const int rpcId = 10;
+			var exception = MethodResultRoundtripException(rpcId, new Exception("Oops"));
+			exception.Should().BeOfType<Exception>();
+			exception.Message.Should().Be("Oops");
+		}
 
-				using (var reader = CreateMethodResultReader(serializer, stream))
-				{
-					reader.RpcId.Should().Be(rpcId);
-
-					Exception exception;
-					reader.ReadException(out exception).Should().BeTrue();
-					exception.Should().BeOfType<ArgumentException>();
-					exception.Message.Should().Be("Foo");
-				}
-			}
+		[Test]
+		[Description("Verifies that a custom Exception can be roundtripped")]
+		public void TestRoundtripCustomException()
+		{
+			const int rpcId = 10;
+			var exception = MethodResultRoundtripException(rpcId, new WellBehavedCustomException("You forgot to implement this!"));
+			exception.Should().BeOfType<WellBehavedCustomException>();
+			exception.Message.Should().Be("You forgot to implement this!");
 		}
 
 		[Test]
@@ -840,7 +842,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var serializer = Create();
 			using (var stream = new MemoryStream())
 			{
-				const int rpcId = 10;
+				const int rpcId = 12;
 				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
 				{
 					writer.WriteResult(value);
@@ -1545,6 +1547,30 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			}
 		}
 
+		private Exception MethodResultRoundtripException(ulong rpcId, Exception exception)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteException(exception);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					Exception actualException;
+					reader.ReadException(out actualException).Should().BeTrue();
+					return actualException;
+				}
+			}
+		}
+
+
 		private void TestFailRegister<T>(string reason)
 		{
 			var serializer = Create();
@@ -1563,8 +1589,8 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			stream.Position = 0;
 
 			var formatted = Format(stream);
-			TestContext.Out.WriteLine("Message, {0} bytes", stream.Length);
-			TestContext.Out.Write(formatted);
+			TestContext.Progress.WriteLine("Message, {0} bytes", stream.Length);
+			TestContext.Progress.Write(formatted);
 			stream.Position = 0;
 		}
 

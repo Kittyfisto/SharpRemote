@@ -438,12 +438,27 @@ namespace SharpRemote
 
 			if (typeName == null)
 				return null;
-
-			if (value == null)
-				return null;
-
+			
 			var type = ResolveTypeName(typeName);
-			return ReadValue(type, value);
+			if (value != null)
+			{
+				return ReadValue(type, value);
+			}
+
+			reader.MoveToElement();
+			var content = reader.ReadSubtree();
+			while (content.Read())
+			{
+				if (content.Name == ValueName)
+				{
+					// It might not have the value embedded in an attribute, so
+					// it's probably in the value element.
+					var methods = _methodStorage.GetOrAdd(type);
+					return methods.ReadObjectDelegate(reader, this, null);
+				}
+			}
+
+			return null;
 		}
 
 		/// <summary>

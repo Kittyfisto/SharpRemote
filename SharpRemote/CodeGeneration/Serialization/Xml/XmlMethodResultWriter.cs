@@ -9,8 +9,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 	internal sealed class XmlMethodResultWriter
 		: IMethodResultWriter
 	{
-		
-
 		private readonly XmlSerializer _serializer;
 		private readonly StreamWriter _textWriter;
 		private readonly XmlWriter _writer;

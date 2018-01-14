@@ -69,7 +69,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 					return false;
 
 				case XmlSerializer.ExceptionElementName:
-					// TODO: Read exception...
+					exception = (Exception)_serializer.ReadObject(_reader);
 					return true;
 
 				default:

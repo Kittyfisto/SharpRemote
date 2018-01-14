@@ -1,13 +1,18 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Serialization;
 using System.Xml;
+using log4net;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml
 {
 	internal sealed class XmlReadValueMethodCompiler
 		: AbstractReadValueMethodCompiler
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		private static readonly MethodInfo XmlReaderRead;
 		private static readonly MethodInfo XmlReaderGetName;
 		private static readonly MethodInfo XmlReaderReadElementContentAsString;
@@ -29,6 +34,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly ConstructorInfo XmlParseExceptionCtor;
 		private static readonly MethodInfo XmlLineInfoGetLineNumber;
 		private static readonly MethodInfo XmlLineInfoGetLinePosition;
+		private static readonly MethodInfo XmlReadValueMethodCompilerReadException;
 
 		static XmlReadValueMethodCompiler()
 		{
@@ -53,6 +59,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlLineInfoGetLineNumber = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LineNumber)).GetMethod;
 			XmlLineInfoGetLinePosition = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LinePosition)).GetMethod;
 			XmlParseExceptionCtor = typeof(XmlParseException).GetConstructor(new [] {typeof(string), typeof(int), typeof(int), typeof(Exception)});
+
+			XmlReadValueMethodCompilerReadException = typeof(XmlReadValueMethodCompiler).GetMethod(nameof(ReadException), new [] {typeof(Type), typeof(XmlReader), typeof(XmlSerializer)});
 		}
 
 		public XmlReadValueMethodCompiler(CompilationContext context)
@@ -197,6 +205,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.MarkLabel(end);
 		}
 
+		protected override void EmitReadException(ILGenerator gen, Type exceptionType)
+		{
+			// ReadException(exceptionType, XmlReader, XmlSerializer)
+			gen.Emit(OpCodes.Ldtoken, exceptionType);
+			gen.Emit(OpCodes.Call, TypeGetTypeFromHandle);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Call, XmlReadValueMethodCompilerReadException);
+		}
+
 		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)
 		{
 			var correctField = gen.DefineLabel();
@@ -250,6 +268,75 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		protected override void EmitReadHintAndGrainId(ILGenerator generator)
 		{
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <remarks>
+		/// TODO: Lookup exception in generated code only once, makes it easier!
+		/// </remarks>
+		/// <param name="exceptionType"></param>
+		/// <param name="reader"></param>
+		/// <param name="serializer"></param>
+		public static Exception ReadException(Type exceptionType, XmlReader reader, XmlSerializer serializer)
+		{
+			if (reader == null)
+				throw new ArgumentNullException(nameof(reader));
+
+			try
+			{
+				if (!typeof(Exception).IsAssignableFrom(exceptionType))
+					throw new UnserializableException(string.Format("Unable to find type '{0}'", exceptionType));
+
+				var info = new SerializationInfo(exceptionType, new XmlFormatterConverter());
+				int depth = reader.Depth;
+				while (reader.Read() && reader.Depth >= depth)
+				{
+					ReadValue(reader, serializer, info);
+				}
+
+				var context = new StreamingContext(StreamingContextStates.CrossMachine |
+				                                   StreamingContextStates.CrossProcess |
+				                                   StreamingContextStates.CrossAppDomain);
+				var tmp = GetConstructor(exceptionType);
+				if (tmp == null)
+					throw new UnserializableException(string.Format("The type '{0}' is missing a deserialization constructor", exceptionType));
+
+				var exception = tmp.Invoke(new object[] {info, context});
+				return (Exception) exception;
+			}
+			catch (UnserializableException)
+			{
+				throw;
+			}
+			catch (Exception e)
+			{
+				var message = string.Format("Caught unexpected exception while trying to deserialize an exception: {0}", e);
+				Log.ErrorFormat(message);
+				throw new UnserializableException(message, e);
+			}
+		}
+
+		private static ConstructorInfo GetConstructor(Type type)
+		{
+			var ctor = type.GetConstructor(new[]
+			{
+				typeof(SerializationInfo),
+				typeof(StreamingContext)
+			});
+			if (ctor != null)
+				return ctor;
+
+			ctor = type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault();
+			return ctor;
+		}
+
+		private static void ReadValue(XmlReader reader, XmlSerializer serializer, SerializationInfo info)
+		{
+			var name = reader.Name;
+			var value = serializer.ReadObject(reader);
+			info.AddValue(name, value);
 		}
 	}
 }

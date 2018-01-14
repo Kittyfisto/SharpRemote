@@ -26,6 +26,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		protected static readonly MethodInfo StringEquals;
 
 		/// <summary>
+		/// </summary>
+		protected static readonly MethodInfo TypeGetTypeFromHandle;
+
+		/// <summary>
 		///     A list of accessors to special <see cref="log4net.Core.Level" /> values
 		///     which shall be regarded as singletons: A serializer shall ensure
 		///     that if an object equal to one of the given array is serialized, then
@@ -113,6 +117,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			CultureInfoGetInvariantCulture = typeof(CultureInfo).GetProperty(nameof(CultureInfo.InvariantCulture)).GetMethod;
 			StringFormatObject = typeof(string).GetMethod(nameof(string.Format), new[] {typeof(string), typeof(object)});
 			StringEquals = typeof(string).GetMethod(nameof(string.Equals), new[] {typeof(string)});
+			TypeGetTypeFromHandle = typeof(Type).GetMethod(nameof(Type.GetTypeFromHandle), new [] {typeof(RuntimeTypeHandle)});
 			HardcodedLevels = new[]
 			{
 				Singleton.FromField<Level>(nameof(Level.Debug)),

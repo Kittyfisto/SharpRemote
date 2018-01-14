@@ -250,6 +250,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				EmitWriteDateTime(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(Level))
 				EmitWriteLevel(gen, loadMember, loadMemberAddress);
+			else if (TypeDescription.IsException(type))
+				EmitWriteException(gen, loadMember, loadMemberAddress);
 			else
 				throw new NotImplementedException();
 		}
@@ -381,6 +383,14 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="loadMember">An operation which emits code to the given <paramref name="gen"/> which pushes the value of the field or property onto the evaluation stack</param>
 		/// <param name="loadMemberAddress">An operation which emits code to the given <paramref name="gen"/> which pushes the address of the value of the field or property onto the evaluation stack</param>
 		protected abstract void EmitWriteLevel(ILGenerator gen, Action loadMember, Action loadMemberAddress);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen">The code generator to use to emit new code</param>
+		/// <param name="loadMember">An operation which emits code to the given <paramref name="gen"/> which pushes the value of the field or property onto the evaluation stack</param>
+		/// <param name="loadMemberAddress">An operation which emits code to the given <paramref name="gen"/> which pushes the address of the value of the field or property onto the evaluation stack</param>
+		protected abstract void EmitWriteException(ILGenerator gen, Action loadMember, Action loadMemberAddress);
 
 		private void EmitCallAfterSerialization(ILGenerator gen)
 		{

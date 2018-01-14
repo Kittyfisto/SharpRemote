@@ -311,7 +311,7 @@ namespace SharpRemote
 		                                                      out MethodInfo singletonAccessor,
 		                                                      out Type byReferenceInterface)
 		{
-			if (type.IsPrimitive || BuiltInTypes.Contains(type))
+			if (type.IsPrimitive || BuiltInTypes.Contains(type) || IsException(type))
 			{
 				builtIn = true;
 				singletonAccessor = null;
@@ -369,6 +369,25 @@ namespace SharpRemote
 
 			byReferenceInterface = null;
 			return SerializationType.Singleton;
+		}
+
+		/// <summary>
+		/// Tests if the given type is <see cref="Exception"/> or inherits from it.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		public static bool IsException(Type type)
+		{
+			// A type is an exception if is System.Exception or any of its base types are.
+			while (type != null && type != typeof(object))
+			{
+				if (type == typeof(Exception))
+					return true;
+
+				type = type.BaseType;
+			}
+
+			return false;
 		}
 	}
 }

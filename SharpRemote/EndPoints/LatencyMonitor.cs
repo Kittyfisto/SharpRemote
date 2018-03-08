@@ -26,13 +26,14 @@ namespace SharpRemote
 		private readonly ILatency _latencyGrain;
 		private readonly RingBuffer<TimeSpan> _measurements;
 		private readonly bool _performLatencyMeasurements;
+		private readonly EndPoint _localEndPoint;
+		private readonly EndPoint _remoteEndPoint;
 		private readonly object _syncRoot;
+
 		private volatile bool _isDisposed;
 		private TimeSpan _roundTripTime;
 
 		private Task _task;
-		private EndPoint _localEndPoint;
-		private EndPoint _remoteEndPoint;
 
 		/// <summary>
 		///     Initializes this latency monitor with the given interval and number of samples over which

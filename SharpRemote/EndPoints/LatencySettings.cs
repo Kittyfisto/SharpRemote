@@ -52,7 +52,7 @@ namespace SharpRemote
 		/// </summary>
 		public LatencySettings()
 		{
-			Interval = TimeSpan.FromMilliseconds(100);
+			Interval = TimeSpan.FromSeconds(1);
 			NumSamples = 10;
 			PerformLatencyMeasurements = true;
 		}

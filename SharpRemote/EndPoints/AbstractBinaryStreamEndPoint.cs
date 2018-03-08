@@ -1081,6 +1081,8 @@ namespace SharpRemote
 			                                         Debugger.Instance,
 			                                         _heartbeatSettings,
 			                                         connectionId,
+			                                         _name,
+			                                         LocalEndPoint,
 			                                         remoteEndPoint);
 
 			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;

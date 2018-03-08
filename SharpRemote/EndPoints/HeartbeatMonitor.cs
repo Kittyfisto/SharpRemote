@@ -8,7 +8,6 @@ using SharpRemote.Diagnostics;
 using log4net;
 
 // ReSharper disable CheckNamespace
-
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
@@ -27,6 +26,8 @@ namespace SharpRemote
 		private readonly TimeSpan _failureInterval;
 		private readonly IHeartbeat _heartbeat;
 		private readonly TimeSpan _interval;
+		private readonly string _endPointName;
+		private readonly EndPoint _localEndPoint;
 		private readonly EndPoint _remoteEndPoint;
 		private readonly object _syncRoot;
 		private readonly Task _task;
@@ -48,11 +49,15 @@ namespace SharpRemote
 		/// <param name="debugger"></param>
 		/// <param name="settings"></param>
 		/// <param name="connectionId"></param>
+		/// <param name="endPointName"></param>
+		/// <param name="localEndPoint"></param>
 		/// <param name="remoteEndPoint"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        IDebugger debugger,
 		                        HeartbeatSettings settings,
 		                        ConnectionId connectionId,
+		                        string endPointName,
+		                        EndPoint localEndPoint,
 		                        EndPoint remoteEndPoint)
 			: this(
 				heartbeat,
@@ -63,6 +68,8 @@ namespace SharpRemote
 				settings.UseHeartbeatFailureDetection,
 				settings.AllowRemoteHeartbeatDisable,
 				connectionId,
+				endPointName,
+				localEndPoint,
 				remoteEndPoint)
 		{
 		}
@@ -79,6 +86,8 @@ namespace SharpRemote
 		/// <param name="useHeartbeatFailureDetection"></param>
 		/// <param name="allowRemoteHeartbeatDisable"></param>
 		/// <param name="connectionId"></param>
+		/// <param name="endPointName"></param>
+		/// <param name="locEndPoint"></param>
 		/// <param name="remoteEndPoint"></param>
 		public HeartbeatMonitor(IHeartbeat heartbeat,
 		                        IDebugger debugger,
@@ -88,6 +97,8 @@ namespace SharpRemote
 		                        bool useHeartbeatFailureDetection,
 		                        bool allowRemoteHeartbeatDisable,
 		                        ConnectionId connectionId,
+		                        string endPointName,
+		                        EndPoint locEndPoint,
 		                        EndPoint remoteEndPoint)
 		{
 			if (heartbeat == null) throw new ArgumentNullException(nameof(heartbeat));
@@ -108,6 +119,8 @@ namespace SharpRemote
 			_useHeartbeatFailureDetection = useHeartbeatFailureDetection;
 			_allowRemoteHeartbeatDisable = allowRemoteHeartbeatDisable;
 			_connectionId = connectionId;
+			_endPointName = endPointName;
+			_localEndPoint = locEndPoint;
 			_remoteEndPoint = remoteEndPoint;
 			_failureInterval = heartBeatInterval +
 			                   TimeSpan.FromMilliseconds(failureThreshold*heartBeatInterval.TotalMilliseconds);
@@ -201,7 +214,9 @@ namespace SharpRemote
 			_remoteIsDebuggerAttached = true;
 
 			var message = new StringBuilder();
-			message.AppendFormat("A debugger has been attached to the remote endpoint's process: {0}", _remoteEndPoint);
+			message.AppendFormat("{0}: A debugger has been attached to the remote endpoint's process: {1}",
+			                     _endPointName,
+			                     _remoteEndPoint);
 			message.Append(", heartbeat failures will ");
 			if (!ReportFailures)
 			{
@@ -221,7 +236,9 @@ namespace SharpRemote
 			_remoteIsDebuggerAttached = false;
 
 			var message = new StringBuilder();
-			message.AppendFormat("A debugger has been detached from the remote endpoint's process: {0}", _remoteEndPoint);
+			message.AppendFormat("{0}: A debugger has been detached from the remote endpoint's process: {1}",
+			                     _endPointName,
+			                     _remoteEndPoint);
 			message.Append(", heartbeat failures will ");
 			if (!ReportFailures)
 			{
@@ -294,7 +311,11 @@ namespace SharpRemote
 				}
 				catch (Exception e)
 				{
-					Log.ErrorFormat("Caught unexpected exception: {0}", e);
+					Log.ErrorFormat("{0}: {1} to {2}, caught unexpected exception: {3}",
+					                _endPointName,
+					                _localEndPoint,
+					                _remoteEndPoint,
+					                e);
 				}
 			}
 		}
@@ -330,7 +351,11 @@ namespace SharpRemote
 			AggregateException exception = task.Exception;
 			if (Log.IsDebugEnabled)
 			{
-				Log.DebugFormat("Task (finally) threw exception - ignoring it: {0}", exception);
+				Log.DebugFormat("{0}: {1} to {2}, Task (finally) threw exception - ignoring it: {3}",
+				                _endPointName,
+				                _localEndPoint,
+				                _remoteEndPoint,
+				                exception);
 			}
 		}
 
@@ -357,7 +382,10 @@ namespace SharpRemote
 
 					if (Log.IsInfoEnabled)
 					{
-						Log.InfoFormat("Ignoring heartbeat failure of remote endpoint '{0}'", _remoteEndPoint);
+						Log.InfoFormat("{0}: {1} to {2}, ignoring heartbeat failure",
+						               _endPointName,
+						               _localEndPoint,
+						               _remoteEndPoint);
 					}
 				}
 			}
@@ -385,9 +413,7 @@ namespace SharpRemote
 			}
 
 			_failureDetected = true;
-			Action<ConnectionId> fn = OnFailure;
-			if (fn != null)
-				fn(_connectionId);
+			OnFailure?.Invoke(_connectionId);
 		}
 
 		/// <summary>

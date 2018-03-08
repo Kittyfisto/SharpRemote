@@ -166,7 +166,7 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="sw"></param>
 		/// <param name="toSleep"></param>
-		private bool MeasureLatency(Stopwatch sw, out TimeSpan toSleep)
+		internal bool MeasureLatency(Stopwatch sw, out TimeSpan toSleep)
 		{
 			try
 			{

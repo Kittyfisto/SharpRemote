@@ -23,13 +23,13 @@ namespace SampleBrowser
 			_title = "Sample Browser";
 			_isScenarioSelectionVisible = true;
 			_scenarios = new IScenario[]
-				{
-					new LongTermScenario(),
-					new HostScenario(),
-					new InProcessHostScenario(), 
-					new RemoteHostScenario(),
-					new BluetoothPairingScenario()
-				};
+			{
+				new LongTermScenario(),
+				new HostScenario(),
+				new InProcessHostScenario(),
+				new RemoteHostScenario(),
+				new BluetoothPairingScenario()
+			};
 		}
 
 		public string Title
@@ -45,10 +45,7 @@ namespace SampleBrowser
 			}
 		}
 
-		public IScenario[] Scenarios
-		{
-			get { return _scenarios; }
-		}
+		public IScenario[] Scenarios => _scenarios;
 
 		public FrameworkElement CurrentScenarioView
 		{
@@ -76,8 +73,13 @@ namespace SampleBrowser
 			}
 		}
 
+		public IScenario CurrentScenario { get; set; }
+
+		public event PropertyChangedEventHandler PropertyChanged;
+
 		public void ShowScenario(AbstractScenario scenario)
 		{
+			CurrentScenario = scenario;
 			CurrentScenarioView = scenario.CreateView();
 			CurrentScenarioView.DataContext = scenario;
 
@@ -85,12 +87,9 @@ namespace SampleBrowser
 			Title = string.Format("Sample Browser - {0}", scenario.Title);
 		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
-
 		private void EmitPropertyChanged([CallerMemberName] string propertyName = null)
 		{
-			PropertyChangedEventHandler handler = PropertyChanged;
-			if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 	}
 }

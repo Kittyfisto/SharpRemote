@@ -29,7 +29,7 @@ namespace SampleBrowser.Scenarios.BluetoothPairing
 			}
 		}
 
-		protected override Task Start()
+		protected override Task StartAsync()
 		{
 			return Task.Factory.StartNew(() =>
 				{
@@ -37,7 +37,7 @@ namespace SampleBrowser.Scenarios.BluetoothPairing
 				});
 		}
 
-		protected override Task Stop()
+		protected override Task StopAsync()
 		{
 			return Task.Factory.StartNew(() =>
 			{

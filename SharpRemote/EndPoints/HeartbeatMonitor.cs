@@ -325,6 +325,11 @@ namespace SharpRemote
 			Task task;
 			try
 			{
+				Log.DebugFormat("{0}: {1} to {2}, sending heartbeat...",
+				                _endPointName,
+				                _localEndPoint,
+				                _remoteEndPoint);
+
 				task = _heartbeat.Beat();
 				task.ContinueWith(ObserverException, TaskContinuationOptions.OnlyOnFaulted);
 			}
@@ -349,7 +354,7 @@ namespace SharpRemote
 		private void ObserverException(Task task, object unused)
 		{
 			AggregateException exception = task.Exception;
-			if (Log.IsDebugEnabled)
+			if (Log.IsDebugEnabled && exception != null)
 			{
 				Log.DebugFormat("{0}: {1} to {2}, Task (finally) threw exception - ignoring it: {3}",
 				                _endPointName,
@@ -377,15 +382,26 @@ namespace SharpRemote
 				{
 					if (ReportFailures)
 					{
+						Log.DebugFormat("{0}: {1} to {2}, heartbeat failed",
+						                _endPointName,
+						                _localEndPoint,
+						                _remoteEndPoint);
 						return false;
 					}
 
-					if (Log.IsInfoEnabled)
+					Log.InfoFormat("{0}: {1} to {2}, ignoring heartbeat failure",
+					               _endPointName,
+					               _localEndPoint,
+					               _remoteEndPoint);
+				}
+				else
+				{
+					if (Log.IsDebugEnabled)
 					{
-						Log.InfoFormat("{0}: {1} to {2}, ignoring heartbeat failure",
-						               _endPointName,
-						               _localEndPoint,
-						               _remoteEndPoint);
+						Log.DebugFormat("{0}: {1} to {2}, heartbeat succeeded",
+						                _endPointName,
+						                _localEndPoint,
+						                _remoteEndPoint);
 					}
 				}
 			}

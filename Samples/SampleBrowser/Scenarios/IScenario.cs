@@ -9,5 +9,6 @@ namespace SampleBrowser.Scenarios
 
 		ICommand StartCommand { get; }
 		ICommand StopCommand { get; }
+		void Stop();
 	}
 }

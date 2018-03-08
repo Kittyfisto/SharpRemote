@@ -61,12 +61,12 @@ namespace SampleBrowser.Scenarios.InProcessHost
 			}
 		}
 
-		protected override Task Start()
+		protected override Task StartAsync()
 		{
 			return Task.Factory.StartNew(() => { });
 		}
 
-		protected override Task Stop()
+		protected override Task StopAsync()
 		{
 			return Task.Factory.StartNew(() => { });
 		}

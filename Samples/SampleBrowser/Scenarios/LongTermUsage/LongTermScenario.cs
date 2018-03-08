@@ -72,7 +72,7 @@ namespace SampleBrowser.Scenarios.LongTermUsage
 			return true;
 		}
 
-		protected override Task Start()
+		protected override Task StartAsync()
 		{
 			return Task.Factory.StartNew(() =>
 			{
@@ -84,12 +84,15 @@ namespace SampleBrowser.Scenarios.LongTermUsage
 				var logger = (Logger)hierarchy.GetLogger("SharpRemote.LatencyMonitor");
 				logger.Level = Level.Debug;
 
+				logger = (Logger)hierarchy.GetLogger("SharpRemote.HeartbeatMonitor");
+				logger.Level = Level.Debug;
+
 				hierarchy.Configured = true;
 				_running = true;
 			});
 		}
 
-		protected override Task Stop()
+		protected override Task StopAsync()
 		{
 			return Task.Factory.StartNew(() =>
 			{

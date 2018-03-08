@@ -47,6 +47,11 @@ namespace SampleBrowser.Scenarios
 
 		public ICommand StopCommand => _stopCommand;
 
+		public void Stop()
+		{
+			StopCommand.Execute(null);
+		}
+
 		protected void Log(LoggingEvent @event)
 		{
 			Log(@event.RenderedMessage);
@@ -62,7 +67,7 @@ namespace SampleBrowser.Scenarios
 		private async void Start(object unused)
 		{
 			App.ViewModel.ShowScenario(this);
-			await Start();
+			await StartAsync();
 			await Dispatcher.BeginInvoke(new Action(ScenarioStarted));
 		}
 
@@ -94,10 +99,10 @@ namespace SampleBrowser.Scenarios
 
 		private void Stop(object unused)
 		{
-			Stop();
+			StopAsync();
 		}
 
-		protected abstract Task Start();
-		protected abstract Task Stop();
+		protected abstract Task StartAsync();
+		protected abstract Task StopAsync();
 	}
 }

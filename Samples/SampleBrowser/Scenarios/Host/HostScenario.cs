@@ -53,12 +53,12 @@ namespace SampleBrowser.Scenarios.Host
 			App.Dispatcher.BeginInvoke(new Action(() => _hostOutput.Add(that)));
 		}
 
-		protected override Task Start()
+		protected override Task StartAsync()
 		{
 			return Task.Factory.StartNew(() => { });
 		}
 
-		protected override Task Stop()
+		protected override Task StopAsync()
 		{
 			return Task.Factory.StartNew(() => { });
 		}

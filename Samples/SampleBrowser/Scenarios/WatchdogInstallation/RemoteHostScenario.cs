@@ -66,7 +66,7 @@ namespace SampleBrowser.Scenarios.WatchdogInstallation
 			}
 		}
 
-		protected override Task Start()
+		protected override Task StartAsync()
 		{
 			return Task.Factory.StartNew(() =>
 				{
@@ -74,7 +74,7 @@ namespace SampleBrowser.Scenarios.WatchdogInstallation
 				});
 		}
 
-		protected override Task Stop()
+		protected override Task StopAsync()
 		{
 			return Task.Factory.StartNew(() =>
 			{

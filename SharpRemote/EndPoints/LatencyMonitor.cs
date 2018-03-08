@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using log4net;
 
 // ReSharper disable CheckNamespace
@@ -33,7 +32,7 @@ namespace SharpRemote
 		private volatile bool _isDisposed;
 		private TimeSpan _roundTripTime;
 
-		private Task _task;
+		private Thread _thread;
 
 		/// <summary>
 		///     Initializes this latency monitor with the given interval and number of samples over which
@@ -132,8 +131,11 @@ namespace SharpRemote
 			IsStarted = true;
 			if (_performLatencyMeasurements)
 			{
-				_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
-				_task.Start();
+				_thread = new Thread(MeasureLatencyLoop)
+				{
+					Name = string.Format("{0}: Latency measurement thread", _endPointName)
+				};
+				_thread.Start();
 			}
 		}
 
@@ -143,7 +145,7 @@ namespace SharpRemote
 		public void Stop()
 		{
 			IsStarted = false;
-			_task = null;
+			_thread = null;
 		}
 
 		private void MeasureLatencyLoop()

@@ -30,7 +30,7 @@ namespace SharpRemote
 		private readonly EndPoint _localEndPoint;
 		private readonly EndPoint _remoteEndPoint;
 		private readonly object _syncRoot;
-		private readonly Task _task;
+		private readonly Thread _thread;
 		private readonly bool _useHeartbeatFailureDetection;
 		private readonly bool _allowRemoteHeartbeatDisable;
 
@@ -124,7 +124,10 @@ namespace SharpRemote
 			_remoteEndPoint = remoteEndPoint;
 			_failureInterval = heartBeatInterval +
 			                   TimeSpan.FromMilliseconds(failureThreshold*heartBeatInterval.TotalMilliseconds);
-			_task = new Task(MeasureHeartbeats, TaskCreationOptions.LongRunning);
+			_thread = new Thread(MeasureHeartbeats)
+			{
+				Name = string.Format("{0}: Heartbeat measurement thread", _endPointName)
+			};
 		}
 
 		/// <summary>
@@ -268,7 +271,7 @@ namespace SharpRemote
 
 			if (_useHeartbeatFailureDetection)
 			{
-				_task.Start();
+				_thread.Start();
 			}
 		}
 

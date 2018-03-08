@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,17 +20,19 @@ namespace SharpRemote
 		: IDisposable
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+		private readonly string _endPointName;
 
 		private readonly TimeSpan _interval;
-		private readonly bool _performLatencyMeasurements;
 		private readonly ILatency _latencyGrain;
 		private readonly RingBuffer<TimeSpan> _measurements;
+		private readonly bool _performLatencyMeasurements;
 		private readonly object _syncRoot;
-		private Task _task;
-
 		private volatile bool _isDisposed;
 		private TimeSpan _roundTripTime;
-		private bool _isStarted;
+
+		private Task _task;
+		private EndPoint _localEndPoint;
+		private EndPoint _remoteEndPoint;
 
 		/// <summary>
 		///     Initializes this latency monitor with the given interval and number of samples over which
@@ -39,15 +42,22 @@ namespace SharpRemote
 		/// <param name="interval"></param>
 		/// <param name="numSamples"></param>
 		/// <param name="performLatencyMeasurements"></param>
+		/// <param name="endPointName"></param>
+		/// <param name="localEndPoint"></param>
+		/// <param name="remoteEndPoint"></param>
 		public LatencyMonitor(
 			ILatency latencyGrain,
 			TimeSpan interval,
 			int numSamples,
-			bool performLatencyMeasurements
-			)
+			bool performLatencyMeasurements,
+			string endPointName = null,
+			EndPoint localEndPoint = null,
+			EndPoint remoteEndPoint = null
+		)
 		{
 			if (latencyGrain == null) throw new ArgumentNullException(nameof(latencyGrain));
-			if (interval < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(interval), "A positive interval must be given");
+			if (interval < TimeSpan.Zero)
+				throw new ArgumentOutOfRangeException(nameof(interval), "A positive interval must be given");
 			if (numSamples < 1) throw new ArgumentOutOfRangeException(nameof(numSamples), "1 or more samples must be specified");
 
 			_syncRoot = new object();
@@ -55,6 +65,9 @@ namespace SharpRemote
 			_performLatencyMeasurements = performLatencyMeasurements;
 			_latencyGrain = latencyGrain;
 			_measurements = new RingBuffer<TimeSpan>(numSamples);
+			_endPointName = endPointName;
+			_localEndPoint = localEndPoint;
+			_remoteEndPoint = remoteEndPoint;
 		}
 
 		/// <summary>
@@ -63,11 +76,19 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="latencyGrain"></param>
 		/// <param name="settings"></param>
-		public LatencyMonitor(ILatency latencyGrain, LatencySettings settings)
+		/// <param name="endPointName"></param>
+		/// <param name="localEndPoint"></param>
+		/// <param name="remoteEndPoint"></param>
+		public LatencyMonitor(ILatency latencyGrain,
+		                      LatencySettings settings,
+		                      string endPointName = null,
+		                      EndPoint localEndPoint = null,
+		                      EndPoint remoteEndPoint = null)
 			: this(latencyGrain,
 			       settings.Interval,
 			       settings.NumSamples,
-			settings.PerformLatencyMeasurements)
+			       settings.PerformLatencyMeasurements,
+			       endPointName, localEndPoint, remoteEndPoint)
 		{
 		}
 
@@ -87,20 +108,14 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Whether or not this latency monitor has been disposed of.
+		///     Whether or not this latency monitor has been disposed of.
 		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		public bool IsDisposed => _isDisposed;
 
 		/// <summary>
-		/// Whether or not <see cref="Start()"/> has been called (and <see cref="Stop()"/> has not since then).
+		///     Whether or not <see cref="Start()" /> has been called (and <see cref="Stop()" /> has not since then).
 		/// </summary>
-		public bool IsStarted
-		{
-			get { return _isStarted; }
-		}
+		public bool IsStarted { get; private set; }
 
 		public void Dispose()
 		{
@@ -113,7 +128,7 @@ namespace SharpRemote
 		/// </summary>
 		public void Start()
 		{
-			_isStarted = true;
+			IsStarted = true;
 			if (_performLatencyMeasurements)
 			{
 				_task = new Task(MeasureLatencyLoop, TaskCreationOptions.LongRunning);
@@ -126,23 +141,20 @@ namespace SharpRemote
 		/// </summary>
 		public void Stop()
 		{
-			_isStarted = false;
+			IsStarted = false;
 			_task = null;
 		}
 
 		private void MeasureLatencyLoop()
 		{
 			var sw = new Stopwatch();
-			while (_isStarted)
+			while (IsStarted)
 			{
 				TimeSpan toSleep;
 				if (!MeasureLatency(sw, out toSleep))
 					break;
 
-				if (toSleep > TimeSpan.Zero)
-				{
-					Thread.Sleep(toSleep);
-				}
+				if (toSleep > TimeSpan.Zero) Thread.Sleep(toSleep);
 			}
 		}
 
@@ -160,15 +172,24 @@ namespace SharpRemote
 				sw.Restart();
 				_latencyGrain.Roundtrip();
 				sw.Stop();
-				TimeSpan rtt = sw.Elapsed;
+				var rtt = sw.Elapsed;
 
 				_measurements.Enqueue(rtt);
-				TimeSpan averageRtt = TimeSpan.FromTicks((long) (((double) _measurements.Sum(x => x.Ticks))/_measurements.Length));
+				var averageRtt = TimeSpan.FromTicks((long) ((double) _measurements.Sum(x => x.Ticks) / _measurements.Length));
 
 				lock (_syncRoot)
 				{
 					_roundTripTime = averageRtt;
 				}
+
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat("{0}: {1} to {2}, current RTT: {3:F1}ms, avg. RTT: {4:F1}ms",
+					                _endPointName,
+					                _localEndPoint,
+					                _remoteEndPoint,
+					                rtt.TotalMilliseconds,
+					                averageRtt.TotalMilliseconds
+					               );
 
 				toSleep = _interval - rtt;
 				return true;

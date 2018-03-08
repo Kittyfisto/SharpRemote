@@ -1073,20 +1073,24 @@ namespace SharpRemote
 		/// <summary>
 		/// 
 		/// </summary>
-		/// <param name="endPoint"></param>
+		/// <param name="remoteEndPoint"></param>
 		/// <param name="connectionId"></param>
-		protected void FireOnConnected(EndPoint endPoint, ConnectionId connectionId)
+		protected void FireOnConnected(EndPoint remoteEndPoint, ConnectionId connectionId)
 		{
 			_heartbeatMonitor = new HeartbeatMonitor(_remoteHeartbeat,
 			                                         Debugger.Instance,
 			                                         _heartbeatSettings,
 			                                         connectionId,
-			                                         endPoint);
+			                                         remoteEndPoint);
 
 			_heartbeatMonitor.OnFailure += HeartbeatMonitorOnOnFailure;
 			_heartbeatMonitor.Start();
 
-			_latencyMonitor = new LatencyMonitor(_remoteLatency, _latencySettings);
+			_latencyMonitor = new LatencyMonitor(_remoteLatency,
+			                                     _latencySettings,
+			                                     _name,
+			                                     LocalEndPoint,
+			                                     remoteEndPoint);
 			_latencyMonitor.Start();
 
 			Action<EndPoint, ConnectionId> fn = OnConnected;
@@ -1094,7 +1098,7 @@ namespace SharpRemote
 			{
 				try
 				{
-					fn(endPoint, connectionId);
+					fn(remoteEndPoint, connectionId);
 				}
 				catch (Exception e)
 				{

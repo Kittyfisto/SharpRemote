@@ -19,5 +19,15 @@ namespace SharpRemote.Test
 			@default.SkippedHeartbeatThreshold.Should().Be(10);
 			@default.ReportDebuggerAttached.Should().BeTrue();
 		}
+
+		[Test]
+		public void TestConstants()
+		{
+			var settings = HeartbeatSettings.Dont;
+			settings.UseHeartbeatFailureDetection.Should().BeFalse("because heartbeat measurements should be disabled");
+
+			settings.UseHeartbeatFailureDetection = true;
+			HeartbeatSettings.Dont.UseHeartbeatFailureDetection.Should().BeFalse("because the constant itself should not have been modified");
+		}
 	}
 }

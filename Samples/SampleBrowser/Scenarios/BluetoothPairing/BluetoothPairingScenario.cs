@@ -10,8 +10,8 @@ namespace SampleBrowser.Scenarios.BluetoothPairing
 		public BluetoothPairingScenario()
 			: base(
 			"Bluetooth Pairing",
-			"Automatically pair this computer with a remote one"
-			)
+			"Automatically pair this computer with a remote one",
+				  isEnabled: false)
 		{
 			
 		}

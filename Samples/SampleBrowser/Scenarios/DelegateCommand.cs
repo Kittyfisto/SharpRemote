@@ -6,18 +6,30 @@ namespace SampleBrowser.Scenarios
 	public class DelegateCommand
 		: ICommand
 	{
-		private readonly Func<object, bool> _canExecute;
 		private readonly Action<object> _execute;
+		private bool _canBeExecuted;
 
-		public DelegateCommand(Action<object> execute, Func<object, bool> canExecute = null)
+		public DelegateCommand(Action<object> execute)
 		{
 			_execute = execute;
-			_canExecute = canExecute;
 		}
 
 		public bool CanExecute(object parameter)
 		{
-			return _canExecute == null || _canExecute(parameter);
+			return CanBeExecuted;
+		}
+
+		public bool CanBeExecuted
+		{
+			get { return _canBeExecuted; }
+			set
+			{
+				if (value == _canBeExecuted)
+					return;
+
+				_canBeExecuted = value;
+				RaiseCanExecuteChanged();
+			}
 		}
 
 		public void Execute(object parameter)
@@ -29,9 +41,7 @@ namespace SampleBrowser.Scenarios
 
 		public void RaiseCanExecuteChanged()
 		{
-			var fn = CanExecuteChanged;
-			if (fn != null)
-				fn(this, null);
+			CanExecuteChanged?.Invoke(this, null);
 		}
 	}
 }

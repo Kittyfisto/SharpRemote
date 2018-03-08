@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-using SampleBrowser.Scenarios.Host;
 using log4net.Core;
+using SampleBrowser.Scenarios.Host;
 
 namespace SampleBrowser.Scenarios
 {
@@ -13,55 +13,39 @@ namespace SampleBrowser.Scenarios
 		: IScenario
 	{
 		private readonly string _description;
-		private readonly ObservableCollection<string> _output;
 		private readonly ICommand _startCommand;
 		private readonly ICommand _stopCommand;
 		private readonly string _title;
 
-		protected AbstractScenario(string title, string description)
+		protected AbstractScenario(string title, string description, bool isEnabled = true)
 		{
-			_output = new ObservableCollection<string>();
+			Output = new ObservableCollection<string>();
 			_title = title;
 			_description = description;
 
-			_startCommand = new DelegateCommand(Start);
+			_startCommand = new DelegateCommand(Start)
+			{
+				CanBeExecuted = isEnabled
+			};
 			_stopCommand = new DelegateCommand(Stop);
 		}
 
-		private static Dispatcher Dispatcher
-		{
-			get { return App.Dispatcher; }
-		}
+		private static Dispatcher Dispatcher => App.Dispatcher;
 
-		public ObservableCollection<string> Output
-		{
-			get { return _output; }
-		}
+		public ObservableCollection<string> Output { get; }
 
 		public ICommand RunTestCommand
 		{
 			get { return new TaskCommand(() => Task.Factory.StartNew(RunTestHost)); }
 		}
 
-		public string Title
-		{
-			get { return _title; }
-		}
+		public string Title => _title;
 
-		public string Description
-		{
-			get { return _description; }
-		}
+		public string Description => _description;
 
-		public ICommand StartCommand
-		{
-			get { return _startCommand; }
-		}
+		public ICommand StartCommand => _startCommand;
 
-		public ICommand StopCommand
-		{
-			get { return _stopCommand; }
-		}
+		public ICommand StopCommand => _stopCommand;
 
 		protected void Log(LoggingEvent @event)
 		{
@@ -70,7 +54,7 @@ namespace SampleBrowser.Scenarios
 
 		protected void Log(string that)
 		{
-			App.Dispatcher.BeginInvoke(new Action(() => _output.Add(that)));
+			App.Dispatcher.BeginInvoke(new Action(() => Output.Add(that)));
 		}
 
 		public abstract FrameworkElement CreateView();
@@ -87,13 +71,9 @@ namespace SampleBrowser.Scenarios
 			try
 			{
 				if (RunTest())
-				{
 					Log("Test succeeded!");
-				}
 				else
-				{
 					Log("Test failed");
-				}
 			}
 			catch (Exception e)
 			{

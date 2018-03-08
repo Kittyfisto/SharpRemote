@@ -1,4 +1,5 @@
 ﻿using SharpRemote;
+using SharpRemote.Attributes;
 
 namespace SampleBrowser.Scenarios.LongTermUsage
 {
@@ -10,6 +11,7 @@ namespace SampleBrowser.Scenarios.LongTermUsage
 	public interface IDataListener
 	{
 		[Invoke(Dispatch.SerializePerMethod)]
+		[AsyncRemote]
 		void Process(object data);
 	}
 }

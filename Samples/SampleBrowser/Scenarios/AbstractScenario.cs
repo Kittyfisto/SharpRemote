@@ -59,10 +59,11 @@ namespace SampleBrowser.Scenarios
 
 		public abstract FrameworkElement CreateView();
 
-		private void Start(object unused)
+		private async void Start(object unused)
 		{
 			App.ViewModel.ShowScenario(this);
-			Start().ContinueWith(task => Dispatcher.BeginInvoke(new Action(ScenarioStarted)));
+			await Start();
+			await Dispatcher.BeginInvoke(new Action(ScenarioStarted));
 		}
 
 		private void RunTestHost()

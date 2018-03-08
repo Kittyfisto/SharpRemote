@@ -24,11 +24,11 @@ namespace SampleBrowser
 			_isScenarioSelectionVisible = true;
 			_scenarios = new IScenario[]
 				{
+					new LongTermScenario(),
 					new HostScenario(),
 					new InProcessHostScenario(), 
 					new RemoteHostScenario(),
-					new BluetoothPairingScenario(),
-					new LongTermScenario()
+					new BluetoothPairingScenario()
 				};
 		}
 

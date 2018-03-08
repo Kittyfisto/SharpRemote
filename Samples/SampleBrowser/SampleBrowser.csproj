@@ -76,6 +76,7 @@
     </Compile>
     <Compile Include="Scenarios\InProcessHost\InProcessHostScenario.cs" />
     <Compile Include="Scenarios\IScenario.cs" />
+    <Compile Include="Scenarios\LongTermUsage\DataLogger.cs" />
     <Compile Include="Scenarios\LongTermUsage\DataPacket.cs" />
     <Compile Include="Scenarios\LongTermUsage\ICommandDescription.cs" />
     <Compile Include="Scenarios\LongTermUsage\IDataListener.cs" />

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -235,10 +236,15 @@ namespace SharpRemote
 					CreateServant<ILatency>(ServerLatencyServantId, _localLatency);
 					_remoteLatency = CreateProxy<ILatency>(ClientLatencyServantId);
 					break;
+
+				default:
+					throw new InvalidEnumArgumentException(nameof(type), (int) type, typeof(EndPointType));
 			}
 
 			_heartbeatSettings = heartbeatSettings ?? new HeartbeatSettings();
 			_latencySettings = latencySettings ?? new LatencySettings();
+
+			Log.DebugFormat("{0}: Created '{1}' endpoint", _name, type);
 		}
 
 		internal ICodeGenerator CodeGenerator => _codeGenerator;
@@ -2051,9 +2057,12 @@ namespace SharpRemote
 					}
 				}
 			}
-			catch (OperationCanceledException)
+			catch (OperationCanceledException e)
 			{
 				reason = EndPointDisconnectReason.RequestedByEndPoint;
+				Log.DebugFormat("{0}: Cancelling write loop due to: {1}",
+				                Name,
+				                e);
 			}
 			catch (Exception e)
 			{
@@ -2129,7 +2138,7 @@ namespace SharpRemote
 					}
 				}
 			}
-			catch (ObjectDisposedException)
+			catch (ObjectDisposedException e)
 			{
 				// We dispose the socket in Disconnect and therefore SynchronizedRead might throw
 				// this exception. There should be a better way to lazily dispose of the socket, but
@@ -2137,6 +2146,9 @@ namespace SharpRemote
 				// sort of synchronization that keeps track of both their lifetimes and dispose of the
 				// socket once neither thread accesses it anymore.
 				reason = EndPointDisconnectReason.RequestedByEndPoint;
+				Log.DebugFormat("{0}: Cancelling read loop due to: {1}",
+				                Name,
+				                e);
 			}
 			catch (Exception e)
 			{

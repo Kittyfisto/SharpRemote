@@ -181,17 +181,19 @@ namespace SharpRemote
 					               );
 				return true;
 			}
-			catch (NotConnectedException)
+			catch (NotConnectedException e)
 			{
+				Log.DebugFormat("{0}: Caught exception while measuring latency: {1}", _endPointName, e);
 				return false;
 			}
-			catch (ConnectionLostException)
+			catch (ConnectionLostException e)
 			{
+				Log.DebugFormat("{0}: Caught exception while measuring latency: {1}", _endPointName, e);
 				return false;
 			}
 			catch (Exception e)
 			{
-				Log.ErrorFormat("Caught unexpected exception while measureing latency: {0}", e);
+				Log.ErrorFormat("{0}: Caught unexpected exception while measuring latency: {1}", _endPointName, e);
 				return true;
 			}
 		}

@@ -14,10 +14,7 @@ namespace SharpRemote
 			_values = new T[length];
 		}
 
-		public int Length
-		{
-			get { return _values.Length; }
-		}
+		public int Length => _values.Length;
 
 		public void Enqueue(T value)
 		{

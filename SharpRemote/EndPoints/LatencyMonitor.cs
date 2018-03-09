@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading;
@@ -23,7 +22,7 @@ namespace SharpRemote
 
 		private readonly TimeSpan _interval;
 		private readonly ILatency _latencyGrain;
-		private readonly RingBuffer<TimeSpan> _measurements;
+		private readonly TimespanStatisticsContainer _measurements;
 		private readonly bool _performLatencyMeasurements;
 		private readonly EndPoint _localEndPoint;
 		private readonly EndPoint _remoteEndPoint;
@@ -31,9 +30,9 @@ namespace SharpRemote
 		private readonly Stopwatch _stopwatch;
 
 		private volatile bool _isDisposed;
-		private TimeSpan _roundTripTime;
 
 		private Timer _timer;
+		private bool _isStarted;
 
 		/// <summary>
 		///     Initializes this latency monitor with the given interval and number of samples over which
@@ -65,7 +64,7 @@ namespace SharpRemote
 			_interval = interval;
 			_performLatencyMeasurements = performLatencyMeasurements;
 			_latencyGrain = latencyGrain;
-			_measurements = new RingBuffer<TimeSpan>(numSamples);
+			_measurements = new TimespanStatisticsContainer(numSamples);
 			_endPointName = endPointName;
 			_localEndPoint = localEndPoint;
 			_remoteEndPoint = remoteEndPoint;
@@ -104,7 +103,7 @@ namespace SharpRemote
 			{
 				lock (_syncRoot)
 				{
-					return _roundTripTime;
+					return _measurements.Average;
 				}
 			}
 		}
@@ -117,7 +116,7 @@ namespace SharpRemote
 		/// <summary>
 		///     Whether or not <see cref="Start()" /> has been called (and <see cref="Stop()" /> has not since then).
 		/// </summary>
-		public bool IsStarted { get; private set; }
+		public bool IsStarted => _isStarted;
 
 		public void Dispose()
 		{
@@ -130,7 +129,7 @@ namespace SharpRemote
 		/// </summary>
 		public void Start()
 		{
-			IsStarted = true;
+			_isStarted = true;
 			if (_performLatencyMeasurements)
 			{
 				_timer = new Timer(OnUpdate, null, _interval, _interval);
@@ -142,7 +141,7 @@ namespace SharpRemote
 		/// </summary>
 		public void Stop()
 		{
-			IsStarted = false;
+			_isStarted = false;
 			_timer?.Dispose();
 		}
 		
@@ -167,8 +166,7 @@ namespace SharpRemote
 				lock (_syncRoot)
 				{
 					_measurements.Enqueue(rtt);
-					averageRtt = TimeSpan.FromTicks((long) ((double) _measurements.Sum(x => x.Ticks) / _measurements.Length));
-					_roundTripTime = averageRtt;
+					averageRtt = _measurements.Average;
 				}
 
 				if (Log.IsDebugEnabled)

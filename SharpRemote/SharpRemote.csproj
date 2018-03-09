@@ -103,6 +103,7 @@
     <Compile Include="CodeGeneration\Serialization\Xml\XmlWriteObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlWriteValueMethodCompiler.cs" />
     <Compile Include="ConnectionDropReason.cs" />
+    <Compile Include="StatisticsContainer.cs" />
     <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />
     <Compile Include="CodeGeneration\ICodeGenerator.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="Serializer.cs" />
     <Compile Include="Sockets\ISocket.cs" />
     <Compile Include="Sockets\Socket2.cs" />
+    <Compile Include="TimespanStatisticsContainer.cs" />
     <Compile Include="TypeModel\FieldDescription.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />

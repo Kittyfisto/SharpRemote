@@ -12,7 +12,7 @@ namespace SharpRemote.Test
 		{
 			var settings = new LatencySettings();
 			settings.PerformLatencyMeasurements.Should().BeTrue();
-			settings.NumSamples.Should().Be(10);
+			settings.NumSamples.Should().Be(100);
 			settings.Interval.Should().Be(TimeSpan.FromSeconds(1));
 		}
 

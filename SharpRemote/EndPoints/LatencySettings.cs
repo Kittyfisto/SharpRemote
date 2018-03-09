@@ -35,7 +35,7 @@ namespace SharpRemote
 		/// The amount of samples over which the average roundtrip time is calulated.
 		/// </summary>
 		/// <remarks>
-		/// The default value is 10.
+		/// The default value is 100.
 		/// </remarks>
 		public int NumSamples;
 
@@ -53,7 +53,7 @@ namespace SharpRemote
 		public LatencySettings()
 		{
 			Interval = TimeSpan.FromSeconds(1);
-			NumSamples = 10;
+			NumSamples = 100;
 			PerformLatencyMeasurements = true;
 		}
 	}

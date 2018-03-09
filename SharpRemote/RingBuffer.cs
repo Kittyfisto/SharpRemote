@@ -16,10 +16,12 @@ namespace SharpRemote
 
 		public int Length => _values.Length;
 
-		public void Enqueue(T value)
+		public T Enqueue(T value)
 		{
+			var previous = _values[_head];
 			_values[_head++] = value;
 			_head %= _values.Length;
+			return previous;
 		}
 
 		public override string ToString()

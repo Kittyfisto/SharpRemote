@@ -1,6 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Moq;
 using NUnit.Framework;
 
@@ -65,8 +63,7 @@ namespace SharpRemote.Test.Hosting
 			{
 				_latency.Verify(x => x.Roundtrip(), Times.Never, "because Roundtrip() shouldn't have been called just yet");
 
-				TimeSpan unused;
-				monitor.MeasureLatency(new Stopwatch(), out unused);
+				monitor.MeasureLatency();
 				_latency.Verify(x => x.Roundtrip(), Times.Once, "because Roundtrip() should've been invoked exactly once during MeasureLatency()");
 			}
 		}

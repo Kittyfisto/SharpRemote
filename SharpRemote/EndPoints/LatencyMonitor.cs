@@ -28,11 +28,12 @@ namespace SharpRemote
 		private readonly EndPoint _localEndPoint;
 		private readonly EndPoint _remoteEndPoint;
 		private readonly object _syncRoot;
+		private readonly Stopwatch _stopwatch;
 
 		private volatile bool _isDisposed;
 		private TimeSpan _roundTripTime;
 
-		private Thread _thread;
+		private Timer _timer;
 
 		/// <summary>
 		///     Initializes this latency monitor with the given interval and number of samples over which
@@ -68,6 +69,7 @@ namespace SharpRemote
 			_endPointName = endPointName;
 			_localEndPoint = localEndPoint;
 			_remoteEndPoint = remoteEndPoint;
+			_stopwatch = new Stopwatch();
 		}
 
 		/// <summary>
@@ -131,11 +133,7 @@ namespace SharpRemote
 			IsStarted = true;
 			if (_performLatencyMeasurements)
 			{
-				_thread = new Thread(MeasureLatencyLoop)
-				{
-					Name = string.Format("{0}: Latency measurement thread", _endPointName)
-				};
-				_thread.Start();
+				_timer = new Timer(OnUpdate, null, _interval, _interval);
 			}
 		}
 
@@ -145,43 +143,31 @@ namespace SharpRemote
 		public void Stop()
 		{
 			IsStarted = false;
-			_thread = null;
+			_timer?.Dispose();
 		}
-
-		private void MeasureLatencyLoop()
+		
+		private void OnUpdate(object state)
 		{
-			var sw = new Stopwatch();
-			while (IsStarted)
-			{
-				TimeSpan toSleep;
-				if (!MeasureLatency(sw, out toSleep))
-					break;
-
-				if (toSleep > TimeSpan.Zero) Thread.Sleep(toSleep);
-			}
+			MeasureLatency();
 		}
 
 		/// <summary>
-		///     Measures and stores the current latencyGrain and returns the amount of time
-		///     the calling thread should sleep in order to repeat measurements at
-		///     <see cref="_interval" />.
+		///     Measures the current latency and calculates the average latency.
 		/// </summary>
-		/// <param name="sw"></param>
-		/// <param name="toSleep"></param>
-		internal bool MeasureLatency(Stopwatch sw, out TimeSpan toSleep)
+		internal bool MeasureLatency()
 		{
 			try
 			{
-				sw.Restart();
+				_stopwatch.Restart();
 				_latencyGrain.Roundtrip();
-				sw.Stop();
-				var rtt = sw.Elapsed;
+				_stopwatch.Stop();
+				var rtt = _stopwatch.Elapsed;
 
-				_measurements.Enqueue(rtt);
-				var averageRtt = TimeSpan.FromTicks((long) ((double) _measurements.Sum(x => x.Ticks) / _measurements.Length));
-
+				TimeSpan averageRtt;
 				lock (_syncRoot)
 				{
+					_measurements.Enqueue(rtt);
+					averageRtt = TimeSpan.FromTicks((long) ((double) _measurements.Sum(x => x.Ticks) / _measurements.Length));
 					_roundTripTime = averageRtt;
 				}
 
@@ -193,24 +179,19 @@ namespace SharpRemote
 					                rtt.TotalMilliseconds,
 					                averageRtt.TotalMilliseconds
 					               );
-
-				toSleep = _interval - rtt;
 				return true;
 			}
 			catch (NotConnectedException)
 			{
-				toSleep = TimeSpan.Zero;
 				return false;
 			}
 			catch (ConnectionLostException)
 			{
-				toSleep = TimeSpan.Zero;
 				return false;
 			}
 			catch (Exception e)
 			{
 				Log.ErrorFormat("Caught unexpected exception while measureing latency: {0}", e);
-				toSleep = _interval;
 				return true;
 			}
 		}

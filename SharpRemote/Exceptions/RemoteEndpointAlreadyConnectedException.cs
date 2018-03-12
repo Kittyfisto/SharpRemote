@@ -32,6 +32,7 @@ namespace SharpRemote
 		public RemoteEndpointAlreadyConnectedException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
+			BlockingEndPoint = info.GetValue("BlockingEndPoint", typeof(EndPoint)) as EndPoint;
 		}
 #endif
 #endif
@@ -55,5 +56,13 @@ namespace SharpRemote
 		///     The endpoint responsible for not being able to establish a connection.
 		/// </summary>
 		public EndPoint BlockingEndPoint { get; set; }
+
+		/// <inheritdoc />
+		public override void GetObjectData(SerializationInfo info, StreamingContext context)
+		{
+			base.GetObjectData(info, context);
+
+			info.AddValue("BlockingEndPoint", BlockingEndPoint);
+		}
 	}
 }

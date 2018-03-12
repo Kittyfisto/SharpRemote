@@ -104,6 +104,7 @@
     <Compile Include="CodeGeneration\Serialization\Xml\XmlWriteValueMethodCompiler.cs" />
     <Compile Include="ConnectionDropReason.cs" />
     <Compile Include="EndPointStatistics.cs" />
+    <Compile Include="Exceptions\RemoteEndpointAlreadyConnectedException.cs" />
     <Compile Include="StatisticsContainer.cs" />
     <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />

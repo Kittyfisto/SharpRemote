@@ -192,6 +192,33 @@ namespace SharpRemote.Test.Remoting.Sockets
 			}
 		}
 
+		[Test]
+		[LocalTest("Doesn't work on appveyor")]
+		[Description("Verifies that establishing a connection to an already connected server is not allowed and throws a helpful exception")]
+		public void TestConnect32()
+		{
+			using (var client1 = CreateClient())
+			using (var client2 = CreateClient())
+			using (var server = CreateServer())
+			{
+				Bind(server);
+				Connect(client1, server.LocalEndPoint);
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
+
+				new Action(() => Connect(client2, server.LocalEndPoint))
+					.ShouldThrow<RemoteEndpointAlreadyConnectedException>()
+					.WithMessage(string.Format("Unnamed: EndPoint '{0}' is already connected to '{1}' and doesn't accept any other connection until the current one is disconnected",
+					                           server.LocalEndPoint,
+					                           client1.LocalEndPoint));
+				client2.IsConnected.Should().BeFalse();
+
+				server.IsConnected.Should().BeTrue();
+				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
+			}
+		}
+
 		protected override void Bind(IRemotingEndPoint endPoint)
 		{
 			((ISocketEndPoint)endPoint).Bind(IPAddress.Loopback);

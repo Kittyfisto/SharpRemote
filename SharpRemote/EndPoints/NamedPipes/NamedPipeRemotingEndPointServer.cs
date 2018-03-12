@@ -1,5 +1,6 @@
 using System;
 using System.IO.Pipes;
+using System.Net;
 using System.Reflection;
 using log4net;
 using SharpRemote.CodeGeneration;
@@ -178,6 +179,11 @@ namespace SharpRemote
 					_pipe.BeginWaitForConnection(OnIncomingConnection, null);
 				}
 			}
+		}
+
+		protected override EndPoint TryParseEndPoint(string message)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

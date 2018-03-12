@@ -275,7 +275,7 @@ namespace SharpRemote.Test.Remoting
 				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
 
 				new Action(() => Connect(client2, server.LocalEndPoint))
-					.ShouldThrow<SharpRemoteException>();
+					.ShouldThrow<RemoteEndpointAlreadyConnectedException>();
 				client2.IsConnected.Should().BeFalse();
 
 				server.IsConnected.Should().BeTrue();

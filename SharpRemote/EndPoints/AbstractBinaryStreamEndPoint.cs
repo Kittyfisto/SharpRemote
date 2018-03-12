@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -48,6 +49,7 @@ namespace SharpRemote
 		private const string AuthenticationResponse = "auth response";
 		private const string AuthenticationVerification = "auth verification";
 		private const string AuthenticationFinished = "auth finished";
+		private const string EndPointBlocked = "endpoint blocked";
 
 		internal const string AuthenticationRequiredMessage = "Authentication required";
 		internal const string NoAuthenticationRequiredMessage = "No Authentication required";
@@ -1721,6 +1723,16 @@ namespace SharpRemote
 		protected abstract EndPoint GetRemoteEndPointOf(TTransport socket);
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="socket"></param>
+		protected void SendConnectionBlocked(TTransport socket)
+		{
+			var remoteEndPoint = RemoteEndPoint;
+			WriteMessage(socket, EndPointBlocked, remoteEndPoint?.ToString());
+		}
+
+		/// <summary>
 		///     Performs the authentication between client and server (if necessary) from the server-side.
 		/// </summary>
 		/// <param name="socket"></param>
@@ -1800,11 +1812,13 @@ namespace SharpRemote
 		/// <param name="errorType"></param>
 		/// <param name="error"></param>
 		/// <param name="currentConnectionId"></param>
+		/// <param name="errorReason"></param>
 		protected bool TryPerformOutgoingHandshake(TTransport socket,
 		                                           TimeSpan timeout,
 		                                           out ErrorType errorType,
 		                                           out string error,
-		                                           out ConnectionId currentConnectionId)
+		                                           out ConnectionId currentConnectionId,
+		                                           out object errorReason)
 		{
 			string messageType;
 			string message;
@@ -1817,6 +1831,7 @@ namespace SharpRemote
 			{
 				errorType = ErrorType.Handshake;
 				currentConnectionId = ConnectionId.None;
+				errorReason = null;
 				return false;
 			}
 
@@ -1831,6 +1846,7 @@ namespace SharpRemote
 					errorType = ErrorType.AuthenticationRequired;
 					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 
@@ -1847,6 +1863,7 @@ namespace SharpRemote
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 
@@ -1859,6 +1876,7 @@ namespace SharpRemote
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 
@@ -1867,10 +1885,27 @@ namespace SharpRemote
 					errorType = ErrorType.Authentication;
 					error = string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint);
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 			}
-			else if (messageType != NoAuthenticationRequiredMessage)
+			else if (messageType == NoAuthenticationRequiredMessage)
+			{
+				Log.Debug("Server requires no client-side authentication");
+			}
+			else if (messageType == EndPointBlocked)
+			{
+				errorType = ErrorType.EndPointBlocked;
+				errorReason = TryParseEndPoint(message);
+				error =
+					string.Format("{0}: EndPoint '{1}' is already connected to '{2}' and doesn't accept any other connection until the current one is disconnected",
+					              Name,
+					              remoteEndPoint,
+					              errorReason);
+				currentConnectionId = ConnectionId.None;
+				return false;
+			}
+			else
 			{
 				errorType = ErrorType.Handshake;
 				error =
@@ -1881,13 +1916,10 @@ namespace SharpRemote
 					              message,
 					              AuthenticationRequiredMessage,
 					              NoAuthenticationRequiredMessage
-						);
+					             );
 				currentConnectionId = ConnectionId.None;
+				errorReason = null;
 				return false;
-			}
-			else
-			{
-				Log.Debug("Server requires no client-side authentication");
 			}
 
 			if (_serverAuthenticator != null)
@@ -1899,6 +1931,7 @@ namespace SharpRemote
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 
@@ -1909,6 +1942,7 @@ namespace SharpRemote
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 
@@ -1921,6 +1955,7 @@ namespace SharpRemote
 					error = string.Format("Remote endpoint '{0}' failed the authentication challenge",
 					                      remoteEndPoint);
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 
@@ -1928,6 +1963,7 @@ namespace SharpRemote
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
+					errorReason = null;
 					return false;
 				}
 
@@ -1944,6 +1980,7 @@ namespace SharpRemote
 			{
 				errorType = ErrorType.Handshake;
 				currentConnectionId = ConnectionId.None;
+				errorReason = null;
 				return false;
 			}
 
@@ -1958,6 +1995,7 @@ namespace SharpRemote
 						HandshakeSucceedMessage,
 						messageType);
 				currentConnectionId = ConnectionId.None;
+				errorReason = null;
 				return false;
 			}
 
@@ -1965,8 +2003,17 @@ namespace SharpRemote
 			currentConnectionId = OnHandshakeSucceeded(socket, remoteEndPoint);
 			errorType = ErrorType.Handshake;
 			error = null;
+			errorReason = null;
 			return true;
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="message"></param>
+		/// <returns></returns>
+		[Pure]
+		protected abstract EndPoint TryParseEndPoint(string message);
 
 		/// <summary>
 		///     Is called when the handshake for the newly incoming message succeeds.
@@ -2224,7 +2271,12 @@ namespace SharpRemote
 			/// <summary>
 			/// 
 			/// </summary>
-			AuthenticationRequired
+			AuthenticationRequired,
+			
+			/// <summary>
+			/// 
+			/// </summary>
+			EndPointBlocked
 		}
 
 		/// <summary>

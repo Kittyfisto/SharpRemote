@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Net;
 using System.Reflection;
 using log4net;
 using SharpRemote.CodeGeneration;
@@ -59,6 +60,11 @@ namespace SharpRemote
 		protected override void DisposeAfterDisconnect(NamedPipeClientStream socket)
 		{
 			socket.TryDispose();
+		}
+
+		protected override EndPoint TryParseEndPoint(string message)
+		{
+			throw new NotImplementedException();
 		}
 
 		/// <summary>
@@ -136,7 +142,8 @@ namespace SharpRemote
 				var remaining = timeout - (DateTime.Now - started);
 				ErrorType errorType;
 				string error;
-				if (!TryPerformOutgoingHandshake(pipe, remaining, out errorType, out error, out connectionId))
+				object errorReason;
+				if (!TryPerformOutgoingHandshake(pipe, remaining, out errorType, out error, out connectionId, out errorReason))
 				{
 					switch (errorType)
 					{
@@ -146,6 +153,10 @@ namespace SharpRemote
 
 						case ErrorType.AuthenticationRequired:
 							exception = new AuthenticationRequiredException(error);
+							break;
+							
+						case ErrorType.EndPointBlocked:
+							exception = new RemoteEndpointAlreadyConnectedException(error, errorReason as EndPoint);
 							break;
 
 						default:

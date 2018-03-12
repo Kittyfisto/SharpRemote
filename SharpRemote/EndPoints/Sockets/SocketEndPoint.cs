@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -261,7 +262,8 @@ namespace SharpRemote
 				var remaining = timeout - (DateTime.Now - started);
 				ErrorType errorType;
 				string error;
-				if (!TryPerformOutgoingHandshake(socket, remaining, out errorType, out error, out connectionId))
+				object errorReason;
+				if (!TryPerformOutgoingHandshake(socket, remaining, out errorType, out error, out connectionId, out errorReason))
 				{
 					switch (errorType)
 					{
@@ -271,6 +273,10 @@ namespace SharpRemote
 
 						case ErrorType.AuthenticationRequired:
 							exception = new AuthenticationRequiredException(error);
+							break;
+
+						case ErrorType.EndPointBlocked:
+							exception = new RemoteEndpointAlreadyConnectedException(error, errorReason as IPEndPoint);
 							break;
 
 						default:
@@ -625,6 +631,25 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
+		protected override EndPoint TryParseEndPoint(string message)
+		{
+			var separatorIndex = message.LastIndexOf(':');
+			if (separatorIndex == -1)
+				return null;
+
+			ushort port;
+			if (!ushort.TryParse(message.Substring(separatorIndex + 1), NumberStyles.Integer, CultureInfo.InvariantCulture,
+			                     out port))
+				return null;
+
+			IPAddress address;
+			if (!IPAddress.TryParse(message.Substring(0, separatorIndex), out address))
+				return null;
+
+			return new IPEndPoint(address, port);
+		}
+
+		/// <inheritdoc />
 		protected override void DisconnectTransport(ISocket socket, bool reuseSocket)
 		{
 			socket.Disconnect(reuseSocket: false);
@@ -731,6 +756,7 @@ namespace SharpRemote
 					Log.InfoFormat("{0}: Blocking incoming connection from '{1}', we're already connected to another endpoint",
 					               Name,
 					               socket.RemoteEndPoint);
+					SendConnectionBlocked(socket);
 				}
 				else
 				{

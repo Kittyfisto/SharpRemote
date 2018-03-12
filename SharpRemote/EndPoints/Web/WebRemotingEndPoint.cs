@@ -64,6 +64,11 @@ namespace SharpRemote
 			throw new NotImplementedException();
 		}
 
+		protected override EndPoint TryParseEndPoint(string message)
+		{
+			throw new NotImplementedException();
+		}
+
 		protected override bool SynchronizedWrite(IDisposable socket, byte[] data, int length, out SocketError err)
 		{
 			throw new NotImplementedException();

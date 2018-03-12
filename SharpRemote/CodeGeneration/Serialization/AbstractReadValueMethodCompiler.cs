@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using log4net.Core;
 using SharpRemote.Attributes;
-using SharpRemote.Exceptions;
 
 namespace SharpRemote.CodeGeneration.Serialization
 {

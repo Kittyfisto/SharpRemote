@@ -2,11 +2,13 @@
 using System.Net;
 using FluentAssertions;
 using NUnit.Framework;
+using SharpRemote.Test.Extensions;
 
-namespace SharpRemote.Test.Extensions
+namespace SharpRemote.Test.Exceptions
 {
 	[TestFixture]
 	public sealed class RemoteEndpointAlreadyConnectedExceptionTest
+		: AbstractExceptionTest<RemoteEndpointAlreadyConnectedException>
 	{
 		[Test]
 		public void TestConstruction()

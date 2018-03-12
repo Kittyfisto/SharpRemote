@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace SharpRemote.Exceptions
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// This exception is thrown when client or server failed authentication.

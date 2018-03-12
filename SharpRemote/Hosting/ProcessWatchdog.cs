@@ -7,7 +7,6 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Hosting.OutOfProcess;
 using log4net;

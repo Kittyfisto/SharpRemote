@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using log4net;
 using SharpRemote.CodeGeneration;
-using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.ServiceDiscovery;
 using SharpRemote.Sockets;

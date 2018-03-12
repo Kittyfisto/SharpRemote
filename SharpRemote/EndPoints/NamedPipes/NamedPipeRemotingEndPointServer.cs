@@ -4,7 +4,6 @@ using System.Net;
 using System.Reflection;
 using log4net;
 using SharpRemote.CodeGeneration;
-using SharpRemote.Exceptions;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote

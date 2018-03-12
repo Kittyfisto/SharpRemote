@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using log4net;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -12,6 +14,8 @@ namespace SharpRemote
 	/// </summary>
 	public abstract class AbstractEndPoint
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
 		#region Static Methods
 
 #if !WINDOWS_PHONE_APP
@@ -31,8 +35,10 @@ namespace SharpRemote
 			{
 				formatter.Serialize(stream, e);
 			}
-			catch (SerializationException)
+			catch (Exception exception)
 			{
+				Log.WarnFormat("Unable to serialize exception: {0}", exception);
+
 				// TODO: Log this..
 				writer.Flush();
 				stream.Position = start;

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace SharpRemote.Exceptions
+// ReSharper disable CheckNamespace
+namespace SharpRemote
+// ReSharper restore CheckNamespace
 {
 	/// <summary>
 	/// This exception is thrown when an application was referenced (by name) that doesn't exist.
 	/// </summary>
+	[Serializable]
 	public sealed class NoSuchApplicationException
 		: ArgumentException
 	{

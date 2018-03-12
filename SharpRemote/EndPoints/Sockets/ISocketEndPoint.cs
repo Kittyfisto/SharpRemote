@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using SharpRemote.Exceptions;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote

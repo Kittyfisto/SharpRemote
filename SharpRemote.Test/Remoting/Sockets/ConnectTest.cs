@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.Exceptions;
 using SharpRemote.ServiceDiscovery;
 
 namespace SharpRemote.Test.Remoting.Sockets
@@ -17,7 +16,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 	{
 		public override LogItem[] Loggers => new[]
 		{
-			new LogItem(typeof (SocketEndPoint)),
+			new LogItem(typeof (SocketEndPoint))
 		};
 
 		internal override IRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)

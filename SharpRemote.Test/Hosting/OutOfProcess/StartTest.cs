@@ -5,7 +5,6 @@ using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.Exceptions;
 using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;

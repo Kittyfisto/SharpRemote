@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using SharpRemote.Exceptions;
 
 namespace SharpRemote
 {

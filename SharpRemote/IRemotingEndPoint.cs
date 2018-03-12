@@ -76,7 +76,7 @@ namespace SharpRemote
 		///     The total number of method invocations that have been retrieved from the underlying stream,
 		///     but not yet invoked or not yet finished.
 		/// </summary>
-		int NumPendingMethodInvocations { get; }
+		long NumPendingMethodInvocations { get; }
 
 		/// <summary>
 		///     The average roundtrip time of messages.

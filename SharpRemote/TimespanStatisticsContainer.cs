@@ -26,5 +26,10 @@ namespace SharpRemote
 		{
 			_ticks.Enqueue(value.Ticks);
 		}
+
+		public override string ToString()
+		{
+			return string.Format("{0} samples, avg: {1}", _ticks.Count, Average);
+		}
 	}
 }

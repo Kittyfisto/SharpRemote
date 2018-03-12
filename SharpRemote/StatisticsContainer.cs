@@ -18,6 +18,8 @@
 			_ringBuffer = new RingBuffer<long>(numSamples);
 		}
 
+		public int Count => _count;
+
 		/// <summary>
 		/// </summary>
 		public double Average => _average;

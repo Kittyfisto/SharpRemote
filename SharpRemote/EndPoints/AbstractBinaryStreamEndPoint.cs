@@ -292,7 +292,7 @@ namespace SharpRemote
 		public EndPointSettings EndPointSettings => _endpointSettings;
 
 		/// <inheritdoc />
-		public int NumPendingMethodInvocations
+		public long NumPendingMethodInvocations
 		{
 			get
 			{
@@ -1102,6 +1102,7 @@ namespace SharpRemote
 			_latencyMonitor.Start();
 
 			_statistics = new EndPointStatistics(this);
+			_statistics.Start();
 
 			Action<EndPoint, ConnectionId> fn = OnConnected;
 			if (fn != null)

@@ -26,7 +26,7 @@ namespace SharpRemote
 		private readonly StatisticsContainer _proxiesCollected;
 		private readonly StatisticsContainer _servantsCollected;
 
-		private readonly Timer _timer;
+		private Timer _timer;
 
 		private TimeSpan _lastGcTime;
 		private long _lastNumBytesReceived;
@@ -45,9 +45,6 @@ namespace SharpRemote
 
 			_endPoint = endPoint;
 
-			var tick = TimeSpan.FromSeconds(value: 1);
-			_timer = new Timer(OnUpdate, state: null, dueTime: tick, period: tick);
-
 			const int numSamples = 60;
 			_bytesSent = new StatisticsContainer(numSamples);
 			_bytesReceived = new StatisticsContainer(numSamples);
@@ -58,12 +55,23 @@ namespace SharpRemote
 			_gcTime = new TimeSpanStatisticsContainer(numSamples);
 		}
 
+		public void Start()
+		{
+			var tick = TimeSpan.FromSeconds(value: 1);
+			_timer = new Timer(OnUpdate, state: null, dueTime: tick, period: tick);
+		}
+
 		public void Dispose()
 		{
-			_timer.Dispose();
+			_timer?.Dispose();
 		}
 
 		private void OnUpdate(object state)
+		{
+			Update();
+		}
+
+		internal void Update()
 		{
 			AppendDelta(_endPoint.NumBytesSent, ref _lastNumBytesSent, _bytesSent);
 			AppendDelta(_endPoint.NumBytesReceived, ref _lastNumBytesReceived, _bytesReceived);
@@ -81,7 +89,7 @@ namespace SharpRemote
 		}
 
 		[Pure]
-		internal StringBuilder CreateReport()
+		internal string CreateReport()
 		{
 			var builder = new StringBuilder();
 			builder.AppendFormat("{0} Statistics Report", _endPoint.Name);
@@ -110,6 +118,8 @@ namespace SharpRemote
 			builder.AppendLine();
 			builder.AppendLine("RPC:");
 			builder.AppendFormat("  Pending method calls: {0}", _endPoint.NumPendingMethodCalls);
+			builder.AppendLine();
+			builder.AppendFormat("  Pending method invocations: {0}", _endPoint.NumPendingMethodInvocations);
 			var rtt = _endPoint.AverageRoundTripTime;
 			if (rtt != null)
 			{
@@ -119,13 +129,12 @@ namespace SharpRemote
 
 			builder.AppendLine();
 			builder.AppendLine("Memory:");
-			builder.AppendFormat("  avg GC {0:F1}ms/s, total GC {1:F1}ms", _gcTime.Average.TotalMilliseconds,
-			                     _lastGcTime.TotalMilliseconds);
+			builder.AppendFormat("  avg. GC: {0:F2}%", _gcTime.Average.TotalMilliseconds / 10);
 			builder.AppendLine();
 			builder.AppendFormat("  Servants collected: {0:F1}/s", _servantsCollected.Average);
 			builder.AppendLine();
 			builder.AppendFormat("  Proxies collected: {0:F1}/s", _proxiesCollected.Average);
-			return builder;
+			return builder.ToString();
 		}
 
 		private void AppendDelta(long currentValue, ref long previousValue, StatisticsContainer container)

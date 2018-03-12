@@ -251,8 +251,8 @@ namespace SharpRemote.Hosting
 		public long NumPendingMethodCalls => _endPoint.NumPendingMethodCalls;
 
 		/// <inheritdoc />
-		public int NumPendingMethodInvocations => _endPoint.NumPendingMethodInvocations;
-		
+		public long NumPendingMethodInvocations => _endPoint.NumPendingMethodInvocations;
+
 		/// <inheritdoc />
 		public TimeSpan? AverageRoundTripTime => _endPoint.AverageRoundTripTime;
 

@@ -12,7 +12,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using log4net;
 using SharpRemote.CodeGeneration;
-using SharpRemote.EndPoints;
 using SharpRemote.Exceptions;
 using SharpRemote.Extensions;
 using SharpRemote.Tasks;
@@ -34,7 +33,7 @@ namespace SharpRemote
 	/// </summary>
 	public abstract class AbstractBinaryStreamEndPoint<TTransport>
 		: AbstractEndPoint
-		  , IInternalRemotingEndPoint
+		  , IRemotingEndPoint
 		  , IEndPointChannel
 		where TTransport : class, IDisposable
 	{
@@ -61,29 +60,35 @@ namespace SharpRemote
 
 		private readonly GrainIdGenerator _idGenerator;
 		private long _numBytesReceived;
+		private long _numMessagesReceived;
 		private long _numBytesSent;
+		private long _numMessagesSent;
 		private long _numCallsAnswered;
 		private long _numCallsInvoked;
-
-		/// <summary>
-		///     The total amount of bytes that have been sent over the underlying stream.
-		/// </summary>
+		
+		/// <inheritdoc />
 		public long NumBytesSent => Interlocked.Read(ref _numBytesSent);
-
-		/// <summary>
-		///     The total amount of bytes that have been received over the underlying stream.
-		/// </summary>
+		
+		/// <inheritdoc />
 		public long NumBytesReceived => Interlocked.Read(ref _numBytesReceived);
-
-		/// <summary>
-		///     The total amount of remote procedure calls that have been invoked from this end.
-		/// </summary>
+		
+		/// <inheritdoc />
+		public long NumMessagesSent => Interlocked.Read(ref _numMessagesSent);
+		
+		/// <inheritdoc />
+		public long NumMessagesReceived => Interlocked.Read(ref _numMessagesReceived);
+		
+		/// <inheritdoc />
 		public long NumCallsInvoked => Interlocked.Read(ref _numCallsInvoked);
 
-		/// <summary>
-		///     The total amount of remote procedure calls that have been invoked from the other end.
-		/// </summary>
+		/// <inheritdoc />
 		public long NumCallsAnswered => Interlocked.Read(ref _numCallsAnswered);
+
+		/// <inheritdoc />
+		public long NumPendingMethodCalls => _pendingMethodCalls.NumPendingCalls;
+
+		/// <inheritdoc />
+		public TimeSpan? AverageRoundTripTime => _latencyMonitor?.RoundtripTime;
 
 		#endregion
 
@@ -112,15 +117,7 @@ namespace SharpRemote
 		private long _numServantsCollected;
 
 		#endregion
-
-		#region Latency Measurements
-
-		private readonly Latency _localLatency;
-		private readonly ILatency _remoteLatency;
-		private LatencyMonitor _latencyMonitor;
-
-		#endregion
-
+		
 		#region Heartbeat
 
 		private readonly HeartbeatSettings _heartbeatSettings;
@@ -130,6 +127,15 @@ namespace SharpRemote
 		private HeartbeatMonitor _heartbeatMonitor;
 		private bool _isDisposing;
 		private DateTime _lastRead;
+
+		#endregion
+
+		#region Statistics
+
+		private readonly Latency _localLatency;
+		private readonly ILatency _remoteLatency;
+		private LatencyMonitor _latencyMonitor;
+		private EndPointStatistics _statistics;
 
 		#endregion
 
@@ -274,7 +280,7 @@ namespace SharpRemote
 		public long NumServantsCollected => _numServantsCollected;
 
 		/// <inheritdoc />
-		public TimeSpan GarbageCollectionTime => _garbageCollectionTime.Elapsed;
+		public TimeSpan TotalGarbageCollectionTime => _garbageCollectionTime.Elapsed;
 
 		/// <inheritdoc />
 		public LatencySettings LatencySettings => _latencySettings;
@@ -831,14 +837,12 @@ namespace SharpRemote
 					}
 				};
 
-			PendingMethodCall call = _pendingMethodCalls.Enqueue(servantId,
-			                                                     interfaceType,
-			                                                     methodName,
-			                                                     arguments,
-			                                                     rpcId,
-			                                                     onCallFinished);
-
-			Interlocked.Add(ref _numBytesSent, call.MessageLength);
+			_pendingMethodCalls.Enqueue(servantId,
+			                            interfaceType,
+			                            methodName,
+			                            arguments,
+			                            rpcId,
+			                            onCallFinished);
 			Interlocked.Increment(ref _numCallsInvoked);
 
 			return taskSource.Task;
@@ -968,13 +972,11 @@ namespace SharpRemote
 						_heartbeatMonitor = null;
 					}
 
-					LatencyMonitor latencyMonitor = _latencyMonitor;
-					if (latencyMonitor != null)
-					{
-						latencyMonitor.Stop();
-						latencyMonitor.TryDispose();
-						_latencyMonitor = null;
-					}
+					_latencyMonitor?.TryDispose();
+					_latencyMonitor = null;
+
+					_statistics?.TryDispose();
+					_statistics = null;
 
 					hasDisconnected = true;
 					_disconnectReason = reason;
@@ -1096,10 +1098,10 @@ namespace SharpRemote
 
 			_latencyMonitor = new LatencyMonitor(_remoteLatency,
 			                                     _latencySettings,
-			                                     _name,
-			                                     LocalEndPoint,
-			                                     remoteEndPoint);
+			                                     _name);
 			_latencyMonitor.Start();
+
+			_statistics = new EndPointStatistics(this);
 
 			Action<EndPoint, ConnectionId> fn = OnConnected;
 			if (fn != null)
@@ -2055,6 +2057,9 @@ namespace SharpRemote
 						reason = EndPointDisconnectReason.WriteFailure;
 						break;
 					}
+
+					Interlocked.Increment(ref _numMessagesSent);
+					Interlocked.Add(ref _numBytesSent, messageLength);
 				}
 			}
 			catch (OperationCanceledException e)
@@ -2119,6 +2124,7 @@ namespace SharpRemote
 						var type = (MessageType) reader.ReadByte();
 
 						Interlocked.Add(ref _numBytesReceived, length + 4);
+						Interlocked.Increment(ref _numMessagesReceived);
 						_lastRead = DateTime.Now;
 
 						EndPointDisconnectReason? r;

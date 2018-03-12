@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using NUnit.Framework;
-using SharpRemote.EndPoints;
 using SharpRemote.ServiceDiscovery;
 
 namespace SharpRemote.Test.Remoting.Sockets
@@ -10,7 +9,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 	public sealed class DisconnectTest
 		: AbstractDisconnectTest
 	{
-		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new SocketEndPoint(EndPointType.Client,
 			                          name, clientAuthenticator, serverAuthenticator, null,
@@ -18,7 +17,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 													heartbeatSettings: heartbeatSettings);
 		}
 
-		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new SocketEndPoint(EndPointType.Server,
 			                          name,

@@ -161,7 +161,7 @@ namespace SharpRemote.Hosting
 		/// <summary>
 		///     The total amount of time this endpoint spent collecting garbage.
 		/// </summary>
-		public TimeSpan GarbageCollectionTime => _endPoint.GarbageCollectionTime;
+		public TimeSpan GarbageCollectionTime => _endPoint.TotalGarbageCollectionTime;
 
 		/// <inheritdoc />
 		public bool IsDisposed { get; private set; }

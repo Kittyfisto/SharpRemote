@@ -103,6 +103,7 @@
     <Compile Include="CodeGeneration\Serialization\Xml\XmlWriteObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Xml\XmlWriteValueMethodCompiler.cs" />
     <Compile Include="ConnectionDropReason.cs" />
+    <Compile Include="EndPointStatistics.cs" />
     <Compile Include="StatisticsContainer.cs" />
     <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />
@@ -114,7 +115,6 @@
     <Compile Include="ConnectionId.cs" />
     <Compile Include="DirectoryInfoExtensions.cs" />
     <Compile Include="EndPoints\AbstractEndPoint.cs" />
-    <Compile Include="EndPoints\IInternalRemotingEndPoint.cs" />
     <Compile Include="EndPoints\NamedPipes\AbstractNamedPipeEndPoint.cs" />
     <Compile Include="EndPoints\EndPointSettings.cs" />
     <Compile Include="EndPoints\ILatency.cs" />

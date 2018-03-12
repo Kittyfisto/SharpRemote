@@ -25,10 +25,71 @@ namespace SharpRemote
 		bool IsConnected { get; }
 
 		/// <summary>
+		///     The total number of <see cref="IProxy" />s that have been removed from this endpoint because
+		///     they're no longer used.
+		/// </summary>
+		long NumProxiesCollected { get; }
+
+		/// <summary>
+		///     The total number of <see cref="IServant" />s that have been removed from this endpoint because
+		///     their subjects have been collected by the GC.
+		/// </summary>
+		long NumServantsCollected { get; }
+
+		/// <summary>
+		///     The total amount of bytes that have been sent over the underlying stream.
+		/// </summary>
+		long NumBytesSent { get; }
+
+		/// <summary>
+		///     The total amount of bytes that have been received over the underlying stream.
+		/// </summary>
+		long NumBytesReceived { get; }
+
+		/// <summary>
+		///     The total amount of messages that have been sent over the underlying stream.
+		/// </summary>
+		long NumMessagesSent { get; }
+
+		/// <summary>
+		///     The total amount of messages that have been received over the underlying stream.
+		/// </summary>
+		long NumMessagesReceived { get; }
+
+		/// <summary>
+		///     The total amount of remote procedure calls that have been invoked from this end.
+		/// </summary>
+		long NumCallsInvoked { get; }
+
+		/// <summary>
+		///     The total amount of remote procedure calls that have been invoked from the other end.
+		/// </summary>
+		long NumCallsAnswered { get; }
+
+		/// <summary>
+		///     The current number of method calls which have been invoked, but have not been sent over
+		///     the underlying stream.
+		/// </summary>
+		long NumPendingMethodCalls { get; }
+		
+		/// <summary>
 		///     The total number of method invocations that have been retrieved from the underlying stream,
 		///     but not yet invoked or not yet finished.
 		/// </summary>
 		int NumPendingMethodInvocations { get; }
+
+		/// <summary>
+		///     The average roundtrip time of messages.
+		/// </summary>
+		/// <remarks>
+		///     Set to <see cref="TimeSpan.Zero" /> in case latency measurements are disabled.
+		/// </remarks>
+		TimeSpan? AverageRoundTripTime { get; }
+
+		/// <summary>
+		///     The total amount of time this endpoint spent collecting garbage.
+		/// </summary>
+		TimeSpan TotalGarbageCollectionTime { get; }
 
 		/// <summary>
 		///     The settings used for the endpoint itself (max. number of concurrent calls, etc...).

@@ -387,7 +387,7 @@ namespace SharpRemote.Test.Remoting
 				// which are always installed on each endpoint).
 				server.Proxies.Count().Should().Be(2);
 				server.NumProxiesCollected.Should().Be(1);
-				server.GarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
+				server.TotalGarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
 			}
 		}
 
@@ -419,7 +419,7 @@ namespace SharpRemote.Test.Remoting
 				// which are always installed on each endpoint).
 				server.Proxies.Count().Should().Be(2);
 				server.NumProxiesCollected.Should().Be(1);
-				server.GarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
+				server.TotalGarbageCollectionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(2));
 			}
 		}
 

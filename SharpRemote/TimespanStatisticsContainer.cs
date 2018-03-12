@@ -5,11 +5,11 @@ namespace SharpRemote
 	/// <summary>
 	///     Collects statistics about a series of timespan measurements.
 	/// </summary>
-	internal sealed class TimespanStatisticsContainer
+	internal sealed class TimeSpanStatisticsContainer
 	{
 		private readonly StatisticsContainer _ticks;
 
-		public TimespanStatisticsContainer(int numSamples)
+		public TimeSpanStatisticsContainer(int numSamples)
 		{
 			_ticks = new StatisticsContainer(numSamples);
 		}

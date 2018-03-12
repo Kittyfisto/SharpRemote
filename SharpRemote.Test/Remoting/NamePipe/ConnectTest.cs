@@ -2,7 +2,6 @@
 using System.Net;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.EndPoints;
 using SharpRemote.ServiceDiscovery;
 
 namespace SharpRemote.Test.Remoting.NamePipe
@@ -12,11 +11,11 @@ namespace SharpRemote.Test.Remoting.NamePipe
 	public sealed class ConnectTest
 		: AbstractConnectTest
 	{
-		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null,
-		                                                         IAuthenticator serverAuthenticator = null,
-		                                                         LatencySettings latencySettings = null,
-		                                                         HeartbeatSettings heartbeatSettings = null,
-		                                                         NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null,
+		                                                 IAuthenticator serverAuthenticator = null,
+		                                                 LatencySettings latencySettings = null,
+		                                                 HeartbeatSettings heartbeatSettings = null,
+		                                                 NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new NamedPipeRemotingEndPointClient(name,
 			                                           clientAuthenticator,
@@ -25,12 +24,12 @@ namespace SharpRemote.Test.Remoting.NamePipe
 			                                           latencySettings: latencySettings);
 		}
 
-		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null,
-		                                                         IAuthenticator serverAuthenticator = null,
-		                                                         LatencySettings latencySettings = null,
-		                                                         EndPointSettings endPointSettings = null,
-		                                                         HeartbeatSettings heartbeatSettings = null,
-		                                                         NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null,
+		                                                 IAuthenticator serverAuthenticator = null,
+		                                                 LatencySettings latencySettings = null,
+		                                                 EndPointSettings endPointSettings = null,
+		                                                 HeartbeatSettings heartbeatSettings = null,
+		                                                 NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new NamedPipeRemotingEndPointServer(name,
 			                                           clientAuthenticator,

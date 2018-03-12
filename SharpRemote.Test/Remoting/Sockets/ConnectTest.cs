@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.EndPoints;
 using SharpRemote.Exceptions;
 using SharpRemote.ServiceDiscovery;
 
@@ -21,7 +20,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 			new LogItem(typeof (SocketEndPoint)),
 		};
 
-		internal override IInternalRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IRemotingEndPoint CreateClient(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new SocketEndPoint(EndPointType.Client,
 			                          name,
@@ -32,7 +31,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 			                          heartbeatSettings: heartbeatSettings);
 		}
 
-		internal override IInternalRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
+		internal override IRemotingEndPoint CreateServer(string name = null, IAuthenticator clientAuthenticator = null, IAuthenticator serverAuthenticator = null, LatencySettings latencySettings = null, EndPointSettings endPointSettings = null, HeartbeatSettings heartbeatSettings = null, NetworkServiceDiscoverer networkServiceDiscoverer = null)
 		{
 			return new SocketEndPoint(EndPointType.Server,
 			                          name,

@@ -224,7 +224,40 @@ namespace SharpRemote.Hosting
 		public bool IsConnected => _endPoint.IsConnected;
 
 		/// <inheritdoc />
+		public long NumProxiesCollected => _endPoint.NumProxiesCollected;
+
+		/// <inheritdoc />
+		public long NumServantsCollected => _endPoint.NumServantsCollected;
+
+		/// <inheritdoc />
+		public long NumBytesSent => _endPoint.NumBytesSent;
+
+		/// <inheritdoc />
+		public long NumBytesReceived => _endPoint.NumBytesReceived;
+		
+		/// <inheritdoc />
+		public long NumMessagesSent => _endPoint.NumMessagesSent;
+
+		/// <inheritdoc />
+		public long NumMessagesReceived => _endPoint.NumMessagesReceived;
+
+		/// <inheritdoc />
+		public long NumCallsInvoked => _endPoint.NumCallsInvoked;
+
+		/// <inheritdoc />
+		public long NumCallsAnswered => _endPoint.NumCallsAnswered;
+
+		/// <inheritdoc />
+		public long NumPendingMethodCalls => _endPoint.NumPendingMethodCalls;
+
+		/// <inheritdoc />
 		public int NumPendingMethodInvocations => _endPoint.NumPendingMethodInvocations;
+		
+		/// <inheritdoc />
+		public TimeSpan? AverageRoundTripTime => _endPoint.AverageRoundTripTime;
+
+		/// <inheritdoc />
+		public TimeSpan TotalGarbageCollectionTime => _endPoint.TotalGarbageCollectionTime;
 
 		/// <inheritdoc />
 		public EndPointSettings EndPointSettings => _endPoint.EndPointSettings;

@@ -81,10 +81,10 @@ namespace SampleBrowser.Scenarios.LongTermUsage
 				hierarchy.Root.AddAppender(_fileAppender);
 				hierarchy.Root.Level = Level.Info;
 
-				var logger = (Logger)hierarchy.GetLogger("SharpRemote.LatencyMonitor");
+				var logger = (Logger)hierarchy.GetLogger("SharpRemote.HeartbeatMonitor");
 				logger.Level = Level.Debug;
 
-				logger = (Logger)hierarchy.GetLogger("SharpRemote.HeartbeatMonitor");
+				logger = (Logger)hierarchy.GetLogger("SharpRemote.EndPointStatistics");
 				logger.Level = Level.Debug;
 
 				hierarchy.Configured = true;

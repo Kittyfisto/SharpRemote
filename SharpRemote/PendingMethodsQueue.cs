@@ -47,15 +47,9 @@ namespace SharpRemote
 			_pendingCalls = new Dictionary<long, PendingMethodCall>();
 		}
 
-		internal Queue<PendingMethodCall> RecycledMessages
-		{
-			get { return _recycledMessages; }
-		}
+		internal Queue<PendingMethodCall> RecycledMessages => _recycledMessages;
 
-		internal BlockingQueue<PendingMethodCall> PendingWrites
-		{
-			get { return _pendingWrites; }
-		}
+		internal BlockingQueue<PendingMethodCall> PendingWrites => _pendingWrites;
 
 		/// <summary>
 		///     Whether or not this endpoint is currently connected.
@@ -89,10 +83,7 @@ namespace SharpRemote
 			}
 		}
 
-		public bool IsDisposed
-		{
-			get { return _isDisposed; }
-		}
+		public bool IsDisposed => _isDisposed;
 
 		public void Dispose()
 		{

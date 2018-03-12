@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Net;
 using System.Reflection;
 using System.Threading;
 using log4net;
@@ -22,10 +21,8 @@ namespace SharpRemote
 
 		private readonly TimeSpan _interval;
 		private readonly ILatency _latencyGrain;
-		private readonly TimespanStatisticsContainer _measurements;
+		private readonly TimeSpanStatisticsContainer _measurements;
 		private readonly bool _performLatencyMeasurements;
-		private readonly EndPoint _localEndPoint;
-		private readonly EndPoint _remoteEndPoint;
 		private readonly object _syncRoot;
 		private readonly Stopwatch _stopwatch;
 
@@ -43,16 +40,12 @@ namespace SharpRemote
 		/// <param name="numSamples"></param>
 		/// <param name="performLatencyMeasurements"></param>
 		/// <param name="endPointName"></param>
-		/// <param name="localEndPoint"></param>
-		/// <param name="remoteEndPoint"></param>
 		public LatencyMonitor(
 			ILatency latencyGrain,
 			TimeSpan interval,
 			int numSamples,
 			bool performLatencyMeasurements,
-			string endPointName = null,
-			EndPoint localEndPoint = null,
-			EndPoint remoteEndPoint = null
+			string endPointName = null
 		)
 		{
 			if (latencyGrain == null) throw new ArgumentNullException(nameof(latencyGrain));
@@ -64,10 +57,8 @@ namespace SharpRemote
 			_interval = interval;
 			_performLatencyMeasurements = performLatencyMeasurements;
 			_latencyGrain = latencyGrain;
-			_measurements = new TimespanStatisticsContainer(numSamples);
+			_measurements = new TimeSpanStatisticsContainer(numSamples);
 			_endPointName = endPointName;
-			_localEndPoint = localEndPoint;
-			_remoteEndPoint = remoteEndPoint;
 			_stopwatch = new Stopwatch();
 		}
 
@@ -78,18 +69,14 @@ namespace SharpRemote
 		/// <param name="latencyGrain"></param>
 		/// <param name="settings"></param>
 		/// <param name="endPointName"></param>
-		/// <param name="localEndPoint"></param>
-		/// <param name="remoteEndPoint"></param>
 		public LatencyMonitor(ILatency latencyGrain,
 		                      LatencySettings settings,
-		                      string endPointName = null,
-		                      EndPoint localEndPoint = null,
-		                      EndPoint remoteEndPoint = null)
+		                      string endPointName = null)
 			: this(latencyGrain,
 			       settings.Interval,
 			       settings.NumSamples,
 			       settings.PerformLatencyMeasurements,
-			       endPointName, localEndPoint, remoteEndPoint)
+			       endPointName)
 		{
 		}
 
@@ -162,21 +149,11 @@ namespace SharpRemote
 				_stopwatch.Stop();
 				var rtt = _stopwatch.Elapsed;
 
-				TimeSpan averageRtt;
 				lock (_syncRoot)
 				{
 					_measurements.Enqueue(rtt);
-					averageRtt = _measurements.Average;
 				}
 
-				if (Log.IsDebugEnabled)
-					Log.DebugFormat("{0}: {1} to {2}, current RTT: {3:F1}ms, avg. RTT: {4:F1}ms",
-					                _endPointName,
-					                _localEndPoint,
-					                _remoteEndPoint,
-					                rtt.TotalMilliseconds,
-					                averageRtt.TotalMilliseconds
-					               );
 				return true;
 			}
 			catch (NotConnectedException e)

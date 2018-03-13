@@ -5,10 +5,10 @@ using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
 using SharpRemote.EndPoints;
-using SharpRemote.Test.Remoting.NamePipe;
+using SharpRemote.Test;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
-namespace SharpRemote.Test.EndPoints
+namespace SharpRemote.SystemTest.EndPoints
 {
 	[TestFixture]
 	public sealed class ServantStorageTest

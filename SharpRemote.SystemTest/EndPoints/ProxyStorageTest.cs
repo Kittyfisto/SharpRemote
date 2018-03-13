@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace SharpRemote.Test.EndPoints
+namespace SharpRemote.SystemTest.EndPoints
 {
 	[TestFixture]
 	public sealed class ProxyStorageTest

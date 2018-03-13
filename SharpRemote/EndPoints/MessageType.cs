@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SharpRemote
+namespace SharpRemote.EndPoints
 {
 	[Flags]
 	internal enum MessageType : byte
@@ -10,6 +10,6 @@ namespace SharpRemote
 		Exception = 0x4,
 		Goodbye = 0x8,
 
-		None = 0,
+		None = 0
 	}
 }

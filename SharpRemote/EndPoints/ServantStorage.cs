@@ -142,7 +142,7 @@ namespace SharpRemote.EndPoints
 
 		public int RemoveUnusedServants()
 		{
-			lock (_servantsById)
+			lock (_syncRoot)
 			{
 				var collectedServants = _servantsBySubject.Collect(returnCollectedValues: true);
 				if (collectedServants != null)

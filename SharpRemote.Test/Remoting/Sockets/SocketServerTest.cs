@@ -1,6 +1,8 @@
 ﻿using System.Net;
 using FluentAssertions;
+using Moq;
 using NUnit.Framework;
+using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.Remoting.Sockets
 {
@@ -24,8 +26,8 @@ namespace SharpRemote.Test.Remoting.Sockets
 			using (var server = CreateServer())
 			using (var client = CreateClient())
 			{
-				var serverEndPoint = new IPEndPoint(IPAddress.Loopback, 54320);
-				server.Bind(serverEndPoint);
+				server.Bind(IPAddress.Loopback);
+				var serverEndPoint = server.LocalEndPoint;
 				server.Connections.Should().BeEmpty("because nobody is connected to that server just yet");
 
 				client.Connect(serverEndPoint);
@@ -34,6 +36,43 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 				client.Disconnect();
 				server.Property(x => x.Connections).ShouldEventually().BeEmpty("because the last connection was just disconnected");
+			}
+		}
+
+		[Test]
+		public void TestConnectTwoClients()
+		{
+			using (var server = CreateServer())
+			using (var client1 = CreateClient())
+			using (var client2 = CreateClient())
+			{
+				const ulong objectId = 42;
+
+				var subject = new Mock<IGetInt32Property>();
+				subject.Setup(x => x.Value).Returns(1337);
+				server.RegisterSubject(objectId, subject.Object);
+
+				server.Bind(IPAddress.Loopback);
+				var serverEndPoint = server.LocalEndPoint;
+				server.Connections.Should().BeEmpty("because nobody is connected to that server just yet");
+
+				client1.Connect(serverEndPoint);
+				client1.IsConnected.Should().BeTrue();
+				server.Connections.Should().HaveCount(1, "because one connection should've been established");
+
+				client2.Connect(serverEndPoint);
+				client2.IsConnected.Should().BeTrue();
+				server.Connections.Should().HaveCount(2, "because we've established a 2nd connection");
+
+				client1.CreateProxy<IGetInt32Property>(42).Value.Should().Be(1337);
+				subject.Verify(x => x.Value, Times.Once);
+
+				client2.CreateProxy<IGetInt32Property>(42).Value.Should().Be(1337);
+				subject.Verify(x => x.Value, Times.Exactly(2));
+
+				client1.Disconnect();
+				client2.Disconnect();
+				server.Property(x => x.Connections).ShouldEventually().BeEmpty("because we've closed both connections");
 			}
 		}
 

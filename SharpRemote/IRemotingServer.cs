@@ -37,6 +37,6 @@ namespace SharpRemote
 		/// <typeparam name="T"></typeparam>
 		/// <param name="objectId"></param>
 		/// <param name="subject"></param>
-		void CreateServant<T>(ulong objectId, T subject) where T : class;
+		void RegisterSubject<T>(ulong objectId, T subject) where T : class;
 	}
 }

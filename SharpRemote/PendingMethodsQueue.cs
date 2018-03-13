@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using log4net;
+using SharpRemote.EndPoints;
 using SharpRemote.ETW;
 
 namespace SharpRemote

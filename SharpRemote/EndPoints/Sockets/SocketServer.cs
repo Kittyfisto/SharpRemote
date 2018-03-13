@@ -197,7 +197,7 @@ namespace SharpRemote
 		public HeartbeatSettings HeartbeatSettings => _heartbeatSettings;
 
 		/// <inheritdoc />
-		public void CreateServant<T>(ulong objectId, T subject) where T : class
+		public void RegisterSubject<T>(ulong objectId, T subject) where T : class
 		{
 			var registration = new SubjectRegistration<T>(objectId, subject);
 
@@ -386,7 +386,7 @@ namespace SharpRemote
 
 		/// <summary>
 		///     Required in order to capture the type parameter of
-		///     <see cref="SocketServer.CreateServant{T}" />.
+		///     <see cref="SocketServer.RegisterSubject{T}" />.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		private sealed class SubjectRegistration<T>

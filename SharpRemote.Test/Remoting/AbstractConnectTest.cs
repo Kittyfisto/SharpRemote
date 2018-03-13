@@ -345,18 +345,18 @@ namespace SharpRemote.Test.Remoting
 			using (var client = CreateClient(latencySettings: settings))
 			using (var server = CreateServer(latencySettings: settings))
 			{
-				client.RoundtripTime.Should().Be(TimeSpan.Zero);
-				server.RoundtripTime.Should().Be(TimeSpan.Zero);
+				client.AverageRoundTripTime.Should().NotHaveValue("because this endpoint hasn't established any connection yet");
+				server.AverageRoundTripTime.Should().NotHaveValue("because this endpoint hasn't established any connection yet");
 
 				Bind(server);
 				Connect(client, server.LocalEndPoint);
 				Thread.Sleep(TimeSpan.FromMilliseconds(100));
 
-				var clientRoundtrip = client.RoundtripTime;
-				var serverRoundtrip = server.RoundtripTime;
+				var clientRoundtrip = client.AverageRoundTripTime;
+				var serverRoundtrip = server.AverageRoundTripTime;
 
-				Console.WriteLine("Client: {0}μs", clientRoundtrip.Ticks / 10);
-				Console.WriteLine("Server: {0}μs", serverRoundtrip.Ticks / 10);
+				Console.WriteLine("Client: {0}μs", clientRoundtrip.Value.Ticks / 10);
+				Console.WriteLine("Server: {0}μs", serverRoundtrip.Value.Ticks / 10);
 
 				clientRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);
 				serverRoundtrip.Should().BeGreaterThan(TimeSpan.Zero);

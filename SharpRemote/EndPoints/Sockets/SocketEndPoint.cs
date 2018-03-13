@@ -466,7 +466,7 @@ namespace SharpRemote
 				throw new InvalidOperationException("A socket may only bound to a particular port when its not already connected");
 
 			IPEndPoint ep;
-			_serverSocket = CreateSocketAndBindToAnyPort(localAddress, out ep);
+			_serverSocket = Socket2.CreateSocketAndBindToAnyPort(localAddress, out ep);
 			LocalEndPoint = ep;
 			Listen();
 		}
@@ -730,6 +730,23 @@ namespace SharpRemote
 
 		private void OnIncomingConnection(IAsyncResult ar)
 		{
+			try
+			{
+				OnIncomingConnection(_serverSocket, ar);
+			}
+			finally
+			{
+				lock (SyncRoot)
+				{
+					_isConnecting = false;
+					if (!IsDisposed)
+						_serverSocket.BeginAccept(OnIncomingConnection, state: null);
+				}
+			}
+		}
+
+		internal void OnIncomingConnection(ISocket serverSocket, IAsyncResult ar)
+		{
 			lock (SyncRoot)
 			{
 				if (IsDisposed)
@@ -740,7 +757,7 @@ namespace SharpRemote
 			var success = false;
 			try
 			{
-				socket = _serverSocket.EndAccept(ar);
+				socket = serverSocket.EndAccept(ar);
 
 				bool isAlreadyConnected;
 				lock (SyncRoot)
@@ -804,13 +821,6 @@ namespace SharpRemote
 						}
 					}
 				}
-
-				lock (SyncRoot)
-				{
-					_isConnecting = false;
-					if (!IsDisposed)
-						_serverSocket.BeginAccept(OnIncomingConnection, state: null);
-				}
 			}
 		}
 
@@ -845,49 +855,6 @@ namespace SharpRemote
 
 				// We need to undo anything we did above
 				Disconnect();
-			}
-		}
-
-		internal static ISocket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
-		{
-			const ushort firstSocket = 49152;
-			const ushort lastSocket = 65535;
-
-			return CreateSocketAndBindToAnyPort(address, firstSocket, lastSocket, out localAddress);
-		}
-
-		internal static ISocket CreateSocketAndBindToAnyPort(IPAddress address,
-		                                                    ushort firstSocket,
-		                                                    ushort lastSocket,
-		                                                    out IPEndPoint localAddress)
-		{
-			var family = address.AddressFamily;
-			var socket = new Socket2(family, SocketType.Stream, ProtocolType.Tcp);
-			try
-			{
-				socket.ExclusiveAddressUse = true;
-
-				localAddress = null;
-				for (var i = firstSocket; i <= lastSocket; ++i)
-					try
-					{
-						localAddress = new IPEndPoint(address, i);
-						socket.Bind(localAddress);
-						break;
-					}
-					catch (SocketException)
-					{
-					}
-
-				if (!socket.IsBound)
-					throw new SystemException("No more available sockets");
-
-				return socket;
-			}
-			finally
-			{
-				if (!socket.IsBound)
-					socket.Dispose();
 			}
 		}
 	}

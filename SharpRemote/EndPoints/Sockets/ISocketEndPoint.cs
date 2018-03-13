@@ -6,8 +6,19 @@ namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
 	/// <summary>
-	///     The interface for an endpoint that can be connected to another <see cref="ISocketEndPoint" />.
+	///     The interface for an endpoint which can establish a connection to another
+	///     <see cref="ISocketEndPoint" /> or to a <see cref="ISocketServer" />.
 	/// </summary>
+	/// <example>
+	///     Have another <see cref="ISocketEndPoint" /> bound(<see cref="Bind(IPAddress)" />) to
+	///     a particular address then then <see cref="Connect(IPEndPoint,TimeSpan)" /> to establish a
+	///     connection with it.
+	/// </example>
+	/// <example>
+	///     Have a <see cref="ISocketServer" /> bound(<see cref="ISocketServer.Bind(IPAddress)" />) to
+	///     a particular address then then <see cref="Connect(IPEndPoint,TimeSpan)" /> to establish a
+	///     connection with it.
+	/// </example>
 	public interface ISocketEndPoint
 		: IRemotingEndPoint
 	{

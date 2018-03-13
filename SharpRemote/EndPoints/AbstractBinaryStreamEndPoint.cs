@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -13,18 +12,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using log4net;
 using SharpRemote.CodeGeneration;
+using SharpRemote.EndPoints;
 using SharpRemote.Extensions;
 using SharpRemote.Tasks;
 using Debugger = SharpRemote.Diagnostics.Debugger;
-//using System.Diagnostics;
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
-
-#endif
-#endif
 
 // ReSharper disable CheckNamespace
-
 namespace SharpRemote
 // ReSharper restore CheckNamespace
 {
@@ -59,7 +52,6 @@ namespace SharpRemote
 
 		#region Statistics
 
-		private readonly GrainIdGenerator _idGenerator;
 		private long _numBytesReceived;
 		private long _numMessagesReceived;
 		private long _numBytesSent;
@@ -95,9 +87,8 @@ namespace SharpRemote
 
 		#region Proxies / Servants
 
-		private readonly Dictionary<ulong, WeakReference<IProxy>> _proxiesById;
-		private readonly Dictionary<ulong, IServant> _servantsById;
-		private readonly WeakKeyDictionary<object, IServant> _servantsBySubject;
+		private readonly ProxyStorage _proxies;
+		private readonly ServantStorage _servants;
 
 		#endregion
 
@@ -114,8 +105,6 @@ namespace SharpRemote
 
 		private readonly Stopwatch _garbageCollectionTime;
 		private readonly Timer _garbageCollectionTimer;
-		private long _numProxiesCollected;
-		private long _numServantsCollected;
 
 		#endregion
 		
@@ -203,15 +192,12 @@ namespace SharpRemote
 			}
 
 			_previousConnectionId = 0;
-			_idGenerator = idGenerator;
 			_name = name ?? "Unnamed";
 			_syncRoot = new object();
 
-			_servantsById = new Dictionary<ulong, IServant>();
-			_servantsBySubject = new WeakKeyDictionary<object, IServant>();
-
-			_proxiesById = new Dictionary<ulong, WeakReference<IProxy>>();
 			_codeGenerator = codeGenerator ?? CodeGeneration.CodeGenerator.Default;
+			_proxies = new ProxyStorage(this, this, _codeGenerator);
+			_servants = new ServantStorage(this, this, idGenerator, _codeGenerator);
 
 			_endpointSettings = endPointSettings ?? new EndPointSettings();
 			_pendingMethodCalls = new PendingMethodsQueue(_name, _endpointSettings.MaxConcurrentCalls);
@@ -275,10 +261,10 @@ namespace SharpRemote
 		protected abstract EndPoint InternalRemoteEndPoint { get; set; }
 
 		/// <inheritdoc />
-		public long NumProxiesCollected => _numProxiesCollected;
+		public long NumProxiesCollected => _proxies.NumProxiesCollected;
 
 		/// <inheritdoc />
-		public long NumServantsCollected => _numServantsCollected;
+		public long NumServantsCollected => _servants.NumServantsCollected;
 
 		/// <inheritdoc />
 		public TimeSpan TotalGarbageCollectionTime => _garbageCollectionTime.Elapsed;
@@ -329,38 +315,15 @@ namespace SharpRemote
 		{
 			get
 			{
-				lock (_proxiesById)
-				{
-					var aliveProxies = new List<IProxy>();
-
-					foreach (var pair in _proxiesById)
-					{
-						IProxy proxy;
-						if (pair.Value.TryGetTarget(out proxy))
-						{
-							aliveProxies.Add(proxy);
-						}
-					}
-
-					return aliveProxies;
-				}
+				return _proxies.Proxies;
 			}
 		}
 
 		/// <summary>
-		///     Returns all the servnats of this endpoint.
+		///     Returns all the servants of this endpoint.
 		///     Used for testing.
 		/// </summary>
-		internal IEnumerable<IServant> Servants
-		{
-			get
-			{
-				lock (_servantsById)
-				{
-					return _servantsById.Values.ToList();
-				}
-			}
-		}
+		internal IEnumerable<IServant> Servants => _servants.Servants;
 
 		/// <inheritdoc />
 		public Task<MemoryStream> CallRemoteMethodAsync(ulong servantId,
@@ -425,11 +388,7 @@ namespace SharpRemote
 
 					// Another thread could still be accessing this dictionary.
 					// Therefore we need to guard this one against concurrent access...
-					lock (_servantsById)
-					{
-						_servantsBySubject.Dispose();
-						_servantsById.Clear();
-					}
+					_servants.Dispose();
 
 					_isDisposed = true;
 				}
@@ -471,144 +430,37 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public T CreateProxy<T>(ulong objectId) where T : class
 		{
-			lock (_proxiesById)
-			{
-				if (Log.IsDebugEnabled)
-					Log.DebugFormat("{0}: Adding proxy '#{1}' of type '{2}'", Name, objectId, typeof(T).FullName);
-
-				var proxy = _codeGenerator.CreateProxy<T>(this, this, objectId);
-				var grain = new WeakReference<IProxy>((IProxy) proxy);
-				_proxiesById.Add(objectId, grain);
-				return proxy;
-			}
+			return _proxies.CreateProxy<T>(objectId);
 		}
 
 		/// <inheritdoc />
 		public T GetProxy<T>(ulong objectId) where T : class
 		{
-			if (Log.IsDebugEnabled)
-				Log.DebugFormat("{0}: Retrieving proxy '#{1}' of type '{2}'", Name, objectId, typeof(T).FullName);
-
-			IProxy proxy;
-			lock (_proxiesById)
-			{
-				WeakReference<IProxy> grain;
-				if (!_proxiesById.TryGetValue(objectId, out grain) || !grain.TryGetTarget(out proxy))
-					throw new ArgumentException(string.Format("No such proxy: {0}", objectId));
-			}
-
-			if (!(proxy is T))
-				throw new ArgumentException(string.Format("The proxy '{0}', {1} is not related to interface: {2}",
-				                                          objectId,
-				                                          proxy.GetType().Name,
-				                                          typeof (T).Name));
-
-			return (T) proxy;
+			return _proxies.GetProxy<T>(objectId);
 		}
 
 		/// <inheritdoc />
 		public IServant CreateServant<T>(ulong objectId, T subject) where T : class
 		{
-			if (Log.IsDebugEnabled)
-			{
-				Log.DebugFormat("{0}: Creating new servant (#{3}) '{1}' implementing '{2}'",
-				                Name,
-				                subject.GetType().FullName,
-				                typeof (T).FullName,
-				                objectId
-					);
-			}
-
-			IServant servant = _codeGenerator.CreateServant(this, this, objectId, subject);
-			lock (_servantsById)
-			{
-				_servantsById.Add(objectId, servant);
-				_servantsBySubject.Add(subject, servant);
-			}
-			return servant;
+			return _servants.CreateServant(objectId, subject);
 		}
 
 		/// <inheritdoc />
 		public T RetrieveSubject<T>(ulong objectId) where T : class
 		{
-			Type interfaceType = null;
-			lock (_servantsById)
-			{
-				IServant servant;
-				if (_servantsById.TryGetValue(objectId, out servant))
-				{
-					var target = servant.Subject as T;
-					if (target != null)
-					{
-						return target;
-					}
-
-					interfaceType = servant.InterfaceType;
-				}
-			}
-
-			if (interfaceType != null)
-			{
-				Log.WarnFormat("{0}: Unable to retrieve subject with id '{1}' as {2}: It was registered as {3}",
-				               Name,
-				               objectId,
-				               typeof(T),
-				               interfaceType);
-			}
-			else
-			{
-				Log.WarnFormat("{0}: Unable to retrieve subject with id '{1}', it might have been garbage collected already",
-				               Name,
-				               objectId);
-			}
-
-			return null;
+			return _servants.RetrieveSubject<T>(objectId);
 		}
 
 		/// <inheritdoc />
 		public T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class
 		{
-			lock (_proxiesById)
-			{
-				IProxy proxy;
-				WeakReference<IProxy> grain;
-				if (!_proxiesById.TryGetValue(objectId, out grain))
-				{
-					// If the proxy doesn't exist, then we can simply create a new one...
-					var value = _codeGenerator.CreateProxy<T>(this, this, objectId);
-					grain = new WeakReference<IProxy>((IProxy) value);
-					_proxiesById.Add(objectId, grain);
-					return value;
-				}
-				if (!grain.TryGetTarget(out proxy))
-				{
-					// It's possible that the proxy did exist at one point, then was collected by the GC, but
-					// our internal GC didn't have the time to remove that proxy from the dictionary yet, which
-					// means that we have to *replace* the existing weak-reference with a new, living one
-					var value = _codeGenerator.CreateProxy<T>(this, this, objectId);
-					grain = new WeakReference<IProxy>(proxy);
-					_proxiesById[objectId] = grain;
-					return value;
-				}
-
-				return (T) proxy;
-			}
+			return _proxies.GetExistingOrCreateNewProxy<T>(objectId);
 		}
 
 		/// <inheritdoc />
 		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
 		{
-			lock (_servantsById)
-			{
-				IServant servant;
-				if (!_servantsBySubject.TryGetValue(subject, out servant))
-				{
-					ulong nextId = _idGenerator.GetGrainId();
-					servant = CreateServant(nextId, subject);
-				}
-
-				return servant;
-			}
+			return _servants.GetExistingOrCreateNewServant(subject);
 		}
 
 		/// <summary>
@@ -680,8 +532,8 @@ namespace SharpRemote
 			_garbageCollectionTime.Start();
 			try
 			{
-				int numServantsRemoved = RemoveUnusedServants();
-				int numProxiesRemoved = RemoveUnusedProxies();
+				int numServantsRemoved = _servants.RemoveUnusedServants();
+				int numProxiesRemoved = _proxies.RemoveUnusedProxies();
 
 				if (numProxiesRemoved > 0)
 				{
@@ -715,73 +567,6 @@ namespace SharpRemote
 			finally
 			{
 				_garbageCollectionTime.Stop();
-			}
-		}
-
-		private int RemoveUnusedServants()
-		{
-			lock (_servantsById)
-			{
-				List<IServant> collectedServants = _servantsBySubject.Collect(true);
-				if (collectedServants != null)
-				{
-					foreach (IServant servant in collectedServants)
-					{
-						if (Log.IsDebugEnabled)
-						{
-							Log.DebugFormat(
-								"{0}: Removing servant '#{1}' from list of available servants because it's subject is no longer reachable (it has been garbage collected)",
-								Name,
-								servant.ObjectId);
-						}
-
-						_servantsById.Remove(servant.ObjectId);
-					}
-
-					_numServantsCollected += collectedServants.Count;
-					return collectedServants.Count;
-				}
-
-				return 0;
-			}
-		}
-
-		private int RemoveUnusedProxies()
-		{
-			lock (_proxiesById)
-			{
-				List<ulong> toRemove = null;
-
-				foreach (var pair in _proxiesById)
-				{
-					IProxy proxy;
-					if (!pair.Value.TryGetTarget(out proxy))
-					{
-						if (toRemove == null)
-							toRemove = new List<ulong>();
-
-						toRemove.Add(pair.Key);
-					}
-				}
-
-				if (toRemove != null)
-				{
-					foreach (ulong key in toRemove)
-					{
-						if (Log.IsDebugEnabled)
-						{
-							Log.DebugFormat("{0}: Removing proxy '#{1}' from list of available proxies because it is no longer reachable (it has been garbage collected)",
-							                Name,
-							                key);
-						}
-						
-						_proxiesById.Remove(key);
-					}
-					_numProxiesCollected += toRemove.Count;
-					return toRemove.Count;
-				}
-
-				return 0;
 			}
 		}
 
@@ -866,11 +651,12 @@ namespace SharpRemote
 
 				call.Wait();
 
-				if (call.MessageType == MessageType.Return)
+				var messageType = call.MessageType;
+				if (messageType == MessageType.Return)
 				{
 					return (MemoryStream) call.Reader.BaseStream;
 				}
-				else if ((call.MessageType & MessageType.Exception) != 0)
+				else if ((messageType & MessageType.Exception) != 0)
 				{
 					Exception e = ReadException(call.Reader);
 					LogRemoteMethodCallException(rpcId, servantId, interfaceType, methodName, e);
@@ -878,7 +664,9 @@ namespace SharpRemote
 				}
 				else
 				{
-					throw new NotImplementedException();
+					throw new NotImplementedException(string.Format("Unexpected message type: {0} ({1})",
+					                                                messageType,
+					                                                (int) messageType));
 				}
 			}
 			finally
@@ -1460,14 +1248,10 @@ namespace SharpRemote
 			ulong servantId = reader.ReadUInt64();
 			string typeName = reader.ReadString();
 			string methodName = reader.ReadString();
-
-			IServant servant;
+			
 			int numServants;
-			lock (_servantsById)
-			{
-				numServants = _servantsById.Count;
-				_servantsById.TryGetValue(servantId, out servant);
-			}
+			IServant servant;
+			_servants.TryGetServant(servantId, out servant, out numServants);
 
 			if (servant != null)
 			{
@@ -1482,19 +1266,7 @@ namespace SharpRemote
 
 			IProxy proxy;
 			int numProxies;
-			lock (_proxiesById)
-			{
-				numProxies = _proxiesById.Count;
-				WeakReference<IProxy> grain;
-				if (_proxiesById.TryGetValue(servantId, out grain))
-				{
-					grain.TryGetTarget(out proxy);
-				}
-				else
-				{
-					proxy = null;
-				}
-			}
+			_proxies.TryGetProxy(servantId, out proxy, out numProxies);
 
 			if (proxy != null)
 			{

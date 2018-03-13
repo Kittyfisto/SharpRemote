@@ -816,5 +816,62 @@ namespace SharpRemote.Sockets
 		{
 			_socket.Shutdown(how);
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="address"></param>
+		/// <param name="localAddress"></param>
+		/// <returns></returns>
+		public static ISocket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
+		{
+			const ushort firstSocket = 49152;
+			const ushort lastSocket = 65535;
+
+			return CreateSocketAndBindToAnyPort(address, firstSocket, lastSocket, out localAddress);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="address"></param>
+		/// <param name="firstSocket"></param>
+		/// <param name="lastSocket"></param>
+		/// <param name="localAddress"></param>
+		/// <returns></returns>
+		public static ISocket CreateSocketAndBindToAnyPort(IPAddress address,
+		                                                     ushort firstSocket,
+		                                                     ushort lastSocket,
+		                                                     out IPEndPoint localAddress)
+		{
+			var family = address.AddressFamily;
+			var socket = new Socket2(family, SocketType.Stream, ProtocolType.Tcp);
+			try
+			{
+				socket.ExclusiveAddressUse = true;
+
+				localAddress = null;
+				for (var i = firstSocket; i <= lastSocket; ++i)
+					try
+					{
+						localAddress = new IPEndPoint(address, i);
+						socket.Bind(localAddress);
+						break;
+					}
+					catch (SocketException)
+					{
+					}
+
+				if (!socket.IsBound)
+					throw new SystemException("No more available sockets");
+
+				return socket;
+			}
+			finally
+			{
+				if (!socket.IsBound)
+					socket.Dispose();
+			}
+		}
 	}
 }

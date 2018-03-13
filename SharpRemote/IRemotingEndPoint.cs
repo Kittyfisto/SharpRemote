@@ -12,18 +12,19 @@ namespace SharpRemote
 	///     There can only be one endpoint *per* <see cref="IPEndPoint" /> *per* machine.
 	/// </remarks>
 	public interface IRemotingEndPoint
-		: IDisposable
+		: IRemotingBase
 	{
-		/// <summary>
-		///     The name of this endpoint, only used for debugging.
-		/// </summary>
-		string Name { get; }
-
 		/// <summary>
 		///     Whether or not this endpoint is connected to another one.
 		/// </summary>
 		bool IsConnected { get; }
-
+		
+		/// <summary>
+		///     The total number of <see cref="IServant" />s that have been removed from this endpoint because
+		///     their subjects have been collected by the GC.
+		/// </summary>
+		long NumServantsCollected { get; }
+		
 		/// <summary>
 		///     The total number of <see cref="IProxy" />s that have been removed from this endpoint because
 		///     they're no longer used.
@@ -31,97 +32,10 @@ namespace SharpRemote
 		long NumProxiesCollected { get; }
 
 		/// <summary>
-		///     The total number of <see cref="IServant" />s that have been removed from this endpoint because
-		///     their subjects have been collected by the GC.
-		/// </summary>
-		long NumServantsCollected { get; }
-
-		/// <summary>
-		///     The total amount of bytes that have been sent over the underlying stream.
-		/// </summary>
-		long NumBytesSent { get; }
-
-		/// <summary>
-		///     The total amount of bytes that have been received over the underlying stream.
-		/// </summary>
-		long NumBytesReceived { get; }
-
-		/// <summary>
-		///     The total amount of messages that have been sent over the underlying stream.
-		/// </summary>
-		long NumMessagesSent { get; }
-
-		/// <summary>
-		///     The total amount of messages that have been received over the underlying stream.
-		/// </summary>
-		long NumMessagesReceived { get; }
-
-		/// <summary>
-		///     The total amount of remote procedure calls that have been invoked from this end.
-		/// </summary>
-		long NumCallsInvoked { get; }
-
-		/// <summary>
-		///     The total amount of remote procedure calls that have been invoked from the other end.
-		/// </summary>
-		long NumCallsAnswered { get; }
-
-		/// <summary>
-		///     The current number of method calls which have been invoked, but have not been sent over
-		///     the underlying stream.
-		/// </summary>
-		long NumPendingMethodCalls { get; }
-		
-		/// <summary>
-		///     The total number of method invocations that have been retrieved from the underlying stream,
-		///     but not yet invoked or not yet finished.
-		/// </summary>
-		long NumPendingMethodInvocations { get; }
-
-		/// <summary>
-		///     The average roundtrip time of messages.
-		/// </summary>
-		/// <remarks>
-		///     Set to <see cref="TimeSpan.Zero" /> in case latency measurements are disabled.
-		/// </remarks>
-		TimeSpan? AverageRoundTripTime { get; }
-
-		/// <summary>
-		///     The total amount of time this endpoint spent collecting garbage.
-		/// </summary>
-		TimeSpan TotalGarbageCollectionTime { get; }
-
-		/// <summary>
-		///     The settings used for the endpoint itself (max. number of concurrent calls, etc...).
-		/// </summary>
-		EndPointSettings EndPointSettings { get; }
-
-		/// <summary>
-		///     The settings used for latency measurements.
-		/// </summary>
-		LatencySettings LatencySettings { get; }
-
-		/// <summary>
-		///     The settings used for the heartbeat mechanism.
-		/// </summary>
-		HeartbeatSettings HeartbeatSettings { get; }
-
-		/// <summary>
 		/// The id of the current connection or <see cref="ConnectionId.None"/> if no connection
 		/// is currently established.
 		/// </summary>
 		ConnectionId CurrentConnectionId { get; }
-
-		/// <summary>
-		/// The current average round trip time or <see cref="TimeSpan.Zero"/> in
-		/// case nothing was measured.
-		/// </summary>
-		TimeSpan RoundtripTime { get; }
-
-		/// <summary>
-		/// 
-		/// </summary>
-		EndPoint LocalEndPoint { get; }
 
 		/// <summary>
 		/// 
@@ -163,6 +77,61 @@ namespace SharpRemote
 		///     When this endpoint is not connected to a remot endpoint in the first place, then this method does nothing.
 		/// </remarks>
 		void Disconnect();
+
+		
+		#region Servant registration
+
+		/// <summary>
+		///     Creates and registers a servant for the given subject <paramref name="subject" /> under the given
+		///     <paramref name="objectId" />,
+		///     giving another connected <see cref="IRemotingEndPoint" /> the ability to call the subject's methods via a proxy
+		///     (<see cref="IRemotingEndPoint.CreateProxy{T}" />).
+		/// </summary>
+		/// <remarks>
+		///     A servant is responsible for invoking RPCs on the original subject whenever they are called through a proxy.
+		///     If the interfaces <typeparamref name="T"/> methods are attributed with the <see cref="InvokeAttribute"/>,
+		///     then the servant will ensure that methods are invoked with the specified synchronization.
+		/// </remarks>
+		/// <remarks>
+		///     A servant can be created independent from any proxy and the order in which both are created is unimportant, for as
+		///     long as no interface methods / properties are invoked.
+		/// </remarks>
+		/// <remarks>
+		///     This method is thread-safe.
+		/// </remarks>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId"></param>
+		/// <param name="subject"></param>
+		/// <returns></returns>
+		IServant CreateServant<T>(ulong objectId, T subject) where T : class;
+
+		/// <summary>
+		///     Retrieves the subject that was previously registered at this end-point via <see cref="CreateServant{T}" />
+		///     (and has not yet been garbage collected).
+		/// </summary>
+		/// <remarks>
+		///     This method is thread-safe.
+		/// </remarks>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="objectId">The objectId that has been given to this endpoint when registering a servant for the subject</param>
+		/// <returns>The subject that was registered or null if the subject has been garbage collected already</returns>
+		T RetrieveSubject<T>(ulong objectId) where T : class;
+
+		/// <summary>
+		///     If a servant has already been registered (via <see cref="CreateServant{T}" /> or this method),
+		///     then it is returned. Otherwise a new servant will be registered.
+		/// </summary>
+		/// <remarks>
+		///     This method is thread-safe.
+		/// </remarks>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="subject"></param>
+		/// <returns></returns>
+		IServant GetExistingOrCreateNewServant<T>(T subject) where T : class;
+
+		#endregion
+
+		#region Proxy Creation
 
 		/// <summary>
 		///     Creates and registers an object that implements the given interface <typeparamref name="T" />.
@@ -206,39 +175,6 @@ namespace SharpRemote
 		T GetProxy<T>(ulong objectId) where T : class;
 
 		/// <summary>
-		///     Creates and registers a servant for the given subject <paramref name="subject" /> under the given
-		///     <paramref name="objectId" />,
-		///     giving another connected <see cref="IRemotingEndPoint" /> the ability to call the subject's methods via a proxy
-		///     (<see cref="CreateProxy{T}" />).
-		/// </summary>
-		/// <remarks>
-		///     A servant is responsible for invoking RPCs on the original subject whenever they are called through a proxy.
-		///     If the interfaces <typeparamref name="T"/> methods are attributed with the <see cref="InvokeAttribute"/>,
-		///     then the servant will ensure that methods are invoked with the specified synchronization.
-		/// </remarks>
-		/// <remarks>
-		///     A servant can be created independent from any proxy and the order in which both are created is unimportant, for as
-		///     long as no interface methods / properties are invoked.
-		/// </remarks>
-		/// <remarks>
-		///     This method is thread-safe.
-		/// </remarks>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="objectId"></param>
-		/// <param name="subject"></param>
-		/// <returns></returns>
-		IServant CreateServant<T>(ulong objectId, T subject) where T : class;
-
-		/// <summary>
-		///     Retrieves the subject that was previously registered at this end-point via <see cref="CreateServant{T}" />
-		///     (and has not yet been garbage collected).
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="objectId">The objectId that has been given to this endpoint when registering a servant for the subject</param>
-		/// <returns>The subject that was registered or null if the subject has been garbage collected already</returns>
-		T RetrieveSubject<T>(ulong objectId) where T : class;
-
-		/// <summary>
 		/// 
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
@@ -246,12 +182,6 @@ namespace SharpRemote
 		/// <returns></returns>
 		T GetExistingOrCreateNewProxy<T>(ulong objectId) where T : class;
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <typeparam name="T"></typeparam>
-		/// <param name="subject"></param>
-		/// <returns></returns>
-		IServant GetExistingOrCreateNewServant<T>(T subject) where T : class;
+		#endregion
 	};
 }

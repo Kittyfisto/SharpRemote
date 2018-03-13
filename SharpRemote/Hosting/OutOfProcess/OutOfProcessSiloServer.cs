@@ -272,9 +272,6 @@ namespace SharpRemote.Hosting
 		public ConnectionId CurrentConnectionId => _endPoint.CurrentConnectionId;
 
 		/// <inheritdoc />
-		public TimeSpan RoundtripTime => _endPoint.RoundtripTime;
-
-		/// <inheritdoc />
 		public EndPoint LocalEndPoint => _endPoint.LocalEndPoint;
 
 		/// <inheritdoc />

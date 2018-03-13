@@ -104,7 +104,13 @@
     <Compile Include="CodeGeneration\Serialization\Xml\XmlWriteValueMethodCompiler.cs" />
     <Compile Include="ConnectionDropReason.cs" />
     <Compile Include="EndPointStatistics.cs" />
+    <Compile Include="EndPoints\ProxyStorage.cs" />
+    <Compile Include="EndPoints\ServantStorage.cs" />
+    <Compile Include="EndPoints\Sockets\SocketServer.cs" />
     <Compile Include="Exceptions\RemoteEndpointAlreadyConnectedException.cs" />
+    <Compile Include="IRemotingBase.cs" />
+    <Compile Include="IRemotingServer.cs" />
+    <Compile Include="EndPoints\Sockets\ISocketServer.cs" />
     <Compile Include="StatisticsContainer.cs" />
     <Compile Include="HandshakeSyn.cs" />
     <Compile Include="CodeGeneration\CodeGenerator.cs" />

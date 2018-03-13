@@ -48,7 +48,7 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		/// Binds this endpoint to <see cref="IRemotingEndPoint.Name"/>.
+		///     Binds this endpoint to <see cref="IRemotingBase.Name" />.
 		/// </summary>
 		public void Bind()
 		{

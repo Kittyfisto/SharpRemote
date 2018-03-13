@@ -77,9 +77,8 @@ namespace SharpRemote
 			_reader = reader;
 			_waitHandle.Set();
 
-			Action<PendingMethodCall> fn = Interlocked.Exchange(ref _callback, null);
-			if (fn != null)
-				fn(this);
+			var fn = Interlocked.Exchange(ref _callback, value: null);
+			fn?.Invoke(this);
 		}
 
 		public void Reset(ulong servantId,

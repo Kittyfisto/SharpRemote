@@ -81,6 +81,8 @@
     <Compile Include="CodeGeneration\TypeResolverTest.cs" />
     <Compile Include="DefectAttribute.cs" />
     <Compile Include="EndPointStatisticsTest.cs" />
+    <Compile Include="EndPoints\ProxyStorageTest.cs" />
+    <Compile Include="EndPoints\ServantStorageTest.cs" />
     <Compile Include="Exceptions\AbstractExceptionTest.cs" />
     <Compile Include="Exceptions\AuthenticationExceptionTest.cs" />
     <Compile Include="Exceptions\AuthenticationRequiredExceptionTest.cs" />

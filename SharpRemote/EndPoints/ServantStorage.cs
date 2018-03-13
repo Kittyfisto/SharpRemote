@@ -104,10 +104,10 @@ namespace SharpRemote.EndPoints
 				IServant servant;
 				if (_servantsById.TryGetValue(objectId, out servant))
 				{
-					var target = servant.Subject as T;
+					var target = servant?.Subject as T;
 					if (target != null) return target;
 
-					interfaceType = servant.InterfaceType;
+					interfaceType = servant?.InterfaceType;
 				}
 			}
 

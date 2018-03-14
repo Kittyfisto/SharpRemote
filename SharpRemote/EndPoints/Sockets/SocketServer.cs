@@ -83,6 +83,7 @@ namespace SharpRemote
 				_isDisposed = true;
 			}
 
+			_serverSocket?.TryDispose();
 			_peerNameRegistration?.TryDispose();
 		}
 

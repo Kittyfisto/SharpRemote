@@ -21,7 +21,6 @@ namespace SharpRemote.Test.Remoting.Sockets
 		}
 
 		[Test]
-		[LocalTest("Won't run on AppVeyor - MT issue")]
 		public void TestConnectDisconnectOneClient()
 		{
 			using (var server = CreateServer())
@@ -33,8 +32,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 				client.Connect(serverEndPoint);
 				client.IsConnected.Should().BeTrue();
-				// TODO: This needs to be queried by eventual assertions as there's no guarantuee that Connect() blocks until that code has run!
-				server.Connections.Should().HaveCount(1, "because one connection should've been established");
+				server.Property(x => x.Connections).ShouldEventually().HaveCount(1, "because one connection should've been established");
 
 				client.Disconnect();
 				server.Property(x => x.Connections).ShouldEventually().BeEmpty("because the last connection was just disconnected");
@@ -42,7 +40,6 @@ namespace SharpRemote.Test.Remoting.Sockets
 		}
 
 		[Test]
-		[LocalTest("Won't run on AppVeyor - MT issue")]
 		public void TestConnectTwoClients()
 		{
 			using (var server = CreateServer())
@@ -61,13 +58,11 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 				client1.Connect(serverEndPoint);
 				client1.IsConnected.Should().BeTrue();
-				// TODO: This needs to be queried by eventual assertions as there's no guarantuee that Connect() blocks until that code has run!
-				server.Connections.Should().HaveCount(1, "because one connection should've been established");
+				server.Property(x => x.Connections).ShouldEventually().HaveCount(1, "because one connection should've been established");
 
 				client2.Connect(serverEndPoint);
 				client2.IsConnected.Should().BeTrue();
-				// TODO: This needs to be queried by eventual assertions as there's no guarantuee that Connect() blocks until that code has run!
-				server.Connections.Should().HaveCount(2, "because we've established a 2nd connection");
+				server.Property(x => x.Connections).ShouldEventually().HaveCount(2, "because we've established a 2nd connection");
 
 				client1.CreateProxy<IGetInt32Property>(42).Value.Should().Be(1337);
 				subject.Verify(x => x.Value, Times.Once);
@@ -77,7 +72,6 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 				client1.Disconnect();
 				client2.Disconnect();
-				// TODO: This needs to be queried by eventual assertions as there's no guarantuee that Connect() blocks until that code has run!
 				server.Property(x => x.Connections).ShouldEventually().BeEmpty("because we've closed both connections");
 			}
 		}

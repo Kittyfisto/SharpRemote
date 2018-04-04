@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Concurrent;
+using System.Net;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -40,6 +41,30 @@ namespace SharpRemote.Test.Remoting.Sockets
 		}
 
 		[Test]
+		public void TestEventsDuringConnectDisconnectOneClient()
+		{
+			using (var server = CreateServer())
+			using (var client = CreateClient())
+			{
+				server.Bind(IPAddress.Loopback);
+				var serverEndPoint = server.LocalEndPoint;
+				var connected = new ConcurrentBag<IRemotingEndPoint>();
+				server.OnClientConnected += ep => connected.Add(ep);
+				var disconnected = new ConcurrentBag<IRemotingEndPoint>();
+				server.OnClientDisconnected += ep => disconnected.Add(ep);
+
+				client.Connect(serverEndPoint);
+				client.IsConnected.Should().BeTrue();
+				connected.Property(x => x.Count).ShouldEventually().Be(1, "because the OnClientConnected event should've been fired exactly once");
+				disconnected.Should().BeEmpty("because the OnClientDisconnected event should not have been fired just yet");
+
+				client.Disconnect();
+				disconnected.Property(x => x.Count).ShouldEventually().Be(1, "because the OnClientDisconnected event should've been fired exactly once");
+				connected.Should().HaveCount(1, "because the OnClientConnected event should not have been fired again");
+			}
+		}
+
+		[Test]
 		public void TestConnectTwoClients()
 		{
 			using (var server = CreateServer())
@@ -73,6 +98,29 @@ namespace SharpRemote.Test.Remoting.Sockets
 				client1.Disconnect();
 				client2.Disconnect();
 				server.Property(x => x.Connections).ShouldEventually().BeEmpty("because we've closed both connections");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that all active connections are dropped when the server is disposed of")]
+		public void TestDisposeWhileConnected()
+		{
+			using (var client1 = CreateClient())
+			using (var client2 = CreateClient())
+			{
+				using (var server = CreateServer())
+				{
+					server.Bind(IPAddress.Loopback);
+
+					client1.Connect(server.LocalEndPoint);
+					client2.Connect(server.LocalEndPoint);
+
+					client1.IsConnected.Should().BeTrue();
+					client2.IsConnected.Should().BeTrue();
+				}
+
+				client1.Property(x => x.IsConnected).ShouldEventually().BeFalse("because the connection should've been dropped");
+				client2.Property(x => x.IsConnected).ShouldEventually().BeFalse("because the connection should've been dropped");
 			}
 		}
 

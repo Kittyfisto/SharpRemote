@@ -81,10 +81,29 @@ namespace SharpRemote
 			lock (_syncRoot)
 			{
 				_isDisposed = true;
+
+				// We copy the collection because it is modified during
+				// Disconnect().
+				foreach (var endPoint in _connectedEndPoints.ToList())
+				{
+					TryDisconnectEndPoint(endPoint);
+				}
 			}
 
 			_serverSocket?.TryDispose();
 			_peerNameRegistration?.TryDispose();
+		}
+
+		private static void TryDisconnectEndPoint(ISocketEndPoint endPoint)
+		{
+			try
+			{
+				endPoint.Disconnect();
+			}
+			catch (Exception e)
+			{
+				Log.ErrorFormat("Caught exception while trying to disconnect endpoint: {0}", e);
+			}
 		}
 
 		/// <inheritdoc />
@@ -372,7 +391,7 @@ namespace SharpRemote
 			}
 
 			// This should never be called from within a lock!
-			EmitOnClientConnected(endPoint);
+			EmitOnClientDisconnected(endPoint);
 		}
 
 		private void EmitOnClientConnected(IRemotingEndPoint endPoint)

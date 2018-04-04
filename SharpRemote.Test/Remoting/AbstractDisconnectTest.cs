@@ -132,7 +132,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
-		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
+		[Description("Verifies that once a socket is disconnected, all pending and future method calls are canceled")]
 		public void TestDisconnect5()
 		{
 			const int numTasks = 64;
@@ -189,7 +189,7 @@ namespace SharpRemote.Test.Remoting
 
 		[Test]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
-		[Description("Verifies that once a socket is disconnected, all pending and future method calls are cancelled")]
+		[Description("Verifies that once a socket is disconnected, all pending and future method calls are canceled")]
 		public void TestDisconnect6()
 		{
 			const int numTasks = 64;

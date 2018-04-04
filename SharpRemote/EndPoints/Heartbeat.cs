@@ -90,11 +90,9 @@ namespace SharpRemote
 					handler();
 					_isDebuggerAttached = true;
 				}
-				catch (NotConnectedException)
+				catch (RemoteProcedureCallCanceledException e)
 				{
-				}
-				catch (ConnectionLostException)
-				{
+					Log.DebugFormat("Caught exception: {0}", e);
 				}
 			}
 		}
@@ -109,11 +107,9 @@ namespace SharpRemote
 					handler();
 					_isDebuggerAttached = false;
 				}
-				catch (NotConnectedException)
+				catch (RemoteProcedureCallCanceledException e)
 				{
-				}
-				catch (ConnectionLostException)
-				{
+					Log.DebugFormat("Caught exception: {0}", e);
 				}
 			}
 		}

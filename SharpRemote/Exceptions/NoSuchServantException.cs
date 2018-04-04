@@ -1,10 +1,5 @@
 ﻿using System;
-
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 using System.Runtime.Serialization;
-#endif
-#endif
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -23,8 +18,6 @@ namespace SharpRemote
 		/// </summary>
 		public readonly ulong ObjectId;
 
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		///     Deserialization ctor.
 		/// </summary>
@@ -43,8 +36,6 @@ namespace SharpRemote
 
 			info.AddValue("ObjectId", ObjectId);
 		}
-#endif
-#endif
 
 		/// <summary>
 		///     Initializes a new instance of this exception with the given object id.

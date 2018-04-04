@@ -156,12 +156,7 @@ namespace SharpRemote
 
 				return true;
 			}
-			catch (NotConnectedException e)
-			{
-				Log.DebugFormat("{0}: Caught exception while measuring latency: {1}", _endPointName, e);
-				return false;
-			}
-			catch (ConnectionLostException e)
+			catch (RemoteProcedureCallCanceledException e)
 			{
 				Log.DebugFormat("{0}: Caught exception while measuring latency: {1}", _endPointName, e);
 				return false;

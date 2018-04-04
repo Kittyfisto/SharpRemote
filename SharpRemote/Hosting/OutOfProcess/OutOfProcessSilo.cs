@@ -348,7 +348,7 @@ namespace SharpRemote.Hosting
 		///     which the method could possibly be executed
 		///     - <see cref="NotConnectedException" />: At the time of calling the proxy's method, no connection to a remote end
 		///     point was available
-		///     - <see cref="ConnectionLostException" />: The method call was cancelled because the connection between proxy and
+		///     - <see cref="ConnectionLostException" />: The method call was canceled because the connection between proxy and
 		///     servant was interrupted / lost / disconnected
 		///     - <see cref="UnserializableException" />: The remote method was executed, threw an exception, but the exception
 		///     could not be serialized

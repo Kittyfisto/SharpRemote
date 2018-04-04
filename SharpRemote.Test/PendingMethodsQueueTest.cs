@@ -110,7 +110,7 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
-		[Description("Verifies that after all pending calls have been cancelled, the queue is empty AND stays empty")]
+		[Description("Verifies that after all pending calls have been canceled, the queue is empty AND stays empty")]
 		public void TestCancelPendingCalls()
 		{
 			const int capacity = 2;

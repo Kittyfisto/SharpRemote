@@ -13,8 +13,6 @@ namespace SharpRemote
 	public class GrainIdRangeExhaustedException
 		: SharpRemoteException
 	{
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		///     Deserialization ctor.
 		/// </summary>
@@ -24,8 +22,6 @@ namespace SharpRemote
 			: base(info, context)
 		{
 		}
-#endif
-#endif
 
 		/// <summary>
 		///     Initializes a new instance of this exception.

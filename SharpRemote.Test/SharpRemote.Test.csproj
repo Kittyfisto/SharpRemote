@@ -91,6 +91,7 @@
     <Compile Include="Exceptions\NoSuchIPEndPointExceptionTest.cs" />
     <Compile Include="Exceptions\NoSuchServantExceptionTest.cs" />
     <Compile Include="Exceptions\NotConnectedExceptionTest.cs" />
+    <Compile Include="Exceptions\RemoteProcedureCallCanceledExceptionTest.cs" />
     <Compile Include="Exceptions\SerializationExceptionTest.cs" />
     <Compile Include="Exceptions\SharpRemoteExceptionTest.cs" />
     <Compile Include="Exceptions\TypeMismatchExceptionTest.cs" />

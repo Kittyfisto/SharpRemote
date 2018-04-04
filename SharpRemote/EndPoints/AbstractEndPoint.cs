@@ -18,8 +18,6 @@ namespace SharpRemote
 
 		#region Static Methods
 
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		/// Writes the given exception using the given writer.
 		/// </summary>
@@ -59,8 +57,6 @@ namespace SharpRemote
 			// TODO: Catch both exceptions and throw an appropriate replacement informing the user of this problem
 			return e;
 		}
-#endif
-#endif
 
 		#endregion
 	}

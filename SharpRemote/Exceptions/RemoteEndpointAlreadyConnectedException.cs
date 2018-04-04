@@ -22,8 +22,6 @@ namespace SharpRemote
 		{
 		}
 
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		///     Deserialization ctor.
 		/// </summary>
@@ -34,8 +32,6 @@ namespace SharpRemote
 		{
 			BlockingEndPoint = info.GetValue("BlockingEndPoint", typeof(EndPoint)) as EndPoint;
 		}
-#endif
-#endif
 
 		/// <summary>
 		///     Initializes a new instance with the given message and inner exception that is the cause

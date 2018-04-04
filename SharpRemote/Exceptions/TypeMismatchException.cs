@@ -14,8 +14,6 @@ namespace SharpRemote
 	public class TypeMismatchException
 		: SharpRemoteException
 	{
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		/// Deserialization ctor.
 		/// </summary>
@@ -24,8 +22,6 @@ namespace SharpRemote
 		public TypeMismatchException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
-#endif
-#endif
 
 		/// <summary>
 		/// Initializes a new instance of this exception with the given message and inner exception

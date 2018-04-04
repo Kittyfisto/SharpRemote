@@ -13,8 +13,6 @@ namespace SharpRemote
 	public sealed class NoSuchIPEndPointException
 		: NoSuchEndPointException
 	{
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		/// Deserialization ctor.
 		/// </summary>
@@ -41,8 +39,6 @@ namespace SharpRemote
 			info.AddValue("Port", EndPoint != null ? EndPoint.Port : int.MaxValue);
 			info.AddValue("EndPointName", EndPointName);
 		}
-#endif
-#endif
 
 		/// <summary>
 		/// Initializes an instance of this exception with the given ipendpoint and inner exception

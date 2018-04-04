@@ -12,8 +12,6 @@ namespace SharpRemote
 	internal sealed class NoSuchNamedPipeEndPointException
 		: SharpRemoteException
 	{
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		/// Deserialization ctor.
 		/// </summary>
@@ -37,8 +35,6 @@ namespace SharpRemote
 			info.AddValue("Type", EndPoint != null ? (byte) EndPoint.Type : (byte)NamedPipeEndPoint.PipeType.None);
 			info.AddValue("EndPointName", EndPointName);
 		}
-#endif
-#endif
 
 		/// <summary>
 		/// Initializes an instance of this exception with the given named pipe endpoint and inner exception

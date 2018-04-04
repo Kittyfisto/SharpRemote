@@ -12,8 +12,6 @@ namespace SharpRemote
 	public class AuthenticationException
 		: SharpRemoteException
 	{
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		/// Deserialization ctor.
 		/// </summary>
@@ -22,8 +20,6 @@ namespace SharpRemote
 		public AuthenticationException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{}
-#endif
-#endif
 
 		/// <summary>
 		/// Initializes a new instance of this exception.

@@ -1,12 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 using SharpRemote.Tasks;
-#endif
-#endif
 
 namespace SharpRemote
 {

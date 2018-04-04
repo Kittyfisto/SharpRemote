@@ -108,6 +108,7 @@
     <Compile Include="EndPoints\ServantStorage.cs" />
     <Compile Include="EndPoints\Sockets\SocketServer.cs" />
     <Compile Include="Exceptions\RemoteEndpointAlreadyConnectedException.cs" />
+    <Compile Include="Exceptions\RemoteProcedureCallCanceledException.cs" />
     <Compile Include="IRemotingBase.cs" />
     <Compile Include="IRemotingServer.cs" />
     <Compile Include="EndPoints\Sockets\ISocketServer.cs" />

@@ -12,8 +12,6 @@ namespace SharpRemote
 	public sealed class NoSuchApplicationException
 		: ArgumentException
 	{
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		/// <summary>
 		/// Deserialization ctor.
 		/// </summary>
@@ -32,8 +30,7 @@ namespace SharpRemote
 
 			info.AddValue("ApplicationName", ApplicationName);
 		}
-#endif
-#endif
+
 		/// <summary>
 		/// Initializes a new instance of this exception.
 		/// </summary>

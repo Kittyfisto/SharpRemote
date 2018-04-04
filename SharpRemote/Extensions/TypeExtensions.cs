@@ -8,7 +8,6 @@ namespace SharpRemote
 {
 	internal static class TypeExtensions
 	{
-#if !WINDOWS_PHONE_APP
 		public static bool Is(this Type that, Type type)
 		{
 			if (that == null) throw new NullReferenceException();
@@ -54,6 +53,5 @@ namespace SharpRemote
 
 			return null;
 		}
-#endif
 	}
 }

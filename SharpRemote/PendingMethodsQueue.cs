@@ -149,7 +149,7 @@ namespace SharpRemote
 					using (var stream = new MemoryStream())
 					using (var writer = new BinaryWriter(stream, Encoding.UTF8))
 					{
-						AbstractEndPoint.WriteException(writer, new ConnectionLostException());
+						AbstractEndPoint.WriteException(writer, new ConnectionLostException(_endPointName));
 						exceptionMessage = stream.GetBuffer();
 						exceptionLength = (int) stream.Length;
 					}

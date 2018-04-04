@@ -19,15 +19,9 @@ namespace SharpRemote
 		private readonly string _originalMessage;
 		private readonly string _originalSource;
 		private readonly string _originalStacktrace;
-
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 		private readonly string _originalTargetSite;
-#endif
-#endif
-
 		private readonly string _originalTypename;
-		
+
 		/// <summary>
 		/// Creates a new UnserializableException.
 		/// </summary>
@@ -60,18 +54,10 @@ namespace SharpRemote
 			_originalStacktrace = originalException.StackTrace;
 			_originalTypename = originalException.GetType().AssemblyQualifiedName;
 			_originalSource = originalException.Source;
-
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 			_originalTargetSite = originalException.TargetSite.Name;
-#endif
-#endif
 
 			HResult = originalException.HResult;
 		}
-
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
 
 		/// <summary>
 		/// Restores an UnserializableException from the given stream.
@@ -99,8 +85,6 @@ namespace SharpRemote
 			info.AddValue("OriginalSource", _originalSource);
 			info.AddValue("OriginalTargetSite", _originalTargetSite);
 		}
-#endif
-#endif
 
 		/// <summary>
 		/// Initializes a new instance of this exception.
@@ -132,15 +116,10 @@ namespace SharpRemote
 		/// </summary>
 		public string OriginalTypename => _originalTypename;
 
-#if !WINDOWS_PHONE_APP
-#if !SILVERLIGHT
-
 		/// <summary>
 		/// The name of the <see cref="Exception.TargetSite"/> of the
 		/// original exception that could not be serialized.
 		/// </summary>
 		public string OriginalTargetSite => _originalTargetSite;
-#endif
-#endif
 	}
 }

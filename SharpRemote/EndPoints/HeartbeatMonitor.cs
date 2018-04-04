@@ -336,12 +336,9 @@ namespace SharpRemote
 				task = _heartbeat.Beat();
 				task.ContinueWith(ObserverException, TaskContinuationOptions.OnlyOnFaulted);
 			}
-			catch (NotConnectedException)
+			catch (RemoteProcedureCallCanceledException e)
 			{
-				return false;
-			}
-			catch (ConnectionLostException)
-			{
+				Log.DebugFormat("Heartbeat failed: {0}", e);
 				return false;
 			}
 

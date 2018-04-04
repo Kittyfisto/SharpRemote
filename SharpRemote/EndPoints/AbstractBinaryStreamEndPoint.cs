@@ -1283,7 +1283,7 @@ namespace SharpRemote
 			// When we couldn't find server nor proxy under the given id, then the user
 			// supplied us with a wrong id, already unregistered the servant (or let it be collected
 			// by the GC) OR there's a bug somewhere in this project ;)
-			// Anyways, we simply serialize the exception so the method call is cancelled on the
+			// Anyways, we simply serialize the exception so the method call is canceled on the
 			// other end and then go on.
 			//
 
@@ -1838,7 +1838,7 @@ namespace SharpRemote
 
 		/// <summary>
 		///     This method blocks and writes to the given <see cref="ThreadArgs.Socket" /> until
-		///     the socket has been disposed of or the <see cref="ThreadArgs.Token" /> has been cancelled.
+		///     the socket has been disposed of or the <see cref="ThreadArgs.Token" /> has been canceled.
 		/// </summary>
 		/// <param name="sock"></param>
 		protected void WriteLoop(object sock)
@@ -1901,7 +1901,7 @@ namespace SharpRemote
 
 		/// <summary>
 		///     This method blocks and reads from the given <see cref="ThreadArgs.Socket" /> until
-		///     the socket has been disposed of or the <see cref="ThreadArgs.Token" /> has been cancelled.
+		///     the socket has been disposed of or the <see cref="ThreadArgs.Token" /> has been canceled.
 		/// </summary>
 		/// <param name="sock"></param>
 		protected void ReadLoop(object sock)

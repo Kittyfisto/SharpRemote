@@ -65,6 +65,7 @@
     <Compile Include="AssemblySetup.cs" />
     <Compile Include="EndPoints\ProxyStorageTest.cs" />
     <Compile Include="EndPoints\ServantStorageTest.cs" />
+    <Compile Include="EndPoints\SocketServerSystemTest.cs" />
     <Compile Include="Hosting\HeartbeatMonitorTest.cs" />
     <Compile Include="OutOfProcessSilo\FailureDetectionTest.cs" />
     <Compile Include="OutOfProcessSilo\FailureRecoveryTest.cs" />

@@ -6,7 +6,8 @@ SharpRemote is a free and active open-source project aimed at developing distrib
 
 SharpRemote is supported on Windows 7, 8 and 10 and requires .NET 4.5 or higher.
 
-Instead of requring remote-able interface definitions to be written in an [IDL](https://en.wikipedia.org/wiki/Interface_description_language), SharpRemote works directly with any .NET inferface definition and generates proxy / servant implementations at runtime on-demand.
+Contrary to other solutions, this project does NOT require an [IDL](https://en.wikipedia.org/wiki/Interface_description_language). Instead,
+all remoting behaviour is defined directly via .NET types and attributes where needed.
 
 ** This library is not intended for production code yet **
 
@@ -14,6 +15,84 @@ Instead of requring remote-able interface definitions to be written in an [IDL](
 
 1. Install latest nuget package (https://www.nuget.org/packages/SharpRemote/)
 2. Done
+
+## Supported scenarios
+
+### Hosting (unreliable code) out of process
+
+As is often the case, an application must make use of third party code which exhibits unreliable behaviour. It may consume too many resources,
+cause access violations or even call exit() when it's inconvenient. SharpRemote makes it **incredibly** easy to host these portions outside
+your own process so that **most** failures become recoverable.
+
+The following examples causes a new process to be spawned. In this new process, a new object of type `SomeInterfaceImplementation` is created.
+The caller receives a so called proxy object which also implements `ISomeInterface`. Finally, Do() is invoked on the proxy which causes
+Do() to be invoked on the actual object of the remote process *synchronously*.
+
+**Example**:
+```
+public interace ISomeInterface
+{
+	void Do();
+}
+...
+var silo = new OutOfProcessSilo();
+silo.Start();
+var @interface = silo.CreateGrain<ISomeInterface>(typeof(SomeInterfaceImplementation));
+@interface.Do();
+```
+
+By default, `OutOfProcessSilo` will simply restart the remote process in case of failures (such as the process crashing / not responding anymore).
+However as usual, you can fine tune this behaviour via its configuration and `IFailureHandler` implementations.
+
+### Client-Server application over LAN/WAN
+
+SharpRemote allows you to develop a typical client/server application using only .NET. All communication between client and server is performed
+via SharpRemote: All you have to worry about is to define the interface over which the communication is performed:
+
+**Interface:**
+```
+[DataContract]
+public struct Document
+{
+	[DataMember]
+	public int Id{get;set;}
+
+	[DataMember]
+	public string Name{get;set;}
+
+	[DataMember]
+	public string Content{get;set;}
+}
+
+public interface IDocuments
+{
+	Task<Document[]> GetAllAsync();
+	Task<Document> GetDocumentByIdAsync(int id);
+	Task PutAsync(Document document);
+}
+...
+const int DocumentsIdentifier = 9001;
+```
+
+**Server:**
+```
+class Documents : IDocuments
+{
+...
+}
+var documents = new Documents();
+var endPoint = new SocketServer();
+endPoint.RegisterSubject<IDocuments>(DocumentsIdentifier, documents);
+endPoint.Bind(IPAddress.Any);
+```
+
+**Client:**
+```
+var endPoint = new SocketEndPoint(EndPointType.Client);
+var documents = endPoint.CreateProxy<IDocuments>(DocumentsIdentifier);
+...
+documents.PutAsync(new Document());
+```
 
 ## Usage
 

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("SharpRemote")]
-[assembly: AssemblyCopyright("Copyright © Simon Mießler 2017")]
+[assembly: AssemblyCopyright("Copyright © Simon Mießler 2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

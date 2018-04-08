@@ -11,7 +11,7 @@ namespace SharpRemote
 	/// </summary>
 	[Serializable]
 	public class NoSuchServantException
-		: SharpRemoteException
+		: RemoteProcedureCallCanceledException
 	{
 		/// <summary>
 		///     The <see cref="IGrain.ObjectId" /> that could not be found on the callee's side.

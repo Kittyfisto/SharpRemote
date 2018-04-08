@@ -16,9 +16,15 @@ all remoting behaviour is defined directly via .NET types and attributes where n
 1. Install latest nuget package (https://www.nuget.org/packages/SharpRemote/)
 2. Done
 
+## Soundbites
+
+- SharpRemote is a framework to enable you to build .NET applications spawning multiple processes, machines and networks
+- All communication happens via TCP/IP connections
+- Failure recovery
+
 ## Supported scenarios
 
-### Hosting (unreliable code) out of process
+### 1. Hosting (unreliable code) out of process
 
 As is often the case, an application must make use of third party code which exhibits unreliable behaviour. It may consume too many resources,
 cause access violations or even call exit() when it's inconvenient. SharpRemote makes it **incredibly** easy to host these portions outside
@@ -44,7 +50,7 @@ var @interface = silo.CreateGrain<ISomeInterface>(typeof(SomeInterfaceImplementa
 By default, `OutOfProcessSilo` will simply restart the remote process in case of failures (such as the process crashing / not responding anymore).
 However as usual, you can fine tune this behaviour via its configuration and `IFailureHandler` implementations.
 
-### Client-Server application over LAN/WAN
+### 2. Client-Server application over LAN/WAN
 
 SharpRemote allows you to develop a typical client/server application using only .NET. All communication between client and server is performed
 via SharpRemote: All you have to worry about is to define the interface over which the communication is performed:
@@ -93,13 +99,6 @@ var documents = endPoint.CreateProxy<IDocuments>(DocumentsIdentifier);
 ...
 documents.PutAsync(new Document());
 ```
-
-## Usage
-
-1. Define a c# interface that represents all possible communication between its user and implementation
-2. Create an ISilo implementation of your choice, that is responsible for hosting the object (for example ProcessSilo to host the object in a different process)
-3. Call ISilo.Create<T>(Type) in order to create an instance of 'Type', offering interface 'T' for communication
-4. Use the interface in order to interact with the newly created object
 
 ## Q&A
 
@@ -185,10 +184,6 @@ However if you pass an object which is not serializable, then an ArgumentExcepti
     foo.Process(Thread.CurrentThread);
 
 Please note that this behaviour is identical for both synchronous as well as asynchronous method calls.
-
-## Samples
-
-TODO
 
 ## Contributing
 

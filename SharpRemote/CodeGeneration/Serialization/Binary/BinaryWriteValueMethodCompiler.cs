@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
@@ -9,8 +11,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 	internal sealed class BinaryWriteValueMethodCompiler
 		: AbstractWriteValueMethodCompiler
 	{
-		public BinaryWriteValueMethodCompiler(CompilationContext context) : base(context)
+		private static readonly MethodInfo BinarySerializer2WriteByte;
+
+		static BinaryWriteValueMethodCompiler()
 		{
+			BinarySerializer2WriteByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(byte)});
+		}
+
+		public BinaryWriteValueMethodCompiler(CompilationContext context)
+			: base(context)
+		{
+			
 		}
 
 		protected override void EmitWriteHint(ILGenerator generator, ByReferenceHint hint)
@@ -42,7 +53,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitWriteByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteByte);
 		}
 
 		protected override void EmitWriteSByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)

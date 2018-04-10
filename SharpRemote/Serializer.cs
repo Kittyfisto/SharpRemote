@@ -18,13 +18,12 @@ namespace SharpRemote
 		/// <summary>
 		///     A binary serializer which produces small, but not human-readable output.
 		/// </summary>
-		[EnumMember] BinarySerializer = 0x0001
+		[EnumMember] BinarySerializer = 0x0001,
 
-		// <summary>
-		// NOT YET SUPPORTED.
-		// </summary>
-		//[EnumMember]
-		//XmlSerializer = 0x0002,
+		/// <summary>
+		/// NOT YET SUPPORTED.
+		/// </summary>
+		[EnumMember] XmlSerializer = 0x0002
 
 		// <summary>
 		// NOT YET SUPPORTED.

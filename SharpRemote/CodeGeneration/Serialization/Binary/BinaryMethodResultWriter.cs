@@ -33,62 +33,62 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public void WriteResult(sbyte value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(byte value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(ushort value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(short value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(uint value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(int value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(ulong value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(long value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(float value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(double value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(string value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteResult(byte[] value)
 		{
-			throw new NotImplementedException();
+			BinarySerializer2.WriteValue(_writer, value);
 		}
 
 		public void WriteException(Exception e)

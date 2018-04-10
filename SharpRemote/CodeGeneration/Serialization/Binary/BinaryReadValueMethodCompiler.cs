@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
@@ -6,9 +7,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 	internal sealed class BinaryReadValueMethodCompiler
 		: AbstractReadValueMethodCompiler
 	{
-		public BinaryReadValueMethodCompiler(CompilationContext context) : base(context)
+		private static readonly MethodInfo BinarySerializer2ReadByte;
+
+		static BinaryReadValueMethodCompiler()
 		{
+			BinarySerializer2ReadByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.ReadValueAsByte));
 		}
+
+		public BinaryReadValueMethodCompiler(CompilationContext context)
+			: base(context)
+		{}
 
 		protected override void EmitEndReadProperty(ILGenerator gen, PropertyDescription property)
 		{
@@ -25,7 +33,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitReadByte(ILGenerator gen)
 		{
-			throw new System.NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, BinarySerializer2ReadByte);
 		}
 
 		protected override void EmitReadSByte(ILGenerator gen)

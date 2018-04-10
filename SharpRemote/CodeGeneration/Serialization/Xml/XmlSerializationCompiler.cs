@@ -19,9 +19,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			return XmlMethodsCompiler.Create(typeBuilder, typeDescription);
 		}
 
-		public void Compile(XmlMethodsCompiler methodses, ISerializationMethodStorage<XmlMethodsCompiler> storage)
+		public void Compile(XmlMethodsCompiler methods, ISerializationMethodStorage<XmlMethodsCompiler> storage)
 		{
-			methodses.Compile(storage);
+			methods.Compile(storage);
 		}
 	}
 }

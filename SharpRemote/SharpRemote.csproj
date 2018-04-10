@@ -63,9 +63,12 @@
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodCallWriter.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodResultReader.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodResultWriter.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinaryMethodsCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinaryReadObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryReadValueMethodCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializationCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializer2.cs" />
-    <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriterObjectMethodCompiler.cs" />
+    <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriteObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinaryWriteValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\Serializers\LevelSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\MessageType2.cs" />

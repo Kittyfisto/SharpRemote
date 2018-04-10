@@ -2,10 +2,10 @@
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
-	internal sealed class BinaryWriterObjectMethodCompiler
+	internal sealed class BinaryWriteObjectMethodCompiler
 		: AbstractWriteObjectMethodCompiler
 	{
-		public BinaryWriterObjectMethodCompiler(CompilationContext context) : base(context)
+		public BinaryWriteObjectMethodCompiler(CompilationContext context) : base(context)
 		{
 		}
 

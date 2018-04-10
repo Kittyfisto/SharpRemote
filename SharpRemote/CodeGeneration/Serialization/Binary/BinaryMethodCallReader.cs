@@ -187,7 +187,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public bool ReadNextArgumentAsDateTime(out DateTime value)
 		{
-			throw new NotImplementedException();
+			if (EndOfStream)
+			{
+				value = DateTime.MinValue;
+				return false;
+			}
+
+			value = DateTime.FromBinary(_reader.ReadInt64());
+			return true;
 		}
 
 		public bool ReadNextArgumentAsString(out string value)
@@ -210,8 +217,16 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			int length = _reader.ReadInt32();
-			value = _reader.ReadBytes(length);
+			if (_reader.ReadBoolean())
+			{
+				int length = _reader.ReadInt32();
+				value = _reader.ReadBytes(length);
+			}
+			else
+			{
+				value = null;
+			}
+
 			return true;
 		}
 	}

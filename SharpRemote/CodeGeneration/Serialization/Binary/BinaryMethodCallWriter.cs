@@ -7,10 +7,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 	internal sealed class BinaryMethodCallWriter
 		: IMethodCallWriter
 	{
+		private readonly BinarySerializer2 _serializer;
+		private readonly IRemotingEndPoint _endPoint;
 		private readonly BinaryWriter _writer;
 
-		public BinaryMethodCallWriter(Stream stream, ulong grainId, string methodName, ulong rpcId)
+		public BinaryMethodCallWriter(BinarySerializer2 serializer, Stream stream, ulong grainId, string methodName, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
+			_serializer = serializer;
+			_endPoint = endPoint;
 			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
 			_writer.Write((byte)MessageType2.Call);
 			_writer.Write(grainId);
@@ -25,7 +29,15 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public void WriteArgument(object value)
 		{
-			throw new NotImplementedException();
+			if (value != null)
+			{
+				BinarySerializer2.WriteValue(_writer, true);
+				_serializer.WriteObject(_writer, value, _endPoint);
+			}
+			else
+			{
+				BinarySerializer2.WriteValue(_writer, false);
+			}
 		}
 
 		public void WriteArgument(sbyte value)

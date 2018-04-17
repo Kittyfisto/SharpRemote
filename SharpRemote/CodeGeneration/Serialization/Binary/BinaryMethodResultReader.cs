@@ -6,15 +6,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 	internal sealed class BinaryMethodResultReader
 		: IMethodResultReader
 	{
+		private readonly BinarySerializer2 _serializer;
 		private readonly BinaryReader _reader;
 		private readonly ulong _rpcId;
 		private readonly Stream _stream;
 
-		public BinaryMethodResultReader(BinaryReader reader)
+		public BinaryMethodResultReader(BinarySerializer2 serializer, BinaryReader reader)
 		{
 			if (reader == null)
 				throw new ArgumentNullException(nameof(reader));
 
+			_serializer = serializer;
 			_reader = reader;
 			_stream = reader.BaseStream;
 			_rpcId = _reader.ReadUInt64();
@@ -31,13 +33,26 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public bool ReadException(out Exception exception)
 		{
-			exception = null;
+			if (EndOfStream)
+			{
+				exception = null;
+				return false;
+			}
+
+			exception = BinarySerializer2.ReadValueAsException(_reader);
 			return false;
 		}
 
 		public bool ReadResult(out object value)
 		{
-			throw new NotImplementedException();
+			if (EndOfStream)
+			{
+				value = null;
+				return false;
+			}
+
+			value = _serializer.ReadObject(_reader);
+			return true;
 		}
 
 		public bool ReadResultSByte(out sbyte value)
@@ -48,7 +63,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadSByte();
+			value = BinarySerializer2.ReadValueAsSByte(_reader);
 			return true;
 		}
 
@@ -60,7 +75,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadByte();
+			value = BinarySerializer2.ReadValueAsByte(_reader);
 			return true;
 		}
 
@@ -72,7 +87,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadUInt16();
+			value = BinarySerializer2.ReadValueAsUInt16(_reader);
 			return true;
 		}
 
@@ -84,7 +99,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadInt16();
+			value = BinarySerializer2.ReadValueAsInt16(_reader);
 			return true;
 		}
 
@@ -96,7 +111,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadUInt32();
+			value = BinarySerializer2.ReadValueAsUInt32(_reader);
 			return true;
 		}
 
@@ -108,7 +123,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadInt32();
+			value = BinarySerializer2.ReadValueAsInt32(_reader);
 			return true;
 		}
 
@@ -120,7 +135,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadUInt64();
+			value = BinarySerializer2.ReadValueAsUInt64(_reader);
 			return true;
 		}
 
@@ -132,7 +147,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadInt64();
+			value = BinarySerializer2.ReadValueAsInt64(_reader);
 			return true;
 		}
 
@@ -144,7 +159,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadSingle();
+			value = BinarySerializer2.ReadValueAsSingle(_reader);
 			return true;
 		}
 
@@ -156,7 +171,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadDouble();
+			value = BinarySerializer2.ReadValueAsDouble(_reader);
 			return true;
 		}
 
@@ -168,7 +183,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			value = _reader.ReadString();
+			value = BinarySerializer2.ReadValueAsString(_reader);
 			return true;
 		}
 

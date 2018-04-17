@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using log4net;
 using SharpRemote.CodeGeneration.Serialization;
@@ -20,19 +21,21 @@ namespace SharpRemote
 
 		private readonly SerializationMethodStorage<BinaryMethodsCompiler> _methodStorage;
 		private readonly BinarySerializationCompiler _methodCompiler;
-		
+		private readonly ITypeResolver _typeResolver;
+
 		/// <summary>
 		/// </summary>
-		public BinarySerializer2()
-			: this(CreateModule())
+		public BinarySerializer2(ITypeResolver typeResolver = null)
+			: this(CreateModule(), typeResolver)
 		{
 		}
 
-		public BinarySerializer2(ModuleBuilder moduleBuilder)
+		public BinarySerializer2(ModuleBuilder moduleBuilder, ITypeResolver typeResolver = null)
 		{
 			_methodCompiler = new BinarySerializationCompiler(moduleBuilder);
 			_methodStorage = new SerializationMethodStorage<BinaryMethodsCompiler>("BinarySerializer",
 			                                                                       _methodCompiler);
+			_typeResolver = typeResolver;
 		}
 
 		/// <inheritdoc />
@@ -64,13 +67,13 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public IMethodCallWriter CreateMethodCallWriter(Stream stream, ulong rpcId, ulong grainId, string methodName, IRemotingEndPoint endPoint = null)
 		{
-			return new BinaryMethodCallWriter(stream, grainId, methodName, rpcId);
+			return new BinaryMethodCallWriter(this, stream, grainId, methodName, rpcId, endPoint);
 		}
 
 		/// <inheritdoc />
 		public IMethodResultWriter CreateMethodResultWriter(Stream stream, ulong rpcId, IRemotingEndPoint endPoint = null)
 		{
-			return new BinaryMethodResultWriter(stream, rpcId);
+			return new BinaryMethodResultWriter(this, stream, rpcId, endPoint);
 		}
 
 		/// <inheritdoc />
@@ -84,13 +87,13 @@ namespace SharpRemote
 			switch (type)
 			{
 				case MessageType2.Call:
-					callReader = new BinaryMethodCallReader(reader);
+					callReader = new BinaryMethodCallReader(this, reader);
 					resultReader = null;
 					break;
 
 				case MessageType2.Result:
 					callReader = null;
-					resultReader = new BinaryMethodResultReader(reader);
+					resultReader = new BinaryMethodResultReader(this, reader);
 					break;
 
 				default:
@@ -121,6 +124,19 @@ namespace SharpRemote
 		}
 
 		#region Write Methods
+
+		public void WriteObject(BinaryWriter writer, object value, IRemotingEndPoint endPoint)
+		{
+			var type = value.GetType();
+			WriteTypeInformation(writer, type);
+			var methods = _methodStorage.GetOrAdd(value.GetType());
+			methods.WriteDelegate(writer, value, this, endPoint);
+		}
+
+		public static void WriteValue(BinaryWriter writer, bool value)
+		{
+			writer.Write(value);
+		}
 
 		public static void WriteValue(BinaryWriter writer, sbyte value)
 		{
@@ -174,7 +190,15 @@ namespace SharpRemote
 
 		public static void WriteValue(BinaryWriter writer, string value)
 		{
-			writer.Write(value);
+			if (value != null)
+			{
+				writer.Write(true);
+				writer.Write(value);
+			}
+			else
+			{
+				writer.Write(false);
+			}
 		}
 
 		public static void WriteValue(BinaryWriter writer, decimal value)
@@ -201,6 +225,18 @@ namespace SharpRemote
 			writer.Write(value.ToBinary());
 		}
 
+		public static void WriteValue(BinaryWriter writer, Exception exception)
+		{
+			if (writer == null)
+				throw new ArgumentNullException(nameof(writer));
+			if (exception == null)
+				throw new ArgumentNullException(nameof(exception));
+
+			var formatter = new BinaryFormatter();
+			writer.Flush();
+			formatter.Serialize(writer.BaseStream, exception);
+		}
+
 		#endregion
 
 		#region Read Methods
@@ -208,6 +244,89 @@ namespace SharpRemote
 		public static byte ReadValueAsByte(BinaryReader reader)
 		{
 			return reader.ReadByte();
+		}
+
+		public static sbyte ReadValueAsSByte(BinaryReader reader)
+		{
+			return reader.ReadSByte();
+		}
+
+		public static bool ReadValueAsBoolean(BinaryReader reader)
+		{
+			return reader.ReadBoolean();
+		}
+
+		public static ushort ReadValueAsUInt16(BinaryReader reader)
+		{
+			return reader.ReadUInt16();
+		}
+
+		public static short ReadValueAsInt16(BinaryReader reader)
+		{
+			return reader.ReadInt16();
+		}
+
+		public static int ReadValueAsInt32(BinaryReader reader)
+		{
+			return reader.ReadInt32();
+		}
+
+		public static uint ReadValueAsUInt32(BinaryReader reader)
+		{
+			return reader.ReadUInt32();
+		}
+
+		public static long ReadValueAsInt64(BinaryReader reader)
+		{
+			return reader.ReadInt64();
+		}
+
+		public static ulong ReadValueAsUInt64(BinaryReader reader)
+		{
+			return reader.ReadUInt64();
+		}
+
+		public static float ReadValueAsSingle(BinaryReader reader)
+		{
+			return reader.ReadSingle();
+		}
+
+		public static double ReadValueAsDouble(BinaryReader reader)
+		{
+			return reader.ReadDouble();
+		}
+
+		public static decimal ReadValueAsDecimal(BinaryReader reader)
+		{
+			return reader.ReadDecimal();
+		}
+
+		public static DateTime ReadValueAsDateTime(BinaryReader reader)
+		{
+			var value = reader.ReadInt64();
+			return DateTime.FromBinary(value);
+		}
+
+		public static string ReadValueAsString(BinaryReader reader)
+		{
+			if (!reader.ReadBoolean())
+				return null;
+
+			return reader.ReadString();
+		}
+
+		public static Exception ReadValueAsException(BinaryReader reader)
+		{
+			var formatter = new BinaryFormatter();
+			var exception = formatter.Deserialize(reader.BaseStream);
+			return (Exception)exception;
+		}
+
+		public object ReadObject(BinaryReader reader)
+		{
+			var type = ReadTypeInformation(reader);
+			var methods = _methodStorage.GetOrAdd(type);
+			return methods.ReadObjectDelegate(reader, this, null);
 		}
 
 		#endregion
@@ -220,6 +339,18 @@ namespace SharpRemote
 			var moduleName = assemblyName.Name + ".dll";
 			var module = assembly.DefineDynamicModule(moduleName);
 			return module;
+		}
+
+		private static void WriteTypeInformation(BinaryWriter writer, Type type)
+		{
+			WriteValue(writer, type.AssemblyQualifiedName);
+		}
+
+		private Type ReadTypeInformation(BinaryReader reader)
+		{
+			var typeName = ReadValueAsString(reader);
+			var type = _typeResolver?.GetType(typeName) ?? Type.GetType(typeName);
+			return type;
 		}
 	}
 }

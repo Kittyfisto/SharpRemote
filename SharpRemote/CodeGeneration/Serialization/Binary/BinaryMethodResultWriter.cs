@@ -7,10 +7,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 	internal sealed class BinaryMethodResultWriter
 		: IMethodResultWriter
 	{
+		private readonly BinarySerializer2 _serializer;
+		private readonly IRemotingEndPoint _endPoint;
 		private readonly BinaryWriter _writer;
 
-		public BinaryMethodResultWriter(Stream stream, ulong rpcId)
+		public BinaryMethodResultWriter(BinarySerializer2 serializer,
+		                                Stream stream,
+		                                ulong rpcId,
+		                                IRemotingEndPoint endPoint = null)
 		{
+			_serializer = serializer;
+			_endPoint = endPoint;
 			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
 			_writer.Write((byte)MessageType2.Result);
 			_writer.Write(rpcId);
@@ -93,7 +100,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public void WriteException(Exception e)
 		{
-			throw new NotImplementedException();
+			_serializer.WriteObject(_writer, e, _endPoint);
 		}
 	}
 }

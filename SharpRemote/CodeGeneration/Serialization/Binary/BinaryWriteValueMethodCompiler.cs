@@ -2,6 +2,9 @@
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using SharpRemote.CodeGeneration.Serialization.Xml;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
@@ -12,10 +15,36 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		: AbstractWriteValueMethodCompiler
 	{
 		private static readonly MethodInfo BinarySerializer2WriteByte;
+		private static readonly MethodInfo BinarySerializer2WriteSByte;
+		private static readonly MethodInfo BinarySerializer2WriteDecimal;
+		private static readonly MethodInfo BinarySerializer2WriteInt16;
+		private static readonly MethodInfo BinarySerializer2WriteUInt16;
+		private static readonly MethodInfo BinarySerializer2WriteInt32;
+		private static readonly MethodInfo BinarySerializer2WriteUInt32;
+		private static readonly MethodInfo BinarySerializer2WriteInt64;
+		private static readonly MethodInfo BinarySerializer2WriteUInt64;
+		private static readonly MethodInfo BinarySerializer2WriteSingle;
+		private static readonly MethodInfo BinarySerializer2WriteDouble;
+		private static readonly MethodInfo BinarySerializer2WriteString;
+		private static readonly MethodInfo BinarySerializer2WriteDateTime;
+		private static readonly MethodInfo BinarySerializer2WriteException;
 
 		static BinaryWriteValueMethodCompiler()
 		{
 			BinarySerializer2WriteByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(byte)});
+			BinarySerializer2WriteSByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(sbyte)});
+			BinarySerializer2WriteDecimal = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(decimal)});
+			BinarySerializer2WriteInt16 = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(Int16)});
+			BinarySerializer2WriteUInt16 = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(UInt16)});
+			BinarySerializer2WriteInt32 = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(Int32)});
+			BinarySerializer2WriteUInt32 = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(UInt32)});
+			BinarySerializer2WriteInt64 = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(Int64)});
+			BinarySerializer2WriteUInt64 = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(UInt64)});
+			BinarySerializer2WriteSingle = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(Single)});
+			BinarySerializer2WriteDouble = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(Double)});
+			BinarySerializer2WriteString = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(string)});
+			BinarySerializer2WriteDateTime = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(DateTime)});
+			BinarySerializer2WriteException = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(Exception)});
 		}
 
 		public BinaryWriteValueMethodCompiler(CompilationContext context)
@@ -33,22 +62,22 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitBeginWriteField(ILGenerator gen, FieldDescription field)
 		{
-			throw new NotImplementedException();
+			
 		}
 
 		protected override void EmitEndWriteField(ILGenerator gen, FieldDescription field)
 		{
-			throw new NotImplementedException();
+			
 		}
 
 		protected override void EmitEndWriteProperty(ILGenerator gen, PropertyDescription property)
 		{
-			throw new NotImplementedException();
+			
 		}
 
 		protected override void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property)
 		{
-			throw new NotImplementedException();
+			
 		}
 
 		protected override void EmitWriteByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)
@@ -60,62 +89,86 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitWriteSByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteSByte);
 		}
 
 		protected override void EmitWriteUInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteUInt16);
 		}
 
 		protected override void EmitWriteInt16(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteInt16);
 		}
 
 		protected override void EmitWriteUInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteUInt32);
 		}
 
 		protected override void EmitWriteInt32(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteInt32);
 		}
 
 		protected override void EmitWriteUInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteUInt64);
 		}
 
 		protected override void EmitWriteInt64(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteInt64);
 		}
 
 		protected override void EmitWriteDecimal(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteDecimal);
 		}
 
 		protected override void EmitWriteSingle(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteSingle);
 		}
 
 		protected override void EmitWriteDouble(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteDouble);
 		}
 
 		protected override void EmitWriteString(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteString);
 		}
 
 		protected override void EmitWriteDateTime(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteDateTime);
 		}
 
 		protected override void EmitWriteLevel(ILGenerator gen, Action loadMember, Action loadMemberAddress)
@@ -125,7 +178,9 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitWriteException(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteException);
 		}
 
 		protected override void EmitWriteObjectId(ILGenerator generator, LocalBuilder proxy)

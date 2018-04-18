@@ -18,7 +18,7 @@ namespace SharpRemote
 	/// <summary>
 	///     A serializer implementation which writes and reads xml documents which carry method call invocations or results.
 	/// </summary>
-	internal sealed class XmlSerializer
+	public sealed class XmlSerializer
 		: ISerializer2
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);

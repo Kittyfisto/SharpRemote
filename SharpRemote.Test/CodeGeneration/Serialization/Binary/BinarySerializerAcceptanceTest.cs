@@ -9,7 +9,6 @@ using SharpRemote.Test.Types.Classes;
 namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 {
 	[TestFixture]
-	//[LocalTest("I don't want to figure out how to combine InternalsVisible+StrongNaming and DefineDynamicAssembly....")]
 	public sealed class BinarySerializerAcceptanceTest
 		: AbstractSerializerAcceptanceTest
 	{

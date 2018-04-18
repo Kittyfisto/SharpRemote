@@ -600,7 +600,7 @@ namespace SharpRemote.Test.Remoting
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
 			// fail sporadically.
-			GC.KeepAlive(subject);
+			GC.KeepAlive(subject.Object);
 		}
 
 		[Test]

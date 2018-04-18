@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.Serialization;
 using System.Xml;
 
 namespace SharpRemote.CodeGeneration.Serialization.Xml
@@ -26,7 +25,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlSerializerWriteSingle;
 		private static readonly MethodInfo XmlSerializerWriteDouble;
 		private static readonly MethodInfo XmlSerializerWriteDateTime;
-		private static readonly MethodInfo XmlWriteValueMethodCompilerWriteException;
+		private static readonly MethodInfo XmlSerializerWriteException;
 
 		static XmlWriteValueMethodCompiler()
 		{
@@ -47,8 +46,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlSerializerWriteSingle = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(float) });
 			XmlSerializerWriteDouble = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(double) });
 			XmlSerializerWriteDateTime = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new [] {typeof(XmlWriter), typeof(DateTime)});
-
-			XmlWriteValueMethodCompilerWriteException = typeof(XmlWriteValueMethodCompiler).GetMethod(nameof(WriteException), new [] {typeof(XmlWriter), typeof(XmlSerializer), typeof(Exception)});
+			XmlSerializerWriteException = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteException), new [] {typeof(XmlWriter), typeof(XmlSerializer), typeof(Exception)});
 		}
 
 		public XmlWriteValueMethodCompiler(CompilationContext context) : base(context)
@@ -227,54 +225,10 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Ldarg_2);
 			// push exception
 			loadMember();
-			gen.Emit(OpCodes.Call, XmlWriteValueMethodCompilerWriteException);
+			gen.Emit(OpCodes.Call, XmlSerializerWriteException);
 		}
 
 		protected override void EmitWriteObjectId(ILGenerator generator, LocalBuilder proxy)
 		{}
-
-		/// <summary>
-		///     Writes the given <paramref name="exception" /> to the given <paramref name="writer" />.
-		/// </summary>
-		/// <param name="writer"></param>
-		/// <param name="serializer"></param>
-		/// <param name="exception"></param>
-		public static void WriteException(XmlWriter writer, XmlSerializer serializer, Exception exception)
-		{
-			if (writer == null)
-				throw new ArgumentNullException(nameof(writer));
-			if (exception == null)
-				throw new ArgumentNullException(nameof(exception));
-
-			var type = exception.GetType();
-			var info = new SerializationInfo(type, new XmlFormatterConverter());
-			var context = new StreamingContext(StreamingContextStates.CrossMachine |
-			                                   StreamingContextStates.CrossProcess |
-			                                   StreamingContextStates.CrossAppDomain);
-			exception.GetObjectData(info, context);
-
-			writer.WriteStartElement(XmlSerializer.ValueName);
-
-			var it = info.GetEnumerator();
-			while (it.MoveNext())
-			{
-				var entry = it.Current;
-				var name = entry.Name;
-				var value = entry.Value;
-				WriteValue(writer, serializer, name, value);
-			}
-
-			writer.WriteEndElement();
-		}
-
-		private static void WriteValue(XmlWriter writer, XmlSerializer serializer, string name, object value)
-		{
-			writer.WriteStartElement(name);
-			if (value != null)
-			{
-				serializer.WriteObject(writer, value, null);
-			}
-			writer.WriteEndElement();
-		}
 	}
 }

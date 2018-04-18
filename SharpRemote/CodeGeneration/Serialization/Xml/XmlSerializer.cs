@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
@@ -405,6 +406,50 @@ namespace SharpRemote
 				writer.WriteAttributeString("Value", HexFromBytes(value));
 			}
 		}
+		
+		/// <summary>
+		///     Writes the given <paramref name="exception" /> to the given <paramref name="writer" />.
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="serializer"></param>
+		/// <param name="exception"></param>
+		public static void WriteException(XmlWriter writer, XmlSerializer serializer, Exception exception)
+		{
+			if (writer == null)
+				throw new ArgumentNullException(nameof(writer));
+			if (exception == null)
+				throw new ArgumentNullException(nameof(exception));
+
+			var type = exception.GetType();
+			var info = new SerializationInfo(type, new XmlFormatterConverter());
+			var context = new StreamingContext(StreamingContextStates.CrossMachine |
+			                                   StreamingContextStates.CrossProcess |
+			                                   StreamingContextStates.CrossAppDomain);
+			exception.GetObjectData(info, context);
+
+			writer.WriteStartElement(ValueName);
+
+			var it = info.GetEnumerator();
+			while (it.MoveNext())
+			{
+				var entry = it.Current;
+				var name = entry.Name;
+				var value = entry.Value;
+				WriteValue(writer, serializer, name, value);
+			}
+
+			writer.WriteEndElement();
+		}
+
+		private static void WriteValue(XmlWriter writer, XmlSerializer serializer, string name, object value)
+		{
+			writer.WriteStartElement(name);
+			if (value != null)
+			{
+				serializer.WriteObject(writer, value, null);
+			}
+			writer.WriteEndElement();
+		}
 
 		#endregion
 
@@ -690,6 +735,75 @@ namespace SharpRemote
 		{
 			var value = ReadValue(reader, allowNull: true);
 			return BytesFromHex(value);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <remarks>
+		/// TODO: Lookup exception in generated code only once, makes it easier!
+		/// </remarks>
+		/// <param name="exceptionType"></param>
+		/// <param name="reader"></param>
+		/// <param name="serializer"></param>
+		public static Exception ReadException(Type exceptionType, XmlReader reader, XmlSerializer serializer)
+		{
+			if (reader == null)
+				throw new ArgumentNullException(nameof(reader));
+
+			try
+			{
+				if (!typeof(Exception).IsAssignableFrom(exceptionType))
+					throw new UnserializableException(string.Format("Unable to find type '{0}'", exceptionType));
+
+				var info = new SerializationInfo(exceptionType, new XmlFormatterConverter());
+				int depth = reader.Depth;
+				while (reader.Read() && reader.Depth >= depth)
+				{
+					ReadValue(reader, serializer, info);
+				}
+
+				var context = new StreamingContext(StreamingContextStates.CrossMachine |
+				                                   StreamingContextStates.CrossProcess |
+				                                   StreamingContextStates.CrossAppDomain);
+				var tmp = GetConstructor(exceptionType);
+				if (tmp == null)
+					throw new UnserializableException(string.Format("The type '{0}' is missing a deserialization constructor", exceptionType));
+
+				var exception = tmp.Invoke(new object[] {info, context});
+				return (Exception) exception;
+			}
+			catch (UnserializableException)
+			{
+				throw;
+			}
+			catch (Exception e)
+			{
+				var message = string.Format("Caught unexpected exception while trying to deserialize an exception: {0}", e);
+				Log.ErrorFormat(message);
+				throw new UnserializableException(message, e);
+			}
+		}
+
+		private static ConstructorInfo GetConstructor(Type type)
+		{
+			var ctor = type.GetConstructor(new[]
+			{
+				typeof(SerializationInfo),
+				typeof(StreamingContext)
+			});
+			if (ctor != null)
+				return ctor;
+
+			ctor = type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Instance).FirstOrDefault();
+			return ctor;
+		}
+
+		private static void ReadValue(XmlReader reader, XmlSerializer serializer, SerializationInfo info)
+		{
+			var name = reader.Name;
+			var value = serializer.ReadObject(reader);
+			info.AddValue(name, value);
 		}
 
 		#endregion

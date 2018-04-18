@@ -9,7 +9,7 @@ using SharpRemote.Test.Types.Classes;
 namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 {
 	[TestFixture]
-	[Ignore("Not yet implemented")]
+	[LocalTest("I don't want to figure out how to combine InternalsVisible+StrongNaming and DefineDynamicAssembly....")]
 	public sealed class BinarySerializerAcceptanceTest
 		: AbstractSerializerAcceptanceTest
 	{
@@ -51,6 +51,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 		};
 
 		[Test]
+		[Ignore("Not implemented yet")]
 		public void TestSerializeHandshakeSync(
 			[ValueSource(nameof(SupportedVersions))] ProtocolVersion supportedVersions,
 			[ValueSource(nameof(SupportedSerializer))] Serializer supportedSerializers,

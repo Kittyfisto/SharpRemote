@@ -827,6 +827,32 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		}
 
 		[Test]
+		public void TestMethodResultNoException()
+		{
+			const int rpcId = 2141249882;
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteFinished();
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					Exception actualException;
+					const string reason = "because no exception was thrown";
+					reader.ReadException(out actualException).Should().BeFalse(reason);
+					actualException.Should().BeNull(reason);
+				}
+			}
+		}
+
+		[Test]
 		[Description("Verifies that a custom Exception can be roundtripped")]
 		public void TestRoundtripCustomException()
 		{
@@ -1109,6 +1135,14 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					actualValue.Should().Be(value);
 				}
 			}
+		}
+
+		[Test]
+		[Ignore("Not yet implemented")]
+		public void TestMethodResultObject([ValueSource(nameof(StringValues))] string value)
+		{
+			const int rpcId = 10;
+			MethodResultRoundtripObject(rpcId, value);
 		}
 
 		#endregion
@@ -1570,6 +1604,28 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			}
 		}
 
+		private void MethodResultRoundtripObject(ulong rpcId, object value)
+		{
+			var serializer = Create();
+			using (var stream = new MemoryStream())
+			{
+				using (var writer = serializer.CreateMethodResultWriter(stream, rpcId))
+				{
+					writer.WriteResult(value);
+				}
+
+				PrintAndRewind(stream);
+
+				using (var reader = CreateMethodResultReader(serializer, stream))
+				{
+					reader.RpcId.Should().Be(rpcId);
+
+					object actualValue;
+					reader.ReadResult(out actualValue);
+					actualValue.Should().Be(value);
+				}
+			}
+		}
 
 		private void TestFailRegister<T>(string reason)
 		{

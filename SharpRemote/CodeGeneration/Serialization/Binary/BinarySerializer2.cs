@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -84,20 +85,19 @@ namespace SharpRemote
 		{
 			var reader = new BinaryReader(stream, Encoding.UTF8, true);
 			var type = (MessageType2)reader.ReadByte();
-			switch (type)
+			if (type == MessageType2.Call)
 			{
-				case MessageType2.Call:
-					callReader = new BinaryMethodCallReader(this, reader);
-					resultReader = null;
-					break;
-
-				case MessageType2.Result:
-					callReader = null;
-					resultReader = new BinaryMethodResultReader(this, reader);
-					break;
-
-				default:
-					throw new NotImplementedException();
+				callReader = new BinaryMethodCallReader(this, reader);
+				resultReader = null;
+			}
+			else if ((type & MessageType2.Result) == MessageType2.Result)
+			{
+				callReader = null;
+				resultReader = new BinaryMethodResultReader(this, reader);
+			}
+			else
+			{
+				throw new InvalidEnumArgumentException("type", (int) type, typeof(MessageType2));
 			}
 		}
 

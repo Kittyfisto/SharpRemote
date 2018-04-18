@@ -7,9 +7,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 	internal sealed class BinaryMethodResultWriter
 		: IMethodResultWriter
 	{
+		private const int MessageTypePosition = 0;
+
 		private readonly BinarySerializer2 _serializer;
 		private readonly IRemotingEndPoint _endPoint;
 		private readonly BinaryWriter _writer;
+		private readonly Stream _stream;
 
 		public BinaryMethodResultWriter(BinarySerializer2 serializer,
 		                                Stream stream,
@@ -18,6 +21,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		{
 			_serializer = serializer;
 			_endPoint = endPoint;
+			_stream = stream;
 			_writer = new BinaryWriter(stream, Encoding.UTF8, true);
 			_writer.Write((byte)MessageType2.Result);
 			_writer.Write(rpcId);
@@ -30,7 +34,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public void WriteFinished()
 		{
-			throw new NotImplementedException();
+			
 		}
 
 		public void WriteResult(object value)
@@ -100,7 +104,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public void WriteException(Exception e)
 		{
-			_serializer.WriteObject(_writer, e, _endPoint);
+			_writer.Flush();
+			var previousPosition = _stream.Position;
+			_stream.Position = MessageTypePosition;
+			_writer.Write((byte)(MessageType2.Result | MessageType2.Exception));
+			_writer.Flush();
+			_stream.Position = previousPosition;
+			BinarySerializer2.WriteValue(_writer, e);
 		}
 	}
 }

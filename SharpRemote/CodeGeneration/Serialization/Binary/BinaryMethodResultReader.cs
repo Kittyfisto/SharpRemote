@@ -40,7 +40,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			}
 
 			exception = BinarySerializer2.ReadValueAsException(_reader);
-			return false;
+			return true;
 		}
 
 		public bool ReadResult(out object value)

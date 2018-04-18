@@ -148,7 +148,35 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitReadLevel(ILGenerator gen)
 		{
-			throw new System.NotImplementedException();
+			var noSpecialValue = gen.DefineLabel();
+			var defaultCase = gen.DefineLabel();
+			var end = gen.DefineLabel();
+
+			var value = gen.DeclareLocal(typeof(byte));
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, BinarySerializer2ReadByte);
+			gen.Emit(OpCodes.Stloc, value);
+
+			for (int i = 0; i < HardcodedLevels.Count; ++i)
+			{
+				var next = gen.DefineLabel();
+				
+				gen.Emit(OpCodes.Ldloc, value);
+				gen.Emit(OpCodes.Ldc_I4, i);
+				gen.Emit(OpCodes.Bne_Un, next);
+
+				gen.Emit(OpCodes.Ldsfld, HardcodedLevels[i].Field);
+				gen.Emit(OpCodes.Br, end);
+
+				gen.MarkLabel(next);
+			}
+
+			gen.MarkLabel(defaultCase);
+			gen.MarkLabel(noSpecialValue);
+			gen.Emit(OpCodes.Newobj, Methods.NotImplementedCtor);
+			gen.Emit(OpCodes.Throw);
+
+			gen.MarkLabel(end);
 		}
 
 		protected override void EmitReadException(ILGenerator gen, Type exceptionType)

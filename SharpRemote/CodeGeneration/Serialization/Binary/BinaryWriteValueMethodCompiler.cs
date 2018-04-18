@@ -2,9 +2,6 @@
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using SharpRemote.CodeGeneration.Serialization.Xml;
 
 namespace SharpRemote.CodeGeneration.Serialization.Binary
 {
@@ -173,7 +170,28 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitWriteLevel(ILGenerator gen, Action loadMember, Action loadMemberAddress)
 		{
-			throw new NotImplementedException();
+			var end = gen.DefineLabel();
+
+			for (int i = 0; i < HardcodedLevels.Count; ++i)
+			{
+				var next = gen.DefineLabel();
+
+				// if (ReferenceEquals(value, <fld>))
+				loadMember();
+				gen.Emit(OpCodes.Ldsfld, HardcodedLevels[i].Field);
+				gen.Emit(OpCodes.Call, Methods.ObjectReferenceEquals);
+				gen.Emit(OpCodes.Brfalse, next);
+
+			//	// writer.WriteByte(<constant>)
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldc_I4, i);
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteByte);
+				gen.Emit(OpCodes.Br, end);
+
+				gen.MarkLabel(next);
+			}
+
+			gen.MarkLabel(end);
 		}
 
 		protected override void EmitWriteException(ILGenerator gen, Action loadMember, Action loadMemberAddress)

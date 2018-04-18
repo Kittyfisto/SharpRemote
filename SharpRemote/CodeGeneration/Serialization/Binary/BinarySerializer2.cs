@@ -15,7 +15,11 @@ namespace SharpRemote
 	/// <summary>
 	///     Shall replace <see cref="BinarySerializer" />.
 	/// </summary>
-	internal sealed class BinarySerializer2
+	/// <remarks>
+	///     This class is meant to be internal, but I don't have a clue how to access
+	///     internal class from within generated code, so it's public for now...
+	/// </remarks>
+	public sealed class BinarySerializer2
 		: ISerializer2
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -31,6 +35,11 @@ namespace SharpRemote
 		{
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="moduleBuilder"></param>
+		/// <param name="typeResolver"></param>
 		public BinarySerializer2(ModuleBuilder moduleBuilder, ITypeResolver typeResolver = null)
 		{
 			_methodCompiler = new BinarySerializationCompiler(moduleBuilder);
@@ -125,6 +134,12 @@ namespace SharpRemote
 
 		#region Write Methods
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		/// <param name="endPoint"></param>
 		public void WriteObject(BinaryWriter writer, object value, IRemotingEndPoint endPoint)
 		{
 			var type = value.GetType();
@@ -132,62 +147,122 @@ namespace SharpRemote
 			var methods = _methodStorage.GetOrAdd(value.GetType());
 			methods.WriteDelegate(writer, value, this, endPoint);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, bool value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, sbyte value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, byte value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, ushort value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, uint value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, short value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, int value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, ulong value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, long value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, float value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, double value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, string value)
 		{
 			if (value != null)
@@ -200,12 +275,22 @@ namespace SharpRemote
 				writer.Write(false);
 			}
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, decimal value)
 		{
 			writer.Write(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, byte[] value)
 		{
 			if (value != null)
@@ -220,11 +305,22 @@ namespace SharpRemote
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
 		public static void WriteValue(BinaryWriter writer, DateTime value)
 		{
 			writer.Write(value.ToBinary());
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="exception"></param>
+		/// <exception cref="ArgumentNullException"></exception>
 		public static void WriteValue(BinaryWriter writer, Exception exception)
 		{
 			if (writer == null)
@@ -240,73 +336,143 @@ namespace SharpRemote
 		#endregion
 
 		#region Read Methods
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static byte ReadValueAsByte(BinaryReader reader)
 		{
 			return reader.ReadByte();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static sbyte ReadValueAsSByte(BinaryReader reader)
 		{
 			return reader.ReadSByte();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static bool ReadValueAsBoolean(BinaryReader reader)
 		{
 			return reader.ReadBoolean();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static ushort ReadValueAsUInt16(BinaryReader reader)
 		{
 			return reader.ReadUInt16();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static short ReadValueAsInt16(BinaryReader reader)
 		{
 			return reader.ReadInt16();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static int ReadValueAsInt32(BinaryReader reader)
 		{
 			return reader.ReadInt32();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static uint ReadValueAsUInt32(BinaryReader reader)
 		{
 			return reader.ReadUInt32();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static long ReadValueAsInt64(BinaryReader reader)
 		{
 			return reader.ReadInt64();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static ulong ReadValueAsUInt64(BinaryReader reader)
 		{
 			return reader.ReadUInt64();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static float ReadValueAsSingle(BinaryReader reader)
 		{
 			return reader.ReadSingle();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static double ReadValueAsDouble(BinaryReader reader)
 		{
 			return reader.ReadDouble();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static decimal ReadValueAsDecimal(BinaryReader reader)
 		{
 			return reader.ReadDecimal();
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static DateTime ReadValueAsDateTime(BinaryReader reader)
 		{
 			var value = reader.ReadInt64();
 			return DateTime.FromBinary(value);
 		}
-
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static string ReadValueAsString(BinaryReader reader)
 		{
 			if (!reader.ReadBoolean())
@@ -315,6 +481,11 @@ namespace SharpRemote
 			return reader.ReadString();
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public static Exception ReadValueAsException(BinaryReader reader)
 		{
 			var formatter = new BinaryFormatter();
@@ -322,6 +493,11 @@ namespace SharpRemote
 			return (Exception)exception;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="reader"></param>
+		/// <returns></returns>
 		public object ReadObject(BinaryReader reader)
 		{
 			var type = ReadTypeInformation(reader);

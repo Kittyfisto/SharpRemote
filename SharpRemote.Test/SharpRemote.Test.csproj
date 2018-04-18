@@ -176,6 +176,7 @@
     <Compile Include="Types\Classes\TooManyBeforeSerializeCallbacks.cs" />
     <Compile Include="Types\Classes\VoidMethodStringParameter.cs" />
     <Compile Include="Types\Classes\BlocksABit.cs" />
+    <Compile Include="Types\Enums\DataContractEnum.cs" />
     <Compile Include="Types\Exceptions\WellBehavedCustomException.cs" />
     <Compile Include="Types\Interfaces\IActionEventStringArray.cs" />
     <Compile Include="Types\Interfaces\IByReferenceReturnMethodInterface.cs" />
@@ -287,6 +288,7 @@
     <Compile Include="Types\Interfaces\Web\IGetStringList.cs" />
     <Compile Include="Types\Interfaces\Web\ITwoIdenticalRoutes.cs" />
     <Compile Include="Types\Structs\FieldDecimal.cs" />
+    <Compile Include="Types\Structs\FieldEnum.cs" />
     <Compile Include="Types\Structs\FieldInt32.cs" />
     <Compile Include="Types\Structs\FieldObjectStruct.cs" />
     <Compile Include="Types\Structs\FieldOptionalDecimal.cs" />

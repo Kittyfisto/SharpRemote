@@ -5,6 +5,7 @@ using NUnit.Framework;
 using SharpRemote.Test.Types.Structs;
 using System.Collections.Generic;
 using SharpRemote.Test.Types.Classes;
+using SharpRemote.Test.Types.Enums;
 using SharpRemote.Test.Types.Interfaces;
 
 namespace SharpRemote.Test.TypeModel
@@ -59,6 +60,27 @@ namespace SharpRemote.Test.TypeModel
 			description.IsEnum.Should().Be(type.IsEnum);
 			description.IsInterface.Should().Be(type.IsInterface);
 			description.IsValueType.Should().Be(type.IsValueType);
+		}
+
+		[Test]
+		public void TestFieldEnum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<FieldEnum>();
+			type.Properties.Should().BeEmpty("because the type doesn't have any properties");
+			type.Methods.Should().BeEmpty("because the methods of DataContract types are uninteresting");
+			type.IsClass.Should().BeFalse("because the type is a struct");
+			type.IsEnum.Should().BeFalse("because the type is a struct");
+			type.IsValueType.Should().BeTrue("because the type is a struct");
+			type.IsInterface.Should().BeFalse("because the type is a struct");
+			type.IsSealed.Should().BeTrue("because structs are always sealed");
+			type.Fields.Should().HaveCount(1);
+
+			var field1 = type.Fields[0];
+			field1.Name.Should().Be(nameof(FieldEnum.Value));
+			field1.FieldType.AssemblyQualifiedName.Should().Be(typeof(DataContractEnum).AssemblyQualifiedName);
+			field1.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
+			field1.FieldType.IsEnum.Should().BeTrue();
 		}
 
 		[Test]

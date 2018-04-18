@@ -302,6 +302,8 @@ namespace SharpRemote
 				return false;
 			if (baseType == typeof(ValueType))
 				return false;
+			if (baseType == typeof(Enum))
+				return false;
 			return true;
 		}
 
@@ -311,7 +313,7 @@ namespace SharpRemote
 		                                                      out MethodInfo singletonAccessor,
 		                                                      out Type byReferenceInterface)
 		{
-			if (type.IsPrimitive || BuiltInTypes.Contains(type) || IsException(type))
+			if (type.IsPrimitive || BuiltInTypes.Contains(type) || IsException(type) || type.IsEnum)
 			{
 				builtIn = true;
 				singletonAccessor = null;

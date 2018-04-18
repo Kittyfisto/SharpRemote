@@ -42,6 +42,11 @@ namespace SharpRemote
 		bool IsEnum { get; }
 
 		/// <summary>
+		///     True when this type implements <see cref="System.Collections.IEnumerable"/>.
+		/// </summary>
+		bool IsEnumerable { get; set; }
+
+		/// <summary>
 		///     Equivalent of <see cref="System.Type.IsInterface" />.
 		/// </summary>
 		bool IsInterface { get; }

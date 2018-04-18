@@ -118,7 +118,15 @@ namespace SharpRemote
 		/// <returns></returns>
 		public byte[] SerializeWithoutTypeInformation(object message)
 		{
-			throw new NotImplementedException();
+			var methods = _methodStorage.GetOrAdd(message.GetType());
+
+			using (var stream = new MemoryStream())
+			using (var writer = new BinaryWriter(stream))
+			{
+				methods.WriteDelegate(writer, message, this, null);
+				writer.Flush();
+				return stream.ToArray();
+			}
 		}
 
 		/// <summary>
@@ -129,7 +137,14 @@ namespace SharpRemote
 		/// <returns></returns>
 		public T Deserialize<T>(byte[] serializedMessage)
 		{
-			throw new NotImplementedException();
+			var methods = _methodStorage.GetOrAdd(typeof(T));
+
+			using (var stream = new MemoryStream(serializedMessage))
+			using (var reader = new BinaryReader(stream))
+			{
+				var value = methods.ReadObjectDelegate(reader, this, null);
+				return (T) value;
+			}
 		}
 
 		#region Write Methods

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -131,6 +132,10 @@ namespace SharpRemote
 
 		/// <inheritdoc />
 		[DataMember]
+		public bool IsEnumerable { get; set; }
+
+		/// <inheritdoc />
+		[DataMember]
 		public bool IsInterface { get; set; }
 
 		/// <inheritdoc />
@@ -192,10 +197,10 @@ namespace SharpRemote
 			if (assemblyQualifiedName == null)
 				throw new ArgumentException("Type.AssemblyQualifiedName should not be null");
 
-			bool builtIn;
+			bool builtIn, isEnumerable;
 			MethodInfo singletonAccessor;
 			Type byReferenceInterface;
-			var serializerType = GetSerializationType(type, out builtIn, out singletonAccessor, out byReferenceInterface);
+			var serializerType = GetSerializationType(type, out builtIn, out isEnumerable, out singletonAccessor, out byReferenceInterface);
 
 			var description = new TypeDescription(type, byReferenceInterface)
 			{
@@ -246,6 +251,12 @@ namespace SharpRemote
 					description.Methods = new[] {MethodDescription.Create(singletonAccessor, typesByAssemblyQualifiedName)};
 					break;
 
+				case SerializationType.Unknown:
+					description.Fields = new FieldDescription[0];
+					description.Properties = new PropertyDescription[0];
+					description.Methods = new MethodDescription[0];
+					break;
+
 				case SerializationType.NotSerializable:
 					// TODO: Throw proper exception with proper error message
 					throw new NotImplementedException();
@@ -261,6 +272,7 @@ namespace SharpRemote
 			description.IsClass = type.IsClass;
 			description.IsInterface = type.IsInterface;
 			description.IsEnum = type.IsEnum;
+			description.IsEnumerable = isEnumerable;
 			description.IsSealed = type.IsSealed;
 			description.IsGenericType = type.IsGenericType;
 
@@ -310,12 +322,17 @@ namespace SharpRemote
 		[Pure]
 		private static SerializationType GetSerializationType(Type type,
 		                                                      out bool builtIn,
+		                                                      out bool isEnumerable,
 		                                                      out MethodInfo singletonAccessor,
 		                                                      out Type byReferenceInterface)
 		{
-			if (type.IsPrimitive || BuiltInTypes.Contains(type) || IsException(type) || type.IsEnum)
+			if (type.IsPrimitive ||
+			    BuiltInTypes.Contains(type) ||
+			    IsException(type) ||
+			    type.IsEnum)
 			{
 				builtIn = true;
+				isEnumerable = false;
 				singletonAccessor = null;
 				byReferenceInterface = null;
 				return SerializationType.ByValue;
@@ -329,6 +346,7 @@ namespace SharpRemote
 
 			if (dataContract != null)
 			{
+				isEnumerable = false;
 				singletonAccessor = null;
 				byReferenceInterface = null;
 				return SerializationType.ByValue;
@@ -336,9 +354,37 @@ namespace SharpRemote
 
 			if (byReference != null)
 			{
+				isEnumerable = false;
 				singletonAccessor = null;
 				byReferenceInterface = type.GetInterfaces().FirstOrDefault(x => x.GetCustomAttribute<ByReferenceAttribute>() != null);
 				return SerializationType.ByReference;
+			}
+
+			// We test for implementations of IEnumerable *after*
+			// we've ruled out DataContract classes so we don't accidentally
+			// ignore [DataContract] on a type which happens to implement
+			// IEnumerable.
+			if (IsEnumeration(type))
+			{
+				builtIn = true;
+				isEnumerable = true;
+				singletonAccessor = null;
+				byReferenceInterface = null;
+				return SerializationType.ByValue;
+			}
+			isEnumerable = false;
+
+			if ((type.IsClass || type.IsInterface) &&
+			    !type.IsSealed)
+			{
+				// The type's serialization is not known and due to being non-sealed
+				// the concrete type (or any of it's base classes / interface) will determine
+				// the serialization.
+				builtIn = false;
+				isEnumerable = false;
+				singletonAccessor = null;
+				byReferenceInterface = null;
+				return SerializationType.Unknown;
 			}
 
 			var factories = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
@@ -387,6 +433,22 @@ namespace SharpRemote
 					return true;
 
 				type = type.BaseType;
+			}
+
+			return false;
+		}
+
+		[Pure]
+		private static bool IsEnumeration(Type type)
+		{
+			if (type == typeof(IEnumerable))
+				return true;
+
+			var interfaces = type.GetInterfaces();
+			foreach (var @interface in interfaces)
+			{
+				if (@interface == typeof(IEnumerable))
+					return true;
 			}
 
 			return false;

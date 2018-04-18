@@ -63,6 +63,50 @@ namespace SharpRemote.Test.TypeModel
 		}
 
 		[Test]
+		[Description("Verifies that the TypeModel can describe itself")]
+		public void TestTypeModel()
+		{
+			var model = new SharpRemote.TypeModel();
+			model.Add<SharpRemote.TypeModel>();
+		}
+
+		[Test]
+		public void TestFieldObjectStruct()
+		{
+			var model = new SharpRemote.TypeModel();
+			var description = model.Add<FieldObjectStruct>();
+
+			var field = description.Fields[0];
+			field.Name.Should().Be(nameof(FieldObjectStruct.Value));
+			field.FieldType.SerializationType.Should().Be(SerializationType.Unknown, "because the serialization is not known due to the field-type to be non-closed (i.e. System.Object)");
+			field.FieldType.IsEnum.Should().BeFalse();
+			field.FieldType.IsEnumerable.Should().BeFalse();
+			field.FieldType.IsSealed.Should().BeFalse();
+			field.FieldType.IsGenericType.Should().BeFalse();
+			field.FieldType.IsInterface.Should().BeFalse();
+			field.FieldType.IsClass.Should().BeTrue();
+			field.FieldType.IsBuiltIn.Should().BeFalse();
+			field.FieldType.Type.Should().Be<object>();
+			field.FieldType.AssemblyQualifiedName.Should().Be(typeof(object).AssemblyQualifiedName);
+			field.FieldType.Properties.Should().BeEmpty();
+			field.FieldType.Fields.Should().BeEmpty();
+			field.FieldType.Methods.Should().BeEmpty();
+		}
+
+		[Test]
+		public void TestFieldIEnumerable()
+		{
+			var model = new SharpRemote.TypeModel();
+			var description = model.Add<FieldIEnumerable>();
+
+			var field = description.Fields[0];
+			field.Name.Should().Be(nameof(FieldIEnumerable.Values));
+			field.FieldType.SerializationType.Should().Be(SerializationType.ByValue, "because all enumerations are serialized by value");
+			field.FieldType.IsEnum.Should().BeFalse();
+			field.FieldType.IsEnumerable.Should().BeTrue();
+		}
+
+		[Test]
 		public void TestFieldEnum()
 		{
 			var model = new SharpRemote.TypeModel();

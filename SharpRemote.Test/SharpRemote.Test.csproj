@@ -289,6 +289,7 @@
     <Compile Include="Types\Interfaces\Web\ITwoIdenticalRoutes.cs" />
     <Compile Include="Types\Structs\FieldDecimal.cs" />
     <Compile Include="Types\Structs\FieldEnum.cs" />
+    <Compile Include="Types\Structs\FieldIEnumerable.cs" />
     <Compile Include="Types\Structs\FieldInt32.cs" />
     <Compile Include="Types\Structs\FieldObjectStruct.cs" />
     <Compile Include="Types\Structs\FieldOptionalDecimal.cs" />

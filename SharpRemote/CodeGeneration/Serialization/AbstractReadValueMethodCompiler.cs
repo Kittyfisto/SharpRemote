@@ -189,10 +189,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitReadValue(ILGenerator gen, TypeDescription valueType, string name)
+		private void EmitReadValue(ILGenerator gen, ITypeDescription typeDescription, string name)
 		{
-			var type = valueType.Type;
-			if (type == typeof(byte))
+			var type = typeDescription.Type;
+			if (type.IsEnum)
+				EmitReadEnum(gen, typeDescription);
+			else if (type == typeof(byte))
 				EmitReadByte(gen);
 			else if (type == typeof(sbyte))
 				EmitReadSByte(gen);
@@ -265,6 +267,13 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		protected abstract void EmitEndRead(ILGenerator gen);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="typeDescription"></param>
+		protected abstract void EmitReadEnum(ILGenerator gen, ITypeDescription typeDescription);
 
 		/// <summary>
 		/// 

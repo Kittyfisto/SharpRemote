@@ -30,7 +30,18 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Xml
 		}
 
 		protected override void Save()
-		{}
+		{
+			var fname = "SharpRemote.GeneratedCode.Serializer.dll";
+			try
+			{
+				_assembly.Save(fname);
+				TestContext.Out.WriteLine("Assembly written to: {0}", Path.Combine(Directory.GetCurrentDirectory(), fname));
+			}
+			catch (Exception e)
+			{
+				TestContext.Out.WriteLine("Couldn't write assembly: {0}", e);
+			}
+		}
 
 		protected override string Format(MemoryStream stream)
 		{

@@ -151,6 +151,7 @@
     <Compile Include="Sockets\ISocket.cs" />
     <Compile Include="Sockets\Socket2.cs" />
     <Compile Include="TimespanStatisticsContainer.cs" />
+    <Compile Include="TypeModel\EnumValueDescription.cs" />
     <Compile Include="TypeModel\FieldDescription.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
     <Compile Include="EndPoints\HeartbeatSettings.cs" />
@@ -161,6 +162,7 @@
     <Compile Include="Hosting\OutOfProcess\FailureSettings.cs" />
     <Compile Include="Hosting\OutOfProcess\IFailureHandler.cs" />
     <Compile Include="Hosting\OutOfProcess\ZeroFailureToleranceStrategy.cs" />
+    <Compile Include="TypeModel\IEnumValueDescription.cs" />
     <Compile Include="TypeModel\IFieldDescription.cs" />
     <Compile Include="TypeModel\IMemberDescription.cs" />
     <Compile Include="TypeModel\IMethodDescription.cs" />

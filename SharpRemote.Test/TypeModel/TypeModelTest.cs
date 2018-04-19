@@ -107,10 +107,194 @@ namespace SharpRemote.Test.TypeModel
 		}
 
 		[Test]
+		public void TestSByteEnum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<SbyteEnum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<SByte>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(SbyteEnum.B);
+			type.EnumValues[0].Name.Should().Be("B");
+			type.EnumValues[0].NumericValue.Should().Be((long) SbyteEnum.B);
+
+			type.EnumValues[1].Value.Should().Be(SbyteEnum.C);
+			type.EnumValues[1].Name.Should().Be("C");
+			type.EnumValues[1].NumericValue.Should().Be((long) SbyteEnum.C);
+
+			type.EnumValues[2].Value.Should().Be(SbyteEnum.A);
+			type.EnumValues[2].Name.Should().Be("A");
+			type.EnumValues[2].NumericValue.Should().Be((long) SbyteEnum.A);
+		}
+
+		[Test]
+		public void TestByteEnum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<ByteEnum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<byte>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(ByteEnum.A);
+			type.EnumValues[0].Name.Should().Be("A");
+			type.EnumValues[0].NumericValue.Should().Be((long) ByteEnum.A);
+
+			type.EnumValues[1].Value.Should().Be(ByteEnum.B);
+			type.EnumValues[1].Name.Should().Be("B");
+			type.EnumValues[1].NumericValue.Should().Be((long) ByteEnum.B);
+
+			type.EnumValues[2].Value.Should().Be(ByteEnum.C);
+			type.EnumValues[2].Name.Should().Be("C");
+			type.EnumValues[2].NumericValue.Should().Be((long) ByteEnum.C);
+		}
+		
+		[Test]
+		public void TestInt16Enum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<Int16Enum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<Int16>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(Int16Enum.B);
+			type.EnumValues[0].Name.Should().Be("B");
+			type.EnumValues[0].NumericValue.Should().Be((long) Int16Enum.B);
+
+			type.EnumValues[1].Value.Should().Be(Int16Enum.C);
+			type.EnumValues[1].Name.Should().Be("C");
+			type.EnumValues[1].NumericValue.Should().Be((long) Int16Enum.C);
+
+			type.EnumValues[2].Value.Should().Be(Int16Enum.A);
+			type.EnumValues[2].Name.Should().Be("A");
+			type.EnumValues[2].NumericValue.Should().Be((long) Int16Enum.A);
+		}
+
+		[Test]
+		public void TestUInt16Enum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<UInt16Enum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<UInt16>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(UInt16Enum.A);
+			type.EnumValues[0].Name.Should().Be("A");
+			type.EnumValues[0].NumericValue.Should().Be((long) UInt16Enum.A);
+
+			type.EnumValues[1].Value.Should().Be(UInt16Enum.B);
+			type.EnumValues[1].Name.Should().Be("B");
+			type.EnumValues[1].NumericValue.Should().Be((long) UInt16Enum.B);
+
+			type.EnumValues[2].Value.Should().Be(UInt16Enum.C);
+			type.EnumValues[2].Name.Should().Be("C");
+			type.EnumValues[2].NumericValue.Should().Be((long) UInt16Enum.C);
+		}
+
+		[Test]
+		public void TestInt32Enum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<Int32Enum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<Int32>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(Int32Enum.B);
+			type.EnumValues[0].Name.Should().Be("B");
+			type.EnumValues[0].NumericValue.Should().Be((long) Int32Enum.B);
+
+			type.EnumValues[1].Value.Should().Be(Int32Enum.C);
+			type.EnumValues[1].Name.Should().Be("C");
+			type.EnumValues[1].NumericValue.Should().Be((long) Int32Enum.C);
+
+			type.EnumValues[2].Value.Should().Be(Int32Enum.A);
+			type.EnumValues[2].Name.Should().Be("A");
+			type.EnumValues[2].NumericValue.Should().Be((long) Int32Enum.A);
+		}
+
+		[Test]
+		public void TestUInt32Enum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<UInt32Enum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<UInt32>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(UInt32Enum.A);
+			type.EnumValues[0].Name.Should().Be("A");
+			type.EnumValues[0].NumericValue.Should().Be((long) UInt32Enum.A);
+
+			type.EnumValues[1].Value.Should().Be(UInt32Enum.B);
+			type.EnumValues[1].Name.Should().Be("B");
+			type.EnumValues[1].NumericValue.Should().Be((long) UInt32Enum.B);
+
+			type.EnumValues[2].Value.Should().Be(UInt32Enum.C);
+			type.EnumValues[2].Name.Should().Be("C");
+			type.EnumValues[2].NumericValue.Should().Be((long) UInt32Enum.C);
+		}
+		
+		[Test]
+		public void TestInt64Enum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<Int64Enum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<Int64>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(Int64Enum.B);
+			type.EnumValues[0].Name.Should().Be("B");
+			type.EnumValues[0].NumericValue.Should().Be((long) Int64Enum.B);
+
+			type.EnumValues[1].Value.Should().Be(Int64Enum.C);
+			type.EnumValues[1].Name.Should().Be("C");
+			type.EnumValues[1].NumericValue.Should().Be((long) Int64Enum.C);
+
+			type.EnumValues[2].Value.Should().Be(Int64Enum.A);
+			type.EnumValues[2].Name.Should().Be("A");
+			type.EnumValues[2].NumericValue.Should().Be((long) Int64Enum.A);
+		}
+
+		[Test]
+		public void TestUInt64Enum()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<UInt64Enum>();
+			type.IsEnum.Should().BeTrue();
+			type.StorageType.Type.Should().Be<UInt64>();
+
+			type.EnumValues.Should().HaveCount(3);
+
+			type.EnumValues[0].Value.Should().Be(UInt64Enum.A);
+			type.EnumValues[0].Name.Should().Be("A");
+			type.EnumValues[0].NumericValue.Should().Be(unchecked((long) UInt64Enum.A));
+
+			type.EnumValues[1].Value.Should().Be(UInt64Enum.B);
+			type.EnumValues[1].Name.Should().Be("B");
+			type.EnumValues[1].NumericValue.Should().Be(unchecked((long) UInt64Enum.B));
+
+			type.EnumValues[2].Value.Should().Be(UInt64Enum.C);
+			type.EnumValues[2].Name.Should().Be("C");
+			type.EnumValues[2].NumericValue.Should().Be(unchecked((long) UInt64Enum.C));
+		}
+		
+		[Test]
 		public void TestFieldEnum()
 		{
 			var model = new SharpRemote.TypeModel();
-			var type = model.Add<FieldEnum>();
+			var type = model.Add<FieldInt32Enum>();
 			type.Properties.Should().BeEmpty("because the type doesn't have any properties");
 			type.Methods.Should().BeEmpty("because the methods of DataContract types are uninteresting");
 			type.IsClass.Should().BeFalse("because the type is a struct");
@@ -121,8 +305,8 @@ namespace SharpRemote.Test.TypeModel
 			type.Fields.Should().HaveCount(1);
 
 			var field1 = type.Fields[0];
-			field1.Name.Should().Be(nameof(FieldEnum.Value));
-			field1.FieldType.AssemblyQualifiedName.Should().Be(typeof(DataContractEnum).AssemblyQualifiedName);
+			field1.Name.Should().Be(nameof(FieldInt32Enum.Value));
+			field1.FieldType.AssemblyQualifiedName.Should().Be(typeof(Int32Enum).AssemblyQualifiedName);
 			field1.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
 			field1.FieldType.IsEnum.Should().BeTrue();
 		}

@@ -26,6 +26,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlSerializerWriteDouble;
 		private static readonly MethodInfo XmlSerializerWriteDateTime;
 		private static readonly MethodInfo XmlSerializerWriteException;
+		private static readonly MethodInfo EnumGetName;
 
 		static XmlWriteValueMethodCompiler()
 		{
@@ -47,6 +48,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlSerializerWriteDouble = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new[] { typeof(XmlWriter), typeof(double) });
 			XmlSerializerWriteDateTime = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteValue), new [] {typeof(XmlWriter), typeof(DateTime)});
 			XmlSerializerWriteException = typeof(XmlSerializer).GetMethod(nameof(XmlSerializer.WriteException), new [] {typeof(XmlWriter), typeof(XmlSerializer), typeof(Exception)});
+
+			EnumGetName = typeof(Enum).GetMethod(nameof(Enum.GetName), new[] {typeof(Type), typeof(object)});
 		}
 
 		public XmlWriteValueMethodCompiler(CompilationContext context) : base(context)
@@ -91,6 +94,19 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			// XmlWriter.WriteEndElement()
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteEndElement);
+		}
+
+		protected override void EmitWriteEnum(ILGenerator gen, ITypeDescription typeDescription, Action loadMember, Action loadMemberAddress)
+		{
+			// TODO: Benchmark and optimize this shit code (there's really no need for any allocation)
+			//       Using a switch statement or a dictionary lookup would be much more preferrable
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldtoken, typeDescription.Type);
+			gen.Emit(OpCodes.Call, Methods.TypeGetTypeFromHandle);
+			loadMember();
+			gen.Emit(OpCodes.Box, typeDescription.Type);
+			gen.Emit(OpCodes.Call, EnumGetName);
+			gen.Emit(OpCodes.Call, XmlSerializerWriteString);
 		}
 
 		protected override void EmitWriteByte(ILGenerator gen, Action loadMember, Action loadMemberAddress)

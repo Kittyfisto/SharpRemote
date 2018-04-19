@@ -5,6 +5,7 @@ using FluentAssertions;
 using log4net.Core;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Classes;
+using SharpRemote.Test.Types.Enums;
 using SharpRemote.Test.Types.Exceptions;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Structs;
@@ -60,6 +61,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			Level.Severe, Level.Trace, Level.Verbose, Level.Warn,
 			Level.Log4Net_Debug
 		};
+
+		public static IEnumerable<SbyteEnum> SByteEnumValues => new[] { SbyteEnum.A, SbyteEnum.B, SbyteEnum.C };
+		public static IEnumerable<ByteEnum> ByteEnumValues => new[] { ByteEnum.A, ByteEnum.B, ByteEnum.C };
+		public static IEnumerable<Int16Enum> Int16EnumValues => new[] { Int16Enum.A, Int16Enum.B, Int16Enum.C };
+		public static IEnumerable<UInt16Enum> UInt16EnumValues => new[] { UInt16Enum.A, UInt16Enum.B, UInt16Enum.C };
+		public static IEnumerable<Int32Enum> Int32EnumValues => new[] { Int32Enum.A, Int32Enum.B, Int32Enum.C };
+		public static IEnumerable<UInt32Enum> UInt32EnumValues => new[] { UInt32Enum.A, UInt32Enum.B, UInt32Enum.C };
+		public static IEnumerable<Int64Enum> Int64EnumValues => new[] { Int64Enum.A, Int64Enum.B, Int64Enum.C };
+		public static IEnumerable<UInt64Enum> UInt64EnumValues => new[] { UInt64Enum.A, UInt64Enum.B, UInt64Enum.C };
+
 		public static IEnumerable<DateTime> DateTimeValues => new[]
 		{
 			DateTime.MinValue, DateTime.MaxValue,
@@ -758,6 +769,54 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestMethodCallFieldUInt32([ValueSource(nameof(UInt32Values))] uint value)
 		{
 			MethodCallRoundtripObject(new FieldUInt32 { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldSByteEnum([ValueSource(nameof(SByteEnumValues))] SbyteEnum value)
+		{
+			MethodCallRoundtripObject(new FieldSbyteEnum { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldByteEnum([ValueSource(nameof(ByteEnumValues))] ByteEnum value)
+		{
+			MethodCallRoundtripObject(new FieldByteEnum { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldInt16Enum([ValueSource(nameof(Int16EnumValues))] Int16Enum value)
+		{
+			MethodCallRoundtripObject(new FieldInt16Enum { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldUInt16Enum([ValueSource(nameof(UInt16EnumValues))] UInt16Enum value)
+		{
+			MethodCallRoundtripObject(new FieldUInt16Enum { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldInt32Enum([ValueSource(nameof(Int32EnumValues))] Int32Enum value)
+		{
+			MethodCallRoundtripObject(new FieldInt32Enum { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldUInt32Enum([ValueSource(nameof(UInt32EnumValues))] UInt32Enum value)
+		{
+			MethodCallRoundtripObject(new FieldUInt32Enum { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldInt64Enum([ValueSource(nameof(Int64EnumValues))] Int64Enum value)
+		{
+			MethodCallRoundtripObject(new FieldInt64Enum { Value = value });
+		}
+
+		[Test]
+		public void TestMethodCallFieldUInt64Enum([ValueSource(nameof(UInt64EnumValues))] UInt64Enum value)
+		{
+			MethodCallRoundtripObject(new FieldUInt64Enum { Value = value });
 		}
 
 		#endregion

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.Serialization;
 using System.Xml;
 using log4net;
 
@@ -36,6 +34,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private static readonly MethodInfo XmlLineInfoGetLinePosition;
 		private static readonly MethodInfo XmlSerializerReadException;
 
+		private static readonly MethodInfo EnumParse;
+
 		static XmlReadValueMethodCompiler()
 		{
 			XmlReaderRead = typeof(XmlReader).GetMethod(nameof(XmlReader.Read));
@@ -61,6 +61,8 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			XmlLineInfoGetLineNumber = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LineNumber)).GetMethod;
 			XmlLineInfoGetLinePosition = typeof(IXmlLineInfo).GetProperty(nameof(IXmlLineInfo.LinePosition)).GetMethod;
 			XmlParseExceptionCtor = typeof(XmlParseException).GetConstructor(new [] {typeof(string), typeof(int), typeof(int), typeof(Exception)});
+
+			EnumParse = typeof(Enum).GetMethod(nameof(Enum.Parse), new[] {typeof(Type), typeof(string)});
 		}
 
 		public XmlReadValueMethodCompiler(CompilationContext context)
@@ -83,6 +85,18 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		protected override void EmitEndRead(ILGenerator gen)
 		{
 			
+		}
+
+		protected override void EmitReadEnum(ILGenerator gen, ITypeDescription typeDescription)
+		{
+			// TODO: Benchmark and optimize this shit code (there's really no need for any allocation)
+			//       Using a switch statement or a dictionary lookup would be much more preferrable
+			gen.Emit(OpCodes.Ldtoken, typeDescription.Type);
+			gen.Emit(OpCodes.Call, Methods.TypeGetTypeFromHandle);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, XmlSerializerReadString);
+			gen.Emit(OpCodes.Call, EnumParse);
+			gen.Emit(OpCodes.Unbox_Any, typeDescription.Type);
 		}
 
 		protected override void EmitReadByte(ILGenerator gen)

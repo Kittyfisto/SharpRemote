@@ -86,7 +86,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		{
 			var gen = Method.GetILGenerator();
 
-			var type = _context.Type;
+			var type = _context.TypeDescription;
 			Action loadMember = () =>
 			{
 				gen.Emit(OpCodes.Ldarg_1);
@@ -159,7 +159,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				try
 				{
 					EmitBeginWriteField(gen, field);
-					EmitWriteValue(gen, field.Type, () =>
+					EmitWriteValue(gen, field.TypeDescription, () =>
 					{
 						loadValue();
 						gen.Emit(OpCodes.Ldfld, field.Field);
@@ -190,7 +190,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				try
 				{
 					EmitBeginWriteProperty(gen, property);
-					EmitWriteValue(gen, property.Type, () =>
+					EmitWriteValue(gen, property.TypeDescription, () =>
 					               {
 						               loadValue();
 						               gen.Emit(OpCodes.Call, property.GetMethod.Method);
@@ -219,9 +219,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitWriteValue(ILGenerator gen, Type type, Action loadMember, Action loadMemberAddress)
+		private void EmitWriteValue(ILGenerator gen, ITypeDescription typeDescription, Action loadMember, Action loadMemberAddress)
 		{
-			if (type == typeof(byte))
+			var type = typeDescription.Type;
+			if (type.IsEnum)
+				EmitWriteEnum(gen, typeDescription, loadMember, loadMemberAddress);
+			else if (type == typeof(byte))
 				EmitWriteByte(gen, loadMember, loadMemberAddress);
 			else if (type == typeof(sbyte))
 				EmitWriteSByte(gen, loadMember, loadMemberAddress);
@@ -282,6 +285,15 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="gen">The code generator to use to emit new code</param>
 		/// <param name="property"></param>
 		protected abstract void EmitEndWriteProperty(ILGenerator gen, PropertyDescription property);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen">The code generator to use to emit new code</param>
+		/// <param name="typeDescription"></param>
+		/// <param name="loadMember"></param>
+		/// <param name="loadMemberAddress"></param>
+		protected abstract void EmitWriteEnum(ILGenerator gen, ITypeDescription typeDescription, Action loadMember, Action loadMemberAddress);
 
 		/// <summary>
 		/// </summary>

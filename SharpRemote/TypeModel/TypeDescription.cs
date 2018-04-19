@@ -75,6 +75,15 @@ namespace SharpRemote
 		public int Id { get; set; }
 
 		/// <summary>
+		///     The underlying type used for storing values.
+		/// </summary>
+		/// <remarks>
+		///     Relevant for enums.
+		/// </remarks>
+		[DataMember]
+		public TypeDescription StorageType { get; set; }
+
+		/// <summary>
 		///     The list of public non-static properties with the <see cref="DataMemberAttribute" />.
 		/// </summary>
 		[DataMember]
@@ -92,6 +101,12 @@ namespace SharpRemote
 		/// </summary>
 		[DataMember]
 		public MethodDescription[] Methods { get; set; }
+
+		/// <summary>
+		///    The list of enum values.
+		/// </summary>
+		[DataMember]
+		public EnumValueDescription[] EnumValues { get; set; }
 
 		/// <summary>
 		/// 
@@ -153,11 +168,15 @@ namespace SharpRemote
 		[DataMember]
 		public bool IsGenericType { get; set; }
 
+		ITypeDescription ITypeDescription.StorageType => StorageType;
+
 		IReadOnlyList<IPropertyDescription> ITypeDescription.Properties => Properties;
 
 		IReadOnlyList<IFieldDescription> ITypeDescription.Fields => Fields;
 
 		IReadOnlyList<IMethodDescription> ITypeDescription.Methods => Methods;
+
+		IReadOnlyList<IEnumValueDescription> ITypeDescription.EnumValues => EnumValues;
 
 		/// <inheritdoc />
 		public override string ToString()
@@ -275,6 +294,22 @@ namespace SharpRemote
 			description.IsEnumerable = isEnumerable;
 			description.IsSealed = type.IsSealed;
 			description.IsGenericType = type.IsGenericType;
+
+			if (type.IsEnum)
+			{
+				var storageType = Enum.GetUnderlyingType(type);
+				description.StorageType = Create(storageType, typesByAssemblyQualifiedName);
+
+				var values = Enum.GetValues(type).OfType<object>().ToArray();
+				var names = Enum.GetNames(type);
+				var descriptions = new EnumValueDescription[values.Length];
+				for (int i = 0; i < names.Length; ++i)
+				{
+					descriptions[i] = EnumValueDescription.Create(storageType, values[i], names[i]);
+				}
+
+				description.EnumValues = descriptions;
+			}
 
 			return description;
 		}

@@ -72,6 +72,50 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			
 		}
 
+		protected override void EmitWriteEnum(ILGenerator gen, ITypeDescription typeDescription, Action loadMember, Action loadMemberAddress)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			loadMember();
+
+			var storageType = typeDescription.StorageType.Type;
+			if (storageType == typeof(byte))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteByte);
+			}
+			else if (storageType == typeof(sbyte))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteSByte);
+			}
+			else if (storageType == typeof(short))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteInt16);
+			}
+			else if (storageType == typeof(ushort))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteUInt16);
+			}
+			else if (storageType == typeof(int))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteInt32);
+			}
+			else if (storageType == typeof(uint))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteUInt32);
+			}
+			else if (storageType == typeof(long))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteInt64);
+			}
+			else if (storageType == typeof(ulong))
+			{
+				gen.Emit(OpCodes.Call, BinarySerializer2WriteUInt64);
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
+		}
+
 		protected override void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property)
 		{
 			

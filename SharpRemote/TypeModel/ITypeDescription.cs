@@ -22,6 +22,14 @@ namespace SharpRemote
 		ITypeDescription BaseType { get; }
 
 		/// <summary>
+		///     The underlying type used for storing values.
+		/// </summary>
+		/// <remarks>
+		///     Relevant for enums.
+		/// </remarks>
+		ITypeDescription StorageType { get; }
+
+		/// <summary>
 		///     Equivalent of <see cref="System.Type.AssemblyQualifiedName" />.
 		/// </summary>
 		string AssemblyQualifiedName { get; }
@@ -87,5 +95,10 @@ namespace SharpRemote
 		///     type.
 		/// </summary>
 		IReadOnlyList<IMethodDescription> Methods { get; }
+
+		/// <summary>
+		///    The list of enum values.
+		/// </summary>
+		IReadOnlyList<IEnumValueDescription> EnumValues { get; }
 	}
 }

@@ -4,8 +4,8 @@ using SharpRemote.Test.Types.Enums;
 namespace SharpRemote.Test.Types.Structs
 {
 	[DataContract]
-	public struct FieldEnum
+	public struct FieldSbyteEnum
 	{
-		[DataMember] public DataContractEnum Value;
+		[DataMember] public SbyteEnum Value;
 	}
 }

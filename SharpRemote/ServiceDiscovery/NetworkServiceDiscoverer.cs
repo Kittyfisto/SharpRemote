@@ -86,6 +86,8 @@ namespace SharpRemote.ServiceDiscovery
 			if (endPoint == null)
 				throw new ArgumentNullException(nameof(endPoint));
 
+			Log.DebugFormat("Registering service '{0}' on endpoint '{1}'", name, endPoint);
+
 			// We use this call as another pre-condition: It checks
 			// that the maximum UDP packet size isn't exceeded
 			// ReSharper disable once ReturnValueOfPureMethodIsNotUsed

@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using log4net;
 using Exception = System.Exception;
+using System.Diagnostics.Contracts;
 
 namespace SharpRemote.ServiceDiscovery
 {
@@ -173,9 +174,9 @@ namespace SharpRemote.ServiceDiscovery
 
 				string token;
 				string name;
-				IPEndPoint endPoint;
+				IPEndPoint serviceEndPoint;
 				byte[] payload;
-				if (Message.TryRead(buffer, out token, out name, out endPoint, out payload))
+				if (Message.TryRead(buffer, out token, out name, out serviceEndPoint, out payload))
 				{
 					switch (token)
 					{
@@ -185,11 +186,7 @@ namespace SharpRemote.ServiceDiscovery
 
 						case Message.P2PResponse2Token:
 						case Message.P2PResponseLegacyToken:
-							OnResponseReceived?.Invoke(new Service(name,
-							                                       endPoint,
-							                                       _localAddress,
-							                                       _networkInterfaceId,
-							                                       payload));
+							EmitResponseReceived(name, serviceEndPoint, remoteEndPoint, payload);
 							break;
 					}
 				}
@@ -215,18 +212,46 @@ namespace SharpRemote.ServiceDiscovery
 			}
 		}
 
+		private void EmitResponseReceived(string name, IPEndPoint serviceEndPoint, EndPoint remoteEndPoint, byte[] payload)
+		{
+			if (ForwardResponse(serviceEndPoint, remoteEndPoint))
+			{
+				OnResponseReceived?.Invoke(new Service(name,
+													   serviceEndPoint,
+													   _localAddress,
+													   _networkInterfaceId,
+													   payload));
+			}
+			else
+			{
+				Log.DebugFormat("Ignoring local service '{0}' from '{1}', we can't possibly connect to it",
+					serviceEndPoint,
+					remoteEndPoint);
+			}
+		}
+
+		[Pure]
+		private static bool ForwardResponse(IPEndPoint serviceEndPoint, EndPoint remoteEndPoint)
+		{
+			// We do not want to forward services which are registered to loopback on REMOTE
+			// machines (because we couldn't connect to them). Therefore we swallow those responses.
+			// It is necessary to filter those on the receiving end because SharpRemote up until v0.5.91
+			// used to send local services to remote requests (which is obviously bollocks).
+			if (IsLoopback(serviceEndPoint) && !IsLoopback(remoteEndPoint))
+				return false;
+
+			return true;
+		}
+
 		private void SendResponse(string name, EndPoint remoteEndPoint)
 		{
-			if (Log.IsDebugEnabled)
-				Log.DebugFormat("Received query (name: {0}) from '{1}', answering...",
-				                name,
-				                remoteEndPoint);
-
 			var services = new List<RegisteredService>();
 			lock (_socket)
 			{
 				services.AddRange(_services.GetServicesByName(name));
 			}
+
+			LogResponseAnswer(name, remoteEndPoint, services.Count);
 
 			lock (_socket)
 			{
@@ -236,14 +261,75 @@ namespace SharpRemote.ServiceDiscovery
 				foreach (var service in services)
 				{
 					var payload = service.Payload;
-					var endPoint = service.EndPoint;
-					if (Equals(endPoint.Address, IPAddress.Any) ||
-					    Equals(endPoint.Address, IPAddress.IPv6Any))
-						endPoint = new IPEndPoint(_localAddress, endPoint.Port);
+					var serviceEndPoint = service.EndPoint;
+					if (IsAny(serviceEndPoint.Address))
+						serviceEndPoint = new IPEndPoint(_localAddress, serviceEndPoint.Port);
 
-					SendResponse(service.Name, endPoint, payload);
+					if (AnswerQuery(serviceEndPoint, remoteEndPoint))
+					{
+						if (Log.IsDebugEnabled)
+							Log.DebugFormat("Answering query (name: {0}) from '{1}': {2}",
+											name, remoteEndPoint, serviceEndPoint);
+
+						SendResponse(service.Name, serviceEndPoint, payload);
+					}
+					else
+					{
+						if (Log.IsDebugEnabled)
+							Log.DebugFormat("Not answering to remote query (name: {0}) from '{1}' with LOCAL service endpoint: {2}",
+											name, remoteEndPoint, serviceEndPoint);
+					}
 				}
 			}
+		}
+
+		private static bool AnswerQuery(IPEndPoint serviceEndPoint, EndPoint remoteEndPoint)
+		{
+			// We don't want to expose local service registrations to remote endpoints:
+			// Therefore service's bound to loopback are only sent to requests originating from loopback...
+			// See https://github.com/Kittyfisto/SharpRemote/issues/56
+			if (IsLoopback(serviceEndPoint.Address) && !IsLoopback(remoteEndPoint))
+				return false;
+
+			return true;
+		}
+
+		private static void LogResponseAnswer(string name, EndPoint remoteEndPoint, int serviceCount)
+		{
+			if (Log.IsDebugEnabled)
+			{
+				if (serviceCount == 0)
+					Log.DebugFormat("Received query (name: {0}) from '{1}', but no services are registered",
+								name,
+								remoteEndPoint);
+				else
+					Log.DebugFormat("Received query (name: {0}) from '{1}', answering with {2} service(s)",
+								name,
+								remoteEndPoint,
+								serviceCount);
+			}
+		}
+
+		[Pure]
+		private static bool IsLoopback(EndPoint endPoint)
+		{
+			var ipEndPoint = endPoint as IPEndPoint;
+			if (ipEndPoint == null)
+				return false;
+
+			return IsLoopback(ipEndPoint.Address);
+		}
+
+		[Pure]
+		private static bool IsLoopback(IPAddress address)
+		{
+			return Equals(address, IPAddress.Loopback) || Equals(address, IPAddress.IPv6Loopback);
+		}
+
+		[Pure]
+		private static bool IsAny(IPAddress address)
+		{
+			return Equals(address, IPAddress.Any) || Equals(address, IPAddress.IPv6Any);
 		}
 
 		private void SendResponse(string serviceName, IPEndPoint endPoint, byte[] payload)

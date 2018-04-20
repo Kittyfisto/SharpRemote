@@ -23,7 +23,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				throw new ArgumentException();
 			
 			_context = context;
-			_method = context.TypeBuilder.DefineMethod("ReadObject", MethodAttributes.Public | MethodAttributes.Static,
+			_method = context.TypeBuilder.DefineMethod("ReadObjectNotNull", MethodAttributes.Public | MethodAttributes.Static,
 			                                           CallingConventions.Standard, typeof(object), new[]
 			                                           {
 				                                           context.ReaderType,

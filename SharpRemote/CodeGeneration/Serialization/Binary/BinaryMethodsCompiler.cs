@@ -60,12 +60,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 			WriteDelegate =
 				(Action<BinaryWriter, object, BinarySerializer2, IRemotingEndPoint>)
-				_context.TypeBuilder.GetMethod("WriteObject")
+				_context.TypeBuilder.GetMethod("WriteObjectNotNull")
 				        .CreateDelegate(typeof(Action<BinaryWriter, object, BinarySerializer2, IRemotingEndPoint>));
 
 			ReadObjectDelegate =
 				(Func<BinaryReader, BinarySerializer2, IRemotingEndPoint, object>)
-				_context.TypeBuilder.GetMethod("ReadObject")
+				_context.TypeBuilder.GetMethod("ReadObjectNotNull")
 				        .CreateDelegate(typeof(Func<BinaryReader, BinarySerializer2, IRemotingEndPoint, object>));
 		}
 	}

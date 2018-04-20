@@ -58,6 +58,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		protected override void EmitWriteHint(ILGenerator generator, ByReferenceHint hint)
 		{ }
 
+		protected override void EmitWriteDynamicDispatch(ILGenerator gen)
+		{
+			throw new NotImplementedException();
+		}
+
 		protected override void EmitBeginWriteField(ILGenerator gen, FieldDescription field)
 		{
 			// XmlWriter.WriteStartElement("Field")

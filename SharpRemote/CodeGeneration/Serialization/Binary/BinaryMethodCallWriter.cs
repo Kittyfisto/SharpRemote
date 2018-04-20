@@ -29,15 +29,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public void WriteArgument(object value)
 		{
-			if (value != null)
-			{
-				BinarySerializer2.WriteValue(_writer, true);
-				_serializer.WriteObject(_writer, value, _endPoint);
-			}
-			else
-			{
-				BinarySerializer2.WriteValue(_writer, false);
-			}
+			_serializer.WriteObject(_writer, value, _endPoint);
 		}
 
 		public void WriteArgument(sbyte value)

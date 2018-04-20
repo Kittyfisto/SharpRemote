@@ -70,11 +70,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		{
 		}
 
-		protected override void EmitEndReadProperty(ILGenerator gen, PropertyDescription property)
-		{
-			throw new NotImplementedException();
-		}
-
 		protected override void EmitBeginRead(ILGenerator gen)
 		{
 			gen.Emit(OpCodes.Ldarg_0);
@@ -229,6 +224,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Call, XmlSerializerReadException);
 		}
 
+		protected override void EmitDispatchReadObject(ILGenerator gen)
+		{
+			throw new NotImplementedException();
+		}
+
 		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)
 		{
 			var correctField = gen.DefineLabel();
@@ -252,6 +252,47 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Pop);
 		}
 
+		protected override void EmitEndReadField(ILGenerator gen, FieldDescription field)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Callvirt, XmlReaderRead);
+			gen.Emit(OpCodes.Pop);
+		}
+
+		protected override void EmitBeginReadProperty(ILGenerator gen, PropertyDescription property)
+		{
+			var correctField = gen.DefineLabel();
+			var actualElementName = gen.DeclareLocal(typeof(string));
+
+			// If reader.Name == FieldElementName goto correctField
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Callvirt, XmlReaderGetName);
+			gen.Emit(OpCodes.Stloc, actualElementName);
+			gen.Emit(OpCodes.Ldloc, actualElementName);
+			gen.Emit(OpCodes.Ldstr, XmlSerializer.FieldElementName);
+			gen.Emit(OpCodes.Call, StringEquals);
+			gen.Emit(OpCodes.Brtrue_S, correctField);
+			// throw new XmlParseException
+			EmitThrowXmlParseException(gen, actualElementName);
+
+			gen.MarkLabel(correctField);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldstr, property.Name);
+			gen.Emit(OpCodes.Callvirt, XmlReaderMoveToAttributeByName);
+			gen.Emit(OpCodes.Pop);
+		}
+
+		protected override void EmitEndReadProperty(ILGenerator gen, PropertyDescription property)
+		{
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Callvirt, XmlReaderRead);
+			gen.Emit(OpCodes.Pop);
+		}
+
+		protected override void EmitReadHintAndGrainId(ILGenerator generator)
+		{
+		}
+
 		private void EmitThrowXmlParseException(ILGenerator gen, LocalBuilder actualElementName)
 		{
 			gen.Emit(OpCodes.Ldstr, "Expected to find element '"+ XmlSerializer.FieldElementName + "', but found '{0}' instead!");
@@ -266,22 +307,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Ldnull);
 			gen.Emit(OpCodes.Newobj, XmlParseExceptionCtor);
 			gen.Emit(OpCodes.Throw);
-		}
-
-		protected override void EmitEndReadField(ILGenerator gen, FieldDescription field)
-		{
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Callvirt, XmlReaderRead);
-			gen.Emit(OpCodes.Pop);
-		}
-
-		protected override void EmitBeginReadProperty(ILGenerator gen, PropertyDescription property)
-		{
-			throw new NotImplementedException();
-		}
-
-		protected override void EmitReadHintAndGrainId(ILGenerator generator)
-		{
 		}
 	}
 }

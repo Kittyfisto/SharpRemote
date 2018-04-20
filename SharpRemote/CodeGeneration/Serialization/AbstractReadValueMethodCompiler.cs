@@ -48,9 +48,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				case SerializationType.ByValue:
 					if (_context.TypeDescription.IsBuiltIn)
-						EmitReadBuiltInType();
+						EmitReadBuiltInType(methodStorage);
 					else
-						EmitReadByValue();
+						EmitReadByValue(methodStorage);
 					break;
 
 				case SerializationType.ByReference:
@@ -62,6 +62,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 					break;
 
 				case SerializationType.NotSerializable:
+					throw new NotImplementedException();
+
+				case SerializationType.Unknown:
+					var gen = Method.GetILGenerator();
+					EmitDispatchReadObject(gen);
 					break;
 
 				default:
@@ -69,10 +74,16 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 		}
 
-		private void EmitReadBuiltInType()
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		protected abstract void EmitDispatchReadObject(ILGenerator gen);
+
+		private void EmitReadBuiltInType(ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var gen = Method.GetILGenerator();
-			EmitReadValue(gen, _context.TypeDescription, null);
+			EmitReadValue(gen, _context.TypeDescription, methodStorage);
 			gen.Emit(OpCodes.Ret);
 		}
 
@@ -84,7 +95,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ret);
 		}
 
-		private void EmitReadByValue()
+		private void EmitReadByValue(ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var gen = Method.GetILGenerator();
 			var tmp = gen.DeclareLocal(_context.Type);
@@ -109,8 +120,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 			// tmp.BeforeDeserializationCallback();
 			EmitCallBeforeDeserialization(gen, tmp);
 
-			EmitReadFields(gen, tmp);
-			EmitReadProperties(gen, tmp);
+			EmitReadFields(gen, tmp, methodStorage);
+			EmitReadProperties(gen, tmp, methodStorage);
 
 			// tmp.AfterDeserializationCallback();
 			EmitCallAfterSerialization(gen, tmp);
@@ -122,7 +133,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			gen.Emit(OpCodes.Ret);
 		}
 
-		private void EmitReadFields(ILGenerator gen, LocalBuilder local)
+		private void EmitReadFields(ILGenerator gen,
+		                            LocalBuilder local,
+		                            ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			foreach (var field in _context.TypeDescription.Fields)
 				try
@@ -136,7 +149,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					{
 						gen.Emit(OpCodes.Ldloc, local);
 					}
-					EmitReadValue(gen, field.FieldType, field.Name);
+					EmitReadValue(gen, field.FieldType, methodStorage);
 					gen.Emit(OpCodes.Stfld, field.Field);
 					EmitEndReadField(gen, field);
 				}
@@ -155,7 +168,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitReadProperties(ILGenerator gen, LocalBuilder local)
+		private void EmitReadProperties(ILGenerator gen,
+		                                LocalBuilder local,
+		                                ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			foreach (var property in _context.TypeDescription.Properties)
 				try
@@ -169,7 +184,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					{
 						gen.Emit(OpCodes.Ldloc, local);
 					}
-					EmitReadValue(gen, property.PropertyType, property.Name);
+					EmitReadValue(gen, property.PropertyType, methodStorage);
 					gen.Emit(OpCodes.Call, property.SetMethod.Method);
 					EmitEndReadProperty(gen, property);
 				}
@@ -189,7 +204,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitReadValue(ILGenerator gen, ITypeDescription typeDescription, string name)
+		private void EmitReadValue(ILGenerator gen,
+		                           ITypeDescription typeDescription,
+		                           ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var type = typeDescription.Type;
 			if (type.IsEnum)
@@ -225,7 +242,28 @@ namespace SharpRemote.CodeGeneration.Serialization
 			else if (TypeDescription.IsException(type))
 				EmitReadException(gen, type);
 			else
-				throw new NotImplementedException();
+				EmitReadDispatched(gen, typeDescription, methodStorage);
+		}
+
+		private void EmitReadDispatched(ILGenerator gen,
+		                                ITypeDescription typeDescription,
+		                                ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
+		{
+			var methods = methodStorage.GetOrAdd(typeDescription.Type);
+			if (typeDescription.IsValueType)
+			{
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldarg_1);
+				gen.Emit(OpCodes.Ldarg_2);
+				gen.Emit(OpCodes.Call, methods.ReadValueMethod);
+			}
+			else
+			{
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldarg_1);
+				gen.Emit(OpCodes.Ldarg_2);
+				gen.Emit(OpCodes.Call, methods.ReadValueMethod);
+			}
 		}
 
 		/// <summary>

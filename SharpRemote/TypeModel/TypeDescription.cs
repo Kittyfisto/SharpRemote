@@ -298,7 +298,7 @@ namespace SharpRemote
 			if (type.IsEnum)
 			{
 				var storageType = Enum.GetUnderlyingType(type);
-				description.StorageType = Create(storageType, typesByAssemblyQualifiedName);
+				description.StorageType = GetOrCreate(storageType, typesByAssemblyQualifiedName);
 
 				var values = Enum.GetValues(type).OfType<object>().ToArray();
 				var names = Enum.GetNames(type);

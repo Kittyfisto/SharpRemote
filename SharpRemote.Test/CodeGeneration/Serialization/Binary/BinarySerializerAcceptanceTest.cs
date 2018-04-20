@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using FluentAssertions;
 using NUnit.Framework;
@@ -12,14 +14,36 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 	public sealed class BinarySerializerAcceptanceTest
 		: AbstractSerializerAcceptanceTest
 	{
+		private AssemblyBuilder _assembly;
+		private ModuleBuilder _module;
+
+		[SetUp]
+		public void Setup()
+		{
+			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
+			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
+			                                                          AssemblyBuilderAccess.RunAndSave);
+			string moduleName = assemblyName.Name + ".dll";
+			_module = _assembly.DefineDynamicModule(moduleName);
+		}
+
 		protected override ISerializer2 Create()
 		{
-			return new BinarySerializer2();
+			return new BinarySerializer2(_module);
 		}
 
 		protected override void Save()
 		{
-			
+			//var fname = "SharpRemote.GeneratedCode.Serializer.dll";
+			//try
+			//{
+			//	_assembly.Save(fname);
+			//	TestContext.Out.WriteLine("Assembly written to: {0}", Path.Combine(Directory.GetCurrentDirectory(), fname));
+			//}
+			//catch (Exception e)
+			//{
+			//	TestContext.Out.WriteLine("Couldn't write assembly: {0}", e);
+			//}
 		}
 
 		public static IEnumerable<ProtocolVersion> SupportedVersions => new[]

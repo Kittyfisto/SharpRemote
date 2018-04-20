@@ -711,6 +711,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		[Test]
 		[Ignore("Not yet implemented")]
+		public void TestMethodCallFieldObjectStruct()
+		{
+			MethodCallRoundtripObject(new FieldObjectStruct
+			{
+				Value = 42
+			});
+		}
+
+		[Test]
+		[Ignore("Not yet implemented")]
 		public void TestMethodCallKeyValuePair()
 		{
 			var serializer = Create();
@@ -817,6 +827,21 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestMethodCallFieldUInt64Enum([ValueSource(nameof(UInt64EnumValues))] UInt64Enum value)
 		{
 			MethodCallRoundtripObject(new FieldUInt64Enum { Value = value });
+		}
+
+		[Test]
+		[Ignore("Not yet implemetned")]
+		public void TestNestedFieldStruct()
+		{
+			MethodCallRoundtripObject(new NestedFieldStruct
+			{
+				N1 = new PropertySealedClass
+				{
+					Value1 = "Fool",
+					Value2 = 1337,
+					Value3 = Math.E
+				}
+			});
 		}
 
 		#endregion

@@ -47,12 +47,6 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 				return false;
 			}
 
-			if (!BinarySerializer2.ReadValueAsBoolean(_reader))
-			{
-				value = null;
-				return true;
-			}
-
 			value = _serializer.ReadObject(_reader);
 			return true;
 		}

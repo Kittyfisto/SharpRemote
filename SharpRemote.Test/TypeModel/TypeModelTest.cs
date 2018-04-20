@@ -71,6 +71,16 @@ namespace SharpRemote.Test.TypeModel
 		}
 
 		[Test]
+		public void TestEnum()
+		{
+			var model = new SharpRemote.TypeModel();
+			model.Add<uint>();
+			new Action(() => model.Add<UInt32Enum>()).ShouldNotThrow();
+			model.Types.Should().Contain(x => x.Type == typeof(uint));
+			model.Types.Should().Contain(x => x.Type == typeof(UInt32Enum));
+		}
+
+		[Test]
 		public void TestFieldObjectStruct()
 		{
 			var model = new SharpRemote.TypeModel();
@@ -289,7 +299,7 @@ namespace SharpRemote.Test.TypeModel
 			type.EnumValues[2].Name.Should().Be("C");
 			type.EnumValues[2].NumericValue.Should().Be(unchecked((long) UInt64Enum.C));
 		}
-		
+
 		[Test]
 		public void TestFieldEnum()
 		{

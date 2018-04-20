@@ -21,9 +21,11 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		private static readonly MethodInfo BinarySerializer2ReadFloat;
 		private static readonly MethodInfo BinarySerializer2ReadDouble;
 		private static readonly MethodInfo BinarySerializer2ReadException;
+		private static readonly MethodInfo BinarySerializer2ReadObject;
 
 		static BinaryReadValueMethodCompiler()
 		{
+			BinarySerializer2ReadObject = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.ReadObject));
 			BinarySerializer2ReadByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.ReadValueAsByte));
 			BinarySerializer2ReadSByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.ReadValueAsSByte));
 			BinarySerializer2ReadInt16 = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.ReadValueAsInt16));
@@ -46,6 +48,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		protected override void EmitBeginRead(ILGenerator gen)
 		{
+		}
+
+		protected override void EmitDispatchReadObject(ILGenerator gen)
+		{
+			gen.Emit(OpCodes.Ldarg_1);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, BinarySerializer2ReadObject);
 		}
 
 		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)

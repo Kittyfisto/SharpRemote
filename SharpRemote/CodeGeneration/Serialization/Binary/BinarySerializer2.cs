@@ -157,12 +157,31 @@ namespace SharpRemote
 		/// <param name="endPoint"></param>
 		public void WriteObject(BinaryWriter writer, object value, IRemotingEndPoint endPoint)
 		{
+			if (value != null)
+			{
+				WriteValue(writer, true);
+				WriteObjectNotNull(writer, value, endPoint);
+			}
+			else
+			{
+				WriteValue(writer, false);
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		/// <param name="endPoint"></param>
+		public void WriteObjectNotNull(BinaryWriter writer, object value, IRemotingEndPoint endPoint)
+		{
 			var type = value.GetType();
 			WriteTypeInformation(writer, type);
 			var methods = _methodStorage.GetOrAdd(value.GetType());
 			methods.WriteDelegate(writer, value, this, endPoint);
 		}
-		
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -515,6 +534,11 @@ namespace SharpRemote
 		/// <returns></returns>
 		public object ReadObject(BinaryReader reader)
 		{
+			if (!ReadValueAsBoolean(reader))
+			{
+				return null;
+			}
+
 			var type = ReadTypeInformation(reader);
 			var methods = _methodStorage.GetOrAdd(type);
 			return methods.ReadObjectDelegate(reader, this, null);

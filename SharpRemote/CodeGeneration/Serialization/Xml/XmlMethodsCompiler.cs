@@ -64,12 +64,12 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 			WriteDelegate =
 				(Action<XmlWriter, object, XmlSerializer, IRemotingEndPoint>)
-				_context.TypeBuilder.GetMethod("WriteObject")
+				_context.TypeBuilder.GetMethod("WriteObjectNotNull")
 				        .CreateDelegate(typeof(Action<XmlWriter, object, XmlSerializer, IRemotingEndPoint>));
 
 			ReadObjectDelegate =
 				(Func<XmlReader, XmlSerializer, IRemotingEndPoint, object>)
-				_context.TypeBuilder.GetMethod("ReadObject")
+				_context.TypeBuilder.GetMethod("ReadObjectNotNull")
 				        .CreateDelegate(typeof(Func<XmlReader, XmlSerializer, IRemotingEndPoint, object>));
 		}
 	}

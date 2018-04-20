@@ -23,7 +23,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 				throw new ArgumentException();
 
 			Type = context.Type;
-			Method = context.TypeBuilder.DefineMethod("WriteObject", MethodAttributes.Public | MethodAttributes.Static,
+			Method = context.TypeBuilder.DefineMethod("WriteObjectNotNull", MethodAttributes.Public | MethodAttributes.Static,
 			                                          CallingConventions.Standard, typeof(void), new[]
 			                                          {
 				                                          context.WriterType,

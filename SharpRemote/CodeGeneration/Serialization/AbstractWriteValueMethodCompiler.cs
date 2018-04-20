@@ -51,7 +51,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			{
 				case SerializationType.ByValue:
 					if (_context.TypeDescription.IsBuiltIn)
-						EmitWriteBuiltInType();
+						EmitWriteBuiltInType(methodStorage);
 					else
 						EmitWriteByValue(methodStorage);
 					break;
@@ -66,6 +66,12 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 				case SerializationType.NotSerializable:
 					throw new NotImplementedException();
+
+				case SerializationType.Unknown:
+					var gen = Method.GetILGenerator();
+					EmitWriteDynamicDispatch(gen);
+					gen.Emit(OpCodes.Ret);
+					break;
 
 				default:
 					throw new InvalidEnumArgumentException("", (int) serializationType, typeof(SerializationType));
@@ -82,7 +88,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <summary>
 		/// 
 		/// </summary>
-		private void EmitWriteBuiltInType()
+		/// <param name="methodStorage"></param>
+		private void EmitWriteBuiltInType(ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var gen = Method.GetILGenerator();
 
@@ -99,7 +106,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					gen.Emit(OpCodes.Ldarg_1);
 			};
 
-			EmitWriteValue(gen, type, loadMember, loadMemberAddress);
+			EmitWriteValue(gen, type, loadMember, loadMemberAddress, methodStorage);
 
 			gen.Emit(OpCodes.Ret);
 		}
@@ -132,9 +139,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			};
 
 			//Followed by the list of serializable fields
-			EmitWriteFields(gen, loadValue);
+			EmitWriteFields(gen, loadValue, methodStorage);
 			// Then the serializable properties
-			EmitWriteProperties(gen, loadValue);
+			EmitWriteProperties(gen, loadValue, methodStorage);
 
 			// And finally call the PostDeserializationCallback, if available.
 			EmitCallAfterSerialization(gen);
@@ -153,7 +160,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 		}
 
-		private void EmitWriteFields(ILGenerator gen, Action loadValue)
+		private void EmitWriteFields(ILGenerator gen,
+		                             Action loadValue,
+		                             ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			foreach (var field in _context.TypeDescription.Fields)
 				try
@@ -167,7 +176,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					{
 						loadValue();
 						gen.Emit(OpCodes.Ldflda, field.Field);
-					});
+					}, methodStorage);
 					EmitEndWriteField(gen, field);
 				}
 				catch (SerializationException)
@@ -184,7 +193,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitWriteProperties(ILGenerator gen, Action loadValue)
+		private void EmitWriteProperties(ILGenerator gen,
+		                                 Action loadValue,
+		                                 ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			foreach (var property in _context.TypeDescription.Properties)
 				try
@@ -200,7 +211,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 						               // TODO: This isn't finihed
 						               loadValue();
 						               gen.Emit(OpCodes.Call, property.GetMethod.Method);
-					               });
+					               },
+					               methodStorage);
 					EmitEndWriteProperty(gen, property);
 				}
 				catch (SerializationException)
@@ -219,7 +231,11 @@ namespace SharpRemote.CodeGeneration.Serialization
 				}
 		}
 
-		private void EmitWriteValue(ILGenerator gen, ITypeDescription typeDescription, Action loadMember, Action loadMemberAddress)
+		private void EmitWriteValue(ILGenerator gen,
+		                            ITypeDescription typeDescription,
+		                            Action loadMember,
+		                            Action loadMemberAddress,
+		                            ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
 			var type = typeDescription.Type;
 			if (type.IsEnum)
@@ -255,8 +271,40 @@ namespace SharpRemote.CodeGeneration.Serialization
 			else if (TypeDescription.IsException(type))
 				EmitWriteException(gen, loadMember, loadMemberAddress);
 			else
-				throw new NotImplementedException();
+				EmitWriteDispatch(gen, typeDescription, loadMember, methodStorage);
+			//throw new NotImplementedException(string.Format("Type '{0}' claims to be a built-in type but there's no code to serialize it", type.AssemblyQualifiedName));
 		}
+
+		private void EmitWriteDispatch(ILGenerator gen,
+		                               ITypeDescription typeDescription,
+		                               Action loadMember,
+		                               ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
+		{
+			var methods = methodStorage.GetOrAdd(typeDescription.Type);
+
+			if (typeDescription.IsValueType)
+			{
+				gen.Emit(OpCodes.Ldarg_0);
+				loadMember();
+				gen.Emit(OpCodes.Ldarg_2);
+				gen.Emit(OpCodes.Ldarg_3);
+				gen.Emit(OpCodes.Call, methods.WriteValueMethod);
+			}
+			else
+			{
+				gen.Emit(OpCodes.Ldarg_0);
+				loadMember();
+				gen.Emit(OpCodes.Ldarg_2);
+				gen.Emit(OpCodes.Ldarg_3);
+				gen.Emit(OpCodes.Call, methods.WriteObjectMethod);
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="gen"></param>
+		protected abstract void EmitWriteDynamicDispatch(ILGenerator gen);
 
 		/// <summary>
 		/// 

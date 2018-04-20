@@ -34,16 +34,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 
 		protected override void Save()
 		{
-			//var fname = "SharpRemote.GeneratedCode.Serializer.dll";
-			//try
-			//{
-			//	_assembly.Save(fname);
-			//	TestContext.Out.WriteLine("Assembly written to: {0}", Path.Combine(Directory.GetCurrentDirectory(), fname));
-			//}
-			//catch (Exception e)
-			//{
-			//	TestContext.Out.WriteLine("Couldn't write assembly: {0}", e);
-			//}
+			var fname = "SharpRemote.GeneratedCode.Serializer.dll";
+			try
+			{
+				_assembly.Save(fname);
+				TestContext.Out.WriteLine("Assembly written to: {0}", Path.Combine(Directory.GetCurrentDirectory(), fname));
+			}
+			catch (Exception e)
+			{
+				TestContext.Out.WriteLine("Couldn't write assembly: {0}", e);
+			}
 		}
 
 		public static IEnumerable<ProtocolVersion> SupportedVersions => new[]
@@ -60,25 +60,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 			Serializer.BinarySerializer | Serializer.XmlSerializer
 		};
 
-		public static IEnumerable<object> Challenges => new object[]
-		{
-			null,
-			42,
-			"Where is Waldo?",
-			new Birke
-			{
-				A = Math.PI,
-				B = byte.MaxValue,
-				C = "Where's my money?"
-			}
-		};
-
 		[Test]
 		[Ignore("Not implemented yet")]
 		public void TestSerializeHandshakeSync(
 			[ValueSource(nameof(SupportedVersions))] ProtocolVersion supportedVersions,
 			[ValueSource(nameof(SupportedSerializer))] Serializer supportedSerializers,
-			[ValueSource(nameof(Challenges))] object challenge
+			[ValueSource(nameof(ObjectValues))] object challenge
 			)
 		{
 			var message = new HandshakeSyn

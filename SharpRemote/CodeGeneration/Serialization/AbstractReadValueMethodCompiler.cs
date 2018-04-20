@@ -65,9 +65,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					throw new NotImplementedException();
 
 				case SerializationType.Unknown:
-					var gen = Method.GetILGenerator();
-					EmitDispatchReadObject(gen);
-					break;
+					throw new NotImplementedException();
 
 				default:
 					throw new InvalidEnumArgumentException("", (int)serializationType, typeof(SerializationType));
@@ -78,7 +76,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitDispatchReadObject(ILGenerator gen);
+		protected abstract void EmitDynamicDispatchReadObject(ILGenerator gen);
 
 		private void EmitReadBuiltInType(ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
@@ -249,9 +247,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		                                ITypeDescription typeDescription,
 		                                ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
-			var methods = methodStorage.GetOrAdd(typeDescription.Type);
 			if (typeDescription.IsValueType)
 			{
+				var methods = methodStorage.GetOrAdd(typeDescription.Type);
+
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldarg_1);
 				gen.Emit(OpCodes.Ldarg_2);
@@ -259,10 +258,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 			else
 			{
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldarg_1);
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.Emit(OpCodes.Call, methods.ReadValueMethod);
+				EmitDynamicDispatchReadObject(gen);
 			}
 		}
 

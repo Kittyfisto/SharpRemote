@@ -11,7 +11,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 	internal sealed class BinaryWriteValueMethodCompiler
 		: AbstractWriteValueMethodCompiler
 	{
-		private static readonly MethodInfo BinarySerializer2WriteObjectNotNull;
+		private static readonly MethodInfo BinarySerializer2WriteObject;
 		private static readonly MethodInfo BinarySerializer2WriteByte;
 		private static readonly MethodInfo BinarySerializer2WriteSByte;
 		private static readonly MethodInfo BinarySerializer2WriteDecimal;
@@ -29,7 +29,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		static BinaryWriteValueMethodCompiler()
 		{
-			BinarySerializer2WriteObjectNotNull = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteObjectNotNull), new []{typeof(BinaryWriter), typeof(object), typeof(IRemotingEndPoint)});
+			BinarySerializer2WriteObject = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteObject), new []{typeof(BinaryWriter), typeof(object), typeof(IRemotingEndPoint)});
 			BinarySerializer2WriteByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(byte)});
 			BinarySerializer2WriteSByte = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(sbyte)});
 			BinarySerializer2WriteDecimal = typeof(BinarySerializer2).GetMethod(nameof(BinarySerializer2.WriteValue), new []{typeof(BinaryWriter), typeof(decimal)});
@@ -59,13 +59,13 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			generator.Emit(OpCodes.Callvirt, Methods.WriteByte);
 		}
 
-		protected override void EmitWriteDynamicDispatch(ILGenerator gen)
+		protected override void EmitDynamicDispatchWriteObject(ILGenerator gen)
 		{
 			gen.Emit(OpCodes.Ldarg_2);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Ldarg_3);
-			gen.Emit(OpCodes.Call, BinarySerializer2WriteObjectNotNull);
+			gen.Emit(OpCodes.Call, BinarySerializer2WriteObject);
 		}
 
 		protected override void EmitBeginWriteField(ILGenerator gen, FieldDescription field)

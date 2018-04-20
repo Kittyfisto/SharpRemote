@@ -49,6 +49,19 @@ namespace SharpRemote.Test.TypeModel
 		};
 
 		[Test]
+		public void TestHierarchy()
+		{
+			var model = new SharpRemote.TypeModel();
+			model.Add<BaseClass>();
+			model.Add<Tree>();
+			model.Add<Birke>();
+
+			model.Types.Should().Contain(x => x.Type == typeof(BaseClass));
+			model.Types.Should().Contain(x => x.Type == typeof(Tree));
+			model.Types.Should().Contain(x => x.Type == typeof(Birke));
+		}
+
+		[Test]
 		public void TestBuiltInType([ValueSource(nameof(BuiltInTypes))] Type type)
 		{
 			var model = new SharpRemote.TypeModel();

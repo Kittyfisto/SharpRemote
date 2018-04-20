@@ -40,13 +40,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public void WriteArgument(object value)
 		{
 			_writer.WriteStartElement(XmlSerializer.ArgumentElementName);
-			if (value != null)
-			{
-				_writer.WriteAttributeString(XmlSerializer.TypeAttributeName, value.GetType().AssemblyQualifiedName);
-				_writer.WriteStartElement(XmlSerializer.ValueName);
-				_serializer.WriteObject(_writer, value, _endPoint);
-				_writer.WriteEndElement();
-			}
+			_serializer.WriteObject(_writer, value, _endPoint);
 			_writer.WriteEndElement();
 		}
 

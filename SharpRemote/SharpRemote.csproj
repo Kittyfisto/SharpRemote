@@ -79,11 +79,6 @@
     <Compile Include="CodeGeneration\Serialization\ISerializationMethods.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializationMethodStorage.cs" />
     <Compile Include="CodeGeneration\Serialization\ISerializerCompiler.cs" />
-    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodCallReader.cs" />
-    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodCallWriter.cs" />
-    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodResultReader.cs" />
-    <Compile Include="CodeGeneration\Serialization\Json\JsonMethodResultWriter.cs" />
-    <Compile Include="CodeGeneration\Serialization\Json\JsonSerializer.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractReadObjectMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractReadValueMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\KeyValuePairSurrogate.cs" />

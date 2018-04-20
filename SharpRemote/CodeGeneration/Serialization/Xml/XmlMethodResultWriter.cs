@@ -42,7 +42,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public void WriteResult(object value)
 		{
 			_writer.WriteStartElement(XmlSerializer.ReturnValueElementName);
-			_serializer.WriteObject(_writer, value, _endPoint);
+			_serializer.WriteObjectNotNull(_writer, value, _endPoint);
 			_writer.WriteEndElement();
 		}
 
@@ -133,7 +133,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		public void WriteException(Exception e)
 		{
 			_writer.WriteStartElement(XmlSerializer.ExceptionElementName);
-			_serializer.WriteObject(_writer, e, _endPoint);
+			_serializer.WriteObjectNotNull(_writer, e, _endPoint);
 			_writer.WriteEndElement();
 		}
 	}

@@ -224,7 +224,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Call, XmlSerializerReadException);
 		}
 
-		protected override void EmitDispatchReadObject(ILGenerator gen)
+		protected override void EmitDynamicDispatchReadObject(ILGenerator gen)
 		{
 			throw new NotImplementedException();
 		}

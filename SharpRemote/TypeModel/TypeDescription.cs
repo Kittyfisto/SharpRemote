@@ -285,7 +285,7 @@ namespace SharpRemote
 			}
 
 			if (IsInterestingBaseType(type.BaseType))
-				description.BaseType = Create(type.BaseType, typesByAssemblyQualifiedName);
+				description.BaseType = GetOrCreate(type.BaseType, typesByAssemblyQualifiedName);
 			description.IsBuiltIn = builtIn;
 			description.IsValueType = type.IsValueType;
 			description.IsClass = type.IsClass;

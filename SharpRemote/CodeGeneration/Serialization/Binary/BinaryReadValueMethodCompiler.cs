@@ -50,7 +50,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		{
 		}
 
-		protected override void EmitDispatchReadObject(ILGenerator gen)
+		protected override void EmitDynamicDispatchReadObject(ILGenerator gen)
 		{
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Ldarg_0);

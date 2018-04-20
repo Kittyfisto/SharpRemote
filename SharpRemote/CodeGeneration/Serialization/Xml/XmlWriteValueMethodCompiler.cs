@@ -58,7 +58,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		protected override void EmitWriteHint(ILGenerator generator, ByReferenceHint hint)
 		{ }
 
-		protected override void EmitWriteDynamicDispatch(ILGenerator gen)
+		protected override void EmitDynamicDispatchWriteObject(ILGenerator gen)
 		{
 			throw new NotImplementedException();
 		}

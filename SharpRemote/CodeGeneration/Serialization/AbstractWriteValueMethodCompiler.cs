@@ -68,10 +68,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 					throw new NotImplementedException();
 
 				case SerializationType.Unknown:
-					var gen = Method.GetILGenerator();
-					EmitWriteDynamicDispatch(gen);
-					gen.Emit(OpCodes.Ret);
-					break;
+					throw new NotImplementedException();
 
 				default:
 					throw new InvalidEnumArgumentException("", (int) serializationType, typeof(SerializationType));
@@ -117,18 +114,6 @@ namespace SharpRemote.CodeGeneration.Serialization
 
 			// The very first thing we want to do is to call the PreDeserializationCallback, if available.
 			EmitCallBeforeSerialization(gen);
-
-			// Then we want to write the contents of the base type to the stream, if available.
-			var baseType = _context.TypeDescription.BaseType;
-			if (baseType != null)
-			{
-				var methods = methodStorage.GetOrAdd(baseType.Type);
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldarg_1);
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.Emit(OpCodes.Ldarg_3);
-				gen.Emit(OpCodes.Call, methods.WriteValueMethod);
-			}
 
 			Action loadValue = () =>
 			{
@@ -280,10 +265,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		                               Action loadMember,
 		                               ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
-			var methods = methodStorage.GetOrAdd(typeDescription.Type);
-
 			if (typeDescription.IsValueType)
 			{
+				var methods = methodStorage.GetOrAdd(typeDescription.Type);
+
 				gen.Emit(OpCodes.Ldarg_0);
 				loadMember();
 				gen.Emit(OpCodes.Ldarg_2);
@@ -292,11 +277,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 			}
 			else
 			{
-				gen.Emit(OpCodes.Ldarg_0);
-				loadMember();
-				gen.Emit(OpCodes.Ldarg_2);
-				gen.Emit(OpCodes.Ldarg_3);
-				gen.Emit(OpCodes.Call, methods.WriteObjectMethod);
+				EmitDynamicDispatchWriteObject(gen);
 			}
 		}
 
@@ -304,7 +285,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
-		protected abstract void EmitWriteDynamicDispatch(ILGenerator gen);
+		protected abstract void EmitDynamicDispatchWriteObject(ILGenerator gen);
 
 		/// <summary>
 		/// 

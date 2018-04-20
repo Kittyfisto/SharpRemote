@@ -89,6 +89,35 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			decimal.MaxValue
 		};
 
+		public static IEnumerable<Tree> TreeValues => new[]
+		{
+			null,
+			new Tree
+			{
+				A = Math.PI,
+				B = 128
+			},
+			new Birke
+			{
+				A = 1,
+				B = 2,
+				C = "3"
+			}
+		};
+
+		public static IEnumerable<object> ObjectValues => new object[]
+		{
+			null,
+			42,
+			"Where is Waldo?",
+			new Birke
+			{
+				A = Math.PI,
+				B = byte.MaxValue,
+				C = "Where's my money?"
+			}
+		};
+
 		#region Method Call Roundtrips
 
 		[Test]
@@ -711,12 +740,20 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		[Test]
 		[Ignore("Not yet implemented")]
-		public void TestMethodCallFieldObjectStruct()
+		public void TestMethodCallFieldObjectStruct([ValueSource(nameof(ObjectValues))] object innerValue)
 		{
 			MethodCallRoundtripObject(new FieldObjectStruct
 			{
-				Value = 42
+				Value = innerValue
 			});
+		}
+
+		[Test]
+		[Ignore("Not yet implemented")]
+		[Description("Verifies that hierarchical data transfer object can be serialized and deserialized")]
+		public void TestMethodCallDtoTree([ValueSource(nameof(TreeValues))] Tree value)
+		{
+			MethodCallRoundtripObject(value);
 		}
 
 		[Test]
@@ -1621,7 +1658,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 					reader.ReadNextArgument(out actualValue).Should().BeTrue();
 					if (value != null)
 					{
-						actualValue.Should().BeOfType<T>();
+						actualValue.Should().BeOfType(value.GetType());
 						if (!ReferenceEquals(value, string.Empty))
 							actualValue.Should().NotBeSameAs(value);
 					}

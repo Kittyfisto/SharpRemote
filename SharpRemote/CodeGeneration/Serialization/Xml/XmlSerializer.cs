@@ -242,12 +242,29 @@ namespace SharpRemote
 		#region Writing
 
 		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="writer"></param>
+		/// <param name="value"></param>
+		/// <param name="endPoint"></param>
+		public void WriteObject(XmlWriter writer, object value, IRemotingEndPoint endPoint)
+		{
+			if (value != null)
+			{
+				writer.WriteAttributeString(TypeAttributeName, value.GetType().AssemblyQualifiedName);
+				writer.WriteStartElement(ValueName);
+				WriteObjectNotNull(writer, value, endPoint);
+				writer.WriteEndElement();
+			}
+		}
+
+		/// <summary>
 		/// </summary>
 		/// <param name="writer"></param>
 		/// <param name="value"></param>
 		/// <param name="endPoint"></param>
 		/// <exception cref="NotImplementedException"></exception>
-		public void WriteObject(XmlWriter writer, object value, IRemotingEndPoint endPoint)
+		public void WriteObjectNotNull(XmlWriter writer, object value, IRemotingEndPoint endPoint)
 		{
 			// TODO: Built-in types should not be denoted using their full assembly qualified name but instead
 			//       by using custom names, such as "UInt16", "SByte" or "String" for short.
@@ -446,7 +463,7 @@ namespace SharpRemote
 			writer.WriteStartElement(name);
 			if (value != null)
 			{
-				serializer.WriteObject(writer, value, null);
+				serializer.WriteObjectNotNull(writer, value, null);
 			}
 			writer.WriteEndElement();
 		}

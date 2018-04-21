@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading.Tasks;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -23,6 +24,11 @@ namespace SharpRemote
 		/// <summary>
 		/// </summary>
 		SpecialMethod SpecialMethod { get; }
+
+		/// <summary>
+		///     True when the method returns a <see cref="Task" />.
+		/// </summary>
+		bool IsAsync { get; }
 
 		/// <summary>
 		///     The equivalent of <see cref="MethodInfo.ReturnParameter" />.

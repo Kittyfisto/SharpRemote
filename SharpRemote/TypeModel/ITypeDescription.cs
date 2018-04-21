@@ -105,5 +105,10 @@ namespace SharpRemote
 		///    The list of enum values.
 		/// </summary>
 		IReadOnlyList<IEnumValueDescription> EnumValues { get; }
+
+		/// <summary>
+		///     The list of generic type arguments, if there are any.
+		/// </summary>
+		IReadOnlyList<ITypeDescription> GenericArguments { get; }
 	}
 }

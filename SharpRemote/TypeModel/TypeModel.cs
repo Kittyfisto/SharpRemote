@@ -46,20 +46,20 @@ namespace SharpRemote
 		/// <summary>
 		///     Adds the given <typeparamref name="T" /> to this model.
 		/// </summary>
-		/// <param name="assumeProxy"></param>
+		/// <param name="assumeByReference"></param>
 		/// <typeparam name="T"></typeparam>
-		public ITypeDescription Add<T>(bool assumeProxy = false)
+		public ITypeDescription Add<T>(bool assumeByReference = false)
 		{
-			return Add(typeof(T), assumeProxy);
+			return Add(typeof(T), assumeByReference);
 		}
 
 		/// <summary>
 		///     Adds the given <paramref name="type" /> to this model.
 		/// </summary>
 		/// <param name="type"></param>
-		/// <param name="assumeProxy"></param>
+		/// <param name="assumeByReference"></param>
 		/// <exception cref="ArgumentNullException">When <paramref name="type" /> is null</exception>
-		public ITypeDescription Add(Type type, bool assumeProxy = false)
+		public ITypeDescription Add(Type type, bool assumeByReference = false)
 		{
 			if (type == null)
 				throw new ArgumentNullException(nameof(type));
@@ -76,7 +76,7 @@ namespace SharpRemote
 				// We work on a local copy so that:
 				// A) In case any constraint is violated, the type model is NEVER modified
 				// B) We know exactly which types to add without having to do an O(N) search of _types
-				typeDescription = TypeDescription.Create(type, typesByAssemblyQualifiedName, assumeProxy);
+				typeDescription = TypeDescription.Create(type, typesByAssemblyQualifiedName, assumeByReference);
 				typeDescription.Id = GetNextId();
 
 				// It's likely that we had to expand the type model beyond the given type, all of those additional types

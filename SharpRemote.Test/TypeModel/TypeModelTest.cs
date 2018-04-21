@@ -4,6 +4,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Structs;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Enums;
 using SharpRemote.Test.Types.Interfaces;
@@ -32,14 +33,50 @@ namespace SharpRemote.Test.TypeModel
 		}
 
 		[Test]
+		public void TestIReturnsTask()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<IReturnsTask>(assumeByReference: true);
+			type.Methods.Should().HaveCount(1);
+			var method = type.Methods[0];
+			method.Name.Should().Be(nameof(IReturnsTask.DoStuff));
+			method.IsAsync.Should().BeTrue();
+
+			var returnType = method.ReturnType;
+			returnType.Type.Should().Be<Task>();
+			returnType.IsGenericType.Should().BeFalse();
+			returnType.GenericArguments.Should().BeEmpty();
+		}
+
+		[Test]
+		public void TestIReturnsIntTask()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<IReturnsIntTask>(assumeByReference: true);
+			type.Methods.Should().HaveCount(1);
+			var method = type.Methods[0];
+			method.Name.Should().Be(nameof(IReturnsIntTask.DoStuff));
+			method.IsAsync.Should().BeTrue();
+
+			var returnType = method.ReturnType;
+			returnType.Type.Should().Be<Task<int>>();
+			returnType.IsGenericType.Should().BeTrue();
+			returnType.GenericArguments.Should().HaveCount(1);
+
+			var argument = returnType.GenericArguments[0];
+			argument.Type.Should().Be<int>();
+		}
+
+		[Test]
 		public void TestIInt32Method()
 		{
 			var model = new SharpRemote.TypeModel();
-			var type = model.Add<IInt32Method>(assumeProxy: true);
+			var type = model.Add<IInt32Method>(assumeByReference: true);
 			type.SerializationType.Should().Be(SerializationType.ByReference);
 			type.Methods.Should().HaveCount(1);
 			var method = type.Methods[0];
 			method.Name.Should().Be(nameof(IInt32Method.Do));
+			method.IsAsync.Should().BeFalse();
 			method.Parameters.Should().BeEmpty();
 			method.ReturnType.Type.Should().Be<int>();
 		}
@@ -48,7 +85,7 @@ namespace SharpRemote.Test.TypeModel
 		public void TestIVoidMethodInt64Parameter()
 		{
 			var model = new SharpRemote.TypeModel();
-			var type = model.Add<IVoidMethodInt64Parameter>(assumeProxy: true);
+			var type = model.Add<IVoidMethodInt64Parameter>(assumeByReference: true);
 			type.SerializationType.Should().Be(SerializationType.ByReference);
 			type.Methods.Should().HaveCount(1);
 			var method = type.Methods[0];

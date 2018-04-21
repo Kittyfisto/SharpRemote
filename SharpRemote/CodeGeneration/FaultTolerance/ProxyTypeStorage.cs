@@ -30,7 +30,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				var type = typeof(T);
 				if (!_fallbackProxyCreators.TryGetValue(type, out creator))
 				{
-					var description = _typeModel.Add(type, assumeProxy: true);
+					var description = _typeModel.Add(type, assumeByReference: true);
 					creator = new FallbackProxyCreator<T>(_moduleBuilder, description);
 					_fallbackProxyCreators.Add(typeof(T), creator);
 				}
@@ -46,7 +46,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				var type = typeof(T);
 				if (!_fallbackCreators.TryGetValue(type, out creator))
 				{
-					var description = _typeModel.Add(type, assumeProxy: true);
+					var description = _typeModel.Add(type, assumeByReference: true);
 					creator = new DefaultFallbackCreator<T>(_moduleBuilder, description);
 					_fallbackCreators.Add(typeof(T), creator);
 				}

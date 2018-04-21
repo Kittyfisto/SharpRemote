@@ -112,6 +112,12 @@ namespace SharpRemote
 		/// 
 		/// </summary>
 		[DataMember]
+		public TypeDescription[] GenericArguments { get; set; }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[DataMember]
 		public int BaseTypeId { get; set; }
 
 		/// <summary>
@@ -178,6 +184,8 @@ namespace SharpRemote
 
 		IReadOnlyList<IEnumValueDescription> ITypeDescription.EnumValues => EnumValues;
 
+		IReadOnlyList<ITypeDescription> ITypeDescription.GenericArguments => GenericArguments;
+
 		/// <inheritdoc />
 		public override string ToString()
 		{
@@ -206,11 +214,11 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="type"></param>
 		/// <param name="typesByAssemblyQualifiedName"></param>
-		/// <param name="assumeProxy"></param>
+		/// <param name="assumeByReference"></param>
 		/// <returns></returns>
 		public static TypeDescription Create(Type type,
 		                                     IDictionary<string, TypeDescription> typesByAssemblyQualifiedName,
-		                                     bool assumeProxy = false)
+		                                     bool assumeByReference = false)
 		{
 			if (type == null)
 				throw new ArgumentNullException(nameof(type));
@@ -223,7 +231,7 @@ namespace SharpRemote
 			MethodInfo singletonAccessor;
 			Type byReferenceInterface;
 			var serializerType = GetSerializationType(type,
-													  assumeProxy,
+													  assumeByReference,
 			                                          out builtIn,
 			                                          out isEnumerable,
 			                                          out singletonAccessor,
@@ -302,6 +310,20 @@ namespace SharpRemote
 			description.IsEnumerable = isEnumerable;
 			description.IsSealed = type.IsSealed;
 			description.IsGenericType = type.IsGenericType;
+
+			if (type.IsGenericType)
+			{
+				var genericArguments = type.GetGenericArguments();
+				description.GenericArguments = new TypeDescription[genericArguments.Length];
+				for (int i = 0; i < genericArguments.Length; ++i)
+				{
+					description.GenericArguments[i] = GetOrCreate(genericArguments[i], typesByAssemblyQualifiedName);
+				}
+			}
+			else
+			{
+				description.GenericArguments = new TypeDescription[0];
+			}
 
 			if (type.IsEnum)
 			{

@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Threading.Tasks;
 using SharpRemote.Attributes;
 
 // ReSharper disable once CheckNamespace
@@ -34,6 +35,13 @@ namespace SharpRemote
 		{
 			Name = method.Name;
 			_method = method;
+
+			var returnType = method.ReturnType;
+			if (returnType == typeof(Task) ||
+			    (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>)))
+			{
+				IsAsync = true;
+			}
 
 			var type = method.DeclaringType;
 			if (IsSerializationCallback(method, out _specialMethod))
@@ -75,9 +83,12 @@ namespace SharpRemote
 			}
 		}
 
-		/// <summary>
-		/// </summary>
+		/// <inheritdoc />
 		public MethodInfo Method => _method;
+
+		/// <inheritdoc />
+		[DataMember]
+		public bool IsAsync { get; set; }
 
 		/// <summary>
 		///     The equivalent of <see cref="MethodInfo.ReturnParameter" />.

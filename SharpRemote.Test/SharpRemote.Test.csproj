@@ -67,7 +67,7 @@
     <Compile Include="AssemblySetup.cs" />
     <Compile Include="BlockingCollectionTest.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorTest.cs" />
-    <Compile Include="CodeGeneration\FailureHandling\FaultTolerantProxyCreatorTest.cs" />
+    <Compile Include="CodeGeneration\FailureHandling\ProxyCreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />
@@ -307,7 +307,7 @@
     <Compile Include="Types\Structs\FieldSbyteEnum.cs" />
     <Compile Include="Types\Structs\FieldString.cs" />
     <Compile Include="Types\Structs\FieldStruct.cs" />
-    <Compile Include="CodeGeneration\Remoting\ProxyCreatorTest.cs" />
+    <Compile Include="CodeGeneration\Remoting\RemotingProxyCreatorTest.cs" />
     <Compile Include="Types\Classes\FieldSealedClass.cs" />
     <Compile Include="Types\Classes\Tree.cs" />
     <Compile Include="Types\Structs\FieldUInt16Enum.cs" />

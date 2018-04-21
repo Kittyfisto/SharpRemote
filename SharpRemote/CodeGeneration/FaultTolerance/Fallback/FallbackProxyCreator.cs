@@ -1,35 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace SharpRemote.CodeGeneration.FaultTolerance
+namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 {
-	/// <summary>
-	/// Responsible for creating proxy objects implementing a specified interface,
-	/// forwarding method calls to another object while attempting to hide failures
-	/// from the caller.
-	/// </summary>
-	public sealed class FaultTolerantProxyCreator
+	internal sealed class FallbackProxyCreator<T>
+		: IFallbackProxyCreator
 	{
-		private readonly ModuleBuilder _moduleBuilder;
-		private readonly TypeModel _typeModel;
-		private readonly Dictionary<Type, IFallbackProxyCreator> _fallbackProxyCreators;
-		private readonly object _syncRoot;
+		private readonly Func<T, T, T> _factoryMethod;
 
-		interface IFallbackProxyCreator
+		public FallbackProxyCreator(ModuleBuilder moduleBuilder, ITypeDescription interfaceDescription)
 		{
-			object Create(object subject, object fallback);
+			var compiler = new FallbackProxyCompiler(moduleBuilder, interfaceDescription);
+			_factoryMethod = compiler.Compile();
 		}
 
-		sealed class FallbackProxyCompiler<T>
+		public object Create(object subject, object fallback)
 		{
-			private readonly Type _interfaceType;
-			private readonly TypeBuilder _typeBuilder;
-			private readonly ITypeDescription _interfaceDescription;
-			private readonly FieldBuilder _subject;
+			return _factoryMethod((T) subject, (T) fallback);
+		}
+
+		sealed class FallbackProxyCompiler
+		{
 			private readonly FieldBuilder _fallback;
+			private readonly ITypeDescription _interfaceDescription;
+			private readonly Type _interfaceType;
+			private readonly FieldBuilder _subject;
+			private readonly TypeBuilder _typeBuilder;
 
 			public FallbackProxyCompiler(ModuleBuilder moduleBuilder, ITypeDescription interfaceDescription)
 			{
@@ -48,15 +46,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 			public Func<T, T, T> Compile()
 			{
 				var constructor = CreateConstructor();
-				foreach (var method in _interfaceDescription.Methods)
-				{
-					CreateMethod(method);
-				}
+				foreach (var method in _interfaceDescription.Methods) CreateMethod(method);
 
-				foreach (var property in _interfaceDescription.Properties)
-				{
-					CreateProperty(property);
-				}
+				foreach (var property in _interfaceDescription.Properties) CreateProperty(property);
 
 				CreateFactoryMethod(constructor);
 				var type = _typeBuilder.CreateType();
@@ -101,7 +93,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				var gen = methodBuilder.GetILGenerator();
 
 				LocalBuilder returnValue = null;
-				bool hasReturnValue = method.ReturnType != typeof(void);
+				var hasReturnValue = method.ReturnType != typeof(void);
 				if (hasReturnValue)
 					returnValue = gen.DeclareLocal(method.ReturnType);
 
@@ -109,10 +101,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _subject);
-				for (int i = 0; i < parameters.Count; ++i)
-				{
-					gen.Emit(OpCodes.Ldarg, i + 1);
-				}
+				for (var i = 0; i < parameters.Count; ++i) gen.Emit(OpCodes.Ldarg, i + 1);
 				gen.Emit(OpCodes.Callvirt, methodDescription.Method);
 				if (hasReturnValue)
 					gen.Emit(OpCodes.Stloc, returnValue);
@@ -120,10 +109,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				gen.BeginCatchBlock(typeof(Exception));
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _fallback);
-				for (int i = 0; i < parameters.Count; ++i)
-				{
-					gen.Emit(OpCodes.Ldarg, i + 1);
-				}
+				for (var i = 0; i < parameters.Count; ++i) gen.Emit(OpCodes.Ldarg, i + 1);
 				gen.Emit(OpCodes.Callvirt, methodDescription.Method);
 				if (hasReturnValue)
 					gen.Emit(OpCodes.Stloc, returnValue);
@@ -145,12 +131,10 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				                                           new Type[0]);
 				if (propertyDescription.GetMethod != null)
 				{
-
 				}
 
 				if (propertyDescription.SetMethod != null)
 				{
-
 				}
 			}
 
@@ -167,99 +151,6 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				gen.Emit(OpCodes.Ret);
 
 				return method;
-			}
-		}
-
-		sealed class FallbackProxyCreator<T>
-			: IFallbackProxyCreator
-		{
-			private readonly Func<T, T, T> _factoryMethod;
-
-			public FallbackProxyCreator(ModuleBuilder moduleBuilder, ITypeDescription interfaceDescription)
-			{
-				var compiler = new FallbackProxyCompiler<T>(moduleBuilder, interfaceDescription);
-				_factoryMethod = compiler.Compile();
-			}
-
-			public object Create(object subject, object fallback)
-			{
-				return _factoryMethod((T) subject, (T) fallback);
-			}
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public FaultTolerantProxyCreator()
-			: this(CreateModule())
-		{
-
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="moduleBuilder"></param>
-		/// <exception cref="ArgumentNullException"></exception>
-		public FaultTolerantProxyCreator(ModuleBuilder moduleBuilder)
-		{
-			if (moduleBuilder == null)
-				throw new ArgumentNullException(nameof(moduleBuilder));
-
-			_moduleBuilder = moduleBuilder;
-			_syncRoot = new object();
-			_typeModel = new TypeModel();
-			_fallbackProxyCreators = new Dictionary<Type, IFallbackProxyCreator>();
-		}
-
-		private static ModuleBuilder CreateModule()
-		{
-			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.FaultTolerance");
-			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
-			                                                             AssemblyBuilderAccess.RunAndSave);
-			var moduleName = assemblyName.Name + ".dll";
-			var module = assembly.DefineDynamicModule(moduleName);
-			return module;
-		}
-
-		/// <summary>
-		/// Creates a proxy which delegates all method calls to the given subject.
-		/// In case any method call throws an exception, the exception is caught and the fallback
-		/// is queried.
-		/// </summary>
-		/// <param name="subject"></param>
-		/// <param name="fallback"></param>
-		/// <typeparam name="T"></typeparam>
-		/// <returns></returns>
-		public T CreateProxyWithFallback<T>(T subject, T fallback)
-			where T : class
-		{
-			if (subject == null)
-				throw new ArgumentNullException(nameof(subject));
-			if (fallback == null)
-				throw new ArgumentNullException(nameof(fallback));
-
-			var creator = GetOrCreateFallbackProxyCreator<T>();
-			return (T)creator.Create(subject, fallback);
-		}
-
-		private IFallbackProxyCreator GetOrCreateFallbackProxyCreator<T>()
-		{
-			var type = typeof(T);
-			if (!type.IsInterface)
-				throw new ArgumentException();
-
-			lock (_syncRoot)
-			{
-				IFallbackProxyCreator creator;
-				if (!_fallbackProxyCreators.TryGetValue(type, out creator))
-				{
-					var description = _typeModel.Add(type, assumeProxy: true);
-					creator = new FallbackProxyCreator<T>(_moduleBuilder, description);
-					_fallbackProxyCreators.Add(typeof(T), creator);
-				}
-
-				return creator;
 			}
 		}
 	}

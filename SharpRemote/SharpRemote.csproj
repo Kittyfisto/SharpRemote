@@ -56,7 +56,14 @@
     <Compile Include="Attributes\SerializationMethodAttribute.cs" />
     <Compile Include="Attributes\SerializationSurrogateForAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
-    <Compile Include="CodeGeneration\FaultTolerance\FaultTolerantProxyCreator.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\Fallback\DefaultFallbackCreator.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\Fallback\FallbackProxyCreator.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\Fallback\IDefaultFallbackCreator.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\Fallback\IFallbackProxyCreator.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\IProxyFactory.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\ProxyCreator.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\ProxyFactory.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\ProxyTypeStorage.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializationMethods.CompilationContext.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractMethodsCompiler.cs" />
@@ -286,7 +293,7 @@
     <Compile Include="IEndpointChannel.cs" />
     <Compile Include="CodeGeneration\Remoting\ProxyCompiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CodeGeneration\Remoting\ProxyCreator.cs" />
+    <Compile Include="CodeGeneration\Remoting\RemotingProxyCreator.cs" />
     <Compile Include="TypeModel\TypeId.cs" />
     <Compile Include="TypeModel\TypeModel.cs" />
     <Compile Include="Watchdog\ApplicationDescriptor.cs" />

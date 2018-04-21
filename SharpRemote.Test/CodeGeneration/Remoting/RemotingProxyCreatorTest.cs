@@ -20,9 +20,9 @@ using SharpRemote.Test.Types.Structs;
 namespace SharpRemote.Test.CodeGeneration.Remoting
 {
 	[TestFixture]
-	public sealed class ProxyCreatorTest
+	public sealed class RemotingProxyCreatorTest
 	{
-		private ProxyCreator _creator;
+		private RemotingProxyCreator _creator;
 		private Mock<IEndPointChannel> _channel;
 		private Random _random;
 		private ulong _objectId;
@@ -44,7 +44,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			_endPoint = new Mock<IRemotingEndPoint>();
 
 			_channel = new Mock<IEndPointChannel>();
-			_creator = new ProxyCreator(module);
+			_creator = new RemotingProxyCreator(module);
 		}
 
 		[OneTimeTearDown]

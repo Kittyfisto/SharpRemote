@@ -36,7 +36,7 @@ namespace SharpRemote.CodeGeneration
 			
 		}
 
-		private readonly ProxyCreator _proxyCreator;
+		private readonly RemotingProxyCreator _proxyCreator;
 		private readonly ServantCreator _servantCreator;
 
 		/// <summary>
@@ -45,7 +45,7 @@ namespace SharpRemote.CodeGeneration
 		/// <param name="binarySerializer"></param>
 		public CodeGenerator(BinarySerializer binarySerializer)
 		{
-			_proxyCreator = new ProxyCreator(binarySerializer.Module, binarySerializer);
+			_proxyCreator = new RemotingProxyCreator(binarySerializer.Module, binarySerializer);
 			_servantCreator = new ServantCreator(binarySerializer.Module, binarySerializer);
 		}
 
@@ -67,7 +67,7 @@ namespace SharpRemote.CodeGeneration
 			var module = assembly.DefineDynamicModule(moduleName);
 
 			var serializer = new BinarySerializer(module, customTypeResolver);
-			_proxyCreator = new ProxyCreator(module, serializer);
+			_proxyCreator = new RemotingProxyCreator(module, serializer);
 			_servantCreator = new ServantCreator(module, serializer);
 		}
 

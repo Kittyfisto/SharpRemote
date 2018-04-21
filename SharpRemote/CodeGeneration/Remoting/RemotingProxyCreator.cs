@@ -9,13 +9,13 @@ namespace SharpRemote.CodeGeneration.Remoting
 	/// Compiler capable of compiling <see cref="IProxy"/> implementations that implement
 	/// one additional interface, and forwards all calls to that interface to an <see cref="IEndPointChannel"/>.
 	/// </summary>
-	internal sealed class ProxyCreator
+	internal sealed class RemotingProxyCreator
 	{
 		private readonly ISerializerCompiler _serializer;
 		private readonly Dictionary<Type, Type> _interfaceToProxy;
 		private readonly ModuleBuilder _module;
 
-		public ProxyCreator(ModuleBuilder module, ISerializerCompiler serializer)
+		public RemotingProxyCreator(ModuleBuilder module, ISerializerCompiler serializer)
 		{
 			if (module == null) throw new ArgumentNullException(nameof(module));
 			if (serializer == null) throw new ArgumentNullException(nameof(serializer));
@@ -26,11 +26,11 @@ namespace SharpRemote.CodeGeneration.Remoting
 			_interfaceToProxy = new Dictionary<Type, Type>();
 		}
 
-		public ProxyCreator(ModuleBuilder module)
+		public RemotingProxyCreator(ModuleBuilder module)
 			: this(module, new BinarySerializer(module))
 		{}
 
-		public ProxyCreator()
+		public RemotingProxyCreator()
 			: this (CreateModule())
 		{
 			

@@ -15,7 +15,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 	public sealed class CreatorTest
 	{
 		private IEndPointChannel _channel;
-		private ProxyCreator _proxyCreator;
+		private RemotingProxyCreator _proxyCreator;
 		private ServantCreator _servantCreator;
 		private IServant _servant;
 		private Random _random;
@@ -40,7 +40,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var channel = new Mock<IEndPointChannel>();
 			_channel = channel.Object;
 
-			_proxyCreator = new ProxyCreator();
+			_proxyCreator = new RemotingProxyCreator();
 			_servantCreator = new ServantCreator();
 
 			channel.Setup(

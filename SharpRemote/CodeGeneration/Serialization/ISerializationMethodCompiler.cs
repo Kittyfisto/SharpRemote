@@ -10,7 +10,7 @@
 		/// <param name="typeName"></param>
 		/// <param name="typeDescription"></param>
 		/// <returns></returns>
-		T Prepare(string typeName, TypeDescription typeDescription);
+		T Prepare(string typeName, ITypeDescription typeDescription);
 
 		/// <summary>
 		/// 

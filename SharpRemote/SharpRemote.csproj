@@ -56,6 +56,7 @@
     <Compile Include="Attributes\SerializationMethodAttribute.cs" />
     <Compile Include="Attributes\SerializationSurrogateForAttribute.cs" />
     <Compile Include="BlockingQueue.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\FaultTolerantProxyCreator.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractMethodCompiler.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializationMethods.CompilationContext.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractMethodsCompiler.cs" />

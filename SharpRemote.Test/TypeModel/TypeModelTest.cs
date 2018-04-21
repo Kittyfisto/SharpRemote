@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Enums;
 using SharpRemote.Test.Types.Interfaces;
+using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace SharpRemote.Test.TypeModel
 {
@@ -28,6 +29,38 @@ namespace SharpRemote.Test.TypeModel
 			model.Types.Should().HaveCount(1);
 			var type = model.Types.First();
 			type.AssemblyQualifiedName.Should().Be(typeof(void).AssemblyQualifiedName);
+		}
+
+		[Test]
+		public void TestIInt32Method()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<IInt32Method>(assumeProxy: true);
+			type.SerializationType.Should().Be(SerializationType.ByReference);
+			type.Methods.Should().HaveCount(1);
+			var method = type.Methods[0];
+			method.Name.Should().Be(nameof(IInt32Method.Do));
+			method.Parameters.Should().BeEmpty();
+			method.ReturnType.Type.Should().Be<int>();
+		}
+
+		[Test]
+		public void TestIVoidMethodInt64Parameter()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<IVoidMethodInt64Parameter>(assumeProxy: true);
+			type.SerializationType.Should().Be(SerializationType.ByReference);
+			type.Methods.Should().HaveCount(1);
+			var method = type.Methods[0];
+			method.Name.Should().Be(nameof(IVoidMethodInt64Parameter.Do));
+			method.ReturnType.Type.Should().Be(typeof(void));
+			method.Parameters.Should().HaveCount(1);
+			method.Parameters[0].Name.Should().Be("value");
+			method.Parameters[0].IsIn.Should().BeFalse();
+			method.Parameters[0].IsOut.Should().BeFalse();
+			method.Parameters[0].IsRetval.Should().BeFalse();
+			method.Parameters[0].Position.Should().Be(0);
+			method.Parameters[0].ParameterType.Type.Should().Be<Int64>();
 		}
 
 		public static IEnumerable<Type> BuiltInTypes => new[]

@@ -11,12 +11,16 @@ namespace SharpRemote
 	public interface IMethodDescription
 	{
 		/// <summary>
+		///     The method being described.
+		/// </summary>
+		MethodInfo Method { get; }
+
+		/// <summary>
 		///     The equivalent of <see cref="MemberInfo.Name" />.
 		/// </summary>
 		string Name { get; }
 
 		/// <summary>
-		/// 
 		/// </summary>
 		SpecialMethod SpecialMethod { get; }
 

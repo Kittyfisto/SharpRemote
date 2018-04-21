@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -10,6 +11,11 @@ namespace SharpRemote
 	public interface IFieldDescription
 		: IMemberDescription
 	{
+		/// <summary>
+		/// 
+		/// </summary>
+		FieldInfo Field { get; }
+
 		/// <summary>
 		///     The type of this field, equivalent of <see cref="FieldInfo.FieldType" />.
 		/// </summary>

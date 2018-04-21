@@ -17,6 +17,8 @@ namespace SharpRemote
 	public sealed class MethodDescription
 		: IMethodDescription
 	{
+		private static readonly ParameterDescription[] EmptyParameters = new ParameterDescription[0];
+
 		private readonly MethodInfo _method;
 		private readonly SpecialMethod _specialMethod;
 
@@ -24,9 +26,11 @@ namespace SharpRemote
 		/// </summary>
 		public MethodDescription()
 		{
+			Parameters = EmptyParameters;
 		}
 
 		private MethodDescription(MethodInfo method)
+			: this()
 		{
 			Name = method.Name;
 			_method = method;
@@ -121,8 +125,19 @@ namespace SharpRemote
 		{
 			var description = new MethodDescription(methodInfo)
 			{
-				ReturnParameter = ParameterDescription.Create(methodInfo.ReturnParameter, typesByAssemblyQualifiedName)
+				ReturnParameter = ParameterDescription.Create(methodInfo.ReturnParameter, typesByAssemblyQualifiedName),
 			};
+			var parameters = methodInfo.GetParameters();
+			if (parameters.Length > 0)
+			{
+				description.Parameters =
+					parameters.Select(x => ParameterDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
+			}
+			else
+			{
+				description.Parameters = EmptyParameters;
+			}
+
 			return description;
 		}
 

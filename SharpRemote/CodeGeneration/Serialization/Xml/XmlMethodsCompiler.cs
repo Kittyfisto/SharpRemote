@@ -14,7 +14,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 		private readonly CompilationContext _context;
 
 		private XmlMethodsCompiler(TypeBuilder typeBuilder,
-		                           TypeDescription typeDescription,
+		                           ITypeDescription typeDescription,
 		                           CompilationContext context,
 		                           XmlWriteValueMethodCompiler writeValueMethodCompiler,
 		                           XmlWriteObjectMethodCompiler writeObjectMethodCompiler,
@@ -38,7 +38,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 
 		public Func<XmlReader, XmlSerializer, IRemotingEndPoint, object> ReadObjectDelegate { get; private set; }
 
-		public static XmlMethodsCompiler Create(TypeBuilder typeBuilder, TypeDescription typeDescription)
+		public static XmlMethodsCompiler Create(TypeBuilder typeBuilder, ITypeDescription typeDescription)
 		{
 			var context = new CompilationContext
 			{

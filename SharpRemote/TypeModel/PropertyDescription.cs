@@ -117,8 +117,8 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public MemberInfo MemberInfo => _property;
 
-		IMethodDescription IPropertyDescription.GetMethod => SetMethod;
-		IMethodDescription IPropertyDescription.SetMethod => GetMethod;
+		IMethodDescription IPropertyDescription.GetMethod => GetMethod;
+		IMethodDescription IPropertyDescription.SetMethod => SetMethod;
 		ITypeDescription IPropertyDescription.PropertyType => _propertyType;
 
 		/// <inheritdoc />

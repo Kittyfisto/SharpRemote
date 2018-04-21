@@ -68,17 +68,17 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			gen.Emit(OpCodes.Call, BinarySerializer2WriteObject);
 		}
 
-		protected override void EmitBeginWriteField(ILGenerator gen, FieldDescription field)
+		protected override void EmitBeginWriteField(ILGenerator gen, IFieldDescription field)
 		{
 			
 		}
 
-		protected override void EmitEndWriteField(ILGenerator gen, FieldDescription field)
+		protected override void EmitEndWriteField(ILGenerator gen, IFieldDescription field)
 		{
 			
 		}
 
-		protected override void EmitEndWriteProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitEndWriteProperty(ILGenerator gen, IPropertyDescription property)
 		{
 			
 		}
@@ -127,7 +127,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			}
 		}
 
-		protected override void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitBeginWriteProperty(ILGenerator gen, IPropertyDescription property)
 		{
 			
 		}

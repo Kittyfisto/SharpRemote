@@ -12,7 +12,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 	{
 		private readonly IMethodCompiler[] _compilers;
 		private readonly TypeBuilder _typeBuilder;
-		private readonly TypeDescription _typeDescription;
+		private readonly ITypeDescription _typeDescription;
 
 		/// <summary>
 		///     Initializes this object.
@@ -24,7 +24,7 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// <param name="readValueMethodCompiler"></param>
 		/// <param name="readObjectMethodCompiler"></param>
 		protected AbstractMethodsCompiler(TypeBuilder typeBuilder,
-		                                 TypeDescription typeDescription,
+		                                 ITypeDescription typeDescription,
 		                                 AbstractWriteValueMethodCompiler writeValueMethodCompiler,
 		                                 AbstractWriteObjectMethodCompiler writeObjectMethodCompiler,
 		                                 AbstractReadValueMethodCompiler readValueMethodCompiler,

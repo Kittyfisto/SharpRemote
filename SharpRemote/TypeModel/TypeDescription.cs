@@ -206,8 +206,11 @@ namespace SharpRemote
 		/// </summary>
 		/// <param name="type"></param>
 		/// <param name="typesByAssemblyQualifiedName"></param>
+		/// <param name="assumeProxy"></param>
 		/// <returns></returns>
-		public static TypeDescription Create(Type type, IDictionary<string, TypeDescription> typesByAssemblyQualifiedName)
+		public static TypeDescription Create(Type type,
+		                                     IDictionary<string, TypeDescription> typesByAssemblyQualifiedName,
+		                                     bool assumeProxy = false)
 		{
 			if (type == null)
 				throw new ArgumentNullException(nameof(type));
@@ -219,7 +222,12 @@ namespace SharpRemote
 			bool builtIn, isEnumerable;
 			MethodInfo singletonAccessor;
 			Type byReferenceInterface;
-			var serializerType = GetSerializationType(type, out builtIn, out isEnumerable, out singletonAccessor, out byReferenceInterface);
+			var serializerType = GetSerializationType(type,
+													  assumeProxy,
+			                                          out builtIn,
+			                                          out isEnumerable,
+			                                          out singletonAccessor,
+			                                          out byReferenceInterface);
 
 			var description = new TypeDescription(type, byReferenceInterface)
 			{
@@ -356,6 +364,7 @@ namespace SharpRemote
 
 		[Pure]
 		private static SerializationType GetSerializationType(Type type,
+		                                                      bool assumeProxy,
 		                                                      out bool builtIn,
 		                                                      out bool isEnumerable,
 		                                                      out MethodInfo singletonAccessor,
@@ -408,6 +417,15 @@ namespace SharpRemote
 				return SerializationType.ByValue;
 			}
 			isEnumerable = false;
+
+			if (assumeProxy && type.IsInterface)
+			{
+				builtIn = false;
+				isEnumerable = false;
+				singletonAccessor = null;
+				byReferenceInterface = type;
+				return SerializationType.ByReference;
+			}
 
 			if ((type.IsClass || type.IsInterface) &&
 			    !type.IsSealed)

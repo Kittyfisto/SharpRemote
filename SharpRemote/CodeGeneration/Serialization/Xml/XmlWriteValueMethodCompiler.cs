@@ -63,7 +63,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitBeginWriteField(ILGenerator gen, FieldDescription field)
+		protected override void EmitBeginWriteField(ILGenerator gen, IFieldDescription field)
 		{
 			// XmlWriter.WriteStartElement("Field")
 			gen.Emit(OpCodes.Ldarg_0);
@@ -75,14 +75,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteAttributeString);
 		}
 
-		protected override void EmitEndWriteField(ILGenerator gen, FieldDescription field)
+		protected override void EmitEndWriteField(ILGenerator gen, IFieldDescription field)
 		{
 			// XmlWriter.WriteEndElement()
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteEndElement);
 		}
 
-		protected override void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitBeginWriteProperty(ILGenerator gen, IPropertyDescription property)
 		{
 			// XmlWriter.WriteEndElement()
 			gen.Emit(OpCodes.Ldarg_0);
@@ -94,7 +94,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Callvirt, XmlWriterWriteAttributeString);
 		}
 
-		protected override void EmitEndWriteProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitEndWriteProperty(ILGenerator gen, IPropertyDescription property)
 		{
 			// XmlWriter.WriteEndElement()
 			gen.Emit(OpCodes.Ldarg_0);

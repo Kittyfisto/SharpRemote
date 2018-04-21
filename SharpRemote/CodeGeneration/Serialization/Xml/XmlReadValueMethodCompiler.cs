@@ -229,7 +229,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			throw new NotImplementedException();
 		}
 
-		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)
+		protected override void EmitBeginReadField(ILGenerator gen, IFieldDescription field)
 		{
 			var correctField = gen.DefineLabel();
 			var actualElementName = gen.DeclareLocal(typeof(string));
@@ -252,14 +252,14 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Pop);
 		}
 
-		protected override void EmitEndReadField(ILGenerator gen, FieldDescription field)
+		protected override void EmitEndReadField(ILGenerator gen, IFieldDescription field)
 		{
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Callvirt, XmlReaderRead);
 			gen.Emit(OpCodes.Pop);
 		}
 
-		protected override void EmitBeginReadProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitBeginReadProperty(ILGenerator gen, IPropertyDescription property)
 		{
 			var correctField = gen.DefineLabel();
 			var actualElementName = gen.DeclareLocal(typeof(string));
@@ -282,7 +282,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			gen.Emit(OpCodes.Pop);
 		}
 
-		protected override void EmitEndReadProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitEndReadProperty(ILGenerator gen, IPropertyDescription property)
 		{
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Callvirt, XmlReaderRead);

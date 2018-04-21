@@ -10,7 +10,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 		private readonly CompilationContext _context;
 
 		public BinaryMethodsCompiler(TypeBuilder typeBuilder,
-		                             TypeDescription typeDescription,
+		                             ITypeDescription typeDescription,
 		                             CompilationContext context,
 		                             BinaryWriteValueMethodCompiler writeValueMethodCompiler,
 		                             BinaryWriteObjectMethodCompiler writeObjectMethodCompiler,
@@ -34,7 +34,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 
 		public Func<BinaryReader, BinarySerializer2, IRemotingEndPoint, object> ReadObjectDelegate { get; private set; }
 
-		public static BinaryMethodsCompiler Create(TypeBuilder typeBuilder, TypeDescription typeDescription)
+		public static BinaryMethodsCompiler Create(TypeBuilder typeBuilder, ITypeDescription typeDescription)
 		{
 			var context = new CompilationContext
 			{

@@ -13,7 +13,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Xml
 			_module = moduleBuilder;
 		}
 
-		public XmlMethodsCompiler Prepare(string typeName, TypeDescription typeDescription)
+		public XmlMethodsCompiler Prepare(string typeName, ITypeDescription typeDescription)
 		{
 			TypeBuilder typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
 			return XmlMethodsCompiler.Create(typeBuilder, typeDescription);

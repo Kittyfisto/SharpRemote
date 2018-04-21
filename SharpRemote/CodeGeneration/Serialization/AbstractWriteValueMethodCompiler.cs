@@ -182,23 +182,23 @@ namespace SharpRemote.CodeGeneration.Serialization
 		                                 Action loadValue,
 		                                 ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
-			foreach (var property in _context.TypeDescription.Properties)
+			foreach (var propertyDescription in _context.TypeDescription.Properties)
 				try
 				{
-					EmitBeginWriteProperty(gen, property);
-					EmitWriteValue(gen, property.TypeDescription, () =>
+					EmitBeginWriteProperty(gen, propertyDescription);
+					EmitWriteValue(gen, propertyDescription.TypeDescription, () =>
 					               {
 						               loadValue();
-						               gen.Emit(OpCodes.Call, property.GetMethod.Method);
+						               gen.Emit(OpCodes.Call, propertyDescription.GetMethod.Method);
 					               },
 					               () =>
 					               {
 						               // TODO: This isn't finihed
 						               loadValue();
-						               gen.Emit(OpCodes.Call, property.GetMethod.Method);
+						               gen.Emit(OpCodes.Call, propertyDescription.GetMethod.Method);
 					               },
 					               methodStorage);
-					EmitEndWriteProperty(gen, property);
+					EmitEndWriteProperty(gen, propertyDescription);
 				}
 				catch (SerializationException)
 				{
@@ -208,8 +208,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				{
 					var message =
 						string.Format("There was a problem generating the code to serialize property '{0} {1}' of type '{2}' ",
-						              property.PropertyType,
-						              property.Name,
+						              propertyDescription.PropertyType,
+						              propertyDescription.Name,
 						              _context.Type.FullName
 						             );
 					throw new SerializationException(message, e);
@@ -292,28 +292,28 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
 		/// <param name="field"></param>
-		protected abstract void EmitBeginWriteField(ILGenerator gen, FieldDescription field);
+		protected abstract void EmitBeginWriteField(ILGenerator gen, IFieldDescription field);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
 		/// <param name="field"></param>
-		protected abstract void EmitEndWriteField(ILGenerator gen, FieldDescription field);
+		protected abstract void EmitEndWriteField(ILGenerator gen, IFieldDescription field);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
 		/// <param name="property"></param>
-		protected abstract void EmitBeginWriteProperty(ILGenerator gen, PropertyDescription property);
+		protected abstract void EmitBeginWriteProperty(ILGenerator gen, IPropertyDescription property);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen">The code generator to use to emit new code</param>
 		/// <param name="property"></param>
-		protected abstract void EmitEndWriteProperty(ILGenerator gen, PropertyDescription property);
+		protected abstract void EmitEndWriteProperty(ILGenerator gen, IPropertyDescription property);
 
 		/// <summary>
 		/// 

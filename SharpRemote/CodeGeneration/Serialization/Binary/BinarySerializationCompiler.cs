@@ -13,7 +13,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			_module = moduleBuilder;
 		}
 
-		public BinaryMethodsCompiler Prepare(string typeName, TypeDescription typeDescription)
+		public BinaryMethodsCompiler Prepare(string typeName, ITypeDescription typeDescription)
 		{
 			TypeBuilder typeBuilder = _module.DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class);
 			return BinaryMethodsCompiler.Create(typeBuilder, typeDescription);

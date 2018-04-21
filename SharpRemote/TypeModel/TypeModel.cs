@@ -46,18 +46,20 @@ namespace SharpRemote
 		/// <summary>
 		///     Adds the given <typeparamref name="T" /> to this model.
 		/// </summary>
+		/// <param name="assumeProxy"></param>
 		/// <typeparam name="T"></typeparam>
-		public TypeDescription Add<T>()
+		public ITypeDescription Add<T>(bool assumeProxy = false)
 		{
-			return Add(typeof(T));
+			return Add(typeof(T), assumeProxy);
 		}
 
 		/// <summary>
 		///     Adds the given <paramref name="type" /> to this model.
 		/// </summary>
 		/// <param name="type"></param>
+		/// <param name="assumeProxy"></param>
 		/// <exception cref="ArgumentNullException">When <paramref name="type" /> is null</exception>
-		public TypeDescription Add(Type type)
+		public ITypeDescription Add(Type type, bool assumeProxy = false)
 		{
 			if (type == null)
 				throw new ArgumentNullException(nameof(type));
@@ -69,14 +71,12 @@ namespace SharpRemote
 			TypeDescription typeDescription;
 			if (!_typesByAssemblyQualifiedName.TryGetValue(name, out typeDescription))
 			{
-				var typesByAssemblyQualifiedName = new Dictionary<string, TypeDescription>(_typesByAssemblyQualifiedName.Count);
-				foreach (var pair in _typesByAssemblyQualifiedName)
-					typesByAssemblyQualifiedName.Add(pair.Key, pair.Value);
+				var typesByAssemblyQualifiedName = CreateTypeCacheClone();
 
 				// We work on a local copy so that:
 				// A) In case any constraint is violated, the type model is NEVER modified
 				// B) We know exactly which types to add without having to do an O(N) search of _types
-				typeDescription = TypeDescription.Create(type, typesByAssemblyQualifiedName);
+				typeDescription = TypeDescription.Create(type, typesByAssemblyQualifiedName, assumeProxy);
 				typeDescription.Id = GetNextId();
 
 				// It's likely that we had to expand the type model beyond the given type, all of those additional types
@@ -95,6 +95,14 @@ namespace SharpRemote
 			}
 
 			return typeDescription;
+		}
+
+		private Dictionary<string, TypeDescription> CreateTypeCacheClone()
+		{
+			var typesByAssemblyQualifiedName = new Dictionary<string, TypeDescription>(_typesByAssemblyQualifiedName.Count);
+			foreach (var pair in _typesByAssemblyQualifiedName)
+				typesByAssemblyQualifiedName.Add(pair.Key, pair.Value);
+			return typesByAssemblyQualifiedName;
 		}
 
 		/// <summary>

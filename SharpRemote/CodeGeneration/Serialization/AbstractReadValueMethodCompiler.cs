@@ -135,10 +135,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		                            LocalBuilder local,
 		                            ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
-			foreach (var field in _context.TypeDescription.Fields)
+			foreach (var fieldDescription in _context.TypeDescription.Fields)
 				try
 				{
-					EmitBeginReadField(gen, field);
+					EmitBeginReadField(gen, fieldDescription);
 					if (_context.TypeDescription.IsValueType)
 					{
 						gen.Emit(OpCodes.Ldloca_S, local);
@@ -147,9 +147,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 					{
 						gen.Emit(OpCodes.Ldloc, local);
 					}
-					EmitReadValue(gen, field.FieldType, methodStorage);
-					gen.Emit(OpCodes.Stfld, field.Field);
-					EmitEndReadField(gen, field);
+					EmitReadValue(gen, fieldDescription.FieldType, methodStorage);
+					gen.Emit(OpCodes.Stfld, fieldDescription.Field);
+					EmitEndReadField(gen, fieldDescription);
 				}
 				catch (SerializationException)
 				{
@@ -158,8 +158,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				catch (Exception e)
 				{
 					var message = string.Format("There was a problem generating the code to deserialize field '{0} {1}' of type '{2}' ",
-					                            field.FieldType,
-					                            field.Name,
+					                            fieldDescription.FieldType,
+					                            fieldDescription.Name,
 					                            _context.Type.FullName
 					                           );
 					throw new SerializationException(message, e);
@@ -170,10 +170,10 @@ namespace SharpRemote.CodeGeneration.Serialization
 		                                LocalBuilder local,
 		                                ISerializationMethodStorage<AbstractMethodsCompiler> methodStorage)
 		{
-			foreach (var property in _context.TypeDescription.Properties)
+			foreach (var propertyDescription in _context.TypeDescription.Properties)
 				try
 				{
-					EmitBeginReadProperty(gen, property);
+					EmitBeginReadProperty(gen, propertyDescription);
 					if (_context.TypeDescription.IsValueType)
 					{
 						gen.Emit(OpCodes.Ldloca_S, local);
@@ -182,9 +182,9 @@ namespace SharpRemote.CodeGeneration.Serialization
 					{
 						gen.Emit(OpCodes.Ldloc, local);
 					}
-					EmitReadValue(gen, property.PropertyType, methodStorage);
-					gen.Emit(OpCodes.Call, property.SetMethod.Method);
-					EmitEndReadProperty(gen, property);
+					EmitReadValue(gen, propertyDescription.PropertyType, methodStorage);
+					gen.Emit(OpCodes.Call, propertyDescription.SetMethod.Method);
+					EmitEndReadProperty(gen, propertyDescription);
 				}
 				catch (SerializationException)
 				{
@@ -194,8 +194,8 @@ namespace SharpRemote.CodeGeneration.Serialization
 				{
 					var message =
 						string.Format("There was a problem generating the code to serialize property '{0} {1}' of type '{2}' ",
-						              property.PropertyType,
-						              property.Name,
+						              propertyDescription.PropertyType,
+						              propertyDescription.Name,
 						              _context.Type.FullName
 						             );
 					throw new SerializationException(message, e);
@@ -267,28 +267,28 @@ namespace SharpRemote.CodeGeneration.Serialization
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="field"></param>
-		protected abstract void EmitBeginReadField(ILGenerator gen, FieldDescription field);
+		protected abstract void EmitBeginReadField(ILGenerator gen, IFieldDescription field);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="field"></param>
-		protected abstract void EmitEndReadField(ILGenerator gen, FieldDescription field);
+		protected abstract void EmitEndReadField(ILGenerator gen, IFieldDescription field);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="property"></param>
-		protected abstract void EmitBeginReadProperty(ILGenerator gen, PropertyDescription property);
+		protected abstract void EmitBeginReadProperty(ILGenerator gen, IPropertyDescription property);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="gen"></param>
 		/// <param name="property"></param>
-		protected abstract void EmitEndReadProperty(ILGenerator gen, PropertyDescription property);
+		protected abstract void EmitEndReadProperty(ILGenerator gen, IPropertyDescription property);
 
 		/// <summary>
 		/// 

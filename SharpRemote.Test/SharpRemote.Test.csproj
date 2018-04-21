@@ -67,6 +67,7 @@
     <Compile Include="AssemblySetup.cs" />
     <Compile Include="BlockingCollectionTest.cs" />
     <Compile Include="CodeGeneration\CodeGeneratorTest.cs" />
+    <Compile Include="CodeGeneration\FailureHandling\FaultTolerantProxyCreatorTest.cs" />
     <Compile Include="CodeGeneration\Serialization\AbstractSerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\Binary\BinarySerializerAcceptanceTest.cs" />
     <Compile Include="CodeGeneration\Serialization\CustomTypeResolver1.cs" />

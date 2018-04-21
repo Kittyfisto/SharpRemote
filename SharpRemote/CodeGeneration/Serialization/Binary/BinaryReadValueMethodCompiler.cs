@@ -57,19 +57,19 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary
 			gen.Emit(OpCodes.Call, BinarySerializer2ReadObject);
 		}
 
-		protected override void EmitBeginReadField(ILGenerator gen, FieldDescription field)
+		protected override void EmitBeginReadField(ILGenerator gen, IFieldDescription field)
 		{
 		}
 
-		protected override void EmitEndReadField(ILGenerator gen, FieldDescription field)
+		protected override void EmitEndReadField(ILGenerator gen, IFieldDescription field)
 		{
 		}
 
-		protected override void EmitBeginReadProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitBeginReadProperty(ILGenerator gen, IPropertyDescription property)
 		{
 		}
 		
-		protected override void EmitEndReadProperty(ILGenerator gen, PropertyDescription property)
+		protected override void EmitEndReadProperty(ILGenerator gen, IPropertyDescription property)
 		{
 		}
 

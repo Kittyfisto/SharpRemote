@@ -22,6 +22,11 @@ namespace SharpRemote
 		ITypeDescription BaseType { get; }
 
 		/// <summary>
+		/// The type being described by this object.
+		/// </summary>
+		Type ByReferenceInterfaceType { get; }
+
+		/// <summary>
 		///     The underlying type used for storing values.
 		/// </summary>
 		/// <remarks>

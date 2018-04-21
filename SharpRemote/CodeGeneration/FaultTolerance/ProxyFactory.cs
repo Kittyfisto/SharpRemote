@@ -11,8 +11,13 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 
 		public ProxyFactory(ProxyTypeStorage storage, T subject)
 		{
-			_storage = storage ?? throw new ArgumentNullException(nameof(storage));
-			_subject = subject ?? throw new ArgumentNullException(nameof(subject));
+			if (storage == null)
+				throw new ArgumentNullException(nameof(storage));
+			if (subject == null)
+				throw new ArgumentNullException(nameof(subject));
+
+			_storage = storage;
+			_subject = subject;
 		}
 
 		public IProxyFactory<T> WithMaximumLatencyOf(TimeSpan maximumMethodLatency)

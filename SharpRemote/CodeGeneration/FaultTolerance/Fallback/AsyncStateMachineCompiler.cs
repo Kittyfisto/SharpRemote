@@ -227,7 +227,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var gen = method.GetILGenerator();
 
 			var aggregateException = gen.DeclareLocal(typeof(AggregateException));
-			var innerExceptions = gen.DeclareLocal(typeof(Exception[]));
+			var innerExceptions = gen.DeclareLocal(typeof(IEnumerable<Exception>));
 			var exception = gen.DeclareLocal(typeof(Exception));
 
 #if TRACE
@@ -530,7 +530,22 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.Emit(OpCodes.Ret);
 
+#if TRACE
+			var method2 = _stateMachine.DefineMethod("OnSubjectCompleted_Invoker",
+			                                         MethodAttributes.Private,
+			                                         typeof(void),
+			                                         new Type[0]);
+			gen = method2.GetILGenerator();
+			gen.EmitWriteLine("OnSubjectCompleted_Invoker Start");
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, method);
+			gen.EmitWriteLine("OnSubjectCompleted_Invoker End");
+			gen.Emit(OpCodes.Ret);
+
+			return method2;
+#else
 			return method;
+#endif
 		}
 
 		private ConstructorInfo CreateConstructor()

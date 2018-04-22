@@ -15,28 +15,28 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 	/// </summary>
 	internal sealed class AsyncStateMachineCompiler
 	{
-		private readonly FieldBuilder _fallbackField;
+		private readonly FieldBuilder _fallback;
 		private readonly Type _interfaceType;
 		private readonly FieldBuilder _taskCompletionSource;
 		private readonly TypeBuilder _stateMachine;
 		private readonly Type _taskCompletionSourceType;
-		private readonly FieldBuilder _originalTask;
 		private readonly FieldBuilder _fallbackTask;
 		private readonly Type _taskType;
-		private readonly FieldBuilder _taskField;
-		private readonly MethodInfo _taskContinueWith;
 		private readonly Type _taskReturnType;
 		private readonly bool _hasReturnValue;
 		private readonly MethodInfo _taskCompletionSourceSetResult;
-		private readonly List<FieldInfo> _arguments;
+		private readonly List<FieldInfo> _parameters;
 		private readonly MethodInfo _originalMethod;
 		private readonly MethodInfo _taskCompletionSourceSetException;
 		private readonly MethodInfo _taskCompletionSourceSetExceptions;
+		private readonly MethodInfo _taskCompletionSourceGetTask;
 		private readonly MethodInfo _taskGetAwaiter;
 		private readonly Type _awaiterType;
 		private readonly MethodInfo _awaiterOnCompleted;
 		private readonly MethodInfo _taskGetResult;
-		private MethodInfo _taskGetException;
+		private readonly MethodInfo _taskGetException;
+		private readonly FieldBuilder _subject;
+		private readonly FieldBuilder _subjectTask;
 
 		public AsyncStateMachineCompiler(TypeBuilder typeBuilder,
 		                            ITypeDescription interfaceDescription,
@@ -65,44 +65,147 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			                                                                        new []{typeof(Exception)});
 			_taskCompletionSourceSetExceptions= _taskCompletionSourceType.GetMethod(nameof(TaskCompletionSource<int>.SetException),
 			                                                                        new []{typeof(IEnumerable<Exception>)});
+			_taskCompletionSourceGetTask = _taskCompletionSourceType.GetProperty(nameof(TaskCompletionSource<int>.Task))
+			                                                        .GetMethod;
 
 			var name = string.Format("{0}_AsyncStateMachine", methodDescription.Name);
 			_stateMachine = typeBuilder.DefineNestedType(name);
 
-			_originalTask =
-				_stateMachine.DefineField("_originalTask", _taskType, FieldAttributes.Private | FieldAttributes.InitOnly);
+			_subject = _stateMachine.DefineField("Subject", _taskType, FieldAttributes.Public);
+			_fallback = _stateMachine.DefineField("Fallback", _interfaceType, FieldAttributes.Public);
+
+			_subjectTask = _stateMachine.DefineField("_subjectTask", _taskType, FieldAttributes.Private);
 			_fallbackTask = _stateMachine.DefineField("_fallbackTask", _taskType, FieldAttributes.Private);
-			_fallbackField =
-				_stateMachine.DefineField("_fallback", _interfaceType, FieldAttributes.Private | FieldAttributes.InitOnly);
-			_taskCompletionSource = _stateMachine.DefineField("_taskCompletionSource", _taskCompletionSourceType,
-			                                         FieldAttributes.Private | FieldAttributes.InitOnly);
-			_taskField = _stateMachine.DefineField("Task", _taskType,
-			                                       FieldAttributes.Public | FieldAttributes.InitOnly);
+			_taskCompletionSource = _stateMachine.DefineField("TaskCompletionSource", _taskCompletionSourceType,
+			                                         FieldAttributes.Public | FieldAttributes.InitOnly);
 
-			_taskContinueWith = _taskType.GetMethod(nameof(Task.ContinueWith),
-			                                        new[] {_taskType, typeof(TaskContinuationOptions)});
-
-			_arguments = new List<FieldInfo>(methodDescription.Parameters.Count);
+			_parameters = new List<FieldInfo>(methodDescription.Parameters.Count);
 			foreach (var parameter in methodDescription.Parameters)
 			{
-				var field = _stateMachine.DefineField(parameter.Name,
+				var parameterName = string.Format("parameter_{0}", parameter.Name);
+				var field = _stateMachine.DefineField(parameterName,
 				                                      parameter.ParameterType.Type,
-				                                      FieldAttributes.Private | FieldAttributes.InitOnly);
-				_arguments.Add(field);
+				                                      FieldAttributes.Public);
+				_parameters.Add(field);
 			}
 		}
 
-		public ConstructorInfo Compile(out FieldInfo taskField)
+		public void Compile(ILGenerator targetSite,
+		                    FieldInfo subject,
+		                    FieldInfo fallback,
+		                    LocalBuilder task)
 		{
 			var failMethodCall = CreateFailMethodCall();
 			var onFallbackCompleted = CreateOnFallbackCompleted(failMethodCall);
 			var invokeFallback = CreateInvokeFallback(onFallbackCompleted, failMethodCall);
 			var onSubjectCompleted = CreateOnSubjectCompleted(invokeFallback);
-			var constructor = CreateConstructor(onSubjectCompleted);
+			var constructor = CreateConstructor();
+			var start = CreateInvokeSubject(onSubjectCompleted);
 			_stateMachine.CreateType();
 
-			taskField = _taskField;
-			return constructor;
+			StartStateMachineAtTargetSite(targetSite,
+			                              subject,
+			                              fallback,
+			                              constructor,
+			                              start,
+			                              task);
+		}
+
+		private MethodInfo CreateInvokeSubject(MethodInfo onSubjectCompleted)
+		{
+			var method = _stateMachine.DefineMethod("InvokeSubject",
+			                                        MethodAttributes.Public,
+			                                        typeof(void),
+			                                        new Type[0]);
+
+			var gen = method.GetILGenerator();
+
+			// _fallbackTask = _subject.Do(....)
+			gen.Emit(OpCodes.Ldarg_0);
+
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, _subject);
+			for (int i = 0; i < _parameters.Count; ++i)
+			{
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, _parameters[i]);
+			}
+
+			gen.Emit(OpCodes.Callvirt, _originalMethod);
+			gen.Emit(OpCodes.Stfld, _subjectTask);
+
+			// var awaiter = _subjectTask.GetAwaiter();
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, _subjectTask);
+			var awaiter = gen.DeclareLocal(_awaiterType);
+			gen.Emit(OpCodes.Callvirt, _taskGetAwaiter);
+			gen.Emit(OpCodes.Stloc, awaiter);
+			
+			// awaiter.ContinueWith(OnSubjectCompleted)
+			var actionCtor = typeof(Action).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
+			gen.Emit(OpCodes.Ldloca, awaiter);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldftn, onSubjectCompleted);
+			gen.Emit(OpCodes.Newobj, actionCtor);
+			gen.Emit(OpCodes.Call, _awaiterOnCompleted);
+
+			gen.Emit(OpCodes.Ret);
+
+			return method;
+		}
+
+		/// <summary>
+		///     Injects code necessary to start the async state machine at the target site.
+		///     Moves the reference to the state machine's task into the given local <paramref name="task" />.
+		/// </summary>
+		/// <param name="gen"></param>
+		/// <param name="subject"></param>
+		/// <param name="fallback"></param>
+		/// <param name="constructor"></param>
+		/// <param name="invokeSubject"></param>
+		/// <param name="task"></param>
+		private void StartStateMachineAtTargetSite(ILGenerator gen,
+		                                           FieldInfo subject,
+		                                           FieldInfo fallback,
+		                                           ConstructorInfo constructor,
+		                                           MethodInfo invokeSubject,
+		                                           LocalBuilder task)
+		{
+			var asyncStateMachine = gen.DeclareLocal(_stateMachine);
+
+			// var asyncStateMachine = new AsyncStateMachine();
+			gen.Emit(OpCodes.Newobj, constructor);
+			gen.Emit(OpCodes.Stloc, asyncStateMachine);
+
+			// asyncStateMachine.Subject = this._subject
+			gen.Emit(OpCodes.Ldloc, asyncStateMachine);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, subject);
+			gen.Emit(OpCodes.Stfld, _subject);
+
+			// asyncStateMachine.Fallback = this._fallback
+			gen.Emit(OpCodes.Ldloc, asyncStateMachine);
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, fallback);
+			gen.Emit(OpCodes.Stfld, _fallback);
+
+			// asyncStateMachine._argumentN = argumentN
+			for (int i = 0; i < _parameters.Count; ++i)
+			{
+				gen.Emit(OpCodes.Ldloc, asyncStateMachine);
+				gen.Emit(OpCodes.Ldarg, i);
+				gen.Emit(OpCodes.Stfld, _parameters[i]);
+			}
+
+			gen.Emit(OpCodes.Ldloc, asyncStateMachine);
+			gen.Emit(OpCodes.Call, invokeSubject);
+
+			// Finally we move the state machine's task to the local variable
+			// we were given (so it can be consumed by the caller).
+			gen.Emit(OpCodes.Ldloc, asyncStateMachine);
+			gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
+			gen.Emit(OpCodes.Callvirt, _taskCompletionSourceGetTask);
+			gen.Emit(OpCodes.Stloc, task);
 		}
 
 		private MethodInfo CreateFailMethodCall()
@@ -243,12 +346,12 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Ldarg_0);
 
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _fallbackField);
+			gen.Emit(OpCodes.Ldfld, _fallback);
 
-			for (int i = 0; i < _arguments.Count; ++i)
+			for (int i = 0; i < _parameters.Count; ++i)
 			{
 				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldfld, _arguments[i]);
+				gen.Emit(OpCodes.Ldfld, _parameters[i]);
 			}
 
 			gen.Emit(OpCodes.Callvirt, _originalMethod);
@@ -299,7 +402,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			// var exception = _fallbackTask.Exception
 			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _originalTask);
+			gen.Emit(OpCodes.Ldfld, _subjectTask);
 			gen.Emit(OpCodes.Callvirt, _taskGetException);
 
 			// if (exception != null)
@@ -320,7 +423,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
 
 				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldfld, _originalTask);
+				gen.Emit(OpCodes.Ldfld, _subjectTask);
 				gen.Emit(OpCodes.Callvirt, _taskGetResult);
 
 				gen.Emit(OpCodes.Callvirt, _taskCompletionSourceSetResult);
@@ -347,66 +450,20 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			return method;
 		}
 
-		private ConstructorInfo CreateConstructor(MethodInfo taskCallback)
+		private ConstructorInfo CreateConstructor()
 		{
-			var constructorArguments = new List<Type>(_arguments.Count + 2);
-			constructorArguments.Add(_taskType);
-			constructorArguments.Add(_interfaceType);
-			constructorArguments.AddRange(_arguments.Select(x => x.FieldType));
-
 			var constructor = _stateMachine.DefineConstructor(MethodAttributes.Public,
 			                                                  CallingConventions.Standard | CallingConventions.HasThis,
-			                                                  constructorArguments.ToArray());
+			                                                  new Type[0]);
 
 			var gen = constructor.GetILGenerator();
 
-			// _originalTask = task
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Stfld, _originalTask);
-
-			// _fallback = fallback
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldarg_2);
-			gen.Emit(OpCodes.Stfld, _fallbackField);
-
-			// _argumentN = argumentN
-			for (int i = 0; i < _arguments.Count; ++i)
-			{
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldarg, 3 + i);
-				gen.Emit(OpCodes.Stfld, _arguments[i]);
-			}
-
 			// _taskCompletionSource = new TaskCompletionSource<>()
-			// _task = _taskCompletionSource.Task
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Newobj, _taskCompletionSourceType.GetConstructor(new Type[0]));
 			gen.Emit(OpCodes.Stfld, _taskCompletionSource);
 
-			var sourceGetTask = _taskCompletionSourceType.GetProperty(nameof(TaskCompletionSource<int>.Task))
-			                                             .GetMethod;
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
-			gen.Emit(OpCodes.Callvirt, sourceGetTask);
-			gen.Emit(OpCodes.Stfld, _taskField);
-
-			// task.GetAwaiter().ContinueWith(OnSubjectCompleted)
-			var awaiter = gen.DeclareLocal(_awaiterType);
-			gen.Emit(OpCodes.Ldarg_1);
-			gen.Emit(OpCodes.Callvirt, _taskGetAwaiter);
-			gen.Emit(OpCodes.Stloc, awaiter);
-
-			gen.Emit(OpCodes.Ldloca, awaiter);
-			var actionCtor = typeof(Action).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
-			gen.Emit(OpCodes.Ldarg_0);
-			gen.Emit(OpCodes.Ldftn, taskCallback);
-			gen.Emit(OpCodes.Newobj, actionCtor);
-			gen.Emit(OpCodes.Callvirt, _awaiterOnCompleted);
-
 			gen.Emit(OpCodes.Ret);
-
 
 			return constructor;
 		}

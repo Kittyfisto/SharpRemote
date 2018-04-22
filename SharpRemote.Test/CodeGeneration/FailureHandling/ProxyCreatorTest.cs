@@ -136,6 +136,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
+			Save();
 
 			new Action(() => Await(proxy.DoStuff()))
 				.ShouldThrow<AggregateException>()

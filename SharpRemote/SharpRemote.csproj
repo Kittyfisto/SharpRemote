@@ -60,7 +60,7 @@
     <Compile Include="CodeGeneration\FaultTolerance\Fallback\FallbackProxyCreator.cs" />
     <Compile Include="CodeGeneration\FaultTolerance\Fallback\IDefaultFallbackCreator.cs" />
     <Compile Include="CodeGeneration\FaultTolerance\Fallback\IFallbackProxyCreator.cs" />
-    <Compile Include="CodeGeneration\FaultTolerance\Fallback\StateMachineCompiler.cs" />
+    <Compile Include="CodeGeneration\FaultTolerance\Fallback\AsyncStateMachineCompiler.cs" />
     <Compile Include="CodeGeneration\FaultTolerance\IProxyFactory.cs" />
     <Compile Include="CodeGeneration\FaultTolerance\ProxyCreator.cs" />
     <Compile Include="CodeGeneration\FaultTolerance\ProxyFactory.cs" />

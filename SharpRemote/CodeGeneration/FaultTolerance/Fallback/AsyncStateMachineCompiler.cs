@@ -13,7 +13,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 	///     Responsible for creating a state machine capable of intercepting failed tasks and delegating
 	///     calls to another new task, in case of failure.
 	/// </summary>
-	internal sealed class StateMachineCompiler
+	internal sealed class AsyncStateMachineCompiler
 	{
 		private readonly FieldBuilder _fallbackField;
 		private readonly Type _interfaceType;
@@ -38,7 +38,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 		private readonly MethodInfo _taskGetResult;
 		private MethodInfo _taskGetException;
 
-		public StateMachineCompiler(TypeBuilder typeBuilder,
+		public AsyncStateMachineCompiler(TypeBuilder typeBuilder,
 		                            ITypeDescription interfaceDescription,
 		                            IMethodDescription methodDescription)
 		{
@@ -66,7 +66,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			_taskCompletionSourceSetExceptions= _taskCompletionSourceType.GetMethod(nameof(TaskCompletionSource<int>.SetException),
 			                                                                        new []{typeof(IEnumerable<Exception>)});
 
-			var name = string.Format("{0}_StateMachine", methodDescription.Name);
+			var name = string.Format("{0}_AsyncStateMachine", methodDescription.Name);
 			_stateMachine = typeBuilder.DefineNestedType(name);
 
 			_originalTask =
@@ -167,19 +167,33 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = method.GetILGenerator();
 			var exception = gen.DeclareLocal(typeof(Exception));
+			var end = gen.DefineLabel();
+			var noException = gen.DefineLabel();
 
 			// try {...
 			gen.BeginExceptionBlock();
+
+			// var exception = _fallbackTask.Exception
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, _fallbackTask);
+			gen.Emit(OpCodes.Callvirt, _taskGetException);
+			gen.Emit(OpCodes.Stloc, exception);
+
+			// if (exception != null)
+			gen.Emit(OpCodes.Ldloc, exception);
+			gen.Emit(OpCodes.Ldnull);
+			gen.Emit(OpCodes.Cgt_Un);
+			gen.Emit(OpCodes.Brfalse_S, noException);
+
+			// FailMethodCall(exception)
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldloc, exception);
+			gen.Emit(OpCodes.Call, failMethodCall);
+			gen.Emit(OpCodes.Br_S, end);
+			
+			gen.MarkLabel(noException);
 			if (_hasReturnValue)
 			{
-				// var exception = _fallbackTask.Exception
-				//gen.Emit(OpCodes.Ldarg_0);
-				//gen.Emit(OpCodes.Ldfld, _fallbackTask);
-				//gen.Emit(OpCodes.Callvirt, _taskGetException);
-				//gen.Emit(OpCodes.Stloc, exception);
-
-				// if (exception != null) FailMethodCall(exception)
-
 				// _taskCompletionSource.SetResult(_fallbackTask.Result);
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
@@ -190,11 +204,6 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			}
 			else
 			{
-				// _fallbackTask.Wait()
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldfld, _fallbackTask);
-				gen.Emit(OpCodes.Callvirt, Methods.TaskWait);
-
 				// _taskCompletionSource.SetResult(42);
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
@@ -211,7 +220,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 
 			gen.EndExceptionBlock();
-
+			gen.MarkLabel(end);
 			gen.Emit(OpCodes.Ret);
 
 			return method;
@@ -282,10 +291,28 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			                                        new Type[0]);
 
 			var gen = method.GetILGenerator();
+			var end = gen.DefineLabel();
+			var noException = gen.DefineLabel();
 
 			// try { ... }
 			gen.BeginExceptionBlock();
 
+			// var exception = _fallbackTask.Exception
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Ldfld, _originalTask);
+			gen.Emit(OpCodes.Callvirt, _taskGetException);
+
+			// if (exception != null)
+			gen.Emit(OpCodes.Ldnull);
+			gen.Emit(OpCodes.Cgt_Un);
+			gen.Emit(OpCodes.Brfalse_S, noException);
+
+			// InvokeFallback()
+			gen.Emit(OpCodes.Ldarg_0);
+			gen.Emit(OpCodes.Call, invokeFallback);
+			gen.Emit(OpCodes.Br_S, end);
+
+			gen.MarkLabel(noException);
 			if (_hasReturnValue)
 			{
 				// _taskCompletionSource.SetResult(_originalTask.Result);
@@ -300,13 +327,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			}
 			else
 			{
-				// _originalTask.Wait()
 				// _taskCompletionSource.SetResult(42)
-				var taskWait = _taskType.GetMethod(nameof(Task<int>.Wait), new Type[0]);
-				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldfld, _originalTask);
-				gen.Emit(OpCodes.Callvirt, taskWait);
-
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
 				gen.Emit(OpCodes.Ldc_I4, 42);
@@ -320,7 +341,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Call, invokeFallback);
 
 			gen.EndExceptionBlock();
-
+			gen.MarkLabel(end);
 			gen.Emit(OpCodes.Ret);
 
 			return method;

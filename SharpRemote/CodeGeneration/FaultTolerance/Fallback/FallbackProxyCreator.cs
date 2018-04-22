@@ -136,7 +136,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			                                  IMethodDescription methodDescription,
 			                                  LocalBuilder returnedTask)
 			{
-				var compiler = new StateMachineCompiler(_typeBuilder,
+				var compiler = new AsyncStateMachineCompiler(_typeBuilder,
 				                                        _interfaceDescription,
 				                                        methodDescription);
 				FieldInfo taskField;

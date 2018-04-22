@@ -537,8 +537,19 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			                                         new Type[0]);
 			gen = method2.GetILGenerator();
 			gen.EmitWriteLine("OnSubjectCompleted_Invoker Start");
+			gen.BeginExceptionBlock();
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, method);
+			end = gen.DefineLabel();
+
+			gen.BeginCatchBlock(typeof(Exception));
+			exception = gen.DeclareLocal(typeof(Exception));
+			gen.Emit(OpCodes.Stloc, exception);
+			gen.EmitWriteLine("OnSubjectCompleted_Invoker caught exception:");
+			gen.EmitWriteLine(exception);
+
+			gen.EndExceptionBlock();
+			gen.MarkLabel(end);
 			gen.EmitWriteLine("OnSubjectCompleted_Invoker End");
 			gen.Emit(OpCodes.Ret);
 

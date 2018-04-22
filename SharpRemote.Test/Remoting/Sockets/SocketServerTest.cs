@@ -108,7 +108,8 @@ namespace SharpRemote.Test.Remoting.Sockets
 			using (var client1 = CreateClient())
 			using (var client2 = CreateClient())
 			{
-				using (var server = CreateServer())
+				ISocketServer server;
+				using (server = CreateServer())
 				{
 					server.Bind(IPAddress.Loopback);
 

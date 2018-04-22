@@ -82,6 +82,11 @@ namespace SharpRemote
 			{
 				_isDisposed = true;
 
+				if (_connectedEndPoints.Count != 2)
+				{
+					_isDisposed = true;
+				}
+
 				// We copy the collection because it is modified during
 				// Disconnect().
 				foreach (var endPoint in _connectedEndPoints.ToList())
@@ -293,11 +298,8 @@ namespace SharpRemote
 
 		private void OnIncomingConnection(IAsyncResult ar)
 		{
-			lock (_syncRoot)
-			{
-				if (_isDisposed)
-					return;
-			}
+			if (_isDisposed)
+				return;
 
 			SocketEndPoint endPoint = null;
 			try
@@ -307,6 +309,15 @@ namespace SharpRemote
 
 				lock (_syncRoot)
 				{
+					// We need to check here again because if we've been
+					// disposed of in the meantime, then we should close
+					// this incoming connection again and shut down...
+					if (_isDisposed)
+					{
+						DisposeAndRemoveEndPoint(endPoint);
+						return;
+					}
+
 					_connectedEndPoints.Add(endPoint);
 				}
 
@@ -321,18 +332,31 @@ namespace SharpRemote
 				                Name,
 				                e);
 
-				lock (_syncRoot)
-				{
-					_internalEndPoints.Remove(endPoint);
-					_connectedEndPoints.Remove(endPoint);
-				}
-
-				endPoint?.TryDispose();
+				DisposeAndRemoveEndPoint(endPoint);
 			}
 			finally
 			{
-				BeginAccept();
+				if (!_isDisposed)
+				{
+					BeginAccept();
+				}
+				else
+				{
+					Log.DebugFormat("{0}: No longer calling BeginAccept(): We've been disposed of",
+					                Name);
+				}
 			}
+		}
+
+		private void DisposeAndRemoveEndPoint(SocketEndPoint endPoint)
+		{
+			lock (_syncRoot)
+			{
+				_internalEndPoints.Remove(endPoint);
+				_connectedEndPoints.Remove(endPoint);
+			}
+
+			endPoint?.TryDispose();
 		}
 
 		/// <summary>

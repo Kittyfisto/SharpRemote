@@ -19,7 +19,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 		{
 			return new ProxyCreator(_module);
 		}
-		
+
 		private AssemblyBuilder _assembly;
 		private ModuleBuilder _module;
 
@@ -48,6 +48,8 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 		}
 
 		#region Fallbacks
+
+		#region Task<int>
 
 		[Test]
 		[Description("Verifies that if the subject succeeds, then the fallback is never invoked")]
@@ -140,6 +142,120 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			subject.Verify(x => x.DoStuff(), Times.Once);
 			fallback.Verify(x => x.DoStuff(), Times.Once);
 		}
+
+		#endregion
+
+		#region Task
+
+		[Test]
+		public void TestIReturnsTaskFallback1()
+		{
+			var source = new TaskCompletionSource<int>();
+			var subject = new Mock<IReturnsTask>();
+			subject.Setup(x => x.DoStuff()).Returns(source.Task);
+			var fallback = new Mock<IReturnsTask>();
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			var task = proxy.DoStuff();
+			task.Wait(TimeSpan.FromMilliseconds(10)).Should().BeFalse("because the actual task didn't finished just yet");
+
+			source.SetResult(42);
+			Await(task);
+			subject.Verify(x => x.DoStuff(), Times.Once, "because the subject should've been invoked once");
+			fallback.Verify(x => x.DoStuff(), Times.Never, "because the subject's method call succeeded and thus the fallback may not have been invoked");
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the subject are ignored and the fallback is invoked instead")]
+		public void TestIReturnsTaskFallback2()
+		{
+			var subject = new Mock<IReturnsTask>();
+			subject.Setup(x => x.DoStuff()).Throws<ArithmeticException>();
+			var source = new TaskCompletionSource<int>();
+			var fallback = new Mock<IReturnsTask>();
+			fallback.Setup(x => x.DoStuff()).Returns(source.Task);
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			var task = proxy.DoStuff();
+			task.Wait(TimeSpan.FromMilliseconds(10)).Should().BeFalse("because the actual task didn't finished just yet");
+			
+			source.SetResult(42);
+			Await(task);
+			subject.Verify(x => x.DoStuff(), Times.Once);
+			fallback.Verify(x => x.DoStuff(), Times.Once);
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the subject's task are ignored and the fallback is invoked instead")]
+		public void TestIReturnsTaskFallback3()
+		{
+			var subject = new Mock<IReturnsTask>();
+			subject.Setup(x => x.DoStuff()).Returns(TaskEx.Failed<int>(new NullReferenceException()));
+			var source = new TaskCompletionSource<int>();
+			var fallback = new Mock<IReturnsTask>();
+			fallback.Setup(x => x.DoStuff()).Returns(source.Task);
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			var task = proxy.DoStuff();
+			task.Wait(TimeSpan.FromMilliseconds(10)).Should().BeFalse("because the actual task didn't finished just yet");
+
+			source.SetResult(42);
+			Await(task);
+			subject.Verify(x => x.DoStuff(), Times.Once);
+			fallback.Verify(x => x.DoStuff(), Times.Once);
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the fallback are forwarded")]
+		public void TestIReturnsTaskFallback4()
+		{
+			var subject = new Mock<IReturnsTask>();
+			subject.Setup(x => x.DoStuff()).Returns(TaskEx.Failed<int>(new NullReferenceException()));
+			var fallback = new Mock<IReturnsTask>();
+			fallback.Setup(x => x.DoStuff()).Throws<FileNotFoundException>();
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			new Action(() => Await(proxy.DoStuff()))
+				.ShouldThrow<AggregateException>()
+				.WithInnerException<FileNotFoundException>();
+			subject.Verify(x => x.DoStuff(), Times.Once);
+			fallback.Verify(x => x.DoStuff(), Times.Once);
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the fallback's task are forwarded")]
+		public void TestIReturnTaskFallback5()
+		{
+			var subject = new Mock<IReturnsTask>();
+			subject.Setup(x => x.DoStuff()).Returns(TaskEx.Failed<int>(new NullReferenceException()));
+			var fallback = new Mock<IReturnsTask>();
+			fallback.Setup(x => x.DoStuff()).Returns(TaskEx.Failed<int>(new FileNotFoundException()));
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+			Save();
+
+			new Action(() => Await(proxy.DoStuff()))
+				.ShouldThrow<AggregateException>()
+				.WithInnerException<FileNotFoundException>();
+			subject.Verify(x => x.DoStuff(), Times.Once);
+			fallback.Verify(x => x.DoStuff(), Times.Once);
+		}
+
+		#endregion
 
 		private void Await(Task task)
 		{

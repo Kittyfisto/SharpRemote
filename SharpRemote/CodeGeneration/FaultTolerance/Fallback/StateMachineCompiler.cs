@@ -179,7 +179,6 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				//gen.Emit(OpCodes.Stloc, exception);
 
 				// if (exception != null) FailMethodCall(exception)
-				
 
 				// _taskCompletionSource.SetResult(_fallbackTask.Result);
 				gen.Emit(OpCodes.Ldarg_0);
@@ -191,6 +190,11 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			}
 			else
 			{
+				// _fallbackTask.Wait()
+				gen.Emit(OpCodes.Ldarg_0);
+				gen.Emit(OpCodes.Ldfld, _fallbackTask);
+				gen.Emit(OpCodes.Callvirt, Methods.TaskWait);
+
 				// _taskCompletionSource.SetResult(42);
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
@@ -288,7 +292,6 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
 
-				
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _originalTask);
 				gen.Emit(OpCodes.Callvirt, _taskGetResult);
@@ -312,6 +315,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.BeginCatchBlock(typeof(Exception));
 			// catch(Exception) { InvokeFallback(); }
+			gen.Emit(OpCodes.Pop);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, invokeFallback);
 

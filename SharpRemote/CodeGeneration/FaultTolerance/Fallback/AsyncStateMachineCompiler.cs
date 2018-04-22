@@ -234,7 +234,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.EmitWriteLine("FailMethodCall Start");
 #endif
 
-			var end = gen.DefineLabel();
+			var endTryBlock = gen.DefineLabel();
 			var notAggregateException = gen.DefineLabel();
 
 			// try {...
@@ -263,14 +263,15 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
 			gen.Emit(OpCodes.Ldloc, innerExceptions);
 			gen.Emit(OpCodes.Callvirt, _taskCompletionSourceSetExceptions);
-			gen.Emit(OpCodes.Br_S, end);
+			gen.Emit(OpCodes.Br_S, endTryBlock);
 
 			gen.MarkLabel(notAggregateException);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _taskCompletionSource);
 			gen.Emit(OpCodes.Ldarg_1);
 			gen.Emit(OpCodes.Call, _taskCompletionSourceSetException);
-
+			
+			gen.MarkLabel(endTryBlock);
 			// Catch(Exception e) _taskCompletionSource.SetException(e);
 			gen.BeginCatchBlock(typeof(Exception));
 			gen.Emit(OpCodes.Stloc, exception);
@@ -286,7 +287,6 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Call, _taskCompletionSourceSetException);
 
 			gen.EndExceptionBlock();
-			gen.MarkLabel(end);
 
 #if TRACE
 			gen.EmitWriteLine("FailMethodCall End");
@@ -306,7 +306,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = method.GetILGenerator();
 			var exception = gen.DeclareLocal(typeof(Exception));
-			var end = gen.DefineLabel();
+			var endTryBlock = gen.DefineLabel();
 			var noException = gen.DefineLabel();
 
 #if TRACE
@@ -332,8 +332,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldloc, exception);
 			gen.Emit(OpCodes.Call, failMethodCall);
-			gen.Emit(OpCodes.Br_S, end);
-			
+			gen.Emit(OpCodes.Br_S, endTryBlock);
+
 			gen.MarkLabel(noException);
 			if (_hasReturnValue)
 			{
@@ -354,6 +354,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				gen.Emit(OpCodes.Call, _taskCompletionSourceSetResult);
 			}
 
+			gen.MarkLabel(endTryBlock);
 			// cach(Exception e) { FailMethodCall(e); }
 			gen.BeginCatchBlock(typeof(Exception));
 			gen.Emit(OpCodes.Stloc, exception);
@@ -363,7 +364,6 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 
 			gen.EndExceptionBlock();
-			gen.MarkLabel(end);
 
 #if TRACE
 			gen.EmitWriteLine("OnFallbackCompleted End");

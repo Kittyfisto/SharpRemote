@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
@@ -193,7 +192,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			for (int i = 0; i < _parameters.Count; ++i)
 			{
 				gen.Emit(OpCodes.Ldloc, asyncStateMachine);
-				gen.Emit(OpCodes.Ldarg, i);
+				gen.Emit(OpCodes.Ldarg, i + 1);
 				gen.Emit(OpCodes.Stfld, _parameters[i]);
 			}
 

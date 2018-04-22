@@ -249,6 +249,7 @@
     <Compile Include="Types\Interfaces\IReturnComplexType.cs" />
     <Compile Include="Types\Interfaces\IReturnsByReferenceType.cs" />
     <Compile Include="Types\Interfaces\IReturnsIntTask.cs" />
+    <Compile Include="Types\Interfaces\IReturnsIntTaskMethodString.cs" />
     <Compile Include="Types\Interfaces\IReturnsObjectArray.cs" />
     <Compile Include="Types\Interfaces\IReturnsTask.cs" />
     <Compile Include="Types\Classes\Listener.cs" />

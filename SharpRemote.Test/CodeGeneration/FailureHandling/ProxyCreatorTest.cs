@@ -49,6 +49,102 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 
 		#region Fallbacks
 
+		#region Task<int>(string)
+
+		[Test]
+		[Description("Verifies that if the subject succeeds, then the fallback is never invoked")]
+		public void TestIReturnsIntTaskMethodStringFallback1()
+		{
+			var subject = new Mock<IReturnsIntTaskMethodString>();
+			var fallback = new Mock<IReturnsIntTaskMethodString>();
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			Await(proxy.CreateFile("foo.txt"));
+			subject.Verify(x => x.CreateFile("foo.txt"), Times.Once, "because the subject should've been invoked once");
+			fallback.Verify(x => x.CreateFile(It.IsAny<string>()), Times.Never, "because the subject's method call succeeded and thus the fallback may not have been invoked");
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the subject are ignored and the fallback is invoked instead")]
+		public void TestIReturnsIntTaskMethodStringFallback2()
+		{
+			var subject = new Mock<IReturnsIntTaskMethodString>();
+			subject.Setup(x => x.CreateFile("hello_world.bmp")).Throws<ArithmeticException>();
+			var fallback = new Mock<IReturnsIntTaskMethodString>();
+			fallback.Setup(x => x.CreateFile("hello_world.bmp")).Returns(Task.FromResult(1337));
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			Await(proxy.CreateFile("hello_world.bmp")).Should().Be(1337);
+			subject.Verify(x => x.CreateFile("hello_world.bmp"), Times.Once);
+			fallback.Verify(x => x.CreateFile("hello_world.bmp"), Times.Once);
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the subject's task are ignored and the fallback is invoked instead")]
+		public void TestIReturnsIntTaskMethodStringFallback3()
+		{
+			var subject = new Mock<IReturnsIntTaskMethodString>();
+			subject.Setup(x => x.CreateFile("fool.cs")).Returns(TaskEx.Failed<int>(new NullReferenceException()));
+			var fallback = new Mock<IReturnsIntTaskMethodString>();
+			fallback.Setup(x => x.CreateFile("fool.cs")).Returns(Task.FromResult(5244222));
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			Await(proxy.CreateFile("fool.cs")).Should().Be(5244222);
+			subject.Verify(x => x.CreateFile("fool.cs"), Times.Once);
+			fallback.Verify(x => x.CreateFile("fool.cs"), Times.Once);
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the fallback are forwarded")]
+		public void TestIReturnsIntTaskMethodString4()
+		{
+			var subject = new Mock<IReturnsIntTaskMethodString>();
+			subject.Setup(x => x.CreateFile("stalker shadow of chernobyl")).Returns(TaskEx.Failed<int>(new NullReferenceException()));
+			var fallback = new Mock<IReturnsIntTaskMethodString>();
+			fallback.Setup(x => x.CreateFile("stalker shadow of chernobyl")).Throws<FileNotFoundException>();
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			new Action(() => Await(proxy.CreateFile("stalker shadow of chernobyl")))
+				.ShouldThrow<AggregateException>()
+				.WithInnerException<FileNotFoundException>();
+			subject.Verify(x => x.CreateFile("stalker shadow of chernobyl"), Times.Once);
+			fallback.Verify(x => x.CreateFile("stalker shadow of chernobyl"), Times.Once);
+		}
+
+		[Test]
+		[Description("Verifies that exceptions thrown by the fallback's task are forwarded")]
+		public void TestIReturnsIntTaskMethodStringFallback5()
+		{
+			var subject = new Mock<IReturnsIntTaskMethodString>();
+			subject.Setup(x => x.CreateFile("great_game")).Returns(TaskEx.Failed<int>(new NullReferenceException()));
+			var fallback = new Mock<IReturnsIntTaskMethodString>();
+			fallback.Setup(x => x.CreateFile("great_game")).Returns(TaskEx.Failed<int>(new FileNotFoundException()));
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithFallbackTo(fallback.Object)
+			                   .Create();
+
+			new Action(() => Await(proxy.CreateFile("great_game")))
+				.ShouldThrow<AggregateException>()
+				.WithInnerException<FileNotFoundException>();
+			subject.Verify(x => x.CreateFile("great_game"), Times.Once);
+			fallback.Verify(x => x.CreateFile("great_game"), Times.Once);
+		}
+
+		#endregion
+
 		#region Task<int>
 
 		[Test]
@@ -97,7 +193,6 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
-			Save();
 
 			Await(proxy.DoStuff()).Should().Be(5244222);
 			subject.Verify(x => x.DoStuff(), Times.Once);
@@ -136,7 +231,6 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
-			Save();
 
 			new Action(() => Await(proxy.DoStuff()))
 				.ShouldThrow<AggregateException>()
@@ -248,7 +342,6 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
-			Save();
 
 			new Action(() => Await(proxy.DoStuff()))
 				.ShouldThrow<AggregateException>()

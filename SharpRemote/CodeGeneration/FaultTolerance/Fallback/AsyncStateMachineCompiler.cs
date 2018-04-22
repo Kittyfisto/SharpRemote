@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define TRACE
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Reflection;
@@ -119,7 +120,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = method.GetILGenerator();
 
-			gen.EmitWriteLine("InvokeSubject");
+#if TRACE
+			gen.EmitWriteLine("InvokeSubject Start");
+#endif
 
 			// _subjectTask = _subject.Do(....)
 			gen.Emit(OpCodes.Ldarg_0);
@@ -149,6 +152,10 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Ldftn, onSubjectCompleted);
 			gen.Emit(OpCodes.Newobj, actionCtor);
 			gen.Emit(OpCodes.Call, _awaiterOnCompleted);
+
+#if TRACE
+			gen.EmitWriteLine("InvokeSubject End");
+#endif
 
 			gen.Emit(OpCodes.Ret);
 
@@ -222,6 +229,10 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var aggregateException = gen.DeclareLocal(typeof(AggregateException));
 			var innerExceptions = gen.DeclareLocal(typeof(Exception[]));
 
+#if TRACE
+			gen.EmitWriteLine("FailMethodCall Start");
+#endif
+
 			var end = gen.DefineLabel();
 			var notAggregateException = gen.DefineLabel();
 
@@ -257,6 +268,11 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Call, _taskCompletionSourceSetException);
 
 			gen.MarkLabel(end);
+
+#if TRACE
+			gen.EmitWriteLine("FailMethodCall End");
+#endif
+
 			gen.Emit(OpCodes.Ret);
 
 			return method;
@@ -274,7 +290,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var end = gen.DefineLabel();
 			var noException = gen.DefineLabel();
 
-			gen.EmitWriteLine("OnFallbackCompleted");
+#if TRACE
+			gen.EmitWriteLine("OnFallbackCompleted Start");
+#endif
 
 			// try {...
 			gen.BeginExceptionBlock();
@@ -327,6 +345,11 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.EndExceptionBlock();
 			gen.MarkLabel(end);
+
+#if TRACE
+			gen.EmitWriteLine("OnFallbackCompleted End");
+#endif
+
 			gen.Emit(OpCodes.Ret);
 
 			return method;
@@ -342,7 +365,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var gen = method.GetILGenerator();
 			var exception = gen.DeclareLocal(typeof(Exception));
 
-			gen.EmitWriteLine("InvokeFallback");
+#if TRACE
+			gen.EmitWriteLine("InvokeFallback Start");
+#endif
 
 			// try { ...
 			gen.BeginExceptionBlock();
@@ -386,6 +411,10 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.EndExceptionBlock();
 
+#if TRACE
+			gen.EmitWriteLine("InvokeFallback End");
+#endif
+
 			gen.Emit(OpCodes.Ret);
 
 			return method;
@@ -403,7 +432,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var exception = gen.DeclareLocal(typeof(Exception));
 			var noException = gen.DefineLabel();
 
-			gen.EmitWriteLine("OnSubjectCompleted");
+#if TRACE
+			gen.EmitWriteLine("OnSubjectCompleted Start");
+#endif
 
 			// try { ... }
 			gen.BeginExceptionBlock();
@@ -454,7 +485,13 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Call, invokeFallback);
 
 			gen.EndExceptionBlock();
+
 			gen.MarkLabel(end);
+
+#if TRACE
+			gen.EmitWriteLine("OnSubjectCompleted End");
+#endif
+
 			gen.Emit(OpCodes.Ret);
 
 			return method;
@@ -468,12 +505,18 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = constructor.GetILGenerator();
 
-			gen.EmitWriteLine("Constructor");
+#if TRACE
+			gen.EmitWriteLine("Constructor Start");
+#endif
 
 			// _taskCompletionSource = new TaskCompletionSource<>()
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Newobj, _taskCompletionSourceType.GetConstructor(new Type[0]));
 			gen.Emit(OpCodes.Stfld, _taskCompletionSource);
+
+#if TRACE
+			gen.EmitWriteLine("Constructor End");
+#endif
 
 			gen.Emit(OpCodes.Ret);
 

@@ -125,7 +125,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				gen.BeginCatchBlock(typeof(Exception));
 
 				gen.Emit(OpCodes.Stloc, exception);
-				gen.EmitWriteLine("Proxy");
+				gen.EmitWriteLine(string.Format("Caught exception in {0}", methodDescription.Name));
 				gen.EmitWriteLine(exception);
 
 				gen.Emit(OpCodes.Ldarg_0);

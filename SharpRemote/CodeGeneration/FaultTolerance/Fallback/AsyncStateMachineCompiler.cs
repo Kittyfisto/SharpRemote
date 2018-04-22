@@ -371,7 +371,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.Emit(OpCodes.Ret);
 
-			var method2 = _stateMachine.DefineMethod("Test",
+#if TRACE
+			var method2 = _stateMachine.DefineMethod("OnFallbackCompleted_Invoker",
 			                                         MethodAttributes.Private,
 			                                         typeof(void),
 			                                         new Type[0]);
@@ -383,6 +384,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Ret);
 
 			return method2;
+#else
+			return method;
+#endif
 		}
 
 		private MethodInfo CreateInvokeFallback(MethodInfo onFallbackCompleted, MethodInfo failMethodCall)
@@ -464,7 +468,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			                                        new Type[0]);
 
 			var gen = method.GetILGenerator();
-			var end = gen.DefineLabel();
+			var endTryBlock = gen.DefineLabel();
 			var exception = gen.DeclareLocal(typeof(Exception));
 			var noException = gen.DefineLabel();
 
@@ -488,7 +492,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			// InvokeFallback()
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, invokeFallback);
-			gen.Emit(OpCodes.Br_S, end);
+			gen.Emit(OpCodes.Br_S, endTryBlock);
 
 			gen.MarkLabel(noException);
 			if (_hasReturnValue)
@@ -512,17 +516,20 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				gen.Emit(OpCodes.Callvirt, _taskCompletionSourceSetResult);
 			}
 
+			gen.MarkLabel(endTryBlock);
 			gen.BeginCatchBlock(typeof(Exception));
 			// catch(Exception) { InvokeFallback(); }
 			gen.Emit(OpCodes.Stloc, exception);
+
+#if TRACE
+			gen.EmitWriteLine("OnSubjectCompleted caught exception:");
 			gen.EmitWriteLine(exception);
+#endif
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, invokeFallback);
 
 			gen.EndExceptionBlock();
-
-			gen.MarkLabel(end);
 
 #if TRACE
 			gen.EmitWriteLine("OnSubjectCompleted End");
@@ -540,7 +547,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.BeginExceptionBlock();
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, method);
-			end = gen.DefineLabel();
+			endTryBlock = gen.DefineLabel();
 
 			gen.BeginCatchBlock(typeof(Exception));
 			exception = gen.DeclareLocal(typeof(Exception));
@@ -549,7 +556,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.EmitWriteLine(exception);
 
 			gen.EndExceptionBlock();
-			gen.MarkLabel(end);
+			gen.MarkLabel(endTryBlock);
 			gen.EmitWriteLine("OnSubjectCompleted_Invoker End");
 			gen.Emit(OpCodes.Ret);
 

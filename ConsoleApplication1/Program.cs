@@ -14,6 +14,36 @@ using SharpRemote.Test;
 
 namespace ConsoleApplication1
 {
+	class StateMachine
+	{
+		private Task<int> _subjectTask;
+		private TaskCompletionSource<int> _source;
+
+		public void OnCompleted()
+		{
+			try
+			{
+				if (_subjectTask.Exception != null)
+				{
+					InvokeFallback();
+				}
+				else
+				{
+					_source.SetResult(_subjectTask.Result);
+				}
+			}
+			catch (Exception)
+			{
+				InvokeFallback();
+			}
+		}
+
+		private void InvokeFallback()
+		{
+
+		}
+	}
+
 	internal class Program
 	{
 		private static unsafe void Main(string[] args)

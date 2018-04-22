@@ -93,6 +93,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				                                              parameters.Select(x => x.ParameterType.Type).ToArray());
 				var gen = methodBuilder.GetILGenerator();
 
+				var exception = gen.DeclareLocal(typeof(Exception));
+
 				LocalBuilder returnValue = null;
 				var hasReturnValue = method.ReturnType != typeof(void);
 				if (hasReturnValue)
@@ -121,6 +123,11 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 				}
 
 				gen.BeginCatchBlock(typeof(Exception));
+
+				gen.Emit(OpCodes.Stloc, exception);
+				gen.EmitWriteLine("Proxy");
+				gen.EmitWriteLine(exception);
+
 				gen.Emit(OpCodes.Ldarg_0);
 				gen.Emit(OpCodes.Ldfld, _fallback);
 				for (var i = 0; i < parameters.Count; ++i) gen.Emit(OpCodes.Ldarg, i + 1);

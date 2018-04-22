@@ -10,6 +10,7 @@ using SharpRemote.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 using log4net.Config;
+using SharpRemote.Test;
 
 namespace ConsoleApplication1
 {
@@ -17,22 +18,10 @@ namespace ConsoleApplication1
 	{
 		private static unsafe void Main(string[] args)
 		{
-			var writer = new BinaryWriter(new MemoryStream());
-			var value = new decimal(0);
+			var task = TaskEx.Failed<int>(new FileNotFoundException());
+			task.GetAwaiter().OnCompleted(SomeMethod);
 
-			var data = decimal.GetBits(value);
-			writer.Write(data[0]);
-			writer.Write(data[1]);
-			writer.Write(data[2]);
-			writer.Write(data[3]);
-
-
-			XmlConfigurator.Configure(new FileInfo("ConsoleApplication1.exe.config"));
-
-			StartServer();
-			Task.Delay(1000).Wait();
-
-
+			Thread.Sleep(1000);
 			return;
 			/*
 			//Client
@@ -66,6 +55,11 @@ namespace ConsoleApplication1
 					Console.WriteLine("{0}μs rtt", (int)roundtripTime / 10);
 				}
 			}*/
+		}
+
+		private static void SomeMethod()
+		{
+			int n = 0;
 		}
 
 		static void StartServer()

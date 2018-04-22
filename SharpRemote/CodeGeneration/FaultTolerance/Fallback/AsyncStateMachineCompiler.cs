@@ -400,6 +400,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = method.GetILGenerator();
 			var end = gen.DefineLabel();
+			var exception = gen.DeclareLocal(typeof(Exception));
 			var noException = gen.DefineLabel();
 
 			gen.EmitWriteLine("OnSubjectCompleted");
@@ -446,7 +447,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.BeginCatchBlock(typeof(Exception));
 			// catch(Exception) { InvokeFallback(); }
-			gen.Emit(OpCodes.Pop);
+			gen.Emit(OpCodes.Stloc, exception);
+			gen.EmitWriteLine(exception);
+
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Call, invokeFallback);
 

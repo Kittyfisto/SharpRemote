@@ -244,7 +244,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			// if (aggregateException != null)
 			gen.Emit(OpCodes.Ldloc, aggregateException);
 			gen.Emit(OpCodes.Ldnull);
-			gen.Emit(OpCodes.Cgt_Un);
+			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Brfalse_S, notAggregateException);
 
 			// var exceptions = aggregateException.InnerExceptions;
@@ -306,7 +306,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			// if (exception != null)
 			gen.Emit(OpCodes.Ldloc, exception);
 			gen.Emit(OpCodes.Ldnull);
-			gen.Emit(OpCodes.Cgt_Un);
+			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Brfalse_S, noException);
 
 			// FailMethodCall(exception)
@@ -446,7 +446,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			// if (exception != null)
 			gen.Emit(OpCodes.Ldnull);
-			gen.Emit(OpCodes.Cgt_Un);
+			gen.Emit(OpCodes.Ceq);
 			gen.Emit(OpCodes.Brfalse_S, noException);
 
 			// InvokeFallback()

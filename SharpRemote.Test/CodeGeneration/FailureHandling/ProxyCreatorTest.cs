@@ -157,6 +157,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
+			Save();
 
 			Await(proxy.DoStuff());
 			subject.Verify(x => x.DoStuff(), Times.Once, "because the subject should've been invoked once");

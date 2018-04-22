@@ -119,7 +119,9 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = method.GetILGenerator();
 
-			// _fallbackTask = _subject.Do(....)
+			gen.EmitWriteLine("InvokeSubject");
+
+			// _subjectTask = _subject.Do(....)
 			gen.Emit(OpCodes.Ldarg_0);
 
 			gen.Emit(OpCodes.Ldarg_0);
@@ -272,6 +274,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var end = gen.DefineLabel();
 			var noException = gen.DefineLabel();
 
+			gen.EmitWriteLine("OnFallbackCompleted");
+
 			// try {...
 			gen.BeginExceptionBlock();
 
@@ -338,6 +342,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var gen = method.GetILGenerator();
 			var exception = gen.DeclareLocal(typeof(Exception));
 
+			gen.EmitWriteLine("InvokeFallback");
+
 			// try { ...
 			gen.BeginExceptionBlock();
 
@@ -395,6 +401,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var gen = method.GetILGenerator();
 			var end = gen.DefineLabel();
 			var noException = gen.DefineLabel();
+
+			gen.EmitWriteLine("OnSubjectCompleted");
 
 			// try { ... }
 			gen.BeginExceptionBlock();
@@ -456,6 +464,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			                                                  new Type[0]);
 
 			var gen = constructor.GetILGenerator();
+
+			gen.EmitWriteLine("Constructor");
 
 			// _taskCompletionSource = new TaskCompletionSource<>()
 			gen.Emit(OpCodes.Ldarg_0);

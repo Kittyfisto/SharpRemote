@@ -1,58 +1,15 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.IO.Pipes;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SharpRemote.Hosting;
-using SharpRemote.Hosting.OutOfProcess;
-using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
-using log4net.Config;
-using SharpRemote.Test;
 
 namespace ConsoleApplication1
 {
-	class StateMachine
-	{
-		private Task<int> _subjectTask;
-		private TaskCompletionSource<int> _source;
-
-		public void OnCompleted()
-		{
-			try
-			{
-				if (_subjectTask.Exception != null)
-				{
-					InvokeFallback();
-				}
-				else
-				{
-					_source.SetResult(_subjectTask.Result);
-				}
-			}
-			catch (Exception)
-			{
-				InvokeFallback();
-			}
-		}
-
-		private void InvokeFallback()
-		{
-
-		}
-	}
-
 	internal class Program
 	{
-		private static unsafe void Main(string[] args)
+		private static void Main(string[] args)
 		{
-			var task = TaskEx.Failed<int>(new FileNotFoundException());
-			task.GetAwaiter().OnCompleted(SomeMethod);
-
-			Thread.Sleep(1000);
-			return;
 			/*
 			//Client
 			var client = new NamedPipeClientStream("PipesOfPiece");
@@ -85,11 +42,6 @@ namespace ConsoleApplication1
 					Console.WriteLine("{0}μs rtt", (int)roundtripTime / 10);
 				}
 			}*/
-		}
-
-		private static void SomeMethod()
-		{
-			int n = 0;
 		}
 
 		static void StartServer()

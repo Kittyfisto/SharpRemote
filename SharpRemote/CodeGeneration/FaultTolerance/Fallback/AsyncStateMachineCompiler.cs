@@ -1,5 +1,4 @@
-﻿#define TRACE
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Reflection;
@@ -16,13 +15,10 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 	internal sealed class AsyncStateMachineCompiler
 	{
 		private readonly FieldBuilder _fallback;
-		private readonly Type _interfaceType;
 		private readonly FieldBuilder _taskCompletionSource;
 		private readonly TypeBuilder _stateMachine;
 		private readonly Type _taskCompletionSourceType;
 		private readonly FieldBuilder _fallbackTask;
-		private readonly Type _taskType;
-		private readonly Type _taskReturnType;
 		private readonly bool _hasReturnValue;
 		private readonly MethodInfo _taskCompletionSourceSetResult;
 		private readonly List<FieldInfo> _parameters;
@@ -34,7 +30,6 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 		private readonly Type _awaiterType;
 		private readonly MethodInfo _awaiterOnCompleted;
 		private readonly MethodInfo _taskGetResult;
-		private readonly MethodInfo _taskGetException;
 		private readonly FieldBuilder _subject;
 		private readonly FieldBuilder _subjectTask;
 
@@ -43,23 +38,22 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 		                            IMethodDescription methodDescription)
 		{
 			_originalMethod = methodDescription.Method;
-			_taskType = methodDescription.ReturnType.Type;
-			_taskGetAwaiter = _taskType.GetMethod(nameof(Task.GetAwaiter));
-			_taskGetException = _taskType.GetProperty(nameof(Task.Exception)).GetMethod;
+			var taskType = methodDescription.ReturnType.Type;
+			_taskGetAwaiter = taskType.GetMethod(nameof(Task.GetAwaiter));
 
-			_awaiterType = GetAwaiterType(_taskType);
+			_awaiterType = GetAwaiterType(taskType);
 			_awaiterOnCompleted = _awaiterType.GetMethod(nameof(TaskAwaiter.OnCompleted),
 			                                               new[] {typeof(Action)});
 
-			_taskReturnType = GetTaskReturnType(_taskType);
-			_hasReturnValue = _taskReturnType != typeof(void);
+			var taskReturnType = GetTaskReturnType(taskType);
+			_hasReturnValue = taskReturnType != typeof(void);
 			if (_hasReturnValue)
 			{
-				_taskGetResult = _taskType.GetProperty(nameof(Task<int>.Result)).GetMethod;
+				_taskGetResult = taskType.GetProperty(nameof(Task<int>.Result)).GetMethod;
 			}
 
-			_interfaceType = interfaceDescription.Type;
-			_taskCompletionSourceType = GetTaskCompletionSourceType(_taskType);
+			var interfaceType = interfaceDescription.Type;
+			_taskCompletionSourceType = GetTaskCompletionSourceType(taskType);
 			_taskCompletionSourceSetResult = _taskCompletionSourceType.GetMethod(nameof(TaskCompletionSource<int>.SetResult));
 			_taskCompletionSourceSetException = _taskCompletionSourceType.GetMethod(nameof(TaskCompletionSource<int>.SetException),
 			                                                                        new []{typeof(Exception)});
@@ -71,11 +65,11 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var name = string.Format("{0}_AsyncStateMachine", methodDescription.Name);
 			_stateMachine = typeBuilder.DefineNestedType(name);
 
-			_subject = _stateMachine.DefineField("Subject", _taskType, FieldAttributes.Public);
-			_fallback = _stateMachine.DefineField("Fallback", _interfaceType, FieldAttributes.Public);
+			_subject = _stateMachine.DefineField("Subject", taskType, FieldAttributes.Public);
+			_fallback = _stateMachine.DefineField("Fallback", interfaceType, FieldAttributes.Public);
 
-			_subjectTask = _stateMachine.DefineField("_subjectTask", _taskType, FieldAttributes.Private);
-			_fallbackTask = _stateMachine.DefineField("_fallbackTask", _taskType, FieldAttributes.Private);
+			_subjectTask = _stateMachine.DefineField("_subjectTask", taskType, FieldAttributes.Private);
+			_fallbackTask = _stateMachine.DefineField("_fallbackTask", taskType, FieldAttributes.Private);
 			_taskCompletionSource = _stateMachine.DefineField("TaskCompletionSource", _taskCompletionSourceType,
 			                                         FieldAttributes.Public | FieldAttributes.InitOnly);
 
@@ -120,7 +114,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = method.GetILGenerator();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("InvokeSubject Start");
 #endif
 
@@ -129,10 +123,10 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subject);
-			for (int i = 0; i < _parameters.Count; ++i)
+			foreach (var parameter in _parameters)
 			{
 				gen.Emit(OpCodes.Ldarg_0);
-				gen.Emit(OpCodes.Ldfld, _parameters[i]);
+				gen.Emit(OpCodes.Ldfld, parameter);
 			}
 
 			gen.Emit(OpCodes.Callvirt, _originalMethod);
@@ -144,16 +138,15 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var awaiter = gen.DeclareLocal(_awaiterType);
 			gen.Emit(OpCodes.Callvirt, _taskGetAwaiter);
 			gen.Emit(OpCodes.Stloc, awaiter);
-			
+
 			// awaiter.ContinueWith(OnSubjectCompleted)
-			var actionCtor = typeof(Action).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
 			gen.Emit(OpCodes.Ldloca, awaiter);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldftn, onSubjectCompleted);
-			gen.Emit(OpCodes.Newobj, actionCtor);
+			gen.Emit(OpCodes.Newobj, Methods.ActionIntPtrCtor);
 			gen.Emit(OpCodes.Call, _awaiterOnCompleted);
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("InvokeSubject End");
 #endif
 
@@ -230,7 +223,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var innerExceptions = gen.DeclareLocal(typeof(IEnumerable<Exception>));
 			var exception = gen.DeclareLocal(typeof(Exception));
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("FailMethodCall Start");
 #endif
 
@@ -252,11 +245,8 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Brtrue_S, notAggregateException);
 
 			// var exceptions = aggregateException.InnerExceptions;
-			var aggregateExceptionGetInnerExceptions = typeof(AggregateException)
-			                                           .GetProperty(nameof(AggregateException.InnerExceptions))
-			                                           .GetMethod;
 			gen.Emit(OpCodes.Ldloc, aggregateException);
-			gen.Emit(OpCodes.Callvirt, aggregateExceptionGetInnerExceptions);
+			gen.Emit(OpCodes.Callvirt, Methods.AggregateExceptionGetInnerExceptions);
 			gen.Emit(OpCodes.Stloc, innerExceptions);
 
 			gen.Emit(OpCodes.Ldarg_0);
@@ -276,7 +266,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.BeginCatchBlock(typeof(Exception));
 			gen.Emit(OpCodes.Stloc, exception);
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("Caught exception in FailMethodCall:");
 			gen.EmitWriteLine(exception);
 #endif
@@ -288,7 +278,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.EndExceptionBlock();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("FailMethodCall End");
 #endif
 
@@ -309,7 +299,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var endTryBlock = gen.DefineLabel();
 			var noException = gen.DefineLabel();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("OnFallbackCompleted Start");
 #endif
 
@@ -319,7 +309,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			// var exception = _fallbackTask.Exception
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _fallbackTask);
-			gen.Emit(OpCodes.Callvirt, _taskGetException);
+			gen.Emit(OpCodes.Callvirt, Methods.TaskGetException);
 			gen.Emit(OpCodes.Stloc, exception);
 
 			// if (exception != null)
@@ -365,13 +355,13 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.EndExceptionBlock();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("OnFallbackCompleted End");
 #endif
 
 			gen.Emit(OpCodes.Ret);
 
-#if TRACE
+#if DETAILED_TRACE
 			var method2 = _stateMachine.DefineMethod("OnFallbackCompleted_Invoker",
 			                                         MethodAttributes.Private,
 			                                         typeof(void),
@@ -399,7 +389,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var gen = method.GetILGenerator();
 			var exception = gen.DeclareLocal(typeof(Exception));
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("InvokeFallback Start");
 #endif
 
@@ -429,18 +419,17 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Stloc, awaiter);
 			
 			// awaiter.ContinueWith(OnFallbackCompleted)
-			var actionCtor = typeof(Action).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
 			gen.Emit(OpCodes.Ldloca, awaiter);
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldftn, onFallbackCompleted);
-			gen.Emit(OpCodes.Newobj, actionCtor);
+			gen.Emit(OpCodes.Newobj, Methods.ActionIntPtrCtor);
 			gen.Emit(OpCodes.Call, _awaiterOnCompleted);
 
 			// cach(Exception e) { FailMethodCall(e); }
 			gen.BeginCatchBlock(typeof(Exception));
 			gen.Emit(OpCodes.Stloc, exception);
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("Caught exception in InvokeFallback:");
 			gen.EmitWriteLine(exception);
 #endif
@@ -451,7 +440,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.EndExceptionBlock();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("InvokeFallback End");
 #endif
 
@@ -472,7 +461,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			var exception = gen.DeclareLocal(typeof(Exception));
 			var noException = gen.DefineLabel();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("OnSubjectCompleted Start");
 #endif
 
@@ -482,7 +471,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			// var exception = _subjectTask.Exception
 			gen.Emit(OpCodes.Ldarg_0);
 			gen.Emit(OpCodes.Ldfld, _subjectTask);
-			gen.Emit(OpCodes.Callvirt, _taskGetException);
+			gen.Emit(OpCodes.Callvirt, Methods.TaskGetException);
 
 			// if (exception != null)
 			gen.Emit(OpCodes.Ldnull);
@@ -521,7 +510,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			// catch(Exception) { InvokeFallback(); }
 			gen.Emit(OpCodes.Stloc, exception);
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("OnSubjectCompleted caught exception:");
 			gen.EmitWriteLine(exception);
 #endif
@@ -531,13 +520,13 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			gen.EndExceptionBlock();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("OnSubjectCompleted End");
 #endif
 
 			gen.Emit(OpCodes.Ret);
 
-#if TRACE
+#if DETAILED_TRACE
 			var method2 = _stateMachine.DefineMethod("OnSubjectCompleted_Invoker",
 			                                         MethodAttributes.Private,
 			                                         typeof(void),
@@ -574,7 +563,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 
 			var gen = constructor.GetILGenerator();
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("Constructor Start");
 #endif
 
@@ -583,7 +572,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance.Fallback
 			gen.Emit(OpCodes.Newobj, _taskCompletionSourceType.GetConstructor(new Type[0]));
 			gen.Emit(OpCodes.Stfld, _taskCompletionSource);
 
-#if TRACE
+#if DETAILED_TRACE
 			gen.EmitWriteLine("Constructor End");
 #endif
 

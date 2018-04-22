@@ -75,6 +75,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo RemotingEndPointGetOrCreateProxy;
 		public static readonly MethodInfo RemotingEndPointTryGetProxy;
 		public static readonly MethodInfo TaskGetFactory;
+		public static readonly ConstructorInfo ActionIntPtrCtor;
 		public static readonly ConstructorInfo ActionObjectIntPtrCtor;
 		public static readonly ConstructorInfo ActionTaskOfMemoryStreamIntPtrCtor;
 		public static readonly MethodInfo TaskFactoryStartNew;
@@ -86,6 +87,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo TaskSchedulerGetDefault;
 		public static readonly MethodInfo TaskMemoryStreamContinueWith;
 		public static readonly MethodInfo TaskMemoryStreamGetResult;
+		public static readonly MethodInfo AggregateExceptionGetInnerExceptions;
 		public static readonly MethodInfo StringFormat3Objects;
 		public static readonly MethodInfo TypeGetTypeFromHandle;
 		public static readonly ConstructorInfo SerialTaskSchedulerCtor;
@@ -177,6 +179,7 @@ namespace SharpRemote.CodeGeneration
 			CreateTypeFromName = typeof(TypeResolver).GetMethod("GetType", new[] { typeof(string) });
 
 			TaskGetFactory = typeof (Task).GetProperty("Factory").GetMethod;
+			ActionIntPtrCtor = typeof (Action).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
 			ActionObjectIntPtrCtor = typeof (Action<object>).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
 			ActionTaskOfMemoryStreamIntPtrCtor = typeof(Action<Task<MemoryStream>>).GetConstructor(new[] { typeof(object), typeof(IntPtr) });
 			TaskFactoryStartNew = typeof (TaskFactory).GetMethod("StartNew", new[]
@@ -198,6 +201,10 @@ namespace SharpRemote.CodeGeneration
 
 			TaskSchedulerGetCurrent = typeof (TaskScheduler).GetProperty("Current").GetMethod;
 			TaskSchedulerGetDefault = typeof (TaskScheduler).GetProperty("Default").GetMethod;
+
+			AggregateExceptionGetInnerExceptions = typeof(AggregateException)
+			                                       .GetProperty(nameof(AggregateException.InnerExceptions))
+			                                       .GetMethod;
 
 			StringFormat3Objects = typeof (string).GetMethod("Format", new[] {typeof(string), typeof (object), typeof (object), typeof (object)});
 

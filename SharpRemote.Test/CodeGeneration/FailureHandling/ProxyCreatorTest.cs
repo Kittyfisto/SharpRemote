@@ -50,6 +50,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 		#region Timeouts
 
 		[Test]
+		[Ignore("Not yet implemented")]
 		[Description("Verifies that the method call is forwarded to the subject and its return value forward")]
 		public void TestIReturnsIntTaskMethodStringTimeout1()
 		{

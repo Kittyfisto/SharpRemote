@@ -50,8 +50,24 @@ namespace SharpRemote
 		public static void LogSystemSettings()
 		{
 			var builder = new StringBuilder();
-			builder.AppendFormat("  TcpTimedWaitDelay: {0} seconds", SocketSettings.TcpTimedWaitDelay);
-			Log.Info(builder.ToString());
+			builder.AppendLine();
+			builder.AppendFormat("  TcpTimedWaitDelay: {0:F0} seconds", SocketSettings.TcpTimedWaitDelay.TotalSeconds);
+			builder.AppendLine();
+			builder.AppendFormat("  MaxUserPort: {0}", SocketSettings.MaxUserPort);
+			builder.AppendLine();
+
+			var ipv4Range = SocketSettings.IPv4.Tcp.EphemeralPortRange;
+			builder.AppendFormat("  DynamicPort.IPv4.TCP.StartPort: {0}", ipv4Range.StartPort);
+			builder.AppendLine();
+			builder.AppendFormat("  DynamicPort.IPv4.TCP.NumberOfPorts: {0}", ipv4Range.NumberOfPorts);
+			builder.AppendLine();
+
+			var ipv6Range = SocketSettings.IPv6.Tcp.EphemeralPortRange;
+			builder.AppendFormat("  DynamicPort.IPv6.TCP.StartPort: {0}", ipv6Range.StartPort);
+			builder.AppendLine();
+			builder.AppendFormat("  DynamicPort.IPv6.TCP.NumberOfPorts: {0}", ipv6Range.NumberOfPorts);
+			var message = builder.ToString();
+			Log.Info(message);
 		}
 
 		/// <summary>
@@ -473,17 +489,41 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		///     Binds this socket
+		///     Binds this socket to the given address.
+		///     The listening port will in the range of [49152, 65535] and can be retrieved
+		///     via <see cref="LocalEndPoint"/> after this call has succeeded.
 		/// </summary>
 		/// <param name="localAddress"></param>
 		public void Bind(IPAddress localAddress)
+		{
+			const ushort minPort = 49152;
+			const ushort maxPort = 65535;
+
+			Bind(localAddress, minPort, maxPort);
+		}
+
+		/// <summary>
+		///     Binds this socket to the given address.
+		///     The listening port will in the range of [<paramref name="minPort"/>, <paramref name="maxPort"/>] and can be retrieved
+		///     via <see cref="LocalEndPoint"/> after this call has succeeded.
+		/// </summary>
+		/// <remarks>
+		///     The current implementation tries to bind the socket to <paramref name="minPort"/> and then increments
+		///     it by one until either a Bind() operation succeeds or maxPort has been reached. If the latter occured
+		///     (and Bind() still didn't succeed, then a <see cref="SystemException"/> is thrown.
+		/// </remarks>
+		/// <param name="localAddress"></param>
+		/// <param name="minPort">The minimum port number to which this endpoint may be bound to</param>
+		/// <param name="maxPort">The maximum port number to which this endpoint may be bound to</param>
+		/// <exception cref="SystemException">When none of the given ports is available</exception>
+		public void Bind(IPAddress localAddress, ushort minPort, ushort maxPort)
 		{
 			if (localAddress == null) throw new ArgumentNullException(nameof(localAddress));
 			if (IsConnected)
 				throw new InvalidOperationException("A socket may only bound to a particular port when its not already connected");
 
 			IPEndPoint ep;
-			_serverSocket = Socket2.CreateSocketAndBindToAnyPort(localAddress, out ep);
+			_serverSocket = Socket2.CreateSocketAndBindToAnyPort(localAddress, minPort, maxPort, out ep);
 			LocalEndPoint = ep;
 			Listen();
 		}

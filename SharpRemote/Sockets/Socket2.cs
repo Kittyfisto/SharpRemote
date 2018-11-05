@@ -825,23 +825,23 @@ namespace SharpRemote.Sockets
 		/// <returns></returns>
 		public static ISocket CreateSocketAndBindToAnyPort(IPAddress address, out IPEndPoint localAddress)
 		{
-			const ushort firstSocket = 49152;
-			const ushort lastSocket = 65535;
+			const ushort minPort = 49152;
+			const ushort maxPort = 65535;
 
-			return CreateSocketAndBindToAnyPort(address, firstSocket, lastSocket, out localAddress);
+			return CreateSocketAndBindToAnyPort(address, minPort, maxPort, out localAddress);
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="address"></param>
-		/// <param name="firstSocket"></param>
-		/// <param name="lastSocket"></param>
+		/// <param name="minPort"></param>
+		/// <param name="maxPort"></param>
 		/// <param name="localAddress"></param>
 		/// <returns></returns>
 		public static ISocket CreateSocketAndBindToAnyPort(IPAddress address,
-		                                                     ushort firstSocket,
-		                                                     ushort lastSocket,
+		                                                     ushort minPort,
+		                                                     ushort maxPort,
 		                                                     out IPEndPoint localAddress)
 		{
 			var family = address.AddressFamily;
@@ -851,7 +851,7 @@ namespace SharpRemote.Sockets
 				socket.ExclusiveAddressUse = true;
 
 				localAddress = null;
-				for (var i = firstSocket; i <= lastSocket; ++i)
+				for (var i = minPort; i <= maxPort; ++i)
 					try
 					{
 						localAddress = new IPEndPoint(address, i);

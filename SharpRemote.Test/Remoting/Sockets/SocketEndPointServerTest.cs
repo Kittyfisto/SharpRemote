@@ -5,9 +5,11 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using FluentAssertions;
+using log4net.Core;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
+using SharpRemote.EndPoints.Sockets;
 using SharpRemote.ServiceDiscovery;
 using SharpRemote.Sockets;
 using SharpRemote.Test.Types.Interfaces;
@@ -17,6 +19,29 @@ namespace SharpRemote.Test.Remoting.Sockets
 	[TestFixture]
 	public sealed class SocketEndPointServerTest
 	{
+		[Test]
+		public void TestLogSystemSettings()
+		{
+			using (var appender = new LogCollector("SharpRemote.SocketEndPoint", Level.Info))
+			{
+				var timedWaitDelay = SocketSettings.TcpTimedWaitDelay;
+				var ipv4TcpRange = SocketSettings.IPv4.Tcp.EphemeralPortRange;
+				var ipv6TcpRange = SocketSettings.IPv6.Tcp.EphemeralPortRange;
+
+				SocketEndPoint.LogSystemSettings();
+
+				var events = appender.Events;
+				events.Should().HaveCount(1);
+				var message = events[0].RenderedMessage;
+				Console.WriteLine(message);
+				message.Should().Contain(string.Format("TcpTimedWaitDelay: {0} seconds", timedWaitDelay.TotalSeconds));
+				message.Should().Contain(string.Format("DynamicPort.IPv4.TCP.StartPort: {0}", ipv4TcpRange.StartPort));
+				message.Should().Contain(string.Format("DynamicPort.IPv4.TCP.NumberOfPorts: {0}", ipv4TcpRange.NumberOfPorts));
+				message.Should().Contain(string.Format("DynamicPort.IPv6.TCP.StartPort: {0}", ipv6TcpRange.StartPort));
+				message.Should().Contain(string.Format("DynamicPort.IPv6.TCP.NumberOfPorts: {0}", ipv6TcpRange.NumberOfPorts));
+			}
+		}
+
 		[Test]
 		[Description("Verifies that any INetworkServiceDiscoverer implementation can be used")]
 		public void TestBind1()
@@ -31,6 +56,38 @@ namespace SharpRemote.Test.Remoting.Sockets
 				                                         It.IsAny<IPEndPoint>(),
 				                                         It.IsAny<byte[]>()),
 				                  Times.Once);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that when no custom port range is specified, then the listening port will be in the default range")]
+		public void TestBind2()
+		{
+			using (var server = new SocketEndPoint(EndPointType.Server,
+			                                       name: "foobar"))
+			{
+				const ushort minPort = 49152;
+				const ushort maxPort = 65535;
+				server.Bind(IPAddress.Loopback, minPort, maxPort);
+
+				server.LocalEndPoint.Address.Should().Be(IPAddress.Loopback);
+				server.LocalEndPoint.Port.Should().BeInRange(minPort, maxPort);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that a custom port range can be specified, from which bind picks the first available socket")]
+		public void TestBind3()
+		{
+			using (var server = new SocketEndPoint(EndPointType.Server,
+			                                       name: "foobar"))
+			{
+				const int minPort = 1234;
+				const int maxPort = 1300;
+				server.Bind(IPAddress.Loopback, minPort, maxPort);
+
+				server.LocalEndPoint.Address.Should().Be(IPAddress.Loopback);
+				server.LocalEndPoint.Port.Should().BeInRange(minPort, maxPort);
 			}
 		}
 

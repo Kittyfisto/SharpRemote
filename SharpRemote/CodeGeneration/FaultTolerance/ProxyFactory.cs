@@ -22,7 +22,11 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 
 		public IProxyFactory<T> WithMaximumLatencyOf(TimeSpan maximumMethodLatency)
 		{
-			throw new NotImplementedException();
+			if (maximumMethodLatency < TimeSpan.Zero)
+				return null;
+
+			var proxy = _storage.CreateProxyWithTimeout(_subject, maximumMethodLatency);
+			return new ProxyFactory<T>(_storage, proxy);
 		}
 
 		public IProxyFactory<T> WithDefaultFallback()
@@ -37,7 +41,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				throw new ArgumentNullException(nameof(fallback));
 
 			var proxy = _storage.CreateProxyWithFallback(_subject, fallback);
-			return new ProxyFactory<T>(_storage, (T) proxy);
+			return new ProxyFactory<T>(_storage, proxy);
 		}
 
 		public IProxyFactory<T> WithMaximumRetries(int numberOfRetries)

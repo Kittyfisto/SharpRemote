@@ -79,6 +79,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly ConstructorInfo ActionObjectIntPtrCtor;
 		public static readonly ConstructorInfo ActionTaskOfMemoryStreamIntPtrCtor;
 		public static readonly MethodInfo TaskFactoryStartNew;
+		public static readonly MethodInfo TaskFactoryStartNewObject;
 		public static readonly MethodInfo TaskWait;
 		public static readonly MethodInfo TaskGetStatus;
 		public static readonly MethodInfo TaskGetIsFaulted;
@@ -87,6 +88,7 @@ namespace SharpRemote.CodeGeneration
 		public static readonly MethodInfo TaskSchedulerGetDefault;
 		public static readonly MethodInfo TaskMemoryStreamContinueWith;
 		public static readonly MethodInfo TaskMemoryStreamGetResult;
+		public static readonly MethodInfo TaskExTimeoutAfter;
 		public static readonly MethodInfo AggregateExceptionGetInnerExceptions;
 		public static readonly MethodInfo StringFormat3Objects;
 		public static readonly MethodInfo TypeGetTypeFromHandle;
@@ -183,6 +185,10 @@ namespace SharpRemote.CodeGeneration
 			ActionObjectIntPtrCtor = typeof (Action<object>).GetConstructor(new[] {typeof(object), typeof(IntPtr)});
 			ActionTaskOfMemoryStreamIntPtrCtor = typeof(Action<Task<MemoryStream>>).GetConstructor(new[] { typeof(object), typeof(IntPtr) });
 			TaskFactoryStartNew = typeof (TaskFactory).GetMethod("StartNew", new[]
+			{
+				typeof(Action)
+			});
+			TaskFactoryStartNewObject = typeof (TaskFactory).GetMethod("StartNew", new[]
 				{
 					typeof(Action<object>),
 					typeof(object)
@@ -201,6 +207,9 @@ namespace SharpRemote.CodeGeneration
 
 			TaskSchedulerGetCurrent = typeof (TaskScheduler).GetProperty("Current").GetMethod;
 			TaskSchedulerGetDefault = typeof (TaskScheduler).GetProperty("Default").GetMethod;
+
+			TaskExTimeoutAfter = typeof(TaskEx).GetMethod(nameof(TaskEx.TimeoutAfter),
+			                                              new[] {typeof(Task), typeof(TimeSpan)});
 
 			AggregateExceptionGetInnerExceptions = typeof(AggregateException)
 			                                       .GetProperty(nameof(AggregateException.InnerExceptions))

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using log4net;
 using SharpRemote.CodeGeneration;
 using SharpRemote.EndPoints;
+using SharpRemote.EndPoints.Sockets;
 using SharpRemote.Extensions;
 using SharpRemote.ServiceDiscovery;
 using SharpRemote.Sockets;
@@ -33,10 +34,25 @@ namespace SharpRemote
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		private readonly INetworkServiceDiscoverer _networkServiceDiscoverer;
+
 		private bool _isConnecting;
 		private RegisteredService _peerNameRegistration;
-
 		private ISocket _serverSocket;
+
+		/// <summary>
+		///    Logs relevant socket, tcp/ip, etc... settings to this classes logger (SharpRemote.SocketEndPoint).
+		/// </summary>
+		/// <remarks>
+		///    This method may be called upon startup (or more often depending on your needs) in order to log relevant
+		///    settings (such as certain timeouts, the dynamic port range, etc...). Can be helpful when troubleshooting
+		///    network problems.
+		/// </remarks>
+		public static void LogSystemSettings()
+		{
+			var builder = new StringBuilder();
+			builder.AppendFormat("  TcpTimedWaitDelay: {0} seconds", SocketSettings.TcpTimedWaitDelay);
+			Log.Info(builder.ToString());
+		}
 
 		/// <summary>
 		///     Creates a new socket end point that (optionally) is bound to the given

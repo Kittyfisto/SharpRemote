@@ -9,6 +9,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 	{
 		private readonly Dictionary<Type, IFallbackProxyCreator> _fallbackProxyCreators;
 		private readonly Dictionary<Type, IDefaultFallbackCreator> _fallbackCreators;
+		private readonly Dictionary<Type, ITimeoutProxyCreator> _timeoutCreators;
 		private readonly object _syncRoot;
 		private readonly TypeModel _typeModel;
 		private readonly ModuleBuilder _moduleBuilder;
@@ -20,6 +21,7 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 			_typeModel = new TypeModel();
 			_fallbackProxyCreators = new Dictionary<Type, IFallbackProxyCreator>();
 			_fallbackCreators = new Dictionary<Type, IDefaultFallbackCreator>();
+			_timeoutCreators = new Dictionary<Type, ITimeoutProxyCreator>();
 		}
 
 		public T CreateProxyWithFallback<T>(T subject, T fallback)
@@ -48,10 +50,26 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 				{
 					var description = _typeModel.Add(type, assumeByReference: true);
 					creator = new DefaultFallbackCreator<T>(_moduleBuilder, description);
-					_fallbackCreators.Add(typeof(T), creator);
+					_fallbackCreators.Add(type, creator);
 				}
 			}
 			return (T)creator.Create();
+		}
+
+		public T CreateProxyWithTimeout<T>(T subject, TimeSpan maximumMethodLatency) where T : class
+		{
+			ITimeoutProxyCreator creator;
+			lock (_syncRoot)
+			{
+				var type = typeof(T);
+				if (!_timeoutCreators.TryGetValue(type, out creator))
+				{
+					var description = _typeModel.Add(type, assumeByReference: true);
+					creator = new TimeoutProxyCreator<T>(_moduleBuilder, description);
+					_timeoutCreators.Add(type, creator);
+				}
+			}
+			return (T)creator.Create(subject, maximumMethodLatency);
 		}
 	}
 }

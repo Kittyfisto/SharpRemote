@@ -13,6 +13,10 @@ namespace SharpRemote.CodeGeneration.FaultTolerance
 		///     Any method which appears to execute longer will be aborted and a <see cref="TimeoutException" />
 		///     will be thrown.
 		/// </summary>
+		/// <remarks>
+		///     This method should **only** be used in cases where the method you are calling cannot possibly
+		///     be cancelled in any way.
+		/// </remarks>
 		/// <param name="maximumMethodLatency"></param>
 		/// <returns></returns>
 		IProxyFactory<T> WithMaximumLatencyOf(TimeSpan maximumMethodLatency);

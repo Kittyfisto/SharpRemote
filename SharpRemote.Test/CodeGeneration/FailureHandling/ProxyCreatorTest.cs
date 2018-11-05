@@ -47,6 +47,27 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			}
 		}
 
+		#region Timeouts
+
+		[Test]
+		[Description("Verifies that the method call is forwarded to the subject and its return value forward")]
+		public void TestIReturnsIntTaskMethodStringTimeout1()
+		{
+			var subject = new Mock<IReturnsIntTaskMethodString>();
+			subject.Setup(x => x.CreateFile("simon")).Returns(Task.FromResult(-21321211));
+
+			var creator = Create();
+			var proxy = creator.PrepareProxyFor(subject.Object)
+			                   .WithMaximumLatencyOf(TimeSpan.FromSeconds(10))
+			                   .Create();
+			Save();
+
+			Await(proxy.CreateFile("simon")).Should().Be(-21321211);
+			subject.Verify(x => x.CreateFile("simon"), Times.Once);
+		}
+
+		#endregion
+
 		#region Fallbacks
 
 		#region Task<int>(string)
@@ -157,7 +178,6 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
-			Save();
 
 			Await(proxy.DoStuff());
 			subject.Verify(x => x.DoStuff(), Times.Once, "because the subject should've been invoked once");
@@ -176,7 +196,6 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
-			Save();
 
 			Await(proxy.DoStuff()).Should().Be(1337);
 			subject.Verify(x => x.DoStuff(), Times.Once);

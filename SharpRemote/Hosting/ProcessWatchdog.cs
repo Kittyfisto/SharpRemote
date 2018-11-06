@@ -216,6 +216,7 @@ namespace SharpRemote.Hosting
 					_remotePort = null;
 					_hasProcessFailed = true;
 					_hasProcessExited = true;
+					_hostedProcessId = null;
 				}
 
 				ProcessExtensions.TryKill(id.Value);

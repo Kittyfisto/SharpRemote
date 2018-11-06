@@ -32,8 +32,8 @@ namespace SharpRemote.Hosting
 		: ISilo
 	{
 		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private readonly SocketEndPoint _endPoint;
 
+		private readonly SocketEndPoint _endPoint;
 		private readonly ProcessWatchdog _process;
 		private readonly OutOfProcessQueue _queue;
 		private readonly ISubjectHost _subjectHost;
@@ -328,6 +328,21 @@ namespace SharpRemote.Hosting
 				"Host process '{0}' (PID: {1}) successfully started",
 				_process.HostExecutableName,
 				_process.HostedProcessId);
+		}
+
+		/// <summary>
+		///    Stops this silo.
+		/// </summary>
+		public void Stop()
+		{
+			var pid = _process.HostedProcessId;
+
+			_queue.Stop().Wait();
+
+			Log.InfoFormat(
+			               "Host process '{0}' (PID: {1}) successfully stopped",
+			               _process.HostExecutableName,
+			               pid);
 		}
 
 		/// <summary>

@@ -10,7 +10,7 @@ using log4net;
 namespace SharpRemote.Hosting.OutOfProcess
 {
 	/// <summary>
-	///     Responsible for starting and restarting another application.
+	///     Responsible for starting, restarting and stopping another application.
 	/// </summary>
 	/// <remarks>
 	///     This classes' right to exist comes from the fact that synchronizing the Start() and HandleFailure()
@@ -32,6 +32,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		public enum OperationType
 		{
 			Start,
+			Stop,
 			HandleFailure
 		}
 
@@ -47,6 +48,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		private ConnectionId _currentConnection;
 		private int _currentPid;
 		private volatile bool _isDisposed;
+		private bool _started;
 
 		public OutOfProcessQueue(
 			ProcessWatchdog process,
@@ -95,6 +97,13 @@ namespace SharpRemote.Hosting.OutOfProcess
 		public Task Start()
 		{
 			Operation op = Operation.Start();
+			_actions.Enqueue(op);
+			return op.Task;
+		}
+
+		public Task Stop()
+		{
+			Operation op = Operation.Stop();
 			_actions.Enqueue(op);
 			return op.Task;
 		}
@@ -173,10 +182,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 			get { return _currentPid; }
 		}
 
-		public ConnectionId CurrentConnection
-		{
-			get { return _currentConnection; }
-		}
+		public ConnectionId CurrentConnection => _currentConnection;
 
 		private void Do()
 		{
@@ -184,8 +190,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 			{
 				try
 				{
-					Operation operation;
-					if (_actions.TryDequeue(out operation))
+					if (_actions.TryDequeue(out var operation))
 					{
 						Do(operation);
 					}
@@ -204,17 +209,43 @@ namespace SharpRemote.Hosting.OutOfProcess
 		private void Do(Operation operation)
 		{
 			Action<Operation> proc;
-			if (operation.Type == OperationType.HandleFailure)
-				proc = op => DoHandleFailure(op);
-			else
-				proc = DoStart;
+			switch (operation.Type)
+			{
+				case OperationType.Start:
+					proc = DoStart;
+					break;
+
+				case OperationType.Stop:
+					proc = DoStop;
+					break;
+
+				case OperationType.HandleFailure:
+					proc = op => DoHandleFailure(op);
+					break;
+
+				default:
+					proc = DoNothing;
+					break;
+			}
 
 			operation.Execute(proc);
 		}
 
 		private void DoStart(Operation op)
 		{
+			_started = true;
 			StartInternal();
+		}
+
+		private void DoStop(Operation op)
+		{
+			_started = false;
+			_process.TryKill();
+		}
+
+		private void DoNothing(Operation unused)
+		{
+			
 		}
 
 		private void StartInternal()
@@ -266,9 +297,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 
 			try
 			{
-				Action fn = OnHostStarted;
-				if (fn != null)
-					fn();
+				OnHostStarted?.Invoke();
 			}
 			catch (Exception e)
 			{
@@ -396,6 +425,16 @@ namespace SharpRemote.Hosting.OutOfProcess
 					"Ignoring failure '{0}' because it doesn't reference the current connection {1}: It is most likely from a previous failure that was already handled",
 					op,
 					_currentConnection);
+				return OperationResult.Ignored;
+			}
+
+			// The failure happened because the user called Stop() which in turn killed the host process
+			// (and therefore it's no surprise the connection dropped). This is NOT failure from the user's
+			// perspective and thus is swalled as well...
+			if (!_started)
+			{
+				Log.DebugFormat("Ignoring failure '{0}' because it occured after Stop() has been called and is very likely a result of it",
+				                op);
 				return OperationResult.Ignored;
 			}
 
@@ -545,6 +584,11 @@ namespace SharpRemote.Hosting.OutOfProcess
 			public static Operation Start()
 			{
 				return new Operation(OperationType.Start, null, null, ConnectionId.None, false);
+			}
+
+			public static Operation Stop()
+			{
+				return new Operation(OperationType.Stop, null, null, ConnectionId.None, false);
 			}
 
 			public static Operation HandleFailure(Failure failure, int pid)

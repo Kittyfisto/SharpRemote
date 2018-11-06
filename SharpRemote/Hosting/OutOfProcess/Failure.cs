@@ -28,8 +28,10 @@
 		ConnectionClosed,
 
 		/// <summary>
-		/// The host process has exited.
+		/// The host process has exited for an unknown reason.
+		/// One possible reason is that it crashed due to an unhandled exception.
+		/// Another reason is that it might have been killed (either by a person or another program).
 		/// </summary>
-		HostProcessExited,
+		HostProcessExited
 	}
 }

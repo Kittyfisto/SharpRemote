@@ -41,9 +41,8 @@
     <Reference Include="FluentAssertions.Core">
       <HintPath>..\packages\FluentAssertions.3.3.0\lib\net45\FluentAssertions.Core.dll</HintPath>
     </Reference>
-    <Reference Include="FluentAssertions.Extensions, Version=1.0.11.0, Culture=neutral, PublicKeyToken=951c63ca832f7094, processorArchitecture=MSIL">
-      <HintPath>..\packages\FluentAssertions.Extensions.1.0.11\lib\net45\FluentAssertions.Extensions.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="FluentAssertions.Extensions, Version=1.0.15.0, Culture=neutral, PublicKeyToken=951c63ca832f7094, processorArchitecture=MSIL">
+      <HintPath>..\packages\FluentAssertions.Extensions.1.0.15\lib\net45\FluentAssertions.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
@@ -101,9 +100,11 @@
     <Compile Include="Exceptions\GrainIdRangeExhaustedExceptionTest.cs" />
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="Exceptions\RemoteEndpointAlreadyConnectedExceptionTest.cs" />
+    <Compile Include="Hosting\OutOfProcess\FailureHandlerMock.cs" />
     <Compile Include="LogCollector.cs" />
     <Compile Include="Remoting\Sockets\Socket2Test.cs" />
     <Compile Include="Remoting\Sockets\SocketServerTest.cs" />
+    <Compile Include="Remoting\Sockets\TcpPortBlocker.cs" />
     <Compile Include="StatisticsContainerTest.cs" />
     <Compile Include="HeartbeatSettingsTest.cs" />
     <Compile Include="HeartbeatTest.cs" />

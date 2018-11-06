@@ -38,14 +38,152 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			return string.Format("{0} bytes", numBytesSent);
 		}
 
+		private static bool IsProcessRunning(int pid)
+		{
+			try
+			{
+				using (var process = Process.GetProcessById(pid))
+				{
+					return !process.HasExited;
+				}
+			}
+			catch (Exception)
+			{
+				return false;
+			}
+		}
+
+		private void ProcessShouldBeRunning(int pid)
+		{
+			this.Property(x => IsProcessRunning(pid)).ShouldEventually().BeTrue();
+		}
+
+		private void ProcessShouldNotBeRunning(int pid)
+		{
+			this.Property(x => IsProcessRunning(pid)).ShouldEventually().BeFalse();
+		}
+
 		[Test]
 		[Description("Verifies that a servant can be created on a not-started silo")]
 		public void TestCreateServant()
 		{
 			using (var silo = new OutOfProcessSilo())
 			{
-				new Action(() => silo.CreateServant(42, new Mock<IVoidMethod>().Object))
-					.ShouldNotThrow();
+				var servant = silo.CreateServant(42, new Mock<IVoidMethod>().Object);
+				servant.Should().NotBeNull();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that calling Stop() on a not-started silo is allowed and is effectively a NOP")]
+		public void TestStop()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.IsProcessRunning.Should().BeFalse();
+				silo.HostProcessId.Should().NotHaveValue();
+
+				silo.Stop();
+				silo.IsProcessRunning.Should().BeFalse();
+				silo.HostProcessId.Should().NotHaveValue();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that Start() starts the host process and Stop() ends it")]
+		public void TestStartStop1()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+				silo.IsProcessRunning.Should().BeTrue();
+				var pid = silo.HostProcessId;
+				pid.Should().HaveValue();
+				ProcessShouldBeRunning(pid.Value);
+
+				silo.Stop();
+				silo.IsProcessRunning.Should().BeFalse();
+				silo.HostProcessId.Should().NotHaveValue();
+
+				ProcessShouldNotBeRunning(pid.Value);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that if Stop() is called, then the process is not immediately restarted")]
+		public void TestStartStop2()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+				silo.Stop();
+
+				Thread.Sleep(TimeSpan.FromSeconds(1));
+				silo.IsProcessRunning.Should().BeFalse();
+				silo.HostProcessId.Should().NotHaveValue();
+			}
+		}
+
+		[Test]
+		[Description("Verifies that if Stop() is called, then the custom failure handler is NOT invoked")]
+		public void TestStartStop3()
+		{
+			var failureHandler = new FailureHandlerMock();
+			using (var silo = new OutOfProcessSilo(failureHandler: failureHandler))
+			{
+				silo.Start();
+				silo.Stop();
+
+				Thread.Sleep(TimeSpan.FromSeconds(1));
+
+				const string reason =
+					"because no failure should've occured (due to the intentional shutdown) and therefore the callback may not have been invoked";
+				failureHandler.NumStartFailure.Should().Be(0, reason);
+				failureHandler.NumFailure.Should().Be(0, reason);
+				failureHandler.NumResolutionFailed.Should().Be(0, reason);
+				failureHandler.NumResolutionFinished.Should().Be(0, reason);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that a stopped silo can be started again")]
+		public void TestStartStopStart1()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+				silo.Stop();
+
+				silo.Start();
+				silo.IsProcessRunning.Should().BeTrue();
+				var pid = silo.HostProcessId;
+				pid.Should().HaveValue();
+				ProcessShouldBeRunning(pid.Value);
+			}
+		}
+
+		[Test]
+		[Description("Verifies that new grains can be created once the host process is restarted again")]
+		public void TestStartStopStart2()
+		{
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+
+				var proxy = silo.CreateGrain<IReturnsType>(typeof(ReturnsTypeofString));
+				proxy.Do().Should().Be<string>();
+
+				silo.Stop();
+
+				new Action(() => proxy.Do())
+					.ShouldThrow<RemoteProcedureCallCanceledException>();
+				new Action(() => silo.CreateGrain<IReturnsType>(typeof(ReturnsTypeofString)))
+					.ShouldThrow<RemoteProcedureCallCanceledException>();
+
+				silo.Start();
+
+				var newProxy = silo.CreateGrain<IReturnsType>(typeof(ReturnsTypeofString));
+				newProxy.Do().Should().Be<string>();
 			}
 		}
 

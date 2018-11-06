@@ -190,7 +190,8 @@ namespace SharpRemote.Hosting.OutOfProcess
 			{
 				try
 				{
-					if (_actions.TryDequeue(out var operation))
+					Operation operation;
+					if (_actions.TryDequeue(out operation))
 					{
 						Do(operation);
 					}

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using log4net.Core;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
@@ -188,6 +189,23 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
+		[Description("")]
+		public void TestKill()
+		{
+			using (var logCollector = new LogCollector("SharpRemote", Level.Info, Level.Warn, Level.Error, Level.Fatal))
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+
+				var pid = silo.HostProcessId;
+				var process = Process.GetProcessById(pid.Value);
+				process.Kill();
+
+				logCollector.PrintAll();
+			}
+		}
+
+		[Test]
 		[Description("Verifies that the create method uses the custom type resolver, if specified, to resolve types")]
 		public void TestCreate()
 		{
@@ -271,6 +289,41 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var silo = new OutOfProcessSilo();
 			new Action(silo.Dispose)
 				.ShouldNotThrow();
+		}
+
+		[Test]
+		[Description("Verifies that warning/exception is logged upon disposing when the silo was never started")]
+		public void TestDispose4()
+		{
+			using (var logCollector = new LogCollector("SharpRemote", Level.Info,
+				Level.Warn, Level.Error, Level.Fatal))
+			{
+				var silo = new OutOfProcessSilo();
+				new Action(silo.Dispose)
+					.ShouldNotThrow();
+
+				logCollector.Log.Should().NotContain("Caught exception while disposing");
+				logCollector.Log.Should().NotContain("SharpRemote.NotConnectedException");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that warning/exception is logged upon disposing when the silo was stoppoed beforehand")]
+		public void TestStartStopDispose()
+		{
+			using (var logCollector = new LogCollector("SharpRemote", Level.Info,
+				Level.Warn, Level.Error, Level.Fatal))
+			{
+				var silo = new OutOfProcessSilo();
+				silo.Start();
+				silo.Stop();
+
+				new Action(silo.Dispose)
+					.ShouldNotThrow();
+
+				logCollector.Log.Should().NotContain("Caught exception while disposing");
+				logCollector.Log.Should().NotContain("SharpRemote.NotConnectedException");
+			}
 		}
 
 		[Test]

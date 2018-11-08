@@ -276,7 +276,7 @@ namespace SharpRemote.Hosting
 
 			_queue.Dispose();
 
-			if (!HasProcessFailed)
+			if (IsProcessRunning)
 				_subjectHost.TryDispose();
 
 			_endPoint.TryDispose();

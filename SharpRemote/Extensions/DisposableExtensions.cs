@@ -9,6 +9,11 @@ namespace SharpRemote.Extensions
 
 		public static void TryDispose(this IDisposable that)
 		{
+			TryDispose(that, logError: true);
+		}
+
+		public static void TryDispose(this IDisposable that, bool logError)
+		{
 			if (that == null)
 				return;
 

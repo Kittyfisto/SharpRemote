@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using log4net;
 using log4net.Appender;
 using log4net.Core;
@@ -23,6 +25,22 @@ namespace SharpRemote.Test
 
 			Hierarchy h = (Hierarchy) LogManager.GetRepository();
 			h.Root.AddAppender(this);
+
+			if (_levels.Contains(Level.All))
+			{
+				_levels.Add(Level.Debug);
+				_levels.Add(Level.Info);
+				_levels.Add(Level.Warn);
+				_levels.Add(Level.Error);
+				_levels.Add(Level.Fatal);
+			}
+
+			if (levels.Any())
+			{
+				var min = levels.Min();
+				h.Root.Level = min;
+			}
+
 			h.Configured = true;
 		}
 
@@ -33,6 +51,25 @@ namespace SharpRemote.Test
 		}
 
 		public IReadOnlyList<LoggingEvent> Events => _events;
+
+		public string Log
+		{
+			get
+			{
+				var buffer = new StringBuilder();
+				foreach (var @event in _events)
+				{
+					buffer.AppendLine(@event.RenderedMessage);
+				}
+
+				return buffer.ToString();
+			}
+		}
+
+		public void PrintAll()
+		{
+			Console.WriteLine(Log);
+		}
 
 		protected override void Append(LoggingEvent loggingEvent)
 		{

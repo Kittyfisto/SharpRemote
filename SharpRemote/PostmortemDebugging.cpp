@@ -2,6 +2,7 @@
 #include "PostmortemDebugging.h"
 #include "Hook.h"
 #include "Convert.h"
+#include <fstream>
 
 typedef BOOL (__stdcall *PDUMPFN)(
 	HANDLE hProcess,
@@ -16,6 +17,7 @@ typedef BOOL (__stdcall *PDUMPFN)(
 bool _collectDumps = false;
 int _numRetainedMinidumps = 0;
 
+std::ofstream logfile;
 std::wstring _dateTimeBuffer;
 std::wstring _dumpFolder;
 std::wstring _dumpName;
@@ -24,6 +26,30 @@ std::wstring _minidumpFileName;
 std::wstring _minidumpPattern;
 std::wstring _tmpPath;
 std::wstring _oldestFileFullName;
+
+void LogDebug(const char* message)
+{
+#ifdef _DEBUG
+	if (!logfile.is_open())
+	{
+		logfile.open("C:\\Snapshots\\SharpRemote\\bin\\win\\Logs\\test.log",
+			std::ios::out | std::ios::trunc);
+	}
+
+	logfile << message << std::endl;
+	logfile.flush();
+#endif
+}
+
+void LogDebug(const std::string& message)
+{
+	LogDebug(message.c_str());
+}
+
+void LogDebug(const std::ostringstream& message)
+{
+	LogDebug(message.str());
+}
 
 BOOL CheckDumpNameConstraints(const wchar_t* dumpName)
 {
@@ -204,9 +230,7 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 					const wchar_t* dumpName)
 {
 	
-#ifdef _DEBUG
-	printf("Creating Mini dump...\r\n");
-#endif
+	LogDebug("Creating Mini dump...");
 
 	if (CreateMinidumpFolder() == FALSE)
 	{
@@ -217,16 +241,10 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 	// remove old dumps... writing the new one is much more important...
 	if (RemoveOldMinidumps() == FALSE)
 	{
-
-#ifdef _DEBUG
-	printf("Failed to remove old minidumps, ignoring it...\r\n");
-#endif
-
+		LogDebug("Failed to remove old minidumps, ignoring it...");
 	}
 
-#ifdef _DEBUG
-	printf("Creating name...\r\n");
-#endif
+	LogDebug("Creating name...");
 
 	CreateMinidumpFileName();
 
@@ -241,10 +259,7 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 	if (hFile == NULL)
 	{
 		auto err = GetLastError();
-
-#ifdef _DEBUG
-	printf("CreateFile failed: %d\r\n", err);
-#endif
+		LogDebug("CreateFile failed");
 		return;
 	}
 
@@ -277,9 +292,7 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 
 		if (rv != FALSE)
 		{
-#ifdef _DEBUG
-			printf("Minidump saved\r\n");
-#endif
+			LogDebug("Minidump saved");
 		}
 
 		CloseHandle( hFile );
@@ -288,22 +301,29 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 
 void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers)
 {
-	CreateMiniDump(exceptionPointers,
-		GetCurrentProcess(),
-		GetCurrentProcessId(),
-		_dumpName.c_str());
+	if (_collectDumps)
+	{
+		CreateMiniDump(exceptionPointers,
+			GetCurrentProcess(),
+			GetCurrentProcessId(),
+			_dumpName.c_str());
+	}
+	else
+	{
+		LogDebug("NOT creating a minidump because InitDumpCollection has NOT been called (yet)");
+	}
 }
 
 void failfast()
 {
+	LogDebug("failfast()");
+
 	abort();
 }
 
 LONG WINAPI OnUnhandledException(struct _EXCEPTION_POINTERS *exceptionPointers)
 {
-#ifdef _DEBUG
-	printf("Caught unhandled exception\r\n");
-#endif
+	LogDebug("Caught unhandled exception");
 
 	CreateMiniDump(exceptionPointers);
 
@@ -312,9 +332,7 @@ LONG WINAPI OnUnhandledException(struct _EXCEPTION_POINTERS *exceptionPointers)
 
 void __cdecl OnCrtAssert( const wchar_t* message, const wchar_t* file, unsigned lineNumber )
 {
-#ifdef _DEBUG
-	printf("Caught assert\r\n");
-#endif
+	LogDebug("Caught assert");
 
 	CreateMiniDump(NULL);
 	failfast();
@@ -322,9 +340,7 @@ void __cdecl OnCrtAssert( const wchar_t* message, const wchar_t* file, unsigned 
 
 void __cdecl OnCrtPurecall()
 {
-#ifdef _DEBUG
-	printf("Caught pure virtual function call\r\n");
-#endif
+	LogDebug("Caught pure virtual function call");
 
 	CreateMiniDump(NULL);
 	failfast();
@@ -336,6 +352,8 @@ extern "C" {
 
 BOOL InitDumpCollection(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* dumpName)
 {
+	LogDebug("InitDumpCollection");
+
 	if (_collectDumps)
 	{
 		SetLastError(ERROR_ACCESS_DENIED);
@@ -373,7 +391,7 @@ BOOL InitDumpCollection(int numRetainedMinidumps, const wchar_t* dumpFolder, con
 	_tmpPath.reserve(2048);
 	_oldestFileFullName.reserve(2048);
 
-	OutputDebugStringW(L"Post-Mortem debugger installed\r\n");
+	LogDebug("Post-Mortem debugger installed");
 
 	_collectDumps = true;
 	return TRUE;
@@ -385,11 +403,19 @@ BOOL InstallPostmortemDebugger(BOOL suppressErrorWindows,
 							   BOOL handleCrtPurecalls,
 							   CRuntimeVersions crtVersions)
 {
+	std::ostringstream message;
+	message << "InstallPostmortemDebugger" << std::endl
+		<< "  suppressErrorWindows=" << suppressErrorWindows << std::endl
+		<< "  handleUnhandledExceptions=" << handleUnhandledExceptions << std::endl
+		<< "  handleCrtAsserts=" << handleCrtAsserts << std::endl
+		<< "  handleCrtPurecalls=" << handleCrtPurecalls;
+	LogDebug(message);
+
 	if (suppressErrorWindows == TRUE)
 	{
-		DWORD dwMode = SetErrorMode(SEM_NOGPFAULTERRORBOX);
-		SetErrorMode(dwMode | SEM_NOGPFAULTERRORBOX);
+		LogDebug("Suppressing error windows...");
 
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 		SuppressCrtAborts(crtVersions);
 	}
 	if (handleUnhandledExceptions == TRUE)
@@ -412,6 +438,8 @@ BOOL CreateMiniDump(
 		const wchar_t* dumpName
 		)
 {
+	LogDebug("CreateMiniDump");
+
 	if (_collectDumps == false)
 	{
 		SetLastError(ERROR_ACCESS_DENIED);
@@ -430,9 +458,7 @@ BOOL CreateMiniDump(
 		processId);
 	if (hProcess == NULL)
 	{
-#ifdef _DEBUG
-		printf("OpenProcess failed...\r\n");
-#endif
+		LogDebug("OpenProcess failed...");
 
 		return FALSE;
 	}

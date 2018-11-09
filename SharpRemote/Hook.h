@@ -152,6 +152,7 @@ BOOL InterceptCrtPurecalls(_purecall_handler hookFunction, CRuntimeVersions crtV
 BOOL SuppressCrtAborts(CRuntimeVersions crtVersions)
 {
 	auto libs = GetCrtLibraries(crtVersions);
+	BOOL success = FALSE;
 	for(auto it = libs.begin(); it != libs.end(); ++it)
 	{
 		HMODULE crt = LoadLibrary(*it);
@@ -161,9 +162,10 @@ BOOL SuppressCrtAborts(CRuntimeVersions crtVersions)
 			if (set_abort_behavior != NULL)
 			{
 				set_abort_behavior(0, _WRITE_ABORT_MSG);
+				success = TRUE;
 			}
 		}
 	}
 
-	return TRUE;
+	return success;
 }

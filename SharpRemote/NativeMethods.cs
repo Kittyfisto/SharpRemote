@@ -194,10 +194,10 @@ namespace SharpRemote
 			CallingConvention = CallingConvention.Cdecl,
 			EntryPoint = "InstallPostmortemDebugger")]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		private static extern bool _installPostmortemDebugger(bool suppressErrorWindows,
-		                                                      bool interceptUnhandledExceptions,
-		                                                      bool handleCrtAsserts,
-		                                                      bool handleCrtPurecalls,
+		private static extern bool _installPostmortemDebugger([MarshalAs(UnmanagedType.Bool)] bool suppressErrorWindows,
+		                                                      [MarshalAs(UnmanagedType.Bool)] bool interceptUnhandledExceptions,
+		                                                      [MarshalAs(UnmanagedType.Bool)] bool handleCrtAsserts,
+		                                                      [MarshalAs(UnmanagedType.Bool)] bool handleCrtPurecalls,
 		                                                      CRuntimeVersions crtVersions);
 
 		/// <summary>
@@ -229,6 +229,8 @@ namespace SharpRemote
 					                err);
 					return false;
 				}
+
+				Log.InfoFormat("Test");
 
 				return true;
 			}

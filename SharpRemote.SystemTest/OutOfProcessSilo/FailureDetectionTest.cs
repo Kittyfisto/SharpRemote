@@ -262,7 +262,13 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 						       handle.Set();
 					       });
 
-				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: handler.Object))
+				var settings = new PostMortemSettings
+				{
+					SuppressErrorWindows = true
+				};
+
+				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: handler.Object,
+					postMortemSettings: settings))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
@@ -422,7 +428,6 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
-		[Ignore("This shit doesn't work in release mode for some fucking reason")]
 		[Description(
 			"Verifies that a pure virtual function triggered by the host process is intercepted and results in a termination of the process"
 			)]
@@ -441,33 +446,32 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 					       });
 
 				var settings = new PostMortemSettings
-					{
-						SuppressErrorWindows = true,
-						HandleCrtPureVirtualFunctionCalls = true,
+				{
+					SuppressErrorWindows = true,
+					HandleCrtPureVirtualFunctionCalls = true,
 #if DEBUG
-						RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Debug,
+					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Debug,
 #else
 					RuntimeVersions = CRuntimeVersions._110 | CRuntimeVersions.Release,
 #endif
 					};
 
-				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(postMortemSettings: settings))
+				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(postMortemSettings: settings,
+					failureHandler: handler.Object))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesPureVirtualFunctionCall>();
 
 					Task task = Task.Factory.StartNew(() => { new Action(proxy.Do).ShouldThrow<ConnectionLostException>(); });
-					//task.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
-					task.Wait();
+					task.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
 
-					handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
+					handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue("because a failure should've been reported");
 					resolution.Should().Be(Resolution.Stopped);
 				}
 			}
 		}
 
 		[Test]
-		[Ignore("This shit doesn't work in release mode for some fucking reason")]
 		[Description(
 			"Verifies that a pure virtual function call triggered by the host process is intercepted and results in a termination of the process"
 			)]
@@ -505,7 +509,8 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 					Directory.Delete(settings.MinidumpFolder, true);
 				}
 
-				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(postMortemSettings: settings))
+				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(postMortemSettings: settings,
+					failureHandler: handler.Object))
 				{
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesPureVirtualFunctionCall>();

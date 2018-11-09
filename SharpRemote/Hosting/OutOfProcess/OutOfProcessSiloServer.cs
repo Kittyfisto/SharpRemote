@@ -162,9 +162,13 @@ namespace SharpRemote.Hosting
 							);
 					}
 				}
+				else
+				{
+					Log.DebugFormat("Collecting minidumps is not enabled, if this process crashes, then NO dump will be collected");
+				}
 
-				NativeMethods.InstallPostmortemDebugger(_postMortemSettings.HandleAccessViolations,
-				                                        _postMortemSettings.SuppressErrorWindows,
+				NativeMethods.InstallPostmortemDebugger(_postMortemSettings.SuppressErrorWindows,
+				                                        _postMortemSettings.HandleAccessViolations,
 				                                        _postMortemSettings.HandleCrtAsserts,
 				                                        _postMortemSettings.HandleCrtPureVirtualFunctionCalls,
 				                                        _postMortemSettings.RuntimeVersions);

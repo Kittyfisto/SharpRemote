@@ -13,12 +13,14 @@ namespace SharpRemote.Test
 		: AppenderSkeleton
 		, IDisposable
 	{
+		private readonly object _syncRoot;
 		private readonly string _namespace;
 		private readonly List<LoggingEvent> _events;
 		private readonly HashSet<Level> _levels;
 
 		public LogCollector(string @namespace, params Level[] levels)
 		{
+			_syncRoot = new object();
 			_namespace = @namespace;
 			_levels = new HashSet<Level>(levels);
 			_events = new List<LoggingEvent>();
@@ -50,7 +52,16 @@ namespace SharpRemote.Test
 			h.Root.RemoveAppender(this);
 		}
 
-		public IReadOnlyList<LoggingEvent> Events => _events;
+		public IReadOnlyList<LoggingEvent> Events
+		{
+			get
+			{
+				lock (_syncRoot)
+				{
+					return _events.ToList();
+				}
+			}
+		}
 
 		public string Log
 		{
@@ -79,7 +90,10 @@ namespace SharpRemote.Test
 			if (!_levels.Contains(loggingEvent.Level))
 				return;
 
-			_events.Add(loggingEvent);
+			lock (_syncRoot)
+			{
+				_events.Add(loggingEvent);
+			}
 		}
 	}
 }

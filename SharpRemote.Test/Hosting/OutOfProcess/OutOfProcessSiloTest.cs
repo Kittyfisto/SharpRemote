@@ -160,6 +160,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 				Thread.Sleep(TimeSpan.FromSeconds(1));
 
 				collector.Events.Should().NotContain(x => x.RenderedMessage.Contains("exited unexpectedly"));
+				collector.Events.Should().NotContain(x => x.Level >= Level.Warn);
 			}
 		}
 

@@ -209,6 +209,8 @@ namespace SharpRemote.Hosting.OutOfProcess
 
 		private void Do(Operation operation)
 		{
+			Log.DebugFormat("Beginning operator {0}...", operation);
+
 			Action<Operation> proc;
 			switch (operation.Type)
 			{
@@ -241,6 +243,8 @@ namespace SharpRemote.Hosting.OutOfProcess
 		private void DoStop(Operation op)
 		{
 			_started = false;
+
+			_endPoint.Disconnect();
 			_process.TryKill();
 		}
 

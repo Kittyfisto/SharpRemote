@@ -1,11 +1,41 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using log4net;
 
 namespace SharpRemote.Extensions
 {
 	internal static class ProcessExtensions
 	{
+		private static readonly ILog Log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
+		public static int? TryGetExitCode(this Process process)
+		{
+			try
+			{
+				return process.ExitCode;
+			}
+			catch (Exception e)
+			{
+				Log.DebugFormat("Caught exception: {0}", e);
+				return null;
+			}
+		}
+
+		public static DateTime? TryGetExitTime(this Process process)
+		{
+			try
+			{
+				return process.ExitTime;
+			}
+			catch (Exception e)
+			{
+				Log.DebugFormat("Caught exception: {0}", e);
+				return null;
+			}
+		}
+
 		public static bool TryKill(int pid)
 		{
 			IntPtr handle = IntPtr.Zero;

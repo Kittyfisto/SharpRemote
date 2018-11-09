@@ -23,7 +23,14 @@ namespace SharpRemote.Extensions
 			}
 			catch (Exception e)
 			{
-				Log.WarnFormat("Caught exception while disposing '{0}': {1}", that, e);
+				if (logError)
+				{
+					Log.WarnFormat("Caught exception while disposing '{0}': {1}", that, e);
+				}
+				else
+				{
+					Log.DebugFormat("Caught exception while disposing '{0}': {1}", that, e);
+				}
 			}
 		}
 	}

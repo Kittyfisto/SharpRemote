@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -147,6 +148,22 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
+		[Description("Verifies that if Stop() is called, then NO warning/error is logged about the process having been killed")]
+		public void TestStartStop4()
+		{
+			using (var collector = new LogCollector("SharpRemote", Level.Warn, Level.Error, Level.Fatal))
+			using (var silo = new OutOfProcessSilo())
+			{
+				silo.Start();
+				silo.Stop();
+
+				Thread.Sleep(TimeSpan.FromSeconds(1));
+
+				collector.Events.Should().NotContain(x => x.RenderedMessage.Contains("exited unexpectedly"));
+			}
+		}
+
+		[Test]
 		[Description("Verifies that a stopped silo can be started again")]
 		public void TestStartStopStart1()
 		{
@@ -189,19 +206,32 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		}
 
 		[Test]
-		[Description("")]
-		public void TestKill()
+		[Description("Verifies that if the hosting process is killed by external forces, then a warning/error is logged stating that")]
+		public void TestKillHostingProcess()
 		{
 			using (var logCollector = new LogCollector("SharpRemote", Level.Info, Level.Warn, Level.Error, Level.Fatal))
-			using (var silo = new OutOfProcessSilo())
 			{
-				silo.Start();
+				int? pid;
+				using (var silo = new OutOfProcessSilo())
+				{
+					silo.Start();
 
-				var pid = silo.HostProcessId;
-				var process = Process.GetProcessById(pid.Value);
-				process.Kill();
+					pid = silo.HostProcessId;
+					var process = Process.GetProcessById(pid.Value);
+					process.Kill();
 
-				logCollector.PrintAll();
+					Thread.Sleep(TimeSpan.FromMilliseconds(100));
+				}
+
+				var expectedMessage = string.Format("Host '{0}' (PID: {1}) exited unexpectedly with error code -1",
+					ProcessWatchdog.SharpRemoteHost,
+					pid);
+				var @event = logCollector.Events.FirstOrDefault(x => x.RenderedMessage.Contains(expectedMessage));
+				@event.Should().NotBeNull("because a message should've been logged that the process exited unexpectedly");
+				@event.Level.Should().Be(Level.Warn);
+
+				logCollector.Events.Should()
+					.NotContain(x => x.RenderedMessage.Contains("Caught exception while disposing "));
 			}
 		}
 

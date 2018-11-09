@@ -47,25 +47,25 @@ namespace SharpRemote.Hosting
 		///     Initializes a new instance of this ProcessWatchdog with the specified options.
 		///     The given host process will only be started once <see cref="Start()" /> is called.
 		/// </summary>
-		/// <param name="process"></param>
+		/// <param name="executable"></param>
 		/// <param name="options"></param>
 		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="processReadyTimeout">The amount of time the host process has to report being ready before it is assumed to be dead</param>
 		/// <exception cref="ArgumentNullException">
-		///     When <paramref name="process" /> is null
+		///     When <paramref name="executable" /> is null
 		/// </exception>
 		/// <exception cref="ArgumentException">
-		///     When <paramref name="process" /> is contains only whitespace
+		///     When <paramref name="executable" /> is contains only whitespace
 		/// </exception>
 		public ProcessWatchdog(
-			string process = SharpRemoteHost,
+			string executable = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
 			PostMortemSettings postMortemSettings = null,
 			TimeSpan? processReadyTimeout = null
 			)
 		{
-			if (process == null) throw new ArgumentNullException(nameof(process));
-			if (string.IsNullOrWhiteSpace(process)) throw new ArgumentException("process");
+			if (executable == null) throw new ArgumentNullException(nameof(executable));
+			if (string.IsNullOrWhiteSpace(executable)) throw new ArgumentException("executable");
 			if (postMortemSettings != null && !postMortemSettings.IsValid)
 				throw new ArgumentException("postMortemSettings");
 
@@ -86,7 +86,7 @@ namespace SharpRemote.Hosting
 			_syncRoot = new object();
 
 			_parentPid = Process.GetCurrentProcess().Id;
-			_startInfo = new ProcessStartInfo(process)
+			_startInfo = new ProcessStartInfo(executable)
 				{
 					Arguments = FormatArguments(_parentPid, _postMortemSettings),
 					RedirectStandardOutput = true,
@@ -254,16 +254,43 @@ namespace SharpRemote.Hosting
 		/// <summary>
 		/// The port used by the hosted process.
 		/// </summary>
-		public int? RemotePort => _remotePort;
+		public int? RemotePort
+		{
+			get
+			{
+				lock (_syncRoot)
+				{
+					return _remotePort;
+				}
+			}
+		}
 
 		/// <summary>
 		/// </summary>
-		public HostState HostedProcessState => _hostedProcessState;
+		public HostState HostedProcessState
+		{
+			get
+			{
+				lock (_syncRoot)
+				{
+					return _hostedProcessState;
+				}
+			}
+		}
 
 		/// <summary>
 		/// </summary>
 		[Pure]
-		public bool IsProcessRunning => !_hasProcessExited;
+		public bool IsProcessRunning
+		{
+			get
+			{
+				lock (_syncRoot)
+				{
+					return !_hasProcessExited;
+				}
+			}
+		}
 
 		/// <summary>
 		///     Whether or not the process has failed.
@@ -271,7 +298,16 @@ namespace SharpRemote.Hosting
 		/// <remarks>
 		///     False means that the process is either running or has exited on purpose.
 		/// </remarks>
-		public bool HasProcessFailed => _hasProcessFailed;
+		public bool HasProcessFailed
+		{
+			get
+			{
+				lock (_syncRoot)
+				{
+					return _hasProcessFailed;
+				}
+			}
+		}
 
 		/// <summary>
 		/// Whether or not this watchdog has been disposed of.
@@ -332,6 +368,8 @@ namespace SharpRemote.Hosting
 		{
 			var s = (Process) sender;
 			ProcessFailureReason reason;
+			int? pid;
+
 			lock (_syncRoot)
 			{
 				// We have to make sure that we ignore events from previously spawned processes!
@@ -344,17 +382,25 @@ namespace SharpRemote.Hosting
 				if (_reason != null)
 					return;
 
-				_reason = reason = ProcessFailureReason.HostProcessExited;
+				_reason = reason = ProcessFailureReason.HostProcessExitedUnexpectedly;
+				pid = _hostedProcessId;
+				_remotePort = null;
+				_hasProcessExited = true;
+				_hasProcessFailed = true;
 			}
 
-			if (reason != ProcessFailureReason.HostProcessExited)
+			if (reason == ProcessFailureReason.HostProcessExitedUnexpectedly)
+			{
+				Log.WarnFormat("Host '{0}' (PID: {1}) exited unexpectedly with error code {2} at {3}!",
+					_startInfo.FileName,
+					pid,
+					_process.TryGetExitCode(),
+					_process.TryGetExitTime());
+			}
+			else
 			{
 				_process.TryKill();
 			}
-
-			_remotePort = null;
-			_hasProcessExited = true;
-			_hasProcessFailed = true;
 
 			try
 			{

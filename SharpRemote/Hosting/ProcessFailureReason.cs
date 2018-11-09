@@ -14,6 +14,6 @@
 		/// <summary>
 		/// The host process has exited.
 		/// </summary>
-		HostProcessExited,
+		HostProcessExitedUnexpectedly,
 	}
 }

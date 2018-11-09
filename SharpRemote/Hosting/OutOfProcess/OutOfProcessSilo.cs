@@ -276,8 +276,8 @@ namespace SharpRemote.Hosting
 
 			_queue.Dispose();
 
-			if (IsProcessRunning)
-				_subjectHost.TryDispose();
+			// Do NOT use TryDispose here!!!
+			TryDisposeSubjectHost();
 
 			_endPoint.TryDispose();
 			_process.TryKill();
@@ -410,6 +410,37 @@ namespace SharpRemote.Hosting
 		private void EmitHostOutputWritten(string message)
 		{
 			OnHostOutputWritten?.Invoke(message);
+		}
+
+		private void TryDisposeSubjectHost()
+		{
+			try
+			{
+				if (IsProcessRunning)
+				{
+					// This is an RPC call which throws
+					// an exception in case the connection was dropped.
+					_subjectHost.Dispose();
+				}
+			}
+			catch (RemoteProcedureCallCanceledException e)
+			{
+				// HOWEVER, if the reason for the cancelled operation was a disconnect
+				// AND we already know that the process isn't running anymore, then we don't need
+				// to log an additional exception stacktrace...
+				if (IsProcessRunning)
+				{
+					Log.WarnFormat("Caught exception while disposing '{0}': {1}", _subjectHost, e);
+				}
+				else
+				{
+					Log.DebugFormat("Caught exception while disposing '{0}': {1}", _subjectHost, e);
+				}
+			}
+			catch (Exception e)
+			{
+				Log.WarnFormat("Caught exception while disposing '{0}': {1}", _subjectHost, e);
+			}
 		}
 
 		internal static class Constants

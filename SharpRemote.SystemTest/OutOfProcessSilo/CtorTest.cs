@@ -1,14 +1,13 @@
 ﻿using System;
 using FluentAssertions;
-using Moq;
 using NUnit.Framework;
 using SharpRemote.CodeGeneration;
-using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
+using SharpRemote.Test;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 
-namespace SharpRemote.Test.Hosting.OutOfProcess
+namespace SharpRemote.SystemTest.OutOfProcessSilo
 {
 	[TestFixture]
 	public sealed class CtorTest
@@ -17,7 +16,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Test]
 		public void TestCtor1()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.IsDisposed.Should().BeFalse();
 				silo.HasProcessFailed.Should().BeFalse();
@@ -29,7 +28,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that specifying a null executable name is not allowed")]
 		public void TestCtor2()
 		{
-			new Action(() => new OutOfProcessSilo(null))
+			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(null))
 				.ShouldThrow<ArgumentNullException>();
 		}
 
@@ -37,7 +36,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that specifying an empty executable name is not allowed")]
 		public void TestCtor3()
 		{
-			new Action(() => new OutOfProcessSilo(""))
+			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(""))
 				.ShouldThrow<ArgumentException>();
 		}
 
@@ -45,7 +44,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that specifying a whitespace executable name is not allowed")]
 		public void TestCtor4()
 		{
-			new Action(() => new OutOfProcessSilo("	"))
+			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo("	"))
 				.ShouldThrow<ArgumentException>();
 		}
 
@@ -57,7 +56,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			serializer.IsTypeRegistered<Tree>().Should().BeFalse();
 			var codeGenerator = new CodeGenerator(serializer);
 
-			using (var silo = new OutOfProcessSilo(codeGenerator: codeGenerator))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(codeGenerator: codeGenerator))
 			{
 				silo.Start();
 				var grain = silo.CreateGrain<IReturnsObjectMethod, ReturnsTree>();
@@ -72,19 +71,19 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that specifying negative / zero heartbeat timeouts/thresholds is not allowed")]
 		public void TestCtor6()
 		{
-			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { Interval = TimeSpan.Zero } }))
+			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { Interval = TimeSpan.Zero } }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("The heartbeat interval must be greater than zero\r\nParameter name: heartbeatSettings.Interval");
 
-			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings{HeartbeatSettings = { Interval = TimeSpan.FromSeconds(-1) }}))
+			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings{HeartbeatSettings = { Interval = TimeSpan.FromSeconds(-1) }}))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("The heartbeat interval must be greater than zero\r\nParameter name: heartbeatSettings.Interval");
 
-			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = 0} }))
+			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = 0} }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("The skipped heartbeat threshold must be greater than zero\r\nParameter name: heartbeatSettings.SkippedHeartbeatThreshold");
 
-			new Action(() => new OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = -1 } }))
+			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = -1 } }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("The skipped heartbeat threshold must be greater than zero\r\nParameter name: heartbeatSettings.SkippedHeartbeatThreshold");
 		}
@@ -94,19 +93,19 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		public void TestCtor7()
 		{
 			new Action(
-				() => new OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.FromSeconds(-1) }))
+				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.FromSeconds(-1) }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
-				() => new OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.Zero }))
+				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.Zero }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
-				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.FromSeconds(-1) }))
+				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.FromSeconds(-1) }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
-				() => new OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.Zero }))
+				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.Zero }))
 				.ShouldThrow<ArgumentOutOfRangeException>()
 				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
 		}

@@ -9,7 +9,7 @@ using log4net.Repository.Hierarchy;
 
 namespace SharpRemote.Test
 {
-	sealed class LogCollector
+	public sealed class LogCollector
 		: AppenderSkeleton
 		, IDisposable
 	{

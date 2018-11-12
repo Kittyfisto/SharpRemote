@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -10,17 +11,18 @@ using NUnit.Framework;
 using SharpRemote.CodeGeneration;
 using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
+using SharpRemote.Test;
 using SharpRemote.Test.CodeGeneration.Serialization;
+using SharpRemote.Test.Hosting.OutOfProcess;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
-namespace SharpRemote.Test.Hosting.OutOfProcess
+namespace SharpRemote.SystemTest.OutOfProcessSilo
 {
 	[TestFixture]
 	public sealed class OutOfProcessSiloTest
-		: AbstractTest
 	{
 		public static string FormatSize(long numBytesSent)
 		{
@@ -69,7 +71,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that a servant can be created on a not-started silo")]
 		public void TestCreateServant()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				var servant = silo.CreateServant(42, new Mock<IVoidMethod>().Object);
 				servant.Should().NotBeNull();
@@ -80,7 +82,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that calling Stop() on a not-started silo is allowed and is effectively a NOP")]
 		public void TestStop()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.IsProcessRunning.Should().BeFalse();
 				silo.HostProcessId.Should().NotHaveValue();
@@ -95,7 +97,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that Start() starts the host process and Stop() ends it")]
 		public void TestStartStop1()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 				silo.IsProcessRunning.Should().BeTrue();
@@ -115,7 +117,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that if Stop() is called, then the process is not immediately restarted")]
 		public void TestStartStop2()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 				silo.Stop();
@@ -131,7 +133,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		public void TestStartStop3()
 		{
 			var failureHandler = new FailureHandlerMock();
-			using (var silo = new OutOfProcessSilo(failureHandler: failureHandler))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: failureHandler))
 			{
 				silo.Start();
 				silo.Stop();
@@ -152,7 +154,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		public void TestStartStop4()
 		{
 			using (var collector = new LogCollector("SharpRemote", Level.Warn, Level.Error, Level.Fatal))
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 				silo.Stop();
@@ -168,7 +170,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that a stopped silo can be started again")]
 		public void TestStartStopStart1()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 				silo.Stop();
@@ -185,7 +187,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Description("Verifies that new grains can be created once the host process is restarted again")]
 		public void TestStartStopStart2()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 
@@ -213,7 +215,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			using (var logCollector = new LogCollector("SharpRemote", Level.Info, Level.Warn, Level.Error, Level.Fatal))
 			{
 				int? pid;
-				using (var silo = new OutOfProcessSilo())
+				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 				{
 					silo.Start();
 
@@ -241,7 +243,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		public void TestCreate()
 		{
 			var customTypeResolver = new CustomTypeResolver1();
-			using (var silo = new OutOfProcessSilo(codeGenerator: new CodeGenerator(customTypeResolver)))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(codeGenerator: new CodeGenerator(customTypeResolver)))
 			{
 				silo.Start();
 
@@ -260,7 +262,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Test]
 		public void TestCreateGrain1()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 
@@ -272,8 +274,8 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Test]
 		public void TestDispose1()
 		{
-			OutOfProcessSilo silo;
-			using (silo = new OutOfProcessSilo())
+			SharpRemote.Hosting.OutOfProcessSilo silo;
+			using (silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 				silo.IsProcessRunning.Should().BeTrue();
@@ -301,7 +303,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			handler.Setup(x => x.OnFailure(It.IsAny<Failure>()))
 			       .Callback((Failure unused) => failureDetected = true);
 
-			using (var silo = new OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
 			{
 				silo.Start();
 				failureDetected.Should().BeFalse("Because the host process shouldn't have failed now");
@@ -317,7 +319,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Test]
 		public void TestDispose3()
 		{
-			var silo = new OutOfProcessSilo();
+			var silo = new SharpRemote.Hosting.OutOfProcessSilo();
 			new Action(silo.Dispose)
 				.ShouldNotThrow();
 		}
@@ -329,7 +331,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			using (var logCollector = new LogCollector("SharpRemote", Level.Info,
 				Level.Warn, Level.Error, Level.Fatal))
 			{
-				var silo = new OutOfProcessSilo();
+				var silo = new SharpRemote.Hosting.OutOfProcessSilo();
 				new Action(silo.Dispose)
 					.ShouldNotThrow();
 
@@ -345,7 +347,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			using (var logCollector = new LogCollector("SharpRemote", Level.Info,
 				Level.Warn, Level.Error, Level.Fatal))
 			{
-				var silo = new OutOfProcessSilo();
+				var silo = new SharpRemote.Hosting.OutOfProcessSilo();
 				silo.Start();
 				silo.Stop();
 
@@ -360,7 +362,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[Test]
 		public void TestGetProperty()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 				IGetInt64Property grain = silo.CreateGrain<IGetInt64Property, ReturnsInt64Max>();
@@ -376,7 +378,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			TimeSpan time = TimeSpan.FromSeconds(5);
 			int num = 0;
 
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 
@@ -437,7 +439,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var watch = new Stopwatch();
 			int num = 0;
 
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 
@@ -491,7 +493,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var watch = new Stopwatch();
 			int num = 0;
 
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
 
@@ -538,8 +540,8 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					NumSamples = 100
 				};
 
-			OutOfProcessSilo silo;
-			using (silo = new OutOfProcessSilo(latencySettings: settings))
+			SharpRemote.Hosting.OutOfProcessSilo silo;
+			using (silo = new SharpRemote.Hosting.OutOfProcessSilo(latencySettings: settings))
 			{
 				silo.RoundtripTime.Should().Be(TimeSpan.Zero, "because without being started, no latency is measured");
 				silo.Start();

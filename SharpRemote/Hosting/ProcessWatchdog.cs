@@ -39,7 +39,7 @@ namespace SharpRemote.Hosting
 		private bool _isDisposed;
 		private bool _isDisposing;
 		private Process _process;
-		private ProcessFailureReason? _reason;
+		private ProcessFailureReason? _processFailureReason;
 		private int? _remotePort;
 		private Exception _startupException;
 
@@ -142,6 +142,9 @@ namespace SharpRemote.Hosting
 				_process.Exited += ProcessOnExited;
 				_process.OutputDataReceived += ProcessOnOutputDataReceived;
 				_startupException = null;
+				_processFailureReason = null;
+				_hasProcessExited = false;
+				_hasProcessFailed = false;
 				_remotePort = null;
 				_waitHandle.Reset();
 			}
@@ -280,6 +283,9 @@ namespace SharpRemote.Hosting
 
 		/// <summary>
 		/// </summary>
+		/// <remarks>
+		///     This property is set to true once <see cref="Start()"/> is called.
+		/// </remarks>
 		[Pure]
 		public bool IsProcessRunning
 		{
@@ -297,6 +303,9 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		/// <remarks>
 		///     False means that the process is either running or has exited on purpose.
+		/// </remarks>
+		/// <remarks>
+		///     This property is set to false once <see cref="Start()"/> is called.
 		/// </remarks>
 		public bool HasProcessFailed
 		{
@@ -334,6 +343,20 @@ namespace SharpRemote.Hosting
 		///     this failure.
 		/// </summary>
 		public event Action<int, ProcessFailureReason> OnFaultDetected;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public ProcessFailureReason? ProcessFailureReason
+		{
+			get
+			{
+				lock (_syncRoot)
+				{
+					return _processFailureReason;
+				}
+			}
+		}
 
 		[Pure]
 		internal static string FormatArguments(int parentPid, PostMortemSettings postMortemSettings)
@@ -379,17 +402,18 @@ namespace SharpRemote.Hosting
 				if (_isDisposed || _isDisposing)
 					return;
 
-				if (_reason != null)
+				if (_processFailureReason != null)
 					return;
 
-				_reason = reason = ProcessFailureReason.HostProcessExitedUnexpectedly;
+				_hostedProcessState = HostState.Dead;
+				_processFailureReason = reason = Hosting.ProcessFailureReason.HostProcessExitedUnexpectedly;
 				pid = _hostedProcessId;
 				_remotePort = null;
 				_hasProcessExited = true;
 				_hasProcessFailed = true;
 			}
 
-			if (reason == ProcessFailureReason.HostProcessExitedUnexpectedly)
+			if (reason == Hosting.ProcessFailureReason.HostProcessExitedUnexpectedly)
 			{
 				Log.WarnFormat("Host '{0}' (PID: {1}) exited unexpectedly with error code {2} at {3}!",
 					_startInfo.FileName,
@@ -430,6 +454,11 @@ namespace SharpRemote.Hosting
 			}
 			catch (Win32Exception e)
 			{
+				lock (_syncRoot)
+				{
+					_hasProcessExited = true;
+				}
+
 				switch (e.NativeErrorCode)
 				{
 					case Win32Error.ERROR_FILE_NOT_FOUND:

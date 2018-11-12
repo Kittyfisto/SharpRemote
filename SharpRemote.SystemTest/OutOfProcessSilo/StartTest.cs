@@ -4,14 +4,14 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using FluentAssertions;
+using log4net.Core;
 using NUnit.Framework;
-using SharpRemote.Hosting;
 using SharpRemote.Hosting.OutOfProcess;
+using SharpRemote.Test;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
-using log4net.Core;
 
-namespace SharpRemote.Test.Hosting.OutOfProcess
+namespace SharpRemote.SystemTest.OutOfProcessSilo
 {
 	[TestFixture]
 	public sealed class StartTest
@@ -23,7 +23,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			{
 				return new[]
 					{
-						new LogItem(typeof (OutOfProcessSilo), Level.Warn)
+						new LogItem(typeof (SharpRemote.Hosting.OutOfProcessSilo), Level.Warn)
 					};
 			}
 		}
@@ -32,7 +32,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[NUnit.Framework.Description("Verifies that starting the default host process succeeds")]
 		public void TestStart1()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.IsProcessRunning.Should().BeFalse();
 				silo.Start();
@@ -46,7 +46,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[NUnit.Framework.Description("Verifies that starting a non-existant executable throws")]
 		public void TestStart2()
 		{
-			using (var silo = new OutOfProcessSilo("Doesntexist.exe"))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo("Doesntexist.exe"))
 			{
 				silo.IsProcessRunning.Should().BeFalse();
 
@@ -54,7 +54,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 					.ShouldThrow<FileNotFoundException>()
 					.WithMessage("The system cannot find the file specified");
 
-				silo.IsProcessRunning.Should().BeFalse();
+				silo.IsProcessRunning.Should().BeFalse("because we shouldn't have been able to start the process");
 				silo.HasProcessFailed.Should().BeFalse();
 
 				new Action(() => silo.CreateGrain<IVoidMethodInt32Parameter>())
@@ -66,7 +66,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[NUnit.Framework.Description("Verifies that starting a non executable throws")]
 		public void TestStart3()
 		{
-			using (var silo = new OutOfProcessSilo("SharpRemote.dll"))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo("SharpRemote.dll"))
 			{
 				silo.IsProcessRunning.Should().BeFalse();
 
@@ -95,7 +95,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			{
 				tasks[i] = new Task(() =>
 					{
-						using (var silo = new OutOfProcessSilo(failureHandler: failureHandler))
+						using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: failureHandler))
 						{
 							silo.IsProcessRunning.Should().BeFalse();
 							silo.Start();
@@ -114,7 +114,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[NUnit.Framework.Description("Verifies that calling Start() after it has succeeded is not allowed")]
 		public void TestStart5()
 		{
-			using (var silo = new OutOfProcessSilo())
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				new Action(silo.Start).ShouldNotThrow();
 				new Action(silo.Start).ShouldThrow<InvalidOperationException>();
@@ -125,7 +125,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[NUnit.Framework.Description("Verifies that exceptions thrown in the child process are marshalled back")]
 		public void TestStart6()
 		{
-			using (var silo = new OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe"))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe"))
 			{
 				new Action(silo.Start)
 					.ShouldThrow<HandshakeException>()
@@ -140,7 +140,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 		[NUnit.Framework.Description("Verifies that Start() gives up restarting the (defunct) application after a limited amount of times")]
 		public void TestStart7()
 		{
-			using (var silo = new OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe",
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe",
 				failureHandler: new RestartOnFailureStrategy(startFailureThreshold: 20)))
 			{
 				new Action(silo.Start)
@@ -210,7 +210,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var executable = Copy("SharpRemote.Host.exe", dir);
 			Copy("log4net.dll", dir);
 
-			using (var silo = new OutOfProcessSilo(executable,
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(executable,
 				failureHandler: failureHandler))
 			{
 				new Action(silo.Start)

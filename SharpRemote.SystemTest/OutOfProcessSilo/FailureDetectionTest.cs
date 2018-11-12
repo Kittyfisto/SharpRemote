@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using log4net.Core;
 using Moq;
 using NUnit.Framework;
 using SharpRemote.Hosting;
@@ -54,6 +55,8 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[Repeat(50)]
+		[LocalTest("Timing dependant tests won't run on AppVeyor")]
 		[Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
 		public void TestFailureDetection10()
 		{
@@ -89,22 +92,28 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 						}
 					};
 
+				using (var log = new LogCollector("SharpRemote", Level.Info, Level.Warn, Level.Error))
 				using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
 				{
 					silo.Start();
-					int? id = silo.HostProcessId;
-					id.Should().HaveValue();
+					int? pid = silo.HostProcessId;
+					pid.Should().HaveValue();
 
-					Process hostProcess = Process.GetProcessById(id.Value);
+					Process hostProcess = Process.GetProcessById(pid.Value);
 					hostProcess.Kill();
 
 					WaitHandle.WaitAll(new[] {handle1, handle2}, TimeSpan.FromSeconds(2))
 					          .Should().BeTrue("Because the failure should've been detected as well as handled");
 
-					(failure1 == Failure.ConnectionFailure ||
-					 failure1 == Failure.HostProcessExited).Should().BeTrue();
+					failure1.Should().Be(Failure.HostProcessExited);
 					failure2.Should().Be(failure1);
 					resolution.Should().Be(Resolution.Stopped);
+
+					var expectedMessage = string.Format("Host '{0}' (PID: {1}) exited unexpectedly with error code -1",
+						ProcessWatchdog.SharpRemoteHost,
+						pid.Value);
+					log.Events.Should().Contain(x => x.Level == Level.Error &&
+					                                 x.RenderedMessage.Contains(expectedMessage));
 				}
 			}
 		}

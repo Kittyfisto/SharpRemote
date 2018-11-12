@@ -415,7 +415,7 @@ namespace SharpRemote.Hosting
 
 			if (reason == Hosting.ProcessFailureReason.HostProcessExitedUnexpectedly)
 			{
-				Log.WarnFormat("Host '{0}' (PID: {1}) exited unexpectedly with error code {2} at {3}!",
+				Log.ErrorFormat("Host '{0}' (PID: {1}) exited unexpectedly with error code {2} at {3}!",
 					_startInfo.FileName,
 					pid,
 					_process.TryGetExitCode(),

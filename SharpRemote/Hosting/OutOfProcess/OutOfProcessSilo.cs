@@ -103,7 +103,8 @@ namespace SharpRemote.Hosting
 			                               codeGenerator: codeGenerator,
 			                               heartbeatSettings: failureSettings.HeartbeatSettings,
 			                               latencySettings: latencySettings,
-			                               endPointSettings: endPointSettings);
+			                               endPointSettings: endPointSettings,
+			                               waitUponReadWriteError: true);
 
 			_subjectHost = _endPoint.CreateProxy<ISubjectHost>(Constants.SubjectHostId);
 

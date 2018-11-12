@@ -98,6 +98,7 @@ namespace SharpRemote
 		///     used
 		/// </param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
+		/// <param name="waitUponReadWriteError">When set to true, then read/write errors are reported with a minimum latency of 100ms</param>
 		public SocketEndPoint(EndPointType type,
 		                      string name = null,
 		                      IAuthenticator clientAuthenticator = null,
@@ -106,7 +107,8 @@ namespace SharpRemote
 		                      ICodeGenerator codeGenerator = null,
 		                      HeartbeatSettings heartbeatSettings = null,
 		                      LatencySettings latencySettings = null,
-		                      EndPointSettings endPointSettings = null)
+		                      EndPointSettings endPointSettings = null,
+		                      bool waitUponReadWriteError = false)
 			: base(new GrainIdGenerator(type),
 			       name,
 			       type,
@@ -115,7 +117,8 @@ namespace SharpRemote
 			       codeGenerator,
 			       heartbeatSettings,
 			       latencySettings,
-			       endPointSettings)
+			       endPointSettings,
+			       waitUponReadWriteError)
 		{
 			_networkServiceDiscoverer = networkServiceDiscoverer;
 		}

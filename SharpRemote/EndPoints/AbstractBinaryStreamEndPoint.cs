@@ -152,6 +152,7 @@ namespace SharpRemote
 		private int _previousConnectionId;
 		private readonly string _name;
 		private readonly object _syncRoot;
+		private readonly bool _waitUponReadWriteError;
 
 		private EndPointDisconnectReason? _disconnectReason;
 		private bool _isDisposed;
@@ -170,6 +171,7 @@ namespace SharpRemote
 		/// <param name="heartbeatSettings"></param>
 		/// <param name="latencySettings"></param>
 		/// <param name="endPointSettings"></param>
+		/// <param name="waitUponReadWriteError"></param>
 		protected AbstractBinaryStreamEndPoint(GrainIdGenerator idGenerator,
 		                                      string name,
 		                                      EndPointType type,
@@ -178,7 +180,8 @@ namespace SharpRemote
 		                                      ICodeGenerator codeGenerator,
 		                                      HeartbeatSettings heartbeatSettings,
 		                                      LatencySettings latencySettings,
-		                                      EndPointSettings endPointSettings)
+		                                      EndPointSettings endPointSettings,
+		                                      bool waitUponReadWriteError = false)
 		{
 			if (idGenerator == null) throw new ArgumentNullException(nameof(idGenerator));
 			if (heartbeatSettings != null)
@@ -191,6 +194,7 @@ namespace SharpRemote
 					                                      "The skipped heartbeat threshold must be greater than zero");
 			}
 
+			_waitUponReadWriteError = waitUponReadWriteError;
 			_previousConnectionId = 0;
 			_name = name ?? "Unnamed";
 			_syncRoot = new object();
@@ -710,6 +714,24 @@ namespace SharpRemote
 
 		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason, SocketError? error = null)
 		{
+			if (_waitUponReadWriteError &&
+			    (reason == EndPointDisconnectReason.ReadFailure || reason == EndPointDisconnectReason.WriteFailure))
+			{
+				Log.DebugFormat("Disconnecting because of {0}, waiting for a little bit to find out of this was caused by a process crash...",
+					reason);
+
+				// This may seem odd, but we do have a problem in where the TCP connection
+				// is disconnected BEFORE we receive and event that the hosting process has been
+				// killed. This in turn causes us to report the wrong problem (the connection
+				// was dropped, but it appeared because the bloody process crashed). By waiting
+				// for a little bit, we correct the order of events most of the time...
+				Thread.Sleep(100);
+
+				// We've waited long enough. If a process crash/kill was responsible for this disconnect,
+				// then Disconnect() will have already been called, causing this method to return without
+				// having to do anything (see 10 lines below, the first return statement).
+			}
+
 			EndPoint remoteEndPoint;
 			bool hasDisconnected = false;
 			bool emitOnFailure = false;

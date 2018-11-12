@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -231,7 +230,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 					pid);
 				var @event = logCollector.Events.FirstOrDefault(x => x.RenderedMessage.Contains(expectedMessage));
 				@event.Should().NotBeNull("because a message should've been logged that the process exited unexpectedly");
-				@event.Level.Should().Be(Level.Warn);
+				@event.Level.Should().Be(Level.Error);
 
 				logCollector.Events.Should()
 					.NotContain(x => x.RenderedMessage.Contains("Caught exception while disposing "));

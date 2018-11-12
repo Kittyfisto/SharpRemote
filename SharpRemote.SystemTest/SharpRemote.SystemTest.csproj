@@ -75,6 +75,7 @@
     <Compile Include="OutOfProcessSilo\LongTest.cs" />
     <Compile Include="OutOfProcessSilo\OutOfProcessSiloAcceptanceTest.cs" />
     <Compile Include="OutOfProcessSilo\OutOfProcessSiloTest.cs" />
+    <Compile Include="OutOfProcessSilo\ProcessWatchdogTest.cs" />
     <Compile Include="OutOfProcessSilo\StartTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServiceDiscovery\NetworkServiceDiscovererTest.cs" />

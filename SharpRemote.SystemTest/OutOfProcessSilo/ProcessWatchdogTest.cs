@@ -4,7 +4,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
 
-namespace SharpRemote.Test.Hosting
+namespace SharpRemote.SystemTest.OutOfProcessSilo
 {
 	[TestFixture]
 	public sealed class ProcessWatchdogTest
@@ -141,18 +141,15 @@ namespace SharpRemote.Test.Hosting
 
 		private void ProcessWithPidShouldNotBeRunning(int pid)
 		{
-			if (IsProcessRunning(pid))
-			{
-				Assert.Fail("Expected process with PID {0} to no longer be running, but it's still alive!");
-			}
+			this.Property(x => IsProcessRunning(pid)).ShouldEventually().BeFalse(
+				string.Format("Expected process with PID {0} to no longer be running, but it's still alive!", pid));
 		}
 
-		private static void ProcessWithPidShouldBeRunning(int pid)
+		private void ProcessWithPidShouldBeRunning(int pid)
 		{
-			if (!IsProcessRunning(pid))
-			{
-				Assert.Fail("Expected a process with PID {0} to be running, but it's not!");
-			}
+			this.Property(x => IsProcessRunning(pid)).ShouldEventually().BeTrue(
+				string.Format("Expected a process with PID {0} to be running, but it's not!", pid)
+			);
 		}
 
 		private static bool IsProcessRunning(int pid)

@@ -22,6 +22,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		: AbstractTest
 	{
 		[Test]
+		[Repeat(10)]
 		[LocalTest("Won't run on AppVeyor 100% of the time")]
 		[Description("Verifies that a crash of the host process is detected when it happens while a method call")]
 		public void TestFailureDetection1()
@@ -55,7 +56,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
-		[Repeat(50)]
+		[Repeat(10)]
 		[LocalTest("Timing dependant tests won't run on AppVeyor")]
 		[Description("Verifies that death of the host process can be detected, even if the silo isn't actively used")]
 		public void TestFailureDetection10()
@@ -200,6 +201,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[Repeat(10)]
 		[LocalTest("Timing sensitive tests don't like to run on the CI server")]
 		[Description("Verifies that a complete deadlock of the important remoting threads is detected")]
 		public void TestFailureDetection3()
@@ -438,6 +440,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[Repeat(10)]
 		[LocalTest("Runs perfectly 100 times in a row on every local computer, but not on AppVeyor")]
 		[Description(
 			"Verifies that a pure virtual function triggered by the host process is intercepted and results in a termination of the process"
@@ -483,6 +486,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[Repeat(10)]
 		[LocalTest("Runs perfectly 100 times in a row on every local computer, but not on AppVeyor")]
 		[Description(
 			"Verifies that a pure virtual function call triggered by the host process is intercepted and results in a termination of the process"

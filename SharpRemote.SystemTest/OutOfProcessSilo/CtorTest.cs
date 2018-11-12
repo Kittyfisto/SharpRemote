@@ -49,6 +49,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Won't run on AppVeyor 100% of the time")]
 		[Description("Verifies that the code generator specified in the ctor is actually used - instead of a new one")]
 		public void TestCtor5()
 		{

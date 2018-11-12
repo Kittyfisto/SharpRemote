@@ -21,6 +21,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		: AbstractTest
 	{
 		[Test]
+		[LocalTest("Won't run on AppVeyor 100% of the time")]
 		[Description("Verifies that a crash of the host process is detected when it happens while a method call")]
 		public void TestFailureDetection1()
 		{

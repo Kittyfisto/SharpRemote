@@ -428,6 +428,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Runs perfectly 100 times in a row on every local computer, but not on AppVeyor")]
 		[Description(
 			"Verifies that a pure virtual function triggered by the host process is intercepted and results in a termination of the process"
 			)]
@@ -472,6 +473,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Runs perfectly 100 times in a row on every local computer, but not on AppVeyor")]
 		[Description(
 			"Verifies that a pure virtual function call triggered by the host process is intercepted and results in a termination of the process"
 			)]

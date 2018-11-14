@@ -3,6 +3,7 @@
 #include "Hook.h"
 #include "Convert.h"
 #include <fstream>
+#include <thread>
 
 typedef BOOL (__stdcall *PDUMPFN)(
 	HANDLE hProcess,
@@ -17,6 +18,7 @@ typedef BOOL (__stdcall *PDUMPFN)(
 bool _collectDumps = false;
 int _numRetainedMinidumps = 0;
 
+DWORD pid = GetCurrentProcessId();
 std::ofstream logfile;
 std::wstring _dateTimeBuffer;
 std::wstring _dumpFolder;
@@ -27,28 +29,36 @@ std::wstring _minidumpPattern;
 std::wstring _tmpPath;
 std::wstring _oldestFileFullName;
 
-void LogDebug(const char* message)
+void Log(const char* message)
 {
 #ifdef _DEBUG
 	if (!logfile.is_open())
 	{
-		logfile.open("C:\\Snapshots\\SharpRemote\\bin\\win\\Logs\\test.log",
-			std::ios::out | std::ios::trunc);
+		logfile.open("C:\\Postmortem.log",
+			std::ios::out | std::ios::app);
+
+		logfile << "Starting new session" << std::endl;
 	}
 
-	logfile << message << std::endl;
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+
+	logfile << pid << " "
+		<< time.wYear << "-" << time.wMonth << "-" << time.wDay
+		<< " " << tiSme.wHour << ":" << time.wMinute << ":" << time.wSecond << "." << time.wMilliseconds
+		<< " " << message << std::endl;
 	logfile.flush();
 #endif
 }
 
-void LogDebug(const std::string& message)
+void Log(const std::string& message)
 {
-	LogDebug(message.c_str());
+	Log(message.c_str());
 }
 
-void LogDebug(const std::ostringstream& message)
+void Log(const std::ostringstream& message)
 {
-	LogDebug(message.str());
+	Log(message.str());
 }
 
 BOOL CheckDumpNameConstraints(const wchar_t* dumpName)
@@ -83,19 +93,19 @@ BOOL CreateMinidumpFolder()
 		auto folder = std::wstring(start, it);
 		if (!(folder.length() == 2 && folder[1] == ':'))
 		{
-#ifdef _DEBUG
-			printf("Creating directory: '%s'\r\n", convert(folder).c_str());
-#endif
+			std::ostringstream buffer;
+			buffer << "Creating directory: '" << convert(folder) << "'";
+			Log(buffer);
 
 			if (CreateDirectory(folder.c_str(), &attr) == FALSE)
 				{
 					HRESULT err = GetLastError();
 					if (err != ERROR_ALREADY_EXISTS)
 					{
-
-#ifdef _DEBUG
-						printf("CreateDirectory '%s' failed: %d\r\n", folder, err);
-#endif
+						std::ostringstream buffer2;
+						buffer2 << "CreateDirectory '" << convert(folder) << "' failed: "
+							<< err;
+						Log(buffer2);
 
 						return FALSE;
 					}
@@ -108,9 +118,7 @@ BOOL CreateMinidumpFolder()
 		++it;
 	}
 
-#ifdef _DEBUG
-	printf("Created directory\r\n");
-#endif
+	Log("Created directory");
 
 	return TRUE;
 }
@@ -123,9 +131,9 @@ BOOL RemoveOldMinidumps()
 	int numFiles = 0;
 	FILETIME oldestFileTime;
 
-#ifdef _DEBUG
-	printf("%s\r\n", convert(_minidumpPattern).c_str());
-#endif
+	std::ostringstream buffer;
+	buffer << "Removing old minidumps, pattern: " << convert(_minidumpPattern);
+	Log(buffer);
 
 	const wchar_t* folder = _minidumpPattern.c_str();
 	if ((hFind = FindFirstFile(folder, &fdFile)) == INVALID_HANDLE_VALUE)
@@ -133,16 +141,14 @@ BOOL RemoveOldMinidumps()
 		auto err = GetLastError();
 		if (err == ERROR_FILE_NOT_FOUND)
 		{
-#ifdef _DEBUG
-			printf("No previous dump files found\r\n");
-#endif
+			Log("No previous dump files found");
 
 			return TRUE;
 		}
 
-#ifdef _DEBUG
-		printf("FindFirstFile failed: %d\r\n", err);
-#endif
+		std::ostringstream buffer;
+		buffer << "FindFirstFile failed: " << err;
+		Log(buffer);
 
 		return FALSE;
 	}
@@ -171,10 +177,10 @@ BOOL RemoveOldMinidumps()
 				{
 					if (!DeleteFile(_oldestFileFullName.c_str()))
 					{
-#ifdef _DEBUG
-						auto err = GetLastError();
-						printf("DeleteFile failed: %d\r\n", err);
-#endif
+						const auto err = GetLastError();
+						std::ostringstream buffer;
+						buffer << "DeleteFile failed: " << err;
+						Log(buffer);
 
 						return FALSE;
 					}
@@ -187,10 +193,7 @@ BOOL RemoveOldMinidumps()
 		} while(FindNextFile(hFind, &fdFile) != FALSE);
 	}
 
-#ifdef _DEBUG
-	printf("Removed old minidumps\r\n");
-#endif
-
+	Log("Removed old minidumps");
 	return TRUE;
 }
 
@@ -219,9 +222,9 @@ void CreateMinidumpFileName()
 	name << L".dmp";
 	_minidumpFileName = name.str();
 
-#ifdef _DEBUG
-	printf("Minidump file name: %s", convert(_minidumpFileName).c_str());
-#endif
+	std::ostringstream buffer;
+	buffer << "Minidump file name: " << convert(_minidumpFileName);
+	Log(buffer);
 }
 
 void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
@@ -230,7 +233,7 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 					const wchar_t* dumpName)
 {
 	
-	LogDebug("Creating Mini dump...");
+	Log("Creating Mini dump...");
 
 	if (CreateMinidumpFolder() == FALSE)
 	{
@@ -241,10 +244,10 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 	// remove old dumps... writing the new one is much more important...
 	if (RemoveOldMinidumps() == FALSE)
 	{
-		LogDebug("Failed to remove old minidumps, ignoring it...");
+		Log("Failed to remove old minidumps, ignoring it...");
 	}
 
-	LogDebug("Creating name...");
+	Log("Creating name...");
 
 	CreateMinidumpFileName();
 
@@ -259,7 +262,7 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 	if (hFile == NULL)
 	{
 		auto err = GetLastError();
-		LogDebug("CreateFile failed");
+		Log("CreateFile failed");
 		return;
 	}
 
@@ -292,7 +295,7 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 
 		if (rv != FALSE)
 		{
-			LogDebug("Minidump saved");
+			Log("Minidump saved");
 		}
 
 		CloseHandle( hFile );
@@ -310,20 +313,20 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers)
 	}
 	else
 	{
-		LogDebug("NOT creating a minidump because InitDumpCollection has NOT been called (yet)");
+		Log("NOT creating a minidump because InitDumpCollection has NOT been called (yet)");
 	}
 }
 
 void failfast()
 {
-	LogDebug("failfast()");
+	Log("failfast()");
 
 	abort();
 }
 
 LONG WINAPI OnUnhandledException(struct _EXCEPTION_POINTERS *exceptionPointers)
 {
-	LogDebug("Caught unhandled exception");
+	Log("Caught unhandled exception");
 
 	CreateMiniDump(exceptionPointers);
 
@@ -332,7 +335,7 @@ LONG WINAPI OnUnhandledException(struct _EXCEPTION_POINTERS *exceptionPointers)
 
 void __cdecl OnCrtAssert( const wchar_t* message, const wchar_t* file, unsigned lineNumber )
 {
-	LogDebug("Caught assert");
+	Log("Caught assert");
 
 	CreateMiniDump(NULL);
 	failfast();
@@ -340,19 +343,35 @@ void __cdecl OnCrtAssert( const wchar_t* message, const wchar_t* file, unsigned 
 
 void __cdecl OnCrtPurecall()
 {
-	LogDebug("Caught pure virtual function call");
+	Log("Caught pure virtual function call");
 
 	CreateMiniDump(NULL);
 	failfast();
 }
 
 #ifdef __cplusplus
+void DoSetUnhandledExceptionFilter()
+{
+	auto previous = SetUnhandledExceptionFilter(OnUnhandledException);
+	if (previous == nullptr)
+	{
+		Log("Installed unhandled exception filter for the first time!");
+	}
+	else if (previous != OnUnhandledException)
+	{
+		std::ostringstream message;
+		message << "Another unhandled exception filter was set! Previous=" << std::hex << previous << ", current="
+			<< std::hex << OnUnhandledException;
+		Log(message);
+	}
+}
+
 extern "C" {
 #endif
 
 BOOL InitDumpCollection(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* dumpName)
 {
-	LogDebug("InitDumpCollection");
+	Log("InitDumpCollection");
 
 	if (_collectDumps)
 	{
@@ -391,10 +410,28 @@ BOOL InitDumpCollection(int numRetainedMinidumps, const wchar_t* dumpFolder, con
 	_tmpPath.reserve(2048);
 	_oldestFileFullName.reserve(2048);
 
-	LogDebug("Post-Mortem debugger installed");
+	Log("Post-Mortem debugger installed");
 
 	_collectDumps = true;
 	return TRUE;
+}
+
+void QueryHook()
+{
+	while(true)
+	{
+		DoSetUnhandledExceptionFilter();
+
+		Sleep(100);
+	}
+}
+
+void StartThread()
+{
+	DoSetUnhandledExceptionFilter();
+
+	std::thread t(QueryHook);
+	t.detach();
 }
 
 BOOL InstallPostmortemDebugger(BOOL suppressErrorWindows,
@@ -409,18 +446,18 @@ BOOL InstallPostmortemDebugger(BOOL suppressErrorWindows,
 		<< "  handleUnhandledExceptions=" << handleUnhandledExceptions << std::endl
 		<< "  handleCrtAsserts=" << handleCrtAsserts << std::endl
 		<< "  handleCrtPurecalls=" << handleCrtPurecalls;
-	LogDebug(message);
+	Log(message);
 
 	if (suppressErrorWindows == TRUE)
 	{
-		LogDebug("Suppressing error windows...");
+		Log("Suppressing error windows...");
 
 		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
 		SuppressCrtAborts(crtVersions);
 	}
 	if (handleUnhandledExceptions == TRUE)
 	{
-		SetUnhandledExceptionFilter(OnUnhandledException);
+		StartThread();
 	}
 	if (handleCrtAsserts == TRUE)
 	{
@@ -438,7 +475,7 @@ BOOL CreateMiniDump(
 		const wchar_t* dumpName
 		)
 {
-	LogDebug("CreateMiniDump");
+	Log("CreateMiniDump");
 
 	if (_collectDumps == false)
 	{
@@ -458,7 +495,7 @@ BOOL CreateMiniDump(
 		processId);
 	if (hProcess == NULL)
 	{
-		LogDebug("OpenProcess failed...");
+		Log("OpenProcess failed...");
 
 		return FALSE;
 	}

@@ -2,10 +2,7 @@
 
 #include "stdafx.h"
 #include "CRuntimeVersions.h"
-#include "Convert.h"
-
-
-
+#include "Logging.h"
 
 void InstallHook(LPVOID originalFunction,
 				 LPVOID hookFunction)
@@ -47,16 +44,13 @@ void InstallHook(LPVOID originalFunction,
 
 BOOL LoadMethodAndInstallHook(const wchar_t* library, const char* proc, LPVOID hookFunction)
 {
-#ifdef _DEBUG
-	std::string output = convert(library);
-	printf("Loading %s\r\n", output.c_str());
-#endif
+	LOG2("Loading ", library);
 
 	HMODULE crt = LoadLibrary(library);
-	if (crt != NULL)
+	if (crt != nullptr)
 	{
 		LPVOID wassert = GetProcAddress(crt, "_wassert");
-		if (wassert != NULL)
+		if (wassert != nullptr)
 		{
 			InstallHook(wassert, hookFunction);
 			return TRUE;

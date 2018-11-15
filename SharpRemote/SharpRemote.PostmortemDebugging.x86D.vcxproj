@@ -46,9 +46,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Convert.h" />
     <ClInclude Include="CRuntimeVersions.h" />
     <ClInclude Include="Hook.h" />
+    <ClInclude Include="Logging.h" />
     <ClInclude Include="PostmortemDebugging.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -56,6 +56,7 @@
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Logging.cpp" />
     <ClCompile Include="PostmortemDebugging.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

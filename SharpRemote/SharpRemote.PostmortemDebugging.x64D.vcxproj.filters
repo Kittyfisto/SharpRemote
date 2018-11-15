@@ -26,10 +26,10 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Convert.h">
+    <ClInclude Include="Version.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Version.h">
+    <ClInclude Include="Logging.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,6 +38,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Logging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

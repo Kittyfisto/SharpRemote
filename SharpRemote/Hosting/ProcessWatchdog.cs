@@ -78,6 +78,11 @@ namespace SharpRemote.Hosting
 					if (!_postMortemSettings.MinidumpFolder.EndsWith("\\"))
 						_postMortemSettings.MinidumpFolder += '\\';
 				}
+
+				if (_postMortemSettings.LogFileName != null)
+				{
+					Log.WarnFormat("Ignoring PostMortemSettings.LogFileName={0}, currently this can be only specified via OutOfProcessSiloServer", _postMortemSettings.LogFileName);
+				}
 			}
 
 			_processReadyTimeout = processReadyTimeout ?? new FailureSettings().ProcessReadyTimeout;

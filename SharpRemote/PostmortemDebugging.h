@@ -10,6 +10,15 @@ extern "C" {
 #endif
 
 	/**
+	 * Enables logging for this library.
+	 * 
+	 * @param logFilePath   The path to the file which shall be logged to
+	 * 
+	 * @returns TRUE upon success, false when the file couldn't be opened or when this method has been called before
+	 */
+	__declspec (dllexport) BOOL InitLogging(const wchar_t* logFilePath);
+
+	/**
 	 * Initializes this port-mortem debugger. Is required to create dumps when an unhandled exception occurs or
 	 * to create a mini-dump for another process.
 	 *

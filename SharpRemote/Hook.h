@@ -44,20 +44,26 @@ void InstallHook(LPVOID originalFunction,
 
 BOOL LoadMethodAndInstallHook(const wchar_t* library, const char* proc, LPVOID hookFunction)
 {
-	LOG2("Loading ", library);
-
 	HMODULE crt = LoadLibrary(library);
-	if (crt != nullptr)
+	if (crt == nullptr)
 	{
-		LPVOID wassert = GetProcAddress(crt, "_wassert");
-		if (wassert != nullptr)
-		{
-			InstallHook(wassert, hookFunction);
-			return TRUE;
-		}
+		auto err = GetLastError();
+		LOG4("Unable to load '", library, "', GetLastError()=", err);
+		return FALSE;
 	}
 
-	return FALSE;
+	LPVOID wassert = GetProcAddress(crt, proc);
+	if (wassert == nullptr)
+	{
+		auto err = GetLastError();
+		LOG6("Unable to find '", proc, "' in '", library, "', GetLastError()=", err);
+		return FALSE;
+	}
+
+	InstallHook(wassert, hookFunction);
+
+	LOG5("Installed hook for '", proc, "' in '", library, "'");
+	return TRUE;
 }
 
 typedef void (__cdecl * _CRT_WASSERT_HOOK)(const wchar_t*, const wchar_t*, unsigned);
@@ -119,7 +125,9 @@ BOOL InterceptCrtAssert(_CRT_WASSERT_HOOK hookFunction, CRuntimeVersions crtVers
 	auto libs = GetCrtLibraries(crtVersions);
 	for(auto it = libs.begin(); it != libs.end(); ++it)
 	{
-		LoadMethodAndInstallHook(*it, "_wassert", hookFunction);
+		auto library = *it;
+		if (LoadMethodAndInstallHook(library, "_wassert", hookFunction) == FALSE)
+			return FALSE;
 	}
 	return TRUE;
 }
@@ -130,13 +138,29 @@ BOOL InterceptCrtPurecalls(_purecall_handler hookFunction, CRuntimeVersions crtV
 	for(auto it = libs.begin(); it != libs.end(); ++it)
 	{
 		HMODULE crt = LoadLibrary(*it);
-		if (crt != NULL)
+		if (crt != nullptr)
 		{
-			_CRT_SET_PURECALL_HANDLER set_purecall = (_CRT_SET_PURECALL_HANDLER)GetProcAddress(crt, "_set_purecall_handler");
-			if (set_purecall != NULL)
+			auto functionName = "_set_purecall_handler";
+			_CRT_SET_PURECALL_HANDLER set_purecall = (_CRT_SET_PURECALL_HANDLER)GetProcAddress(crt, functionName);
+			if (set_purecall != nullptr)
 			{
 				set_purecall(hookFunction);
+				LOG2("Installed purecall_handler at 0x", hookFunction);
 			}
+			else
+			{
+				const auto err = GetLastError();
+				LOG6("Unable to install purecall_handler, '", functionName, "' cannot be found in '", *it, "', GetLastError()=", err);
+
+				return FALSE;
+			}
+		}
+		else
+		{
+			const auto err = GetLastError();
+			LOG4("Unable to install purecall_handler, LoadLibrary(\"", *it, "\") returned NULL, GetLastError()=", err);
+
+			return FALSE;
 		}
 	}
 
@@ -150,10 +174,10 @@ BOOL SuppressCrtAborts(CRuntimeVersions crtVersions)
 	for(auto it = libs.begin(); it != libs.end(); ++it)
 	{
 		HMODULE crt = LoadLibrary(*it);
-		if (crt != NULL)
+		if (crt != nullptr)
 		{
 			_CRT_SET_ABORT_BEHAVIOR_HANDLER set_abort_behavior = (_CRT_SET_ABORT_BEHAVIOR_HANDLER)GetProcAddress(crt, "_set_abort_behavior");
-			if (set_abort_behavior != NULL)
+			if (set_abort_behavior != nullptr)
 			{
 				set_abort_behavior(0, _WRITE_ABORT_MSG);
 				success = TRUE;

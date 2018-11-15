@@ -2,6 +2,7 @@
 
 void Log(const std::wostringstream& message);
 bool IsLogEnabled();
+bool EnableLogging(const wchar_t* filePath);
 
 #define LOG1(arg1) { if (IsLogEnabled()) { std::wostringstream buffer; buffer << arg1; Log(buffer); } }
 #define LOG2(arg1, arg2) { if (IsLogEnabled()) { std::wostringstream buffer; buffer << arg1; buffer << arg2; Log(buffer); } }

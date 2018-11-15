@@ -147,6 +147,36 @@ namespace SharpRemote
 			SetLastError = true,
 			CharSet = CharSet.Unicode,
 			CallingConvention = CallingConvention.Cdecl,
+			EntryPoint = "InitLogging")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool _initLogging(
+			string logFile
+		);
+
+		/// <summary>
+		///    Configures the post-mortem debugger to log to the given file.
+		///    Should be called before <see cref="InitDumpCollection"/> and
+		///    before <see cref="InstallPostmortemDebugger"/> to log everything
+		/// </summary>
+		/// <param name="logFile"></param>
+		/// <returns></returns>
+		public static bool EnableLogging(string logFile)
+		{
+			try
+			{
+				return _initLogging(logFile);
+			}
+			catch (Exception e)
+			{
+				Log.ErrorFormat("Unable to initialize the post-mortem logging: {0}", e);
+				return false;
+			}
+		}
+
+		[DllImport(PostmortdemDebuggerDll,
+			SetLastError = true,
+			CharSet = CharSet.Unicode,
+			CallingConvention = CallingConvention.Cdecl,
 			EntryPoint = "InitDumpCollection")]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		private static extern bool _initDumpCollection(

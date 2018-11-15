@@ -101,6 +101,7 @@
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="Exceptions\RemoteEndpointAlreadyConnectedExceptionTest.cs" />
     <Compile Include="Hosting\OutOfProcess\FailureHandlerMock.cs" />
+    <Compile Include="Hosting\PostMortemSettingsTest.cs" />
     <Compile Include="LogCollector.cs" />
     <Compile Include="Remoting\Sockets\Socket2Test.cs" />
     <Compile Include="Remoting\Sockets\SocketServerTest.cs" />

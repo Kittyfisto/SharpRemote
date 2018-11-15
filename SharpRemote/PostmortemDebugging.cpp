@@ -281,7 +281,10 @@ void failfast()
 
 LONG WINAPI OnUnhandledException(struct _EXCEPTION_POINTERS *exceptionPointers)
 {
-	LOG1("Caught unhandled exception");
+	LOG4("Caught unhandled exception, ExceptionCode=0x",
+		exceptionPointers->ExceptionRecord->ExceptionCode,
+		", ExceptionAddress=0x",
+		exceptionPointers->ExceptionRecord->ExceptionAddress);
 
 	CreateMiniDump(exceptionPointers);
 
@@ -304,162 +307,161 @@ void __cdecl OnCrtPurecall()
 	failfast();
 }
 
-#ifdef __cplusplus
 void DoSetUnhandledExceptionFilter()
 {
 	auto previous = SetUnhandledExceptionFilter(OnUnhandledException);
 	if (previous == nullptr)
 	{
-		LOG1("Installed unhandled exception filter for the first time!");
+		LOG1("Installed unhandled exception filter...");
 	}
 	else if (previous != OnUnhandledException)
 	{
-		LOG4("Another unhandled exception filter was set! Previous=", previous, ", current=", OnUnhandledException);
+		LOG4("Installed unhandled exception filter, previous=0x", previous, ", current=0x", OnUnhandledException);
 	}
+}
+
+BOOL DoSuppressAborts(CRuntimeVersions crtVersions)
+{
+	LOG1("Suppressing error windows...");
+	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+
+	if (SuppressCrtAborts(crtVersions) == FALSE)
+		return FALSE;
+
+	return TRUE;
 }
 
 extern "C" {
-#endif
 
-BOOL InitDumpCollection(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* dumpName)
-{
-	LOG1("InitDumpCollection");
-
-	if (_collectDumps)
+	BOOL InitLogging(const wchar_t* logFilePath)
 	{
-		SetLastError(ERROR_ACCESS_DENIED);
-		return FALSE;
+		if (!EnableLogging(logFilePath))
+			return FALSE;
+
+		return TRUE;
 	}
 
-	if (numRetainedMinidumps <= 0 || dumpFolder == NULL || dumpName == NULL)
+	BOOL InitDumpCollection(int numRetainedMinidumps, const wchar_t* dumpFolder, const wchar_t* dumpName)
 	{
-		SetLastError(ERROR_BAD_ARGUMENTS);
-		return FALSE;
+		LOG1("Initializing mini dump collection...");
+
+		if (_collectDumps)
+		{
+			SetLastError(ERROR_ACCESS_DENIED);
+			return FALSE;
+		}
+
+		if (numRetainedMinidumps <= 0 || dumpFolder == NULL || dumpName == NULL)
+		{
+			SetLastError(ERROR_BAD_ARGUMENTS);
+			return FALSE;
+		}
+
+		auto dumpFolderLength = wcslen(dumpFolder);
+		if (wcschr(dumpFolder, '/') != NULL || dumpFolder[dumpFolderLength-1] != '\\' ||
+			PathIsRelative(dumpFolder) == TRUE)
+		{
+			SetLastError(ERROR_BAD_ARGUMENTS);
+			return FALSE;
+		}
+
+		if (CheckDumpNameConstraints(dumpName) == FALSE)
+		{
+			SetLastError(ERROR_BAD_ARGUMENTS);
+			return FALSE;
+		}
+
+		_numRetainedMinidumps = numRetainedMinidumps;
+		_dumpFolder = dumpFolder;
+		_dumpName = dumpName;
+
+		_minidumpPattern = _dumpFolder;
+		_minidumpPattern += _dumpName;
+		_minidumpPattern += L"*.dmp";
+
+		_tmpPath.reserve(2048);
+		_oldestFileFullName.reserve(2048);
+
+		LOG1("Mini dump collection successfully installed!");
+
+		_collectDumps = true;
+		return TRUE;
 	}
 
-	auto dumpFolderLength = wcslen(dumpFolder);
-	if (wcschr(dumpFolder, '/') != NULL || dumpFolder[dumpFolderLength-1] != '\\' ||
-		PathIsRelative(dumpFolder) == TRUE)
+	BOOL InstallPostmortemDebugger(BOOL suppressErrorWindows,
+								   BOOL handleUnhandledExceptions,
+								   BOOL handleCrtAsserts,
+								   BOOL handleCrtPurecalls,
+								   CRuntimeVersions crtVersions)
 	{
-		SetLastError(ERROR_BAD_ARGUMENTS);
-		return FALSE;
+		std::wostringstream message;
+		message << "Installing post mortem debugger:" << std::endl
+			<< "  suppressErrorWindows=" << suppressErrorWindows << std::endl
+			<< "  handleUnhandledExceptions=" << handleUnhandledExceptions << std::endl
+			<< "  handleCrtAsserts=" << handleCrtAsserts << std::endl
+			<< "  handleCrtPurecalls=" << handleCrtPurecalls;
+		LOG1(message.str());
+
+		if (suppressErrorWindows == TRUE)
+		{
+			if (DoSuppressAborts(crtVersions) == FALSE)
+				return FALSE;
+		}
+		if (handleUnhandledExceptions == TRUE)
+		{
+			DoSetUnhandledExceptionFilter();
+		}
+		if (handleCrtAsserts == TRUE)
+		{
+			if (InterceptCrtAssert(&OnCrtAssert, crtVersions) == FALSE)
+				return FALSE;
+		}
+		if (handleCrtPurecalls == TRUE)
+		{
+			if (InterceptCrtPurecalls(&OnCrtPurecall, crtVersions) == FALSE)
+				return FALSE;
+		}
+
+		LOG1("Post mortem debugger successfully installed!");
+		return TRUE;
 	}
 
-	if (CheckDumpNameConstraints(dumpName) == FALSE)
+	BOOL CreateMiniDump(
+			int processId,
+			const wchar_t* dumpName
+			)
 	{
-		SetLastError(ERROR_BAD_ARGUMENTS);
-		return FALSE;
+		LOG1("CreateMiniDump");
+
+		if (_collectDumps == false)
+		{
+			SetLastError(ERROR_ACCESS_DENIED);
+			return FALSE;
+		}
+
+		if (CheckDumpNameConstraints(dumpName) == FALSE)
+		{
+			SetLastError(ERROR_BAD_ARGUMENTS);
+			return FALSE;
+		}
+
+		HANDLE hProcess = OpenProcess(
+			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_DUP_HANDLE,
+			FALSE,
+			processId);
+		if (hProcess == NULL)
+		{
+			LOG1("OpenProcess failed...");
+			return FALSE;
+		}
+
+		CreateMiniDump(NULL,
+			hProcess,
+			processId,
+			dumpName);
+
+		CloseHandle(hProcess);
+
+		return TRUE;
 	}
-
-	_numRetainedMinidumps = numRetainedMinidumps;
-	_dumpFolder = dumpFolder;
-	_dumpName = dumpName;
-
-	_minidumpPattern = _dumpFolder;
-	_minidumpPattern += _dumpName;
-	_minidumpPattern += L"*.dmp";
-
-	_tmpPath.reserve(2048);
-	_oldestFileFullName.reserve(2048);
-
-	LOG1("Post-Mortem debugger installed");
-
-	_collectDumps = true;
-	return TRUE;
 }
-
-void QueryHook()
-{
-	while(true)
-	{
-		DoSetUnhandledExceptionFilter();
-
-		Sleep(100);
-	}
-}
-
-void StartThread()
-{
-	DoSetUnhandledExceptionFilter();
-
-	std::thread t(QueryHook);
-	t.detach();
-}
-
-BOOL InstallPostmortemDebugger(BOOL suppressErrorWindows,
-							   BOOL handleUnhandledExceptions,
-							   BOOL handleCrtAsserts,
-							   BOOL handleCrtPurecalls,
-							   CRuntimeVersions crtVersions)
-{
-	std::ostringstream message;
-	message << "InstallPostmortemDebugger" << std::endl
-		<< "  suppressErrorWindows=" << suppressErrorWindows << std::endl
-		<< "  handleUnhandledExceptions=" << handleUnhandledExceptions << std::endl
-		<< "  handleCrtAsserts=" << handleCrtAsserts << std::endl
-		<< "  handleCrtPurecalls=" << handleCrtPurecalls;
-	LOG1(message);
-
-	if (suppressErrorWindows == TRUE)
-	{
-		LOG1("Suppressing error windows...");
-		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-		SuppressCrtAborts(crtVersions);
-	}
-	if (handleUnhandledExceptions == TRUE)
-	{
-		StartThread();
-	}
-	if (handleCrtAsserts == TRUE)
-	{
-		InterceptCrtAssert(&OnCrtAssert, crtVersions);
-	}
-	if (handleCrtPurecalls == TRUE)
-	{
-		InterceptCrtPurecalls(&OnCrtPurecall, crtVersions);
-	}
-	return TRUE;
-}
-
-BOOL CreateMiniDump(
-		int processId,
-		const wchar_t* dumpName
-		)
-{
-	LOG1("CreateMiniDump");
-
-	if (_collectDumps == false)
-	{
-		SetLastError(ERROR_ACCESS_DENIED);
-		return FALSE;
-	}
-
-	if (CheckDumpNameConstraints(dumpName) == FALSE)
-	{
-		SetLastError(ERROR_BAD_ARGUMENTS);
-		return FALSE;
-	}
-
-	HANDLE hProcess = OpenProcess(
-		PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_DUP_HANDLE,
-		FALSE,
-		processId);
-	if (hProcess == NULL)
-	{
-		LOG1("OpenProcess failed...");
-		return FALSE;
-	}
-
-	CreateMiniDump(NULL,
-		hProcess,
-		processId,
-		dumpName);
-
-	CloseHandle(hProcess);
-
-	return TRUE;
-}
-
-#ifdef __cplusplus
-}
-#endif

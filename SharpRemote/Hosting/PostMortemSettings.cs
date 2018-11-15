@@ -70,6 +70,16 @@ namespace SharpRemote.Hosting
 		public string MinidumpName;
 
 		/// <summary>
+		///     The file path to the logfile which the post mortem debugger shall log to.
+		///     When set to a non-null value, the posrt mortem debugger will try to log its
+		///     actions (and failures) to the given file.
+		/// </summary>
+		/// <remarks>
+		///     Is set to NULL by default, i.e. no log is written.
+		/// </remarks>
+		public string LogFileName;
+
+		/// <summary>
 		///     The maximum amount of minidumps that shall be retained.
 		///     Once more are created, the oldest ones are removed.
 		/// </summary>
@@ -141,9 +151,9 @@ namespace SharpRemote.Hosting
 		{
 			return
 				string.Format(
-					"CollectMinidumps: {0}, HandleAccessViolations: {1}, HandleCrtAsserts: {2}, HandleCrtPureVirtualFunctionCalls: {3}, MinidumpFolder: {4}, MinidumpName: {5}, NumMinidumpsRetained: {6}, RuntimeVersions: {7}, SuppressErrorWindows: {8}",
+					"CollectMinidumps: {0}, HandleAccessViolations: {1}, HandleCrtAsserts: {2}, HandleCrtPureVirtualFunctionCalls: {3}, MinidumpFolder: {4}, MinidumpName: {5}, LogFileName: {6}, NumMinidumpsRetained: {7}, RuntimeVersions: {8}, SuppressErrorWindows: {9}",
 					CollectMinidumps, HandleAccessViolations, HandleCrtAsserts, HandleCrtPureVirtualFunctionCalls, MinidumpFolder,
-					MinidumpName, NumMinidumpsRetained, RuntimeVersions, SuppressErrorWindows);
+					MinidumpName, LogFileName, NumMinidumpsRetained, RuntimeVersions, SuppressErrorWindows);
 		}
 
 		/// <summary>
@@ -157,12 +167,13 @@ namespace SharpRemote.Hosting
 					CollectMinidumps = CollectMinidumps,
 					MinidumpName = MinidumpName,
 					MinidumpFolder = MinidumpFolder,
+					LogFileName = LogFileName,
 					NumMinidumpsRetained = NumMinidumpsRetained,
 					SuppressErrorWindows = SuppressErrorWindows,
 					HandleCrtAsserts = HandleCrtAsserts,
 					HandleAccessViolations = HandleAccessViolations,
 					HandleCrtPureVirtualFunctionCalls = HandleCrtPureVirtualFunctionCalls,
-					RuntimeVersions = RuntimeVersions,
+					RuntimeVersions = RuntimeVersions
 				};
 		}
 	}

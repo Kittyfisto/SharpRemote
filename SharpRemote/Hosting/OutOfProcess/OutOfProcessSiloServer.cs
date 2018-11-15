@@ -150,6 +150,11 @@ namespace SharpRemote.Hosting
 									err);
 				}
 
+				if (_postMortemSettings.LogFileName != null)
+				{
+					NativeMethods.EnableLogging(_postMortemSettings.LogFileName);
+				}
+
 				if (_postMortemSettings.CollectMinidumps)
 				{
 					if (NativeMethods.InitDumpCollection(_postMortemSettings.NumMinidumpsRetained,

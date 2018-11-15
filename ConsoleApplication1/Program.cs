@@ -15,7 +15,7 @@ namespace ConsoleApplication1
 			NativeMethods.LoadPostmortemDebugger();
 			NativeMethods.EnableLogging(@"C:\Postmortem.log");
 			NativeMethods.InstallPostmortemDebugger(true, true, true, true,
-				CRuntimeVersions._120 | CRuntimeVersions.Release);
+				CRuntimeVersions._141 | CRuntimeVersions.Release);
 
 			/*
 			//Client

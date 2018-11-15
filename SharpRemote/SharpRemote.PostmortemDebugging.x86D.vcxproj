@@ -56,6 +56,7 @@
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Hook.cpp" />
     <ClCompile Include="Logging.cpp" />
     <ClCompile Include="PostmortemDebugging.cpp" />
     <ClCompile Include="stdafx.cpp">

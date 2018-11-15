@@ -29,13 +29,13 @@ std::wstring _oldestFileFullName;
 BOOL CheckDumpNameConstraints(const wchar_t* dumpName)
 {
 	auto dumpNameLength = wcslen(dumpName);
-	if (wcschr(dumpName, '/') != NULL ||
-		wcschr(dumpName, '\\') != NULL ||
-		wcsstr(dumpName, L"..") != NULL ||
-		wcsstr(dumpName, L":") != NULL ||
-		wcsstr(dumpName, L"*") != NULL ||
-		wcsstr(dumpName, L"?") != NULL ||
-		wcsstr(dumpName, L"\"") != NULL ||
+	if (wcschr(dumpName, '/') != nullptr ||
+		wcschr(dumpName, '\\') != nullptr ||
+		wcsstr(dumpName, L"..") != nullptr ||
+		wcsstr(dumpName, L":") != nullptr ||
+		wcsstr(dumpName, L"*") != nullptr ||
+		wcsstr(dumpName, L"?") != nullptr ||
+		wcsstr(dumpName, L"\"") != nullptr ||
 		dumpNameLength == 0)
 	{
 		return FALSE;
@@ -307,30 +307,6 @@ void __cdecl OnCrtPurecall()
 	failfast();
 }
 
-void DoSetUnhandledExceptionFilter()
-{
-	auto previous = SetUnhandledExceptionFilter(OnUnhandledException);
-	if (previous == nullptr)
-	{
-		LOG1("Installed unhandled exception filter...");
-	}
-	else if (previous != OnUnhandledException)
-	{
-		LOG4("Installed unhandled exception filter, previous=0x", previous, ", current=0x", OnUnhandledException);
-	}
-}
-
-BOOL DoSuppressAborts(CRuntimeVersions crtVersions)
-{
-	LOG1("Suppressing error windows...");
-	SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
-
-	if (SuppressCrtAborts(crtVersions) == FALSE)
-		return FALSE;
-
-	return TRUE;
-}
-
 extern "C" {
 
 	BOOL InitLogging(const wchar_t* logFilePath)
@@ -404,12 +380,12 @@ extern "C" {
 
 		if (suppressErrorWindows == TRUE)
 		{
-			if (DoSuppressAborts(crtVersions) == FALSE)
+			if (SuppressCrtAbortMessages(crtVersions) == FALSE)
 				return FALSE;
 		}
 		if (handleUnhandledExceptions == TRUE)
 		{
-			DoSetUnhandledExceptionFilter();
+			DoSetUnhandledExceptionFilter(OnUnhandledException);
 		}
 		if (handleCrtAsserts == TRUE)
 		{

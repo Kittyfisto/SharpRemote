@@ -49,6 +49,16 @@ namespace SharpRemote.Hosting
 		_120 = 0x00000020,
 
 		/// <summary>
+		/// CRT version 14.0 (Visual Studio 2015) should be supported.
+		/// </summary>
+		_140 = 0x00000040,
+
+		/// <summary>
+		/// CRT version 14.1 (Visual Studio 2017) should be supported.
+		/// </summary>
+		_141 = 0x00000080,
+
+		/// <summary>
 		/// Debug version(s) of the CRT should be supported.
 		/// </summary>
 		Debug = 0x20000000,

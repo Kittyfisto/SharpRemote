@@ -18,6 +18,8 @@ enum CRuntimeVersions : int
 	Crt_100    = 0x00000008,
 	Crt_110    = 0x00000010,
 	Crt_120    = 0x00000020,
+	Crt_140    = 0x00000040,
+	Crt_141    = 0x00000080,
 
 	Crt_Debug   = 0x20000000,
 	Crt_Release = 0x40000000,

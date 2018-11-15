@@ -143,6 +143,8 @@ void DoSetUnhandledExceptionFilter(LPTOP_LEVEL_EXCEPTION_FILTER callback)
 	{
 		LOG4("Installed unhandled exception filter, previous=0x", previous, ", current=0x", callback);
 	}
+
+	LOG1("Unhandled exceptions will be intercepted and cause a minidump to be created");
 }
 
 BOOL InterceptCrtAssert(_CRT_WASSERT_HOOK hookFunction, CRuntimeVersions crtVersions)

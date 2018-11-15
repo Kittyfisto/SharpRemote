@@ -41,7 +41,7 @@ bool EnableLogging(const wchar_t* filePath)
 	if (!logfile.is_open())
 	{
 		logfile.open(filePath,
-			ios::out | ios::trunc);
+			ios::out | ios::app);
 
 		if (logfile.fail())
 			return false;

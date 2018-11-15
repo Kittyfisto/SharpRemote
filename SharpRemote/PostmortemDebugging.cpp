@@ -207,10 +207,10 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);
 
-	if (hFile == nullptr)
+	if (hFile == INVALID_HANDLE_VALUE)
 	{
 		auto err = GetLastError();
-		LOG2("CreateFile failed: ", err)
+		LOG2("CreateFile returned INVALID_HANDLE_VALUE: GetLastError()=", err)
 		return;
 	}
 
@@ -250,7 +250,10 @@ void CreateMiniDump(EXCEPTION_POINTERS* exceptionPointers,
 			LOG1("MiniDumpWriteDump returned FALSE, unable to write a minidump");
 		}
 
-		CloseHandle( hFile );
+		if (CloseHandle( hFile ) == FALSE)
+		{
+			LOG2("CloseHandle failed: GetLastError()=", GetLastError());
+		}
 	}
 }
 

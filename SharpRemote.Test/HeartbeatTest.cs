@@ -30,6 +30,15 @@ namespace SharpRemote.Test
 		private Heartbeat _heartbeat;
 
 		[Test]
+		public void TestDispose()
+		{
+			_heartbeat.IsDisposed.Should().BeFalse();
+
+			_heartbeat.Dispose();
+			_heartbeat.IsDisposed.Should().BeTrue();
+		}
+
+		[Test]
 		[Description(
 			"Verifies that the RemoteDebuggerAttached event is fired when a debugger becomes attached AND the endpoint is connected"
 			)]

@@ -24,6 +24,7 @@ namespace SharpRemote
 		private readonly bool _reportDebuggerAttached;
 
 		private bool? _isDebuggerAttached;
+		private bool _isDisposed;
 
 		public Heartbeat(IDebugger debugger,
 		                 IRemotingEndPoint endPoint,
@@ -43,6 +44,11 @@ namespace SharpRemote
 				};
 			_timer.Elapsed += TimerOnElapsed;
 			_timer.Start();
+		}
+
+		public bool IsDisposed
+		{
+			get { return _isDisposed; }
 		}
 
 		private void TimerOnElapsed(object sender, ElapsedEventArgs args)
@@ -117,6 +123,7 @@ namespace SharpRemote
 		public void Dispose()
 		{
 			_timer.Dispose();
+			_isDisposed = true;
 		}
 	}
 }

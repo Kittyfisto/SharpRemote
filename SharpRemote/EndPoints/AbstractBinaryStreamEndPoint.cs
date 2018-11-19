@@ -388,7 +388,8 @@ namespace SharpRemote
 
 					Disconnect();
 					DisposeAdditional();
-					_garbageCollectionTimer.Dispose();
+					_garbageCollectionTimer.TryDispose();
+					_localHeartbeat.TryDispose();
 
 					// Another thread could still be accessing this dictionary.
 					// Therefore we need to guard this one against concurrent access...

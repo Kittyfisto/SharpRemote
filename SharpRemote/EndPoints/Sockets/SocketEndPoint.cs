@@ -669,9 +669,11 @@ namespace SharpRemote
 				var read = socket.Receive(buffer, index, toRead, SocketFlags.None, out err);
 				index += read;
 
-				if (err != SocketError.Success || read <= 0 || !socket.Connected)
+				if (err != SocketError.Success ||
+				    read <= 0 ||
+				    !socket.Connected)
 				{
-					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}",
+					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} bytes read, method {3}, IsConnected: {4}",
 					                Name,
 					                read,
 					                buffer.Length, err, socket.Connected);

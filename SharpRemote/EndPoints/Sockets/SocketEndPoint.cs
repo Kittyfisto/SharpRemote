@@ -340,7 +340,7 @@ namespace SharpRemote
 					if (socket != null)
 					{
 						socket.Close();
-						socket.Dispose();
+						socket.TryDispose();
 					}
 
 					RemoteEndPoint = null;

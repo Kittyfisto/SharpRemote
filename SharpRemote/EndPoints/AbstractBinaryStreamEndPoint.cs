@@ -750,17 +750,13 @@ namespace SharpRemote
 				// those threads are almost always reporting a "failure" afterwards.
 				if (IsFailure(reason))
 				{
+					var explanation = CreateDisconnectExplanation(reason, error);
 					var builder = new StringBuilder();
-					builder.AppendFormat("{0}: Disconnecting EndPoint '{1}' from '{2}' due to: {3}",
+					builder.AppendFormat("{0}: Disconnecting EndPoint '{1}' from '{2}': {3}",
 					                     Name,
 					                     InternalLocalEndPoint,
 					                     InternalRemoteEndPoint,
-					                     reason);
-					if (error != null)
-					{
-						builder.AppendFormat(" (socket returned {0})", error);
-					}
-
+					                     explanation);
 					Log.Error(builder);
 				}
 
@@ -847,6 +843,41 @@ namespace SharpRemote
 
 			EmitOnDisconnected(hasDisconnected, remoteEndPoint, connectionId);
 		}
+
+		#region Disconnect Error Messages
+
+		/// <summary>
+		///    Creates an explanation as to why the connection was disconnected.
+		///    This is most likely due to external circumstances (such as the cabling having been removed,
+		///    the other side crashing, etc..) and this method tries to find a way to explain that
+		///    to a human in simple terms.
+		/// </summary>
+		/// <param name="reason"></param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		private string CreateDisconnectExplanation(EndPointDisconnectReason reason, SocketError? error)
+		{
+			if (reason == EndPointDisconnectReason.ReadFailure || reason == EndPointDisconnectReason.WriteFailure)
+			{
+				if (error == SocketError.ConnectionAborted)
+					return "The connection was aborted for an unknown reason.";
+				if (error == SocketError.ConnectionReset)
+					return "The connected peer failed to respond in time";
+				if (error == SocketError.TimedOut)
+					return "The connection was forcefully reset by the remote peer.";
+			}
+
+			var builder = new StringBuilder();
+			builder.AppendFormat("{0}", reason);
+			if (error != null)
+			{
+				builder.AppendFormat(" (socket returned {0})", error);
+			}
+
+			return builder.ToString();
+		}
+
+		#endregion
 
 		/// <summary>
 		/// 

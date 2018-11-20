@@ -32,6 +32,11 @@
 		/// One possible reason is that it crashed due to an unhandled exception.
 		/// Another reason is that it might have been killed (either by a person or another program).
 		/// </summary>
-		HostProcessExited
+		HostProcessExited,
+
+		/// <summary>
+		/// An unknown failure occured.
+		/// </summary>
+		Unknown = int.MaxValue
 	}
 }

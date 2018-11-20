@@ -130,6 +130,10 @@ namespace SharpRemote.Hosting.OutOfProcess
 			{
 				case EndPointDisconnectReason.ReadFailure:
 				case EndPointDisconnectReason.RpcInvalidResponse:
+				case EndPointDisconnectReason.WriteFailure:
+				case EndPointDisconnectReason.ConnectionAborted:
+				case EndPointDisconnectReason.ConnectionReset:
+				case EndPointDisconnectReason.ConnectionTimedOut:
 					failure = Failure.ConnectionFailure;
 					break;
 
@@ -142,11 +146,13 @@ namespace SharpRemote.Hosting.OutOfProcess
 					failure = Failure.HeartbeatFailure;
 					break;
 
-					// ReSharper disable RedundantCaseLabel
 				case EndPointDisconnectReason.UnhandledException:
-					// ReSharper restore RedundantCaseLabel
-				default:
 					failure = Failure.UnhandledException;
+					break;
+
+				default:
+					Log.WarnFormat("Unknown EndPointDisconnectReason: {0}", endPointReason);
+					failure = Failure.Unknown;
 					break;
 			}
 

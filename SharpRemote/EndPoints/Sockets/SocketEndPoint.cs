@@ -594,94 +594,123 @@ namespace SharpRemote
 		}
 
 		/// <inheritdoc />
-		protected override bool SynchronizedWrite(ISocket socket, byte[] data, int length, out SocketError err)
+		protected override bool SynchronizedWrite(ISocket socket, byte[] data, int length, out EndPointDisconnectReason error)
 		{
 			if (!socket.Connected)
 			{
-				err = SocketError.NotConnected;
+				error = EndPointDisconnectReason.Unknown;
 				return false;
 			}
 
-			var written = socket.Send(data, offset: 0, size: length, socketFlags: SocketFlags.None, errorCode: out err);
-			if (written != length || err != SocketError.Success || !socket.Connected)
+			SocketError socketError;
+			var written = socket.Send(data, offset: 0, size: length, socketFlags: SocketFlags.None, errorCode: out socketError);
+			if (written != length || socketError != SocketError.Success || !socket.Connected)
 			{
 				Log.DebugFormat("{0}: Error while writing to socket, {1} out of {2} written, method {3}, IsConnected: {4}",
 				                Name,
 				                written,
-				                data.Length, err, socket.Connected);
+				                data.Length, socketError, socket.Connected);
+
+				error = ToDisconnectReason(socketError);
 				return false;
 			}
 
+			error = EndPointDisconnectReason.Unknown;
 			return true;
 		}
 
 		/// <inheritdoc />
-		protected override bool SynchronizedRead(ISocket socket, byte[] buffer, TimeSpan timeout, out SocketError err)
+		protected override bool SynchronizedRead(ISocket socket, byte[] buffer, TimeSpan timeout, out EndPointDisconnectReason error)
 		{
 			var start = DateTime.Now;
 			while (socket.Available < buffer.Length)
 			{
 				if (!socket.Connected)
 				{
-					err = SocketError.NotConnected;
+					error = EndPointDisconnectReason.Unknown;
 					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}",
 					                Name,
 					                0,
-					                buffer.Length, err, socket.Connected);
+					                buffer.Length, error, socket.Connected);
 					return false;
 				}
 
 				var remaining = timeout - (DateTime.Now - start);
 				if (remaining <= TimeSpan.Zero)
 				{
-					err = SocketError.TimedOut;
+					error = EndPointDisconnectReason.ConnectionTimedOut;
 					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}",
 					                Name,
 					                0,
-					                buffer.Length, err, socket.Connected);
+					                buffer.Length, error, socket.Connected);
 					return false;
 				}
 
 				var t = (int) (remaining.TotalMilliseconds * 1000);
 				if (!socket.Poll(t, SelectMode.SelectRead))
 				{
-					err = SocketError.TimedOut;
+					error = EndPointDisconnectReason.ConnectionTimedOut;
 					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} read, method {3}, IsConnected: {4}",
 					                Name,
 					                0,
-					                buffer.Length, err, socket.Connected);
+					                buffer.Length, error, socket.Connected);
 					return false;
 				}
 			}
 
-			return SynchronizedRead(socket, buffer, out err);
+			return SynchronizedRead(socket, buffer, out error);
 		}
 
 		/// <inheritdoc />
-		protected override bool SynchronizedRead(ISocket socket, byte[] buffer, out SocketError err)
+		protected override bool SynchronizedRead(ISocket socket, byte[] buffer, out EndPointDisconnectReason error)
 		{
-			err = SocketError.Success;
-
 			var index = 0;
 			int toRead;
 			while ((toRead = buffer.Length - index) > 0)
 			{
-				var read = socket.Receive(buffer, index, toRead, SocketFlags.None, out err);
-				index += read;
+				SocketError socketError;
+				var bytesRead = socket.Receive(buffer, index, toRead, SocketFlags.None, out socketError);
+				index += bytesRead;
 
-				if (err != SocketError.Success ||
-				    read <= 0 ||
+				if (socketError != SocketError.Success ||
+				    bytesRead <= 0 ||
 				    !socket.Connected)
 				{
 					Log.DebugFormat("{0}: Error while reading from socket, {1} out of {2} bytes read, method {3}, IsConnected: {4}",
 					                Name,
-					                read,
-					                buffer.Length, err, socket.Connected);
+					                bytesRead,
+					                buffer.Length, socketError, socket.Connected);
+					error = ToDisconnectReason(socketError, bytesRead: bytesRead);
 					return false;
 				}
 			}
 
+			error = EndPointDisconnectReason.Unknown;
 			return true;
+		}
+
+		private static EndPointDisconnectReason ToDisconnectReason(SocketError socketError, int? bytesRead = null)
+		{
+			switch (socketError)
+			{
+				case SocketError.ConnectionAborted:
+					return EndPointDisconnectReason.ConnectionAborted;
+
+				case SocketError.ConnectionReset:
+					return EndPointDisconnectReason.ConnectionReset;
+
+				case SocketError.TimedOut:
+					return EndPointDisconnectReason.ConnectionTimedOut;
+
+				case SocketError.Success:
+					if (bytesRead == 0)
+						return EndPointDisconnectReason.ConnectionAborted;
+
+					return EndPointDisconnectReason.Unknown;
+
+				default:
+					return EndPointDisconnectReason.Unknown;
+			}
 		}
 
 		/// <inheritdoc />

@@ -3,6 +3,7 @@ using System.IO.Pipes;
 using System.Net;
 using System.Net.Sockets;
 using SharpRemote.CodeGeneration;
+using SharpRemote.EndPoints.Sockets;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -74,35 +75,35 @@ namespace SharpRemote
 			socket.Write(data, offset, size);
 		}
 
-		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, out SocketError err)
+		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, out EndPointDisconnectReason error)
 		{
-			return SynchronizedRead(socket, buffer, TimeSpan.MaxValue, out err);
+			return SynchronizedRead(socket, buffer, TimeSpan.MaxValue, out error);
 		}
 
-		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, TimeSpan timeout, out SocketError err)
+		protected override bool SynchronizedRead(TTransport socket, byte[] buffer, TimeSpan timeout, out EndPointDisconnectReason error)
 		{
 			int read = socket.Read(buffer, 0, buffer.Length);
 			if (read != buffer.Length)
 			{
-				err = SocketError.ConnectionAborted;
+				error = EndPointDisconnectReason.ConnectionAborted;
 				return false;
 			}
 
-			err = SocketError.Success;
+			error = EndPointDisconnectReason.Unknown;
 			return true;
 		}
 
-		protected override bool SynchronizedWrite(TTransport socket, byte[] data, int length, out SocketError err)
+		protected override bool SynchronizedWrite(TTransport socket, byte[] data, int length, out EndPointDisconnectReason error)
 		{
 			try
 			{
 				socket.Write(data, 0, length);
-				err = SocketError.Success;
+				error = EndPointDisconnectReason.Unknown;
 				return true;
 			}
 			catch (Exception)
 			{
-				err = SocketError.Fault;
+				error = EndPointDisconnectReason.Unknown;
 				return false;
 			}
 		}

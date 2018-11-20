@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using SharpRemote.CodeGeneration;
+using SharpRemote.EndPoints.Sockets;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote
@@ -69,17 +70,17 @@ namespace SharpRemote
 			throw new NotImplementedException();
 		}
 
-		protected override bool SynchronizedWrite(IDisposable socket, byte[] data, int length, out SocketError err)
+		protected override bool SynchronizedWrite(IDisposable socket, byte[] data, int length, out EndPointDisconnectReason error)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, TimeSpan timeout, out SocketError err)
+		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, TimeSpan timeout, out EndPointDisconnectReason error)
 		{
 			throw new NotImplementedException();
 		}
 
-		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, out SocketError err)
+		protected override bool SynchronizedRead(IDisposable socket, byte[] buffer, out EndPointDisconnectReason error)
 		{
 			throw new NotImplementedException();
 		}

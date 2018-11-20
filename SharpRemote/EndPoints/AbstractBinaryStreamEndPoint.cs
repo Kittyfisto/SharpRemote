@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using log4net;
 using SharpRemote.CodeGeneration;
 using SharpRemote.EndPoints;
+using SharpRemote.EndPoints.Sockets;
 using SharpRemote.Extensions;
 using SharpRemote.Tasks;
 using Debugger = SharpRemote.Diagnostics.Debugger;
@@ -710,13 +711,13 @@ namespace SharpRemote
 		/// </summary>
 		internal void DisconnectByFailure()
 		{
-			Disconnect(CurrentConnectionId, EndPointDisconnectReason.ReadFailure);
+			Disconnect(CurrentConnectionId, EndPointDisconnectReason.Unknown);
 		}
 
-		private void Disconnect(ConnectionId currentConnectionId, EndPointDisconnectReason reason, SocketError? error = null)
+		private void Disconnect(ConnectionId currentConnectionId,
+			                    EndPointDisconnectReason reason)
 		{
-			if (_waitUponReadWriteError &&
-			    (reason == EndPointDisconnectReason.ReadFailure || reason == EndPointDisconnectReason.WriteFailure))
+			if (_waitUponReadWriteError && IsFailure(reason))
 			{
 				Log.DebugFormat("Disconnecting because of {0}, waiting for a little bit to find out of this was caused by a process crash...",
 					reason);
@@ -750,7 +751,7 @@ namespace SharpRemote
 				// those threads are almost always reporting a "failure" afterwards.
 				if (IsFailure(reason))
 				{
-					var explanation = CreateDisconnectExplanation(reason, error);
+					var explanation = CreateDisconnectExplanation(reason);
 					var builder = new StringBuilder();
 					builder.AppendFormat("{0}: Disconnecting EndPoint '{1}' from '{2}': {3}",
 					                     Name,
@@ -853,28 +854,36 @@ namespace SharpRemote
 		///    to a human in simple terms.
 		/// </summary>
 		/// <param name="reason"></param>
-		/// <param name="error"></param>
 		/// <returns></returns>
-		private string CreateDisconnectExplanation(EndPointDisconnectReason reason, SocketError? error)
+		private string CreateDisconnectExplanation(EndPointDisconnectReason reason)
 		{
-			if (reason == EndPointDisconnectReason.ReadFailure || reason == EndPointDisconnectReason.WriteFailure)
+			switch (reason)
 			{
-				if (error == SocketError.ConnectionAborted)
-					return "The connection was aborted for an unknown reason.";
-				if (error == SocketError.ConnectionReset)
-					return "The connected peer failed to respond in time";
-				if (error == SocketError.TimedOut)
-					return "The connection was forcefully reset by the remote peer.";
-			}
+				case EndPointDisconnectReason.RpcDuplicateRequest:
+					return
+						"The connection was dropped because a request with the same RPC id than an alrady pending request was made.";
 
-			var builder = new StringBuilder();
-			builder.AppendFormat("{0}", reason);
-			if (error != null)
-			{
-				builder.AppendFormat(" (socket returned {0})", error);
-			}
+				case EndPointDisconnectReason.RpcInvalidResponse:
+					return "The connection was dropped because a response to a non-existant pending RPC was received.";
 
-			return builder.ToString();
+				case EndPointDisconnectReason.UnhandledException:
+					return "The connection was dropped because an unexpected exception.";
+
+				case EndPointDisconnectReason.HeartbeatFailure:
+					return "The connection was dropped because the remote peer failed to respond to heartbeats in time";
+
+				case EndPointDisconnectReason.ConnectionReset:
+					return "The connection was reset by the remote peer.";
+
+				case EndPointDisconnectReason.ConnectionAborted:
+					return "The connection was aborted by the underlying software on either this or the remote computer.";
+
+				case EndPointDisconnectReason.ConnectionTimedOut:
+					return "A read or write operation timed out (this is usually caused by the remote host no longer being reachable)";
+
+				default:
+					return "The connection was dropped for an unknown reason";
+			}
 		}
 
 		#endregion
@@ -1105,11 +1114,10 @@ namespace SharpRemote
 						var responseLength = (int) response.Length;
 						byte[] data = response.GetBuffer();
 
-						SocketError err;
-
-						if (!SynchronizedWrite(socket, data, responseLength, out err))
+						EndPointDisconnectReason error;
+						if (!SynchronizedWrite(socket, data, responseLength, out error))
 						{
-							Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
+							Disconnect(connectionId, error);
 						}
 					}
 					catch (Exception e)
@@ -1251,11 +1259,10 @@ namespace SharpRemote
 			var responseLength = (int) response.Length;
 			byte[] data = response.GetBuffer();
 
-			SocketError err;
-
-			if (!SynchronizedWrite(socket, data, responseLength, out err))
+			EndPointDisconnectReason error;
+			if (!SynchronizedWrite(socket, data, responseLength, out error))
 			{
-				Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
+				Disconnect(connectionId, error);
 			}
 		}
 
@@ -1286,18 +1293,18 @@ namespace SharpRemote
 			var responseLength = (int) response.Length;
 			byte[] data = response.GetBuffer();
 
-			SocketError err;
+			EndPointDisconnectReason error;
 			TTransport socket = _socket;
-			if (!SynchronizedWrite(socket, data, responseLength, out err))
+			if (!SynchronizedWrite(socket, data, responseLength, out error))
 			{
-				Disconnect(connectionId, EndPointDisconnectReason.WriteFailure, err);
+				Disconnect(connectionId, error);
 			}
 		}
 
 		private bool HandleRequest(ConnectionId connectionId,
 		                           long rpcId,
 		                           BinaryReader reader,
-		                           out EndPointDisconnectReason? reason)
+		                           out EndPointDisconnectReason? disconnectReason)
 		{
 			ulong servantId = reader.ReadUInt64();
 			string typeName = reader.ReadString();
@@ -1315,7 +1322,7 @@ namespace SharpRemote
 				                                typeName,
 				                                methodName,
 				                                reader,
-				                                out reason);
+				                                out disconnectReason);
 			}
 
 			IProxy proxy;
@@ -1330,7 +1337,7 @@ namespace SharpRemote
 				                                typeName,
 				                                methodName,
 				                                reader,
-				                                out reason);
+				                                out disconnectReason);
 			}
 
 			//
@@ -1343,7 +1350,7 @@ namespace SharpRemote
 
 			HandleNoSuchServant(connectionId, rpcId, servantId, typeName, methodName, numServants, numProxies);
 
-			reason = null;
+			disconnectReason = null;
 			return true;
 		}
 
@@ -1383,8 +1390,8 @@ namespace SharpRemote
 		{
 			EndPoint remoteEndPoint = GetRemoteEndPointOf(socket);
 			var size = new byte[4];
-			SocketError err;
-			if (!SynchronizedRead(socket, size, timeout, out err))
+			EndPointDisconnectReason disconnectReason;
+			if (!SynchronizedRead(socket, size, timeout, out disconnectReason))
 			{
 				messageType = null;
 				message = null;
@@ -1396,7 +1403,7 @@ namespace SharpRemote
 						messageStep,
 						remoteEndPoint,
 						timeout.TotalSeconds,
-						err);
+						disconnectReason);
 				return false;
 			}
 
@@ -1411,7 +1418,7 @@ namespace SharpRemote
 			}
 
 			var buffer = new byte[length];
-			if (!SynchronizedRead(socket, buffer, timeout, out err))
+			if (!SynchronizedRead(socket, buffer, timeout, out disconnectReason))
 			{
 				messageType = null;
 				message = null;
@@ -1423,7 +1430,7 @@ namespace SharpRemote
 						messageStep,
 						remoteEndPoint,
 						timeout.TotalSeconds,
-						err);
+						disconnectReason);
 				return false;
 			}
 
@@ -1523,15 +1530,15 @@ namespace SharpRemote
 				PatchResponseMessageLength(stream, writer);
 				stream.Position = 0;
 
-				SocketError err;
-				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out err))
+				EndPointDisconnectReason disconnectReason;
+				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out disconnectReason))
 				{
 					error = string.Format("{0}: EndPoint '{1}' failed to send {2} to remote endpoint '{3}': {4}",
 					                      Name,
 					                      InternalLocalEndPoint,
 					                      messageType,
 					                      remoteEndPoint,
-					                      err);
+					                      disconnectReason);
 					return false;
 				}
 			}
@@ -1901,33 +1908,28 @@ namespace SharpRemote
 			TTransport socket = args.Socket;
 			CancellationToken token = args.Token;
 			ConnectionId currentConnectionId = args.ConnectionId;
-			SocketError? error = null;
 
-			EndPointDisconnectReason reason;
+			EndPointDisconnectReason disconnectReason;
 			try
 			{
 				while (true)
 				{
 					if (token.IsCancellationRequested)
 					{
-						reason = EndPointDisconnectReason.RequestedByEndPoint;
+						disconnectReason = EndPointDisconnectReason.RequestedByEndPoint;
 						break;
 					}
 
 					int messageLength;
 					byte[] message = _pendingMethodCalls.TakePendingWrite(out messageLength);
-
 					if (message == null)
 					{
-						reason = EndPointDisconnectReason.RequestedByEndPoint;
+						disconnectReason = EndPointDisconnectReason.RequestedByEndPoint;
 						break;
 					}
 
-					SocketError err;
-					if (!SynchronizedWrite(socket, message, messageLength, out err))
+					if (!SynchronizedWrite(socket, message, messageLength, out disconnectReason))
 					{
-						error = err;
-						reason = EndPointDisconnectReason.WriteFailure;
 						break;
 					}
 
@@ -1937,20 +1939,20 @@ namespace SharpRemote
 			}
 			catch (OperationCanceledException e)
 			{
-				reason = EndPointDisconnectReason.RequestedByEndPoint;
+				disconnectReason = EndPointDisconnectReason.RequestedByEndPoint;
 				Log.DebugFormat("{0}: Cancelling write loop due to: {1}",
 				                Name,
 				                e);
 			}
 			catch (Exception e)
 			{
-				reason = EndPointDisconnectReason.UnhandledException;
+				disconnectReason = EndPointDisconnectReason.UnhandledException;
 				Log.ErrorFormat("{0}: Caught exception while writing/handling messages: {1}",
 				                Name,
 				                e);
 			}
 
-			Disconnect(currentConnectionId, reason, error);
+			Disconnect(currentConnectionId, disconnectReason);
 		}
 
 		/// <summary>
@@ -1965,18 +1967,14 @@ namespace SharpRemote
 			ConnectionId connectionId = args.ConnectionId;
 
 			EndPointDisconnectReason reason;
-			SocketError? error = null;
 
 			try
 			{
 				var size = new byte[4];
 				while (true)
 				{
-					SocketError err;
-					if (!SynchronizedRead(socket, size, out err))
+					if (!SynchronizedRead(socket, size, out reason))
 					{
-						error = err;
-						reason = EndPointDisconnectReason.ReadFailure;
 						break;
 					}
 
@@ -1984,10 +1982,8 @@ namespace SharpRemote
 					if (length >= 8)
 					{
 						var buffer = new byte[length];
-						if (!SynchronizedRead(socket, buffer, out err))
+						if (!SynchronizedRead(socket, buffer, out reason))
 						{
-							error = err;
-							reason = EndPointDisconnectReason.ReadFailure;
 							break;
 						}
 
@@ -2037,7 +2033,7 @@ namespace SharpRemote
 				                e);
 			}
 
-			Disconnect(connectionId, reason, error);
+			Disconnect(connectionId, reason);
 		}
 
 		/// <summary>
@@ -2046,9 +2042,9 @@ namespace SharpRemote
 		/// <param name="socket"></param>
 		/// <param name="data"></param>
 		/// <param name="length"></param>
-		/// <param name="err"></param>
+		/// <param name="error"></param>
 		/// <returns></returns>
-		protected abstract bool SynchronizedWrite(TTransport socket, byte[] data, int length, out SocketError err);
+		protected abstract bool SynchronizedWrite(TTransport socket, byte[] data, int length, out EndPointDisconnectReason error);
 
 		/// <summary>
 		/// 
@@ -2056,18 +2052,18 @@ namespace SharpRemote
 		/// <param name="socket"></param>
 		/// <param name="buffer"></param>
 		/// <param name="timeout"></param>
-		/// <param name="err"></param>
+		/// <param name="error"></param>
 		/// <returns></returns>
-		protected abstract bool SynchronizedRead(TTransport socket, byte[] buffer, TimeSpan timeout, out SocketError err);
+		protected abstract bool SynchronizedRead(TTransport socket, byte[] buffer, TimeSpan timeout, out EndPointDisconnectReason error);
 
 		/// <summary>
 		/// 
 		/// </summary>
 		/// <param name="socket"></param>
 		/// <param name="buffer"></param>
-		/// <param name="err"></param>
+		/// <param name="error"></param>
 		/// <returns></returns>
-		protected abstract bool SynchronizedRead(TTransport socket, byte[] buffer, out SocketError err);
+		protected abstract bool SynchronizedRead(TTransport socket, byte[] buffer, out EndPointDisconnectReason error);
 
 		#endregion
 

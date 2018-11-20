@@ -195,7 +195,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 				WaitFor(() => resolution != null, TimeSpan.FromSeconds(1)).Should().BeTrue();
 				(failure == Failure.ConnectionFailure ||
-				 failure == Failure.HostProcessExited).Should().BeTrue();
+				 failure == Failure.HostProcessExited).Should().BeTrue("because we expected either a ConnectionFailure or HostProcessExited, but found: {0}", failure);
 				resolution.Should().Be(Resolution.Stopped);
 			}
 		}

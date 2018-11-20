@@ -97,8 +97,10 @@ namespace SharpRemote.SystemTest.ServiceDiscovery
 				{
 					services = _discoverer.FindServices(name);
 					services.Should().NotBeNull();
-					services.Select(x => x.EndPoint).Distinct().Count().Should().Be(expected: 2,
-						because: "Because we should've received responses for 2 different services, but over all possible adapters");
+					var endPoints = services.Select(x => x.EndPoint).Distinct().ToList();
+					endPoints.Count().Should().Be(2,
+						"Because we should've received responses for exactly 2 different services, but found: {0}",
+						string.Join(", ", endPoints));
 					services.Should().Contain(new Service(name, ep1, IPAddress.Loopback));
 
 					var service = services.First(x => !Equals(x.EndPoint, ep1));

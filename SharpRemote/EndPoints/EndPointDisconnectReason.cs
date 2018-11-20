@@ -53,8 +53,7 @@ namespace SharpRemote
 		///     The connection was reset by the remote peer.
 		/// </summary>
 		/// <remarks>
-		///     This error usually happens when the remote process exits unexpectedly without
-		///     properly disconnecting first.
+		///     This error usually happens when the remote process exits unexpectedly without properly disconnecting first.
 		/// </remarks>
 		ConnectionReset,
 

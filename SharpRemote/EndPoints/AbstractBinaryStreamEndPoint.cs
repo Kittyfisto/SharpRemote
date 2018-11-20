@@ -867,13 +867,13 @@ namespace SharpRemote
 					return "The connection was dropped because a response to a non-existant pending RPC was received.";
 
 				case EndPointDisconnectReason.UnhandledException:
-					return "The connection was dropped because an unexpected exception.";
+					return "The connection was dropped because an unexpected exception within SharpRemote. Please report the exception to the developer at https://github.com/Kittyfisto/SharpRemote/issues/new.";
 
 				case EndPointDisconnectReason.HeartbeatFailure:
-					return "The connection was dropped because the remote peer failed to respond to heartbeats in time";
+					return "The connection was dropped because the remote peer failed to respond to heartbeats in time (the remote peer might be too overwhelmed to respond or the connection has been interrupted)";
 
 				case EndPointDisconnectReason.ConnectionReset:
-					return "The connection was reset by the remote peer.";
+					return "The connection was reset by the remote peer (this is usually caused by the remote process exiting unexpectedly or crashing).";
 
 				case EndPointDisconnectReason.ConnectionAborted:
 					return "The connection was aborted by the underlying software on either this or the remote computer.";

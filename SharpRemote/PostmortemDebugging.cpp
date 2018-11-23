@@ -169,7 +169,7 @@ void CreateMinidumpFileName()
 	name << time.wMonth;
 
 	name << '.' << time.wYear;
-	name << L" - " << time.wHour << '_' << time.wMinute << '_' << time.wSecond;
+	name << L" - " << time.wHour << '_' << time.wMinute << '_' << time.wSecond << '.' << time.wMilliseconds;
 	name << L".dmp";
 	_minidumpFileName = name.str();
 

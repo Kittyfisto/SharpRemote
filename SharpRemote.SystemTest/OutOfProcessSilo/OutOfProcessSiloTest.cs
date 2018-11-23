@@ -83,12 +83,14 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		{
 			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
-				silo.IsProcessRunning.Should().BeFalse();
-				silo.HostProcessId.Should().NotHaveValue();
+				silo.IsProcessRunning.Should().BeFalse("because Start() hasn't been called yet");
+				silo.HostProcessId.Should().NotHaveValue("because Start() hasn't been called yet");
+				silo.IsConnected.Should().BeFalse("because Start() hasn't been called yet");
 
 				silo.Stop();
-				silo.IsProcessRunning.Should().BeFalse();
-				silo.HostProcessId.Should().NotHaveValue();
+				silo.IsProcessRunning.Should().BeFalse("because Start() hasn't been called yet");
+				silo.HostProcessId.Should().NotHaveValue("because Start() hasn't been called yet");
+				silo.IsConnected.Should().BeFalse("because Start() hasn't been called yet");
 			}
 		}
 
@@ -99,7 +101,8 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
 				silo.Start();
-				silo.IsProcessRunning.Should().BeTrue();
+				silo.IsProcessRunning.Should().BeTrue("because Start() has been called and the host should be running now");
+				silo.IsConnected.Should().BeTrue("because Start() has been called and the connection to the host should be running");
 				var pid = silo.HostProcessId;
 				pid.Should().HaveValue();
 				ProcessShouldBeRunning(pid.Value);
@@ -551,6 +554,46 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				rtt.Should().BeGreaterThan(TimeSpan.Zero);
 				rtt.Should().BeLessOrEqualTo(TimeSpan.FromMilliseconds(10));
 			}
+		}
+
+		[Test]
+		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/63")]
+		public void TestUseByReferenceTypeAfterRestart()
+		{
+			using (var logCollector = new LogCollector(new []{ "SharpRemote.EndPoints.ProxyStorage" }, new []{Level.Debug}))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: new RestartOnFailureStrategy()))
+			{
+				logCollector.AutoPrint(TestContext.Progress);
+				silo.Start();
+
+				var factory = silo.CreateGrain<IAdvancedFactory>(typeof(AdvancedFactory));
+				var proxyToByReferenceClass = factory.Create(typeof(ByReferenceClass));
+				var id = GetIdOf(proxyToByReferenceClass);
+				Console.WriteLine("ObjectId: {0}", id);
+
+				RestartHost(silo);
+
+				factory = silo.CreateGrain<IAdvancedFactory>(typeof(AdvancedFactory));
+				var proxyToObject = factory.Create(typeof(Handle));
+				var otherId = GetIdOf(proxyToObject);
+				Console.WriteLine("ObjectId: {0}", otherId);
+			}
+		}
+
+		private void RestartHost(SharpRemote.Hosting.OutOfProcessSilo silo)
+		{
+			var pid = silo.HostProcessId;
+			var process = Process.GetProcessById(pid.Value);
+			process.Kill();
+			silo.Property(x => x.IsProcessRunning).ShouldEventually().BeFalse();
+			silo.Property(x => x.IsProcessRunning).ShouldEventually().BeTrue();
+			silo.Property(x => x.IsConnected).ShouldEventually().BeTrue();
+		}
+
+		private object GetIdOf(object value)
+		{
+			var proxy = (IProxy) value;
+			return proxy.ObjectId;
 		}
 	}
 }

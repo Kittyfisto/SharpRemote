@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics.Contracts;
 
 namespace SharpRemote
 {
@@ -33,27 +34,36 @@ namespace SharpRemote
 		}
 
 		/// <summary>
-		///     Initializes this generator for the given endpoint type.
+		///    Returns the range of ObjectIds which may be used by the given endpoint.
+		///    Both server and client have completely distinct ranges.
 		/// </summary>
 		/// <param name="type"></param>
-		public GrainIdGenerator(EndPointType type)
+		/// <returns></returns>
+		[Pure]
+		public static GrainIdRange GetRangeFor(EndPointType type)
 		{
 			const ulong midPoint = (MaxValue - MinValue) / 2 + MinValue;
 
 			switch (type)
 			{
 				case EndPointType.Client:
-					_range = new GrainIdRange(MinValue, midPoint - 1);
-					break;
+					return new GrainIdRange(MinValue, midPoint - 1);
 
 				case EndPointType.Server:
-					_range = new GrainIdRange(midPoint, MaxValue);
-					break;
+					return new GrainIdRange(midPoint, MaxValue);
 
 				default:
-					throw new InvalidEnumArgumentException(nameof(type), (int) type, typeof(EndPointType));
+					throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(EndPointType));
 			}
+		}
 
+		/// <summary>
+		///     Initializes this generator for the given endpoint type.
+		/// </summary>
+		/// <param name="type"></param>
+		public GrainIdGenerator(EndPointType type)
+		{
+			_range = GetRangeFor(type);
 			_nextId = _range.Minimum;
 		}
 

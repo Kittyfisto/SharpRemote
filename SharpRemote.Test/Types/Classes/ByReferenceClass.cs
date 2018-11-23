@@ -7,7 +7,10 @@ namespace SharpRemote.Test.Types.Classes
 	{
 		private readonly int _value;
 
-		public ByReferenceClass(int value = 0)
+		public ByReferenceClass()
+		{ }
+
+		public ByReferenceClass(int value)
 		{
 			_value = value;
 		}

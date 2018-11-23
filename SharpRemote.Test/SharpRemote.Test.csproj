@@ -140,6 +140,7 @@
     <Compile Include="Types\Classes\BeforeSerializeCallbackWithParameters.cs" />
     <Compile Include="Types\Classes\ByReferenceAndDataContract.cs" />
     <Compile Include="Types\Classes\ByReferenceClass.cs" />
+    <Compile Include="Types\Classes\ByReferenceSealedType.cs" />
     <Compile Include="Types\Classes\CausesAccessViolation.cs" />
     <Compile Include="Types\Classes\CausesPurecall.cs" />
     <Compile Include="Types\Classes\CausesPureVirtualFunctionCall.cs" />
@@ -153,6 +154,7 @@
     <Compile Include="Types\Classes\GenericAfterSerializeCallback.cs" />
     <Compile Include="Types\Classes\GenericBeforeDeserializeCallback.cs" />
     <Compile Include="Types\Classes\GenericBeforeSerializeCallback.cs" />
+    <Compile Include="Types\Interfaces\IHandle.cs" />
     <Compile Include="Types\Classes\InheritedClass.cs" />
     <Compile Include="Types\Classes\ISingleton.cs" />
     <Compile Include="Types\Classes\NonPublicAfterDeserializeCallback.cs" />
@@ -188,7 +190,9 @@
     <Compile Include="Types\Enums\UInt32Enum.cs" />
     <Compile Include="Types\Enums\UInt64Enum.cs" />
     <Compile Include="Types\Exceptions\WellBehavedCustomException.cs" />
+    <Compile Include="Types\Interfaces\AdvancedFactory.cs" />
     <Compile Include="Types\Interfaces\IActionEventStringArray.cs" />
+    <Compile Include="Types\Interfaces\IAdvancedFactory.cs" />
     <Compile Include="Types\Interfaces\IByReferenceReturnMethodInterface.cs" />
     <Compile Include="Types\Interfaces\IByReferenceType.cs" />
     <Compile Include="CodeGeneration\Serialization\TypeLoaderTest.cs" />

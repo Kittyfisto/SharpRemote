@@ -154,6 +154,13 @@ namespace SharpRemote.Hosting
 		public bool IsProcessRunning => _process.IsProcessRunning;
 
 		/// <summary>
+		///     Returns true if the process managed by this silo is currently running and the connection to it is healthy,
+		///     false otherwise.
+		/// </summary>
+		[Pure]
+		public bool IsConnected => _endPoint.IsConnected;
+
+		/// <summary>
 		///     The process-id of the host process, or null, if it's not running.
 		/// </summary>
 		public int? HostProcessId => _process.HostedProcessId;

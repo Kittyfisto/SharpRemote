@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using log4net;
@@ -14,18 +15,19 @@ namespace SharpRemote.Test
 		, IDisposable
 	{
 		private readonly object _syncRoot;
-		private readonly string _namespace;
+		private readonly IReadOnlyList<string> _namespaces;
 		private readonly List<LoggingEvent> _events;
 		private readonly HashSet<Level> _levels;
+		private TextWriter _writer;
 
-		public LogCollector(string @namespace, params Level[] levels)
+		public LogCollector(string[] namespaces, Level[] levels)
 		{
 			_syncRoot = new object();
-			_namespace = @namespace;
+			_namespaces = namespaces;
 			_levels = new HashSet<Level>(levels);
 			_events = new List<LoggingEvent>();
 
-			Hierarchy h = (Hierarchy) LogManager.GetRepository();
+			Hierarchy h = (Hierarchy)LogManager.GetRepository();
 			h.Root.AddAppender(this);
 
 			if (_levels.Contains(Level.All))
@@ -45,6 +47,10 @@ namespace SharpRemote.Test
 
 			h.Configured = true;
 		}
+
+		public LogCollector(string @namespace, params Level[] levels)
+			: this (new[] { @namespace}, levels)
+		{}
 
 		public void Dispose()
 		{
@@ -84,7 +90,7 @@ namespace SharpRemote.Test
 
 		protected override void Append(LoggingEvent loggingEvent)
 		{
-			if (!loggingEvent.LoggerName.StartsWith(_namespace))
+			if (!IsNamespaceConfigured(loggingEvent))
 				return;
 
 			if (!_levels.Contains(loggingEvent.Level))
@@ -93,7 +99,24 @@ namespace SharpRemote.Test
 			lock (_syncRoot)
 			{
 				_events.Add(loggingEvent);
+				_writer?.WriteLine(loggingEvent.RenderedMessage);
 			}
+		}
+
+		private bool IsNamespaceConfigured(LoggingEvent loggingEvent)
+		{
+			foreach (var @namespace in _namespaces)
+			{
+				if (loggingEvent.LoggerName.StartsWith(@namespace))
+					return true;
+			}
+
+			return false;
+		}
+
+		public void AutoPrint(TextWriter writer)
+		{
+			_writer = writer;
 		}
 	}
 }

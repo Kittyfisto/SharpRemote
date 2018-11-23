@@ -7,6 +7,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -154,6 +155,7 @@ namespace SharpRemote
 		private readonly string _name;
 		private readonly object _syncRoot;
 		private readonly bool _waitUponReadWriteError;
+		private readonly EndPointType _type;
 
 		private EndPointDisconnectReason? _disconnectReason;
 		private bool _isDisposed;
@@ -197,6 +199,7 @@ namespace SharpRemote
 
 			_waitUponReadWriteError = waitUponReadWriteError;
 			_previousConnectionId = 0;
+			_type = type;
 			_name = name ?? "Unnamed";
 			_syncRoot = new object();
 
@@ -800,6 +803,7 @@ namespace SharpRemote
 					_pendingMethodCalls.CancelAllCalls();
 
 					ClearPendingMethodInvocations();
+					ClearTransientProxies();
 
 					// If we are disconnecting because of a failure, then we don't notify the other end
 					// and drop the connection immediately. Also there's no need to notify the other
@@ -909,6 +913,24 @@ namespace SharpRemote
 			lock (_pendingMethodInvocations)
 			{
 				_pendingMethodInvocations.Clear();
+			}
+		}
+
+		/// <summary>
+		/// Removes all those proxies which were created because the other endpoint
+		/// created (likely temporary) servants and sent them over the network.
+		/// </summary>
+		private void ClearTransientProxies()
+		{
+			try
+			{
+				var otherType = _type == EndPointType.Client ? EndPointType.Server : EndPointType.Client;
+				var range = GrainIdGenerator.GetRangeFor(otherType);
+				_proxies.RemoveProxiesInRange(range.Minimum, range.Maximum);
+			}
+			catch (Exception e)
+			{
+				Log.ErrorFormat("Unable to remove transient proxies: {0}", e);
 			}
 		}
 

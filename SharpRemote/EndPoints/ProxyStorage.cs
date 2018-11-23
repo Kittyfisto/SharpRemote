@@ -104,6 +104,9 @@ namespace SharpRemote.EndPoints
 				WeakReference<IProxy> grain;
 				if (!_proxiesById.TryGetValue(objectId, out grain))
 				{
+					if (Log.IsDebugEnabled)
+						Log.DebugFormat("{0}: Adding proxy '#{1}' of type '{2}'", _remotingEndPoint.Name, objectId, typeof(T).FullName);
+
 					// If the proxy doesn't exist, then we can simply create a new one...
 					var value = _codeGenerator.CreateProxy<T>(_remotingEndPoint, _endPointChannel, objectId);
 					grain = new WeakReference<IProxy>((IProxy) value);
@@ -113,16 +116,45 @@ namespace SharpRemote.EndPoints
 
 				if (!grain.TryGetTarget(out proxy))
 				{
+					if (Log.IsDebugEnabled)
+						Log.DebugFormat("{0}: Recreating proxy '#{1}' of type '{2}'", _remotingEndPoint.Name, objectId, typeof(T).FullName);
+
 					// It's possible that the proxy did exist at one point, then was collected by the GC, but
 					// our internal GC didn't have the time to remove that proxy from the dictionary yet, which
 					// means that we have to *replace* the existing weak-reference with a new, living one
 					var value = _codeGenerator.CreateProxy<T>(_remotingEndPoint, _endPointChannel, objectId);
-					grain = new WeakReference<IProxy>(proxy);
+					grain = new WeakReference<IProxy>((IProxy) value);
 					_proxiesById[objectId] = grain;
 					return value;
 				}
 
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat("{0}: Retrieving proxy '#{1}' of type '{2}'", _remotingEndPoint.Name, objectId, typeof(T).FullName);
+
 				return (T) proxy;
+			}
+		}
+
+		/// <summary>
+		/// Removies all proxies with ids in the given range.
+		/// </summary>
+		/// <param name="minimumId"></param>
+		/// <param name="maximumId"></param>
+		public void RemoveProxiesInRange(ulong minimumId, ulong maximumId)
+		{
+			lock (_syncRoot)
+			{
+				var keysToRemove = new List<ulong>();
+
+				foreach (var objectId in _proxiesById.Keys)
+				{
+					if (objectId >= minimumId && objectId <= maximumId)
+					{
+						keysToRemove.Add(objectId);
+					}
+				}
+
+				RemoveProxiesByKeys(keysToRemove);
 			}
 		}
 
@@ -130,34 +162,23 @@ namespace SharpRemote.EndPoints
 		{
 			lock (_syncRoot)
 			{
-				List<ulong> toRemove = null;
+				List<ulong> keysToRemove = null;
 
 				foreach (var pair in _proxiesById)
 				{
 					IProxy proxy;
 					if (!pair.Value.TryGetTarget(out proxy))
 					{
-						if (toRemove == null)
-							toRemove = new List<ulong>();
+						if (keysToRemove == null)
+							keysToRemove = new List<ulong>();
 
-						toRemove.Add(pair.Key);
+						keysToRemove.Add(pair.Key);
 					}
 				}
 
-				if (toRemove != null)
+				if (keysToRemove != null)
 				{
-					foreach (var key in toRemove)
-					{
-						if (Log.IsDebugEnabled)
-							Log.DebugFormat("{0}: Removing proxy '#{1}' from list of available proxies because it is no longer reachable (it has been garbage collected)",
-							                _remotingEndPoint.Name,
-							                key);
-
-						_proxiesById.Remove(key);
-					}
-
-					_numProxiesCollected += toRemove.Count;
-					return toRemove.Count;
+					return RemoveProxiesByKeys(keysToRemove);
 				}
 
 				return 0;
@@ -175,6 +196,26 @@ namespace SharpRemote.EndPoints
 				else
 					proxy = null;
 			}
+		}
+
+		private int RemoveProxiesByKeys(IReadOnlyCollection<ulong> keysToRemove)
+		{
+			foreach (var key in keysToRemove)
+			{
+				if (Log.IsDebugEnabled)
+					Log.DebugFormat(
+						"{0}: Removing proxy '#{1}' from list of available proxies because it is no longer reachable (it has been garbage collected)",
+						_remotingEndPoint.Name,
+						key);
+
+				_proxiesById.Remove(key);
+			}
+
+			_numProxiesCollected += keysToRemove.Count;
+
+			Log.DebugFormat("{0}: Removed {1} proxies in total", _remotingEndPoint.Name, keysToRemove.Count);
+
+			return keysToRemove.Count;
 		}
 	}
 }

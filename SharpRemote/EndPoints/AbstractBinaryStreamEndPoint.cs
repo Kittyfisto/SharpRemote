@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 using log4net;
 using SharpRemote.CodeGeneration;
 using SharpRemote.EndPoints;
-using SharpRemote.EndPoints.Sockets;
 using SharpRemote.Extensions;
 using SharpRemote.Tasks;
 using Debugger = SharpRemote.Diagnostics.Debugger;
@@ -255,7 +254,7 @@ namespace SharpRemote
 		/// </summary>
 		protected TTransport Socket
 		{
-			set { _socket = value; }
+			set => _socket = value;
 		}
 
 		/// <summary>
@@ -319,13 +318,7 @@ namespace SharpRemote
 		///     Returns all the proxies of this endpoint.
 		///     Used for testing.
 		/// </summary>
-		public IEnumerable<IProxy> Proxies
-		{
-			get
-			{
-				return _proxies.Proxies;
-			}
-		}
+		public IEnumerable<IProxy> Proxies => _proxies.Proxies;
 
 		/// <summary>
 		///     Returns all the servants of this endpoint.
@@ -417,7 +410,10 @@ namespace SharpRemote
 		/// <inheritdoc />
 		public ConnectionId CurrentConnectionId { get; protected set; }
 
-		/// <inheritdoc />
+		/// <summary>
+		///    The average roundtrip time of empty method calls between this and the remote
+		///    endpoint.
+		/// </summary>
 		public TimeSpan RoundtripTime
 		{
 			get

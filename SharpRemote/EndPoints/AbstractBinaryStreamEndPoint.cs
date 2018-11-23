@@ -254,7 +254,7 @@ namespace SharpRemote
 		/// </summary>
 		protected TTransport Socket
 		{
-			set => _socket = value;
+			set { _socket = value; }
 		}
 
 		/// <summary>

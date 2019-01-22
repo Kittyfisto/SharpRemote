@@ -16,6 +16,7 @@ namespace SharpRemote
 	{
 		private readonly FieldInfo _field;
 		private TypeDescription _fieldType;
+		private int? _fieldTypeId;
 
 		/// <summary>
 		/// 
@@ -50,7 +51,11 @@ namespace SharpRemote
 		///     The id of the <see cref="SharpRemote.TypeDescription" /> which describes the type of this field.
 		/// </summary>
 		[DataMember]
-		public int FieldTypeId { get; set; }
+		public int FieldTypeId
+		{
+			get { return _fieldTypeId ?? _fieldType?.Id ?? 0; }
+			set { _fieldTypeId = value; }
+		}
 
 		/// <summary>
 		///     The type of this field, equivalent of <see cref="FieldInfo.FieldType" />.
@@ -61,7 +66,12 @@ namespace SharpRemote
 			set
 			{
 				_fieldType = value;
-				FieldTypeId = value?.Id ?? -1;
+				if (value != null)
+				{
+					var id = value.Id;
+					if (id > 0)
+						_fieldTypeId = id;
+				}
 			}
 		}
 

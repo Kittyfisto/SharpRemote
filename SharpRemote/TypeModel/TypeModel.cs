@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using log4net;
 using SharpRemote.Attributes;
+using SharpRemote.CodeGeneration;
 
 // ReSharper disable once CheckNamespace
 namespace SharpRemote
@@ -35,12 +37,63 @@ namespace SharpRemote
 			_nextId = 1;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="typeResolver"></param>
+		public void TryResolveTypes(ITypeResolver typeResolver = null)
+		{
+			foreach (var typeDescription in _types)
+			{
+				if (typeDescription.Type == null)
+				{
+					try
+					{
+						var actualType = typeResolver != null
+							? typeResolver.GetType(typeDescription.AssemblyQualifiedName)
+							: TypeResolver.GetType(typeDescription.AssemblyQualifiedName);
+
+						typeDescription.Type = actualType;
+					}
+					catch (Exception e)
+					{
+						Log.WarnFormat("Unable to resolve type '{0}':\r\n{1}", typeDescription.AssemblyQualifiedName,
+							e);
+					}
+				}
+			}
+		}
+
 		/// <inheritdoc />
 		[DataMember]
 		public IReadOnlyList<TypeDescription> Types
 		{
 			get { return _types; }
 			set { _types = new List<TypeDescription>(value); }
+		}
+
+		/// <summary>
+		/// Returns the type description for the given type.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public ITypeDescription Get<T>()
+		{
+			return Get(typeof(T));
+		}
+
+		/// <summary>
+		/// Returns the type description for the given type.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		public ITypeDescription Get(Type type)
+		{
+			var description = _types.FirstOrDefault(x => x.Type == type);
+			if (description == null)
+				throw new ArgumentException(string.Format("This model doesn't contain type description for a type which has been resolved to: {0}", type.AssemblyQualifiedName));
+
+			return description;
 		}
 
 		/// <summary>
@@ -175,21 +228,93 @@ namespace SharpRemote
 
 				foreach (var type in _types)
 				{
-					foreach (var field in type.Fields)
-					{
-						TypeDescription fieldType;
-						if (typesById.TryGetValue(field.FieldTypeId, out fieldType))
-							field.FieldType = fieldType;
-					}
-
-					foreach (var property in type.Properties)
-					{
-						TypeDescription propertyType;
-						if (typesById.TryGetValue(property.PropertyTypeId, out propertyType))
-							property.PropertyType = propertyType;
-					}
+					FixBaseType(type, typesById);
+					FixGenericArguments(type, typesById);
+					FixFields(type, typesById);
+					FixProperties(type, typesById);
+					FixMethods(type, typesById);
 				}
 			}
+		}
+
+		private void FixBaseType(TypeDescription type, Dictionary<int, TypeDescription> typesById)
+		{
+			TypeDescription baseType;
+			if (typesById.TryGetValue(type.BaseTypeId, out baseType))
+				type.BaseType = baseType;
+			else
+				Log.WarnFormat("Unable to resolve the base type of '{0}'", type);
+		}
+
+		private static void FixMethods(TypeDescription type, Dictionary<int, TypeDescription> typesById)
+		{
+			foreach (var method in type.Methods)
+			{
+				TypeDescription returnType;
+				if (typesById.TryGetValue(method.ReturnParameter.ParameterTypeId, out returnType))
+					method.ReturnParameter.ParameterType = returnType;
+				else
+					Log.WarnFormat("Unable to resolve the type of parameter '{0}'", method.ReturnParameter);
+
+				foreach (var parameter in method.Parameters)
+				{
+					TypeDescription parameterType;
+					if (typesById.TryGetValue(parameter.ParameterTypeId, out parameterType))
+						parameter.ParameterType = parameterType;
+					else
+						Log.WarnFormat("Unable to resolve the type of parameter '{0}'", parameter);
+				}
+			}
+		}
+
+		private static void FixProperties(TypeDescription type, Dictionary<int, TypeDescription> typesById)
+		{
+			foreach (var property in type.Properties)
+			{
+				TypeDescription propertyType;
+				if (typesById.TryGetValue(property.PropertyTypeId, out propertyType))
+					property.PropertyType = propertyType;
+				else
+					Log.WarnFormat("Unable to resolve the type of property '{0}'", property);
+			}
+		}
+
+		private static void FixFields(TypeDescription type, Dictionary<int, TypeDescription> typesById)
+		{
+			foreach (var field in type.Fields)
+			{
+				TypeDescription fieldType;
+				if (typesById.TryGetValue(field.FieldTypeId, out fieldType))
+					field.FieldType = fieldType;
+				else
+					Log.WarnFormat("Unable to resolve the type of field '{0}'", field);
+			}
+		}
+
+		private static void FixGenericArguments(TypeDescription type, Dictionary<int, TypeDescription> typesById)
+		{
+			var genericArguments = new List<TypeDescription>();
+			foreach (var genericArgumentId in type.GenericArgumentTypeIds)
+			{
+				TypeDescription genericArgumentType;
+				if (typesById.TryGetValue(genericArgumentId, out genericArgumentType))
+					genericArguments.Add(genericArgumentType);
+			}
+
+			type.GenericArguments = genericArguments;
+		}
+
+		[Pure]
+		internal int GetId<T>()
+		{
+			return GetId(typeof(T));
+		}
+
+		[Pure]
+		internal int GetId(Type type)
+		{
+			var description = (TypeDescription)Get(type);
+			return description.Id;
 		}
 	}
 }

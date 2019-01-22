@@ -24,9 +24,11 @@ namespace SharpRemote
 		/// </summary>
 		private static readonly HashSet<Type> BuiltInTypes;
 
-		private readonly Type _type;
+		private Type _type;
 		private readonly Type _byReferenceInterfaceType;
 		private TypeDescription _baseType;
+		private int[] _genericArgumentIds;
+		private int _baseTypeId;
 
 		static TypeDescription()
 		{
@@ -60,7 +62,11 @@ namespace SharpRemote
 		/// <summary>
 		/// The type being described by this object.
 		/// </summary>
-		public Type Type => _type;
+		public Type Type
+		{
+			get => _type;
+			internal set => _type = value;
+		}
 
 		/// <summary>
 		/// The type being described by this object.
@@ -111,14 +117,27 @@ namespace SharpRemote
 		/// <summary>
 		/// 
 		/// </summary>
-		[DataMember]
-		public TypeDescription[] GenericArguments { get; set; }
+		public IReadOnlyList<TypeDescription> GenericArguments { get; set; }
 
 		/// <summary>
 		/// 
 		/// </summary>
 		[DataMember]
-		public int BaseTypeId { get; set; }
+		public int[] GenericArgumentTypeIds
+		{
+			get { return GenericArguments != null ? GenericArguments.Select(x => x.Id).ToArray() : _genericArgumentIds; }
+			set { _genericArgumentIds = value; }
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[DataMember]
+		public int BaseTypeId
+		{
+			get { return _baseType != null ? _baseType.Id : _baseTypeId;}
+			set { _baseTypeId = value; }
+		}
 
 		/// <summary>
 		///     Equivalent of <see cref="System.Type.BaseType" />.
@@ -129,7 +148,11 @@ namespace SharpRemote
 			set
 			{
 				_baseType = value;
-				BaseTypeId = value?.Id ?? 0;
+				if (value != null)
+				{
+					if (value.Id > 0)
+						_baseTypeId = value.Id;
+				}
 			}
 		}
 
@@ -231,7 +254,7 @@ namespace SharpRemote
 			MethodInfo singletonAccessor;
 			Type byReferenceInterface;
 			var serializerType = GetSerializationType(type,
-													  assumeByReference,
+			                                          assumeByReference,
 			                                          out builtIn,
 			                                          out isEnumerable,
 			                                          out singletonAccessor,
@@ -249,7 +272,6 @@ namespace SharpRemote
 			switch (description.SerializationType)
 			{
 				case SerializationType.ByValue:
-					// TODO: Throw when ByValue rules are violated
 					description.Fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
 					                         .Where(x => x.GetCustomAttribute<DataMemberAttribute>() != null)
 					                         .Select(x => FieldDescription.Create(x, typesByAssemblyQualifiedName)).ToArray();
@@ -314,11 +336,20 @@ namespace SharpRemote
 			if (type.IsGenericType)
 			{
 				var genericArguments = type.GetGenericArguments();
-				description.GenericArguments = new TypeDescription[genericArguments.Length];
+				var types = new TypeDescription[genericArguments.Length];
 				for (int i = 0; i < genericArguments.Length; ++i)
 				{
-					description.GenericArguments[i] = GetOrCreate(genericArguments[i], typesByAssemblyQualifiedName);
+					types[i] = GetOrCreate(genericArguments[i], typesByAssemblyQualifiedName);
 				}
+
+				description.GenericArguments = types;
+			}
+			else if (type.IsArray)
+			{
+				description.GenericArguments = new[]
+				{
+					GetOrCreate(type.GetElementType(), typesByAssemblyQualifiedName)
+				};
 			}
 			else
 			{
@@ -375,12 +406,12 @@ namespace SharpRemote
 		{
 			if (baseType == null)
 				return false;
-			if (baseType == typeof(object))
+			/*if (baseType == typeof(object))
 				return false;
 			if (baseType == typeof(ValueType))
 				return false;
 			if (baseType == typeof(Enum))
-				return false;
+				return false;*/
 			return true;
 		}
 

@@ -17,6 +17,7 @@ namespace SharpRemote
 	{
 		private readonly PropertyInfo _property;
 		private TypeDescription _propertyType;
+		private int? _propertyTypeId;
 
 		/// <summary>
 		/// 
@@ -75,7 +76,11 @@ namespace SharpRemote
 		///     The id of the <see cref="SharpRemote.TypeDescription" /> which describes the type of this property.
 		/// </summary>
 		[DataMember]
-		public int PropertyTypeId { get; set; }
+		public int PropertyTypeId
+		{
+			get { return _propertyTypeId ?? _propertyType?.Id ?? 0; }
+			set { _propertyTypeId = value; }
+		}
 
 		/// <summary>
 		///     The type of this property, equivalent of <see cref="PropertyInfo.PropertyType" />.
@@ -86,7 +91,12 @@ namespace SharpRemote
 			set
 			{
 				_propertyType = value;
-				PropertyTypeId = value?.Id ?? -1;
+				if (value != null)
+				{
+					var id = value.Id;
+					if (id > 0)
+						_propertyTypeId = id;
+				}
 			}
 		}
 

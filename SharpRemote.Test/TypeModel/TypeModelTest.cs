@@ -23,16 +23,6 @@ namespace SharpRemote.Test.TypeModel
 		}
 
 		[Test]
-		public void TestAddType1()
-		{
-			var model = new SharpRemote.TypeModel();
-			model.Add(typeof(void));
-			model.Types.Should().HaveCount(1);
-			var type = model.Types.First();
-			type.AssemblyQualifiedName.Should().Be(typeof(void).AssemblyQualifiedName);
-		}
-
-		[Test]
 		public void TestIReturnsTask()
 		{
 			var model = new SharpRemote.TypeModel();
@@ -132,11 +122,85 @@ namespace SharpRemote.Test.TypeModel
 		}
 
 		[Test]
+		public void TestAddVoid()
+		{
+			var model = new SharpRemote.TypeModel();
+			var description = model.Add(typeof(void));
+			description.Should().NotBeNull();
+			description.AssemblyQualifiedName.Should().Be(typeof(void).AssemblyQualifiedName);
+			((TypeDescription) description).Id.Should().BeGreaterThan(0);
+			model.GetId(typeof(void)).Should().Be(((TypeDescription) description).Id);
+			model.Types.Should().Contain((TypeDescription) description);
+		}
+
+		[Test]
+		[Description("Verifies that inheritance is correctly modeled for the int type")]
+		public void TestAddInt()
+		{
+			var model = new SharpRemote.TypeModel();
+			var intType = model.Add<int>();
+			intType.Should().NotBeNull();
+
+			var valueType = intType.BaseType;
+			valueType.Should().NotBeNull();
+			valueType.Type.Should().Be<ValueType>();
+
+			var objectType = valueType.BaseType;
+			objectType.Should().NotBeNull();
+			objectType.Type.Should().Be<object>();
+
+			((TypeDescription)intType).Id.Should().BeGreaterThan(0);
+			((TypeDescription)valueType).Id.Should().BeGreaterThan(0);
+			((TypeDescription)objectType).Id.Should().BeGreaterThan(0);
+
+			((TypeDescription)intType).BaseTypeId.Should().Be(((TypeDescription)valueType).Id);
+			((TypeDescription)valueType).BaseTypeId.Should().Be(((TypeDescription)objectType).Id);
+
+			model.Get<int>().Should().BeSameAs(intType);
+			model.Get<ValueType>().Should().BeSameAs(valueType);
+			model.Get<object>().Should().BeSameAs(objectType);
+		}
+
+		[Test]
+		public void TestAddIVoidMethodNoParameters()
+		{
+			var model = new SharpRemote.TypeModel();
+			var description = model.Add<IVoidMethodNoParameters>(assumeByReference: true);
+			description.Should().NotBeNull();
+			description.AssemblyQualifiedName.Should().Be(typeof(IVoidMethodNoParameters).AssemblyQualifiedName);
+			description.Methods.Should().HaveCount(1);
+
+			var method = description.Methods[0];
+			method.Should().NotBeNull();
+			method.Parameters.Should().HaveCount(0);
+
+			var returnParameter = method.ReturnParameter;
+			returnParameter.ParameterType.Should().NotBeNull();
+			returnParameter.ParameterType.Type.Should().Be(typeof(void));
+
+			model.Contains(typeof(void)).Should().BeTrue();
+			model.GetId(typeof(void)).Should().Be(((TypeDescription)returnParameter.ParameterType).Id);
+		}
+
+		[Test]
+		public void TestAddObject()
+		{
+			var model = new SharpRemote.TypeModel();
+			var description = model.Add<object>();
+			description.Should().NotBeNull();
+			description.AssemblyQualifiedName.Should().Be(typeof(object).AssemblyQualifiedName);
+
+			model.Types.Should().HaveCount(1);
+			model.Types.Should().Equal(new[] {description});
+		}
+
+		[Test]
 		public void TestBuiltInType([ValueSource(nameof(BuiltInTypes))] Type type)
 		{
 			var model = new SharpRemote.TypeModel();
 			var description = model.Add(type);
 			description.SerializationType.Should().Be(SerializationType.ByValue);
+			description.BaseType.Should().NotBeNull();
 			description.IsBuiltIn.Should().BeTrue();
 			description.IsClass.Should().Be(type.IsClass);
 			description.IsSealed.Should().Be(type.IsSealed);
@@ -425,20 +489,23 @@ namespace SharpRemote.Test.TypeModel
 			field1.FieldType.AssemblyQualifiedName.Should().Be(typeof(double).AssemblyQualifiedName);
 			field1.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
 			field1.FieldType.IsBuiltIn.Should().BeTrue();
+			((FieldDescription) field1).FieldTypeId.Should().Be(model.GetId<double>());
 
 			var field2 = type.Fields[1];
 			field2.Name.Should().Be(nameof(FieldStruct.B));
 			field2.FieldType.AssemblyQualifiedName.Should().Be(typeof(int).AssemblyQualifiedName);
 			field2.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
 			field2.FieldType.IsBuiltIn.Should().BeTrue();
+			((FieldDescription)field2).FieldTypeId.Should().Be(model.GetId<int>());
 
 			var field3 = type.Fields[2];
 			field3.Name.Should().Be(nameof(FieldStruct.C));
 			field3.FieldType.AssemblyQualifiedName.Should().Be(typeof(string).AssemblyQualifiedName);
 			field3.FieldType.SerializationType.Should().Be(SerializationType.ByValue);
 			field3.FieldType.IsBuiltIn.Should().BeTrue();
+			((FieldDescription)field3).FieldTypeId.Should().Be(model.GetId<string>());
 
-			model.Types.Should().BeEquivalentTo(new object[]
+			model.Types.Should().Contain(new object[]
 			{
 				type, //< FieldStruct
 				field1.FieldType, //< double
@@ -509,7 +576,7 @@ namespace SharpRemote.Test.TypeModel
 
 			type.BaseType.Should().NotBeNull();
 			type = type.BaseType;
-			type.BaseType.Should().BeNull("because the type model only concentrates the serializable aspect of types, something which the base type object doesn't have any impact on");
+			type.BaseType.Should().NotBeNull();
 			type.Properties.Should().HaveCount(1);
 			property = type.Properties[0];
 			property.Name.Should().Be("Value1");
@@ -518,6 +585,40 @@ namespace SharpRemote.Test.TypeModel
 			var field = type.Fields[0];
 			field.Name.Should().Be("Value2");
 			field.FieldType.AssemblyQualifiedName.Should().Be(typeof(bool).AssemblyQualifiedName);
+		}
+
+		[Test]
+		public void TestByteArray()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<byte[]>();
+			type.IsGenericType.Should().BeFalse("because arrays were invented before generics and therefore don't count as being generic");
+			type.Fields.Should().BeEmpty();
+			type.Properties.Should().BeEmpty();
+			type.Methods.Should().BeEmpty();
+			type.GenericArguments.Should().HaveCount(1);
+
+			var elementType = type.GenericArguments[0];
+			elementType.Should().NotBeNull();
+			elementType.AssemblyQualifiedName.Should().Be(typeof(byte).AssemblyQualifiedName);
+			elementType.Type.Should().Be<byte>();
+		}
+
+		[Test]
+		public void TestListString()
+		{
+			var model = new SharpRemote.TypeModel();
+			var type = model.Add<List<string>>();
+			type.IsGenericType.Should().BeTrue();
+			type.Fields.Should().BeEmpty();
+			type.Properties.Should().BeEmpty();
+			type.Methods.Should().BeEmpty();
+			type.GenericArguments.Should().HaveCount(1);
+
+			var elementType = type.GenericArguments[0];
+			elementType.Should().NotBeNull();
+			elementType.AssemblyQualifiedName.Should().Be(typeof(string).AssemblyQualifiedName);
+			elementType.Type.Should().Be<string>();
 		}
 
 		[Test]
@@ -550,7 +651,7 @@ namespace SharpRemote.Test.TypeModel
 			var type1 = model.Add<string>();
 			var type2 = model.Add<string>();
 			type2.Should().BeSameAs(type1);
-			model.Types.Should().HaveCount(1);
+			model.Types.Count(x => x.AssemblyQualifiedName == typeof(string).AssemblyQualifiedName).Should().Be(1);
 		}
 
 		[Test]

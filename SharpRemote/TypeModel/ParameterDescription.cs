@@ -14,12 +14,17 @@ namespace SharpRemote
 		: IParameterDescription
 	{
 		private TypeDescription _parameterType;
+		private int? _parameterTypeId;
 
 		/// <summary>
 		///     The id of the <see cref="ParameterType" />.
 		/// </summary>
 		[DataMember]
-		public int ParameterTypeId { get; set; }
+		public int ParameterTypeId
+		{
+			get { return _parameterTypeId ?? _parameterType?.Id ?? 0; }
+			set => _parameterTypeId = value;
+		}
 
 		/// <summary>
 		///     The equivalent of <see cref="ParameterInfo.ParameterType" />.
@@ -30,7 +35,12 @@ namespace SharpRemote
 			set
 			{
 				_parameterType = value;
-				ParameterTypeId = value?.Id ?? 0;
+				if (value != null)
+				{
+					var id = value.Id;
+					if (id > 0)
+						_parameterTypeId = id;
+				}
 			}
 		}
 

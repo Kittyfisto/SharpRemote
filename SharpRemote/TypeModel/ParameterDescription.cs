@@ -23,7 +23,7 @@ namespace SharpRemote
 		public int ParameterTypeId
 		{
 			get { return _parameterTypeId ?? _parameterType?.Id ?? 0; }
-			set => _parameterTypeId = value;
+			set { _parameterTypeId = value; }
 		}
 
 		/// <summary>
@@ -64,7 +64,10 @@ namespace SharpRemote
 		[DataMember]
 		public int Position { get; set; }
 
-		ITypeDescription IParameterDescription.ParameterType => _parameterType;
+		ITypeDescription IParameterDescription.ParameterType
+		{
+			get { return _parameterType; }
+		}
 
 		/// <inheritdoc />
 		public override string ToString()

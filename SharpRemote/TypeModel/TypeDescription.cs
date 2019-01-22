@@ -64,8 +64,8 @@ namespace SharpRemote
 		/// </summary>
 		public Type Type
 		{
-			get => _type;
-			internal set => _type = value;
+			get { return _type; }
+			internal set { _type = value; }
 		}
 
 		/// <summary>

@@ -77,7 +77,7 @@ namespace ConsoleApplication1
 		{
 			while (true)
 			{
-				something.Do();
+				something.DoStuff();
 				Thread.Sleep(100);
 			}
 		}

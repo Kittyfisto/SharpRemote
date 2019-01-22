@@ -774,7 +774,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			        .Returns((ulong objectId, string interfaceName, string methodName, Stream stream) =>
 				        {
 					        objectId.Should().Be(((IProxy) proxy).ObjectId);
-					        methodName.Should().Be("Do");
+					        methodName.Should().Be("DoStuff");
 					        stream.Should().NotBeNull();
 					        stream.Length.Should().Be(8);
 					        var reader = new BinaryReader(stream);
@@ -785,7 +785,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					        return null;
 				        });
 
-			proxy.Do(Math.PI);
+			proxy.DoStuff(Math.PI);
 			doCalled.Should().BeTrue();
 		}
 
@@ -852,7 +852,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			        .Returns((ulong objectId, string interfaceName, string methodName, Stream stream) =>
 				        {
 					        objectId.Should().Be(((IProxy) proxy).ObjectId);
-					        methodName.Should().Be("Do");
+					        methodName.Should().Be("DoStuff");
 					        stream.Should().NotBeNull();
 					        stream.Length.Should().Be(4);
 					        var reader = new BinaryReader(stream);
@@ -863,7 +863,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 					        return null;
 				        });
 
-			proxy.Do(-32);
+			proxy.DoStuff(-32);
 			doCalled.Should().BeTrue();
 		}
 

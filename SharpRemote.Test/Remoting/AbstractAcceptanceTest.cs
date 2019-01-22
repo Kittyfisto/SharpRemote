@@ -1116,7 +1116,7 @@ namespace SharpRemote.Test.Remoting
 		{
 			const ulong servantId = 34;
 			var proxy = _client.CreateProxy<IInt32Method>(servantId);
-			new Action(() => proxy.Do())
+			new Action(() => proxy.DoStuff())
 				.ShouldThrow<NoSuchServantException>();
 
 			const string reason =
@@ -1136,7 +1136,7 @@ namespace SharpRemote.Test.Remoting
 			var subject = new DoesNothing();
 			_server.CreateServant(servantId, (IVoidMethod) subject);
 
-			new Action(() => proxy.Do())
+			new Action(() => proxy.DoStuff())
 				.ShouldThrow<TypeMismatchException>();
 
 			const string reason =

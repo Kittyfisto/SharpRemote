@@ -11,7 +11,7 @@ namespace SharpRemote.Test.Types.Classes
 			get { return 42; }
 		}
 
-		public int Do()
+		public int DoStuff()
 		{
 			return 42;
 		}

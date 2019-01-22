@@ -96,5 +96,19 @@ namespace SharpRemote
 
 			return description;
 		}
+
+		internal IEnumerable<ITypeModelDifference> FindDifferences(ParameterDescription actualParameter)
+		{
+			var differences = new List<ITypeModelDifference>();
+			if (IsIn != actualParameter.IsIn)
+				differences.Add(new IncompatibleMethodSignature());
+			if (IsOut != actualParameter.IsOut)
+				differences.Add(new IncompatibleMethodSignature());
+			if (IsRetval != actualParameter.IsRetval)
+				differences.Add(new IncompatibleMethodSignature());
+			if (ParameterType.Type != actualParameter.ParameterType.Type)
+				differences.Add(new ParameterTypeMismatch(this, actualParameter));
+			return differences;
+		}
 	}
 }

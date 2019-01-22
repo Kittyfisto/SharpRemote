@@ -1,8 +1,8 @@
 ﻿namespace SharpRemote.Test.Types.Interfaces.PrimitiveTypes
 {
 	[ByReference]
-	public interface IVoidMethod
+	public interface INoMethod
 	{
-		void DoStuff();
+
 	}
 }

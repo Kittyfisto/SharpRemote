@@ -559,5 +559,53 @@ namespace SharpRemote
 
 			return false;
 		}
+
+		internal IEnumerable<ITypeModelDifference> FindDifferences(TypeDescription otherType)
+		{
+			if (SerializationType != otherType.SerializationType)
+				return new[]
+					{new SerializationTypeChanged(otherType.AssemblyQualifiedName, SerializationType, otherType.SerializationType)};
+
+			switch (SerializationType)
+			{
+				case SerializationType.ByReference:
+					return FindByReferenceDifferences(otherType);
+
+				case SerializationType.ByValue:
+					return FindByValueDifferences(otherType);
+
+				case SerializationType.Singleton:
+					return FindSingletonDifferences(otherType);
+
+				default:
+					throw new NotImplementedException();
+			}
+		}
+
+		private IEnumerable<ITypeModelDifference> FindByReferenceDifferences(TypeDescription otherType)
+		{
+			var differences = new List<ITypeModelDifference>();
+
+			foreach (var expectedMethod in Methods)
+			{
+				var actualMethod = otherType.Methods.FirstOrDefault(x => x.Name == expectedMethod.Name);
+				if (actualMethod != null)
+					differences.AddRange(expectedMethod.FindDifferences(actualMethod));
+				else
+					differences.Add(new MissingMethod(otherType, expectedMethod));
+			}
+
+			return differences;
+		}
+
+		private IEnumerable<ITypeModelDifference> FindByValueDifferences(TypeDescription otherType)
+		{
+			throw new NotImplementedException();
+		}
+
+		private IEnumerable<ITypeModelDifference> FindSingletonDifferences(TypeDescription otherType)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

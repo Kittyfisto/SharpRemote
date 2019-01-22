@@ -197,5 +197,25 @@ namespace SharpRemote
 			specialMethod = SpecialMethod.None;
 			return false;
 		}
+
+		internal IEnumerable<ITypeModelDifference> FindDifferences(MethodDescription actualMethod)
+		{
+			var differences = new List<ITypeModelDifference>();
+			differences.AddRange(ReturnParameter.FindDifferences(actualMethod.ReturnParameter));
+			if (Parameters.Length != actualMethod.Parameters.Length)
+			{
+				differences.Add(new ParameterCountMismatch(this, actualMethod));
+			}
+			else
+			{
+				for (int i = 0; i < Parameters.Length; ++i)
+				{
+					var expectedParameter = Parameters[i];
+					var actualParameter = actualMethod.Parameters[i];
+					differences.AddRange(expectedParameter.FindDifferences(actualParameter));
+				}
+			}
+			return differences;
+		}
 	}
 }

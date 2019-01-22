@@ -2,8 +2,9 @@
 
 namespace SharpRemote.Test.Types.Interfaces.PrimitiveTypes
 {
+	[ByReference]
 	public interface IVoidMethodInt32Parameter
 	{
-		void Do(Int32 value);
+		void DoStuff(Int32 value);
 	}
 }

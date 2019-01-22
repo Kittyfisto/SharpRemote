@@ -45,21 +45,18 @@ namespace SharpRemote
 		{
 			foreach (var typeDescription in _types)
 			{
-				if (typeDescription.Type == null)
+				try
 				{
-					try
-					{
-						var actualType = typeResolver != null
-							? typeResolver.GetType(typeDescription.AssemblyQualifiedName)
-							: TypeResolver.GetType(typeDescription.AssemblyQualifiedName);
+					var actualType = typeResolver != null
+						? typeResolver.GetType(typeDescription.AssemblyQualifiedName)
+						: TypeResolver.GetType(typeDescription.AssemblyQualifiedName);
 
-						typeDescription.Type = actualType;
-					}
-					catch (Exception e)
-					{
-						Log.WarnFormat("Unable to resolve type '{0}':\r\n{1}", typeDescription.AssemblyQualifiedName,
-							e);
-					}
+					typeDescription.Type = actualType;
+				}
+				catch (Exception e)
+				{
+					Log.WarnFormat("Unable to resolve type '{0}':\r\n{1}", typeDescription.AssemblyQualifiedName,
+					               e);
 				}
 			}
 		}
@@ -315,6 +312,26 @@ namespace SharpRemote
 		{
 			var description = (TypeDescription)Get(type);
 			return description.Id;
+		}
+
+		internal IReadOnlyList<ITypeModelDifference> FindDifferences(TypeModel otherTypeModel)
+		{
+			var differences = new List<ITypeModelDifference>();
+
+			foreach (var type in _types)
+			{
+				var otherType = otherTypeModel.Types.FirstOrDefault(x => x.Type == type.Type);
+				if (otherType != null)
+				{
+					differences.AddRange(type.FindDifferences(otherType));
+				}
+				else
+				{
+					differences.Add(new MissingType(type));
+				}
+			}
+
+			return differences;
 		}
 	}
 }

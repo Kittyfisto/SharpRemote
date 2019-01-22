@@ -65,7 +65,7 @@ namespace SharpRemote.Test.TypeModel
 			type.SerializationType.Should().Be(SerializationType.ByReference);
 			type.Methods.Should().HaveCount(1);
 			var method = type.Methods[0];
-			method.Name.Should().Be(nameof(IInt32Method.Do));
+			method.Name.Should().Be(nameof(IInt32Method.DoStuff));
 			method.IsAsync.Should().BeFalse();
 			method.Parameters.Should().BeEmpty();
 			method.ReturnType.Type.Should().Be<int>();

@@ -430,18 +430,18 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 		public void TestIInt32MethodFallback()
 		{
 			var subject = new Mock<IInt32Method>();
-			subject.Setup(x => x.Do()).Returns(1337);
+			subject.Setup(x => x.DoStuff()).Returns(1337);
 			var fallback = new Mock<IInt32Method>();
-			fallback.Setup(x => x.Do()).Returns(42);
+			fallback.Setup(x => x.DoStuff()).Returns(42);
 
 			var creator = Create();
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithFallbackTo(fallback.Object)
 			                   .Create();
-			proxy.Do().Should().Be(1337);
+			proxy.DoStuff().Should().Be(1337);
 
-			subject.Setup(x => x.Do()).Throws<NullReferenceException>();
-			proxy.Do().Should().Be(42);
+			subject.Setup(x => x.DoStuff()).Throws<NullReferenceException>();
+			proxy.DoStuff().Should().Be(42);
 		}
 
 		[Test]
@@ -511,17 +511,17 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 		public void TestIInt32MethodDefaultFallback()
 		{
 			var subject = new Mock<IInt32Method>();
-			subject.Setup(x => x.Do()).Returns(32412);
+			subject.Setup(x => x.DoStuff()).Returns(32412);
 
 			var creator = Create();
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithDefaultFallback()
 			                   .Create();
 
-			proxy.Do().Should().Be(32412);
+			proxy.DoStuff().Should().Be(32412);
 
-			subject.Setup(x => x.Do()).Throws<ArithmeticException>();
-			proxy.Do().Should().Be(0);
+			subject.Setup(x => x.DoStuff()).Throws<ArithmeticException>();
+			proxy.DoStuff().Should().Be(0);
 		}
 
 		[Test]

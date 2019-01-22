@@ -161,6 +161,8 @@
     <Compile Include="Sockets\ISocket.cs" />
     <Compile Include="Sockets\Socket2.cs" />
     <Compile Include="TimespanStatisticsContainer.cs" />
+    <Compile Include="TypeModel\Differences\ParameterTypeMismatch.cs" />
+    <Compile Include="TypeModel\Differences\ParameterCountMismatch.cs" />
     <Compile Include="TypeModel\EnumValueDescription.cs" />
     <Compile Include="TypeModel\FieldDescription.cs" />
     <Compile Include="PendingMethodsQueue2.cs" />
@@ -176,10 +178,15 @@
     <Compile Include="TypeModel\IFieldDescription.cs" />
     <Compile Include="TypeModel\IMemberDescription.cs" />
     <Compile Include="TypeModel\IMethodDescription.cs" />
+    <Compile Include="TypeModel\Differences\IncompatibleMethodSignature.cs" />
     <Compile Include="TypeModel\IParameterDescription.cs" />
     <Compile Include="TypeModel\IPropertyDescription.cs" />
     <Compile Include="TypeModel\ITypeDescription.cs" />
     <Compile Include="TypeModel\ITypeModel.cs" />
+    <Compile Include="TypeModel\Differences\MissingMethod.cs" />
+    <Compile Include="TypeModel\Differences\ITypeModelDifference.cs" />
+    <Compile Include="TypeModel\Differences\MissingValueType.cs" />
+    <Compile Include="TypeModel\Differences\MissingType.cs" />
     <Compile Include="TypeModel\ParameterDescription.cs" />
     <Compile Include="TypeModel\PropertyDescription.cs" />
     <Compile Include="SerializationType.cs" />
@@ -280,6 +287,7 @@
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Clock\ITimer.cs" />
     <Compile Include="TypeModel\MethodDescription.cs" />
+    <Compile Include="TypeModel\Differences\SerializationTypeChanged.cs" />
     <Compile Include="TypeModel\SpecialMethod.cs" />
     <Compile Include="TypeModel\TypeDescription.cs" />
     <Compile Include="TypeInformation.cs" />
@@ -303,6 +311,7 @@
     <Compile Include="CodeGeneration\Remoting\RemotingProxyCreator.cs" />
     <Compile Include="TypeModel\TypeId.cs" />
     <Compile Include="TypeModel\TypeModel.cs" />
+    <Compile Include="TypeModel\TypeModelComparer.cs" />
     <Compile Include="Watchdog\ApplicationDescriptor.cs" />
     <Compile Include="Watchdog\ApplicationInstaller.cs" />
     <Compile Include="Watchdog\ApplicationInstanceDescription.cs" />

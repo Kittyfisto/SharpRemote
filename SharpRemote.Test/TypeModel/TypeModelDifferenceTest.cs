@@ -89,7 +89,8 @@ namespace SharpRemote.Test.TypeModel
 
 			public Type GetType(string assemblyQualifiedTypeName)
 			{
-				if (_types.TryGetValue(assemblyQualifiedTypeName, out var type))
+				Type type;
+				if (_types.TryGetValue(assemblyQualifiedTypeName, out type))
 					return type;
 
 				return TypeResolver.GetType(assemblyQualifiedTypeName);

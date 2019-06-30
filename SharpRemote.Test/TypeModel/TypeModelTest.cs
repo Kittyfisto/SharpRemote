@@ -4,7 +4,9 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Test.Types.Structs;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
+using log4net.Core;
 using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Enums;
 using SharpRemote.Test.Types.Interfaces;
@@ -103,9 +105,17 @@ namespace SharpRemote.Test.TypeModel
 			typeof(float),
 			typeof(double),
 			typeof(string),
-			typeof(decimal)
+			typeof(decimal),
+			typeof(DateTime),
+			typeof(DateTimeOffset),
+			typeof(TimeSpan),
+			typeof(Uri),
+			typeof(IPAddress),
+			typeof(Version),
+			typeof(Guid),
+			typeof(Level)
 			// TODO: Add all other built in types
-			// typeof(IpAddress)
+			// 
 		};
 
 		[Test]

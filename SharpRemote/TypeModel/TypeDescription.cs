@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Runtime.Serialization;
 using log4net.Core;
@@ -38,6 +39,12 @@ namespace SharpRemote
 				typeof(string),
 				typeof(decimal),
 				typeof(DateTime),
+				typeof(DateTimeOffset),
+				typeof(TimeSpan),
+				typeof(Uri),
+				typeof(IPAddress),
+				typeof(Version),
+				typeof(Guid),
 				typeof(Level)
 			};
 		}

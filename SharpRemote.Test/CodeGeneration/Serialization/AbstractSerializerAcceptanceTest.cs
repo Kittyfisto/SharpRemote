@@ -118,6 +118,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			}
 		};
 
+		public static IEnumerable<Version> VersionValues => new Version[]
+		{
+			null,
+			new Version(),
+			new Version(1, 0),
+			new Version(1, 2, 3),
+			new Version(2019, 2, 1337),
+			new Version(4, 3, 2, 1),
+		};
+
 		#region Method Call Roundtrips
 
 		[Test]
@@ -219,6 +229,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 
 		[Test]
 		public void TestMethodCallObjectDateTime([ValueSource(nameof(DateTimeValues))] DateTime value)
+		{
+			MethodCallRoundtripObject(value);
+		}
+
+		[Test]
+		[Ignore("Not yet implemented")]
+		public void TestMethodCallObjectValue([ValueSource(nameof(VersionValues))] Version value)
 		{
 			MethodCallRoundtripObject(value);
 		}

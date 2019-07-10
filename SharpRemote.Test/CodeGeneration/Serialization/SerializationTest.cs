@@ -45,6 +45,16 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			Level.Log4Net_Debug
 		};
 
+		public static IEnumerable<Version> VersionValues => new Version[]
+		{
+			null,
+			new Version(),
+			new Version(1, 0),
+			new Version(1, 2, 3),
+			new Version(2019, 2, 1337),
+			new Version(4, 3, 2, 1),
+		};
+
 		[Test]
 		public void TestBinaryTree()
 		{
@@ -295,6 +305,15 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var actualLevel = _serializer.Roundtrip(level);
 			actualLevel.Should().NotBeNull();
 			actualLevel.Should().Be(level);
+		}
+
+		[Test]
+		public void TestVersion([ValueSource(nameof(VersionValues))] Version version)
+		{
+			_serializer.RegisterType<Version>();
+
+			var actualLevel = _serializer.Roundtrip(version);
+			actualLevel.Should().Be(version);
 		}
 
 		[Test]

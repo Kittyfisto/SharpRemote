@@ -241,7 +241,6 @@
     <Compile Include="EndPoints\LatencySettings.cs" />
     <Compile Include="Exceptions\GrainIdRangeExhaustedException.cs" />
     <Compile Include="Hosting\OutOfProcess\OutOfProcessSiloServer.cs" />
-    <Compile Include="Hosting\PostMortemSettings.cs" />
     <Compile Include="Hosting\ProcessFailureReason.cs" />
     <Compile Include="Hosting\ProcessWatchdog.cs" />
     <Compile Include="ServiceDiscovery\Message.cs" />

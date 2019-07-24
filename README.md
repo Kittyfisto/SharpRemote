@@ -1,6 +1,7 @@
 # SharpRemote
 
 [![Build status](https://ci.appveyor.com/api/projects/status/e4s3he430y1a27cb?svg=true)](https://ci.appveyor.com/project/Kittyfisto/sharpremote)
+![AppVeyor tests](https://img.shields.io/appveyor/tests/Kittyfisto/sharpremote.svg?color=%234CC61E)
 [![NuGet](https://img.shields.io/nuget/dt/sharpremote.svg)](http://nuget.org/packages/sharpremote)
 [![NuGet](https://img.shields.io/nuget/v/sharpremote.svg)](http://nuget.org/packages/sharpremote)
 

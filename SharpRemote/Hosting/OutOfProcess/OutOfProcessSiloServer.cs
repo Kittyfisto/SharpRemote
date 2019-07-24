@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 using log4net;
 using SharpRemote.CodeGeneration;
@@ -48,7 +47,6 @@ namespace SharpRemote.Hosting
 
 		private readonly Process _parentProcess;
 		private readonly int? _parentProcessId;
-		private readonly PostMortemSettings _postMortemSettings;
 		private readonly DefaultImplementationRegistry _registry;
 		private readonly ManualResetEvent _waitHandle;
 
@@ -58,12 +56,6 @@ namespace SharpRemote.Hosting
 		/// <param name="args">The command line arguments given to the Main() method</param>
 		/// <param name="customTypeResolver">The type resolver, if any, responsible for resolving Type objects by their assembly qualified name</param>
 		/// <param name="codeGenerator">The code generator to create proxy and servant types</param>
-		/// <param name="postMortemSettings">
-		///     Settings to control how and if minidumps are collected - when set to null, default values are used (
-		///     <see
-		///         cref="PostMortemSettings" />
-		///     )
-		/// </param>
 		/// <param name="heartbeatSettings">The settings for heartbeat mechanism, if none are specified, then default settings are used</param>
 		/// <param name="latencySettings">The settings for latency measurements, if none are specified, then default settings are used</param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
@@ -71,17 +63,11 @@ namespace SharpRemote.Hosting
 		public OutOfProcessSiloServer(string[] args,
 		                              ITypeResolver customTypeResolver = null,
 		                              ICodeGenerator codeGenerator = null,
-		                              PostMortemSettings postMortemSettings = null,
 		                              HeartbeatSettings heartbeatSettings = null,
 		                              LatencySettings latencySettings = null,
 		                              EndPointSettings endPointSettings = null,
 		                              string endPointName = null)
 		{
-			if (postMortemSettings != null && !postMortemSettings.IsValid)
-			{
-				throw new ArgumentException("postMortemSettings");
-			}
-
 			Log.InfoFormat("Silo Server starting, args ({0}): \"{1}\", {2} custom type resolver",
 			               args.Length,
 			               string.Join(" ", args),
@@ -102,82 +88,9 @@ namespace SharpRemote.Hosting
 				Log.DebugFormat("Args.Length: {0}", args.Length);
 			}
 
-			if (args.Length >= 10)
-			{
-				if (postMortemSettings != null)
-				{
-					Log.Info("Ignoring post-mortem settings specified from the command-line");
-				}
-				else
-				{
-					var settings = new PostMortemSettings();
-					bool.TryParse(args[1], out settings.CollectMinidumps);
-					bool.TryParse(args[2], out settings.SuppressErrorWindows);
-					bool.TryParse(args[3], out settings.HandleAccessViolations);
-					bool.TryParse(args[4], out settings.HandleCrtAsserts);
-					bool.TryParse(args[5], out settings.HandleCrtPureVirtualFunctionCalls);
-					int tmp;
-					int.TryParse(args[6], out tmp);
-					settings.RuntimeVersions = (CRuntimeVersions) tmp;
-					int.TryParse(args[7], out settings.NumMinidumpsRetained);
-					settings.MinidumpFolder = args[8];
-					settings.MinidumpName = args[9];
-
-					if (!settings.IsValid)
-					{
-						Log.ErrorFormat("Received invalid post-mortem debugger settings: {0}", settings);
-					}
-					else
-					{
-						postMortemSettings = settings;
-					}
-				}
-			}
-
 			_registry = new DefaultImplementationRegistry();
 			_waitHandle = new ManualResetEvent(false);
 			_customTypeResolver = customTypeResolver;
-
-			_postMortemSettings = postMortemSettings;
-			if (_postMortemSettings != null)
-			{
-				Log.InfoFormat("Using post-mortem debugger: {0}", _postMortemSettings);
-
-				if (!NativeMethods.LoadPostmortemDebugger())
-				{
-					int err = Marshal.GetLastWin32Error();
-					Log.ErrorFormat("Unable to load the post-mortem debugger dll: {0}",
-									err);
-				}
-
-				if (_postMortemSettings.LogFileName != null)
-				{
-					NativeMethods.EnableLogging(_postMortemSettings.LogFileName);
-				}
-
-				if (_postMortemSettings.CollectMinidumps)
-				{
-					if (NativeMethods.InitDumpCollection(_postMortemSettings.NumMinidumpsRetained,
-					                        _postMortemSettings.MinidumpFolder,
-					                        _postMortemSettings.MinidumpName))
-					{
-						Log.InfoFormat("Installed post-mortem debugger; up to {0} mini dumps will automatically be saved to: {1}",
-									   _postMortemSettings.NumMinidumpsRetained,
-									   _postMortemSettings.MinidumpFolder
-							);
-					}
-				}
-				else
-				{
-					Log.DebugFormat("Collecting minidumps is not enabled, if this process crashes, then NO dump will be collected");
-				}
-
-				NativeMethods.InstallPostmortemDebugger(_postMortemSettings.SuppressErrorWindows,
-				                                        _postMortemSettings.HandleAccessViolations,
-				                                        _postMortemSettings.HandleCrtAsserts,
-				                                        _postMortemSettings.HandleCrtPureVirtualFunctionCalls,
-				                                        _postMortemSettings.RuntimeVersions);
-			}
 
 			_endPoint = new SocketEndPoint(EndPointType.Server,
 				endPointName,
@@ -206,12 +119,6 @@ namespace SharpRemote.Hosting
 		{
 			OnConnected?.Invoke(remoteEndPoint, connectionId);
 		}
-
-		/// <summary>
-		/// The settings that were used to configure this server's behaviour in case of unexpected
-		/// (mostly native) faults.
-		/// </summary>
-		public PostMortemSettings PostMortemSettings => _postMortemSettings;
 
 		/// <summary>
 		///     The process id of the parent process, as specified in the command line arguments or null

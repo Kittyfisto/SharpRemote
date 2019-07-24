@@ -2,8 +2,6 @@
 using System.IO.Pipes;
 using System.Threading;
 using System.Threading.Tasks;
-using SharpRemote;
-using SharpRemote.Hosting;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
 
 namespace ConsoleApplication1
@@ -12,11 +10,6 @@ namespace ConsoleApplication1
 	{
 		private static void Main(string[] args)
 		{
-			NativeMethods.LoadPostmortemDebugger();
-			NativeMethods.EnableLogging(@"C:\Postmortem.log");
-			NativeMethods.InstallPostmortemDebugger(true, true, true, true,
-				CRuntimeVersions._141 | CRuntimeVersions.Release);
-
 			/*
 			//Client
 			var client = new NamedPipeClientStream("PipesOfPiece");

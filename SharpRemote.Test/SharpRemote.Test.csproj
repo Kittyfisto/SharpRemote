@@ -101,7 +101,6 @@
     <Compile Include="Extensions\ProcessExtensionsTest.cs" />
     <Compile Include="Exceptions\RemoteEndpointAlreadyConnectedExceptionTest.cs" />
     <Compile Include="Hosting\OutOfProcess\FailureHandlerMock.cs" />
-    <Compile Include="Hosting\PostMortemSettingsTest.cs" />
     <Compile Include="LogCollector.cs" />
     <Compile Include="Remoting\Sockets\Socket2Test.cs" />
     <Compile Include="Remoting\Sockets\SocketServerTest.cs" />
@@ -145,12 +144,9 @@
     <Compile Include="Types\Classes\ByReferenceClass.cs" />
     <Compile Include="Types\Classes\ByReferenceSealedType.cs" />
     <Compile Include="Types\Classes\CausesAccessViolation.cs" />
-    <Compile Include="Types\Classes\CausesPurecall.cs" />
-    <Compile Include="Types\Classes\CausesPureVirtualFunctionCall.cs" />
     <Compile Include="Types\Classes\ClassWithAfterDeserializeCallback.cs" />
     <Compile Include="Types\Classes\ClassWithBeforeSerializeCallback.cs" />
     <Compile Include="Types\Classes\ClassWithNullableTimeSpan.cs" />
-    <Compile Include="Types\Classes\CausesAssert.cs" />
     <Compile Include="Types\Classes\ClassWithSerializationCallbacks.cs" />
     <Compile Include="Types\Classes\DoesNothing.cs" />
     <Compile Include="Types\Classes\GenericAfterDeserializeCallback.cs" />
@@ -352,7 +348,6 @@
     <Compile Include="WebApi\Routes\RouteTest.cs" />
     <Compile Include="WebApi\Routes\RouteTokenTest.cs" />
     <Compile Include="WebApi\WebApiControllerTest.cs" />
-    <Compile Include="_NativeMethodsTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">

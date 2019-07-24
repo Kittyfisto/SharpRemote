@@ -25,7 +25,6 @@ namespace SharpRemote.Hosting
 
 		private readonly int _parentPid;
 
-		private readonly PostMortemSettings _postMortemSettings;
 		private readonly ProcessStartInfo _startInfo;
 		private readonly object _syncRoot;
 		private readonly ManualResetEvent _waitHandle;
@@ -49,7 +48,6 @@ namespace SharpRemote.Hosting
 		/// </summary>
 		/// <param name="executable"></param>
 		/// <param name="options"></param>
-		/// <param name="postMortemSettings">The settings for the post mortem debugger of the host process, if none are specified then no post mortem debugging is performed</param>
 		/// <param name="processReadyTimeout">The amount of time the host process has to report being ready before it is assumed to be dead</param>
 		/// <exception cref="ArgumentNullException">
 		///     When <paramref name="executable" /> is null
@@ -60,30 +58,11 @@ namespace SharpRemote.Hosting
 		public ProcessWatchdog(
 			string executable = SharpRemoteHost,
 			ProcessOptions options = ProcessOptions.HideConsole,
-			PostMortemSettings postMortemSettings = null,
 			TimeSpan? processReadyTimeout = null
 			)
 		{
 			if (executable == null) throw new ArgumentNullException(nameof(executable));
 			if (string.IsNullOrWhiteSpace(executable)) throw new ArgumentException("executable");
-			if (postMortemSettings != null && !postMortemSettings.IsValid)
-				throw new ArgumentException("postMortemSettings");
-
-			if (postMortemSettings != null)
-			{
-				_postMortemSettings = postMortemSettings.Clone();
-				if (_postMortemSettings.MinidumpFolder != null)
-				{
-					_postMortemSettings.MinidumpFolder = _postMortemSettings.MinidumpFolder.Replace('/', '\\');
-					if (!_postMortemSettings.MinidumpFolder.EndsWith("\\"))
-						_postMortemSettings.MinidumpFolder += '\\';
-				}
-
-				if (_postMortemSettings.LogFileName != null)
-				{
-					Log.WarnFormat("Ignoring PostMortemSettings.LogFileName={0}, currently this can be only specified via OutOfProcessSiloServer", _postMortemSettings.LogFileName);
-				}
-			}
 
 			_processReadyTimeout = processReadyTimeout ?? new FailureSettings().ProcessReadyTimeout;
 			_waitHandle = new ManualResetEvent(false);
@@ -93,7 +72,7 @@ namespace SharpRemote.Hosting
 			_parentPid = Process.GetCurrentProcess().Id;
 			_startInfo = new ProcessStartInfo(executable)
 				{
-					Arguments = FormatArguments(_parentPid, _postMortemSettings),
+					Arguments = FormatArguments(_parentPid),
 					RedirectStandardOutput = true,
 					UseShellExecute = false
 				};
@@ -364,31 +343,10 @@ namespace SharpRemote.Hosting
 		}
 
 		[Pure]
-		internal static string FormatArguments(int parentPid, PostMortemSettings postMortemSettings)
+		internal static string FormatArguments(int parentPid)
 		{
 			var builder = new StringBuilder();
 			builder.Append(parentPid);
-			if (postMortemSettings != null)
-			{
-				builder.Append(" ");
-				builder.Append(postMortemSettings.CollectMinidumps);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.SuppressErrorWindows);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.HandleAccessViolations);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.HandleCrtAsserts);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.HandleCrtPureVirtualFunctionCalls);
-				builder.Append(" ");
-				builder.Append(((int) postMortemSettings.RuntimeVersions).ToString(CultureInfo.InvariantCulture));
-				builder.Append(" ");
-				builder.Append(postMortemSettings.NumMinidumpsRetained);
-				builder.Append(" ");
-				builder.Append(postMortemSettings.MinidumpFolder ?? Path.GetTempPath());
-				builder.Append(" ");
-				builder.Append(postMortemSettings.MinidumpName ?? "<Unused>");
-			}
 			return builder.ToString();
 		}
 

@@ -53,10 +53,6 @@ namespace SharpRemote.Hosting
 		///     The settings for latency measurements, if none are specified, then default settings are
 		///     used
 		/// </param>
-		/// <param name="postMortemSettings">
-		///     The settings for the post mortem debugger of the host process, if none are specified
-		///     then no post mortem debugging is performed
-		/// </param>
 		/// <param name="endPointSettings">The settings for the endpoint itself (max. number of concurrent calls, etc...)</param>
 		/// <param name="failureSettings">
 		///     The settings specifying when a failure is assumed to have occured in the host process -
@@ -74,7 +70,6 @@ namespace SharpRemote.Hosting
 			ProcessOptions options = ProcessOptions.HideConsole,
 			ICodeGenerator codeGenerator = null,
 			LatencySettings latencySettings = null,
-			PostMortemSettings postMortemSettings = null,
 			EndPointSettings endPointSettings = null,
 			FailureSettings failureSettings = null,
 			IFailureHandler failureHandler = null,
@@ -83,8 +78,6 @@ namespace SharpRemote.Hosting
 		{
 			if (process == null) throw new ArgumentNullException(nameof(process));
 			if (string.IsNullOrWhiteSpace(process)) throw new ArgumentException("process");
-			if (postMortemSettings != null && !postMortemSettings.IsValid)
-				throw new ArgumentException("postMortemSettings");
 			if (failureSettings != null)
 			{
 				if (failureSettings.ProcessReadyTimeout <= TimeSpan.Zero)
@@ -112,8 +105,7 @@ namespace SharpRemote.Hosting
 
 			_process = new ProcessWatchdog(
 				process,
-				options,
-				postMortemSettings
+				options
 			);
 
 			_process.OnHostOutputWritten += EmitHostOutputWritten;

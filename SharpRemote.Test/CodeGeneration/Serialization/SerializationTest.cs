@@ -24,7 +24,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestFixtureSetUp()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
 			ModuleBuilder module = _assembly.DefineDynamicModule(_moduleName);
 			_serializer = new BinarySerializer(module);

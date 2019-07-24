@@ -27,8 +27,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 		public void Setup()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.FaultTolerance");
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
-			                                                          AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			string moduleName = assemblyName.Name + ".dll";
 			_module = _assembly.DefineDynamicModule(moduleName);
 		}

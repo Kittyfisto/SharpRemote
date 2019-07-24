@@ -26,7 +26,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		public void SetUp()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Servants");
-			_assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			_moduleName = assemblyName.Name + ".dll";
 			ModuleBuilder module = _assembly.DefineDynamicModule(_moduleName);
 

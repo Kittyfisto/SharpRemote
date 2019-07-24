@@ -62,7 +62,7 @@ namespace SharpRemote.CodeGeneration
 		public CodeGenerator(ITypeResolver customTypeResolver = null)
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode");
-			var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			var moduleName = assemblyName.Name + ".dll";
 			var module = assembly.DefineDynamicModule(moduleName);
 

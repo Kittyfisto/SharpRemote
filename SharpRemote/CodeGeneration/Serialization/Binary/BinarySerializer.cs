@@ -133,8 +133,7 @@ namespace SharpRemote
 		private static ModuleBuilder CreateModule()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
-			AssemblyBuilder assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
-			                                                                         AssemblyBuilderAccess.RunAndSave);
+			AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 			string moduleName = assemblyName.Name + ".dll";
 			ModuleBuilder module = assembly.DefineDynamicModule(moduleName);
 			return module;

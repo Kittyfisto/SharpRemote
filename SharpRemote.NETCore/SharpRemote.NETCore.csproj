@@ -1,9 +1,313 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <AssemblyName>SharpRemote</AssemblyName>
     <RootNamespace>SharpRemote</RootNamespace>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>TRACE;DOTNETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;DOTNETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\SharpRemote\Attributes\AfterDeserializeAttribute.cs" Link="Attributes\AfterDeserializeAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\AfterSerializeAttribute.cs" Link="Attributes\AfterSerializeAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\AsyncRemoteAttribute.cs" Link="Attributes\AsyncRemoteAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\BeforeDeserializeAttribute.cs" Link="Attributes\BeforeDeserializeAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\BeforeSerializeAttribute.cs" Link="Attributes\BeforeSerializeAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\ByReferenceAttribute.cs" Link="Attributes\ByReferenceAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\InvokeAttribute.cs" Link="Attributes\InvokeAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\SerializationMethodAttribute.cs" Link="Attributes\SerializationMethodAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\SerializationSurrogateForAttribute.cs" Link="Attributes\SerializationSurrogateForAttribute.cs" />
+    <Compile Include="..\SharpRemote\Attributes\SingletonFactoryMethodAttribute.cs" Link="Attributes\SingletonFactoryMethodAttribute.cs" />
+    <Compile Include="..\SharpRemote\BlockingQueue.cs" Link="BlockingQueue.cs" />
+    <Compile Include="..\SharpRemote\Buffer.cs" Link="Buffer.cs" />
+    <Compile Include="..\SharpRemote\Clock\ITimer.cs" Link="Clock\ITimer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\CodeGenerator.cs" Link="CodeGeneration\CodeGenerator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\Fallback\AsyncStateMachineCompiler.cs" Link="CodeGeneration\FaultTolerance\Fallback\AsyncStateMachineCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\Fallback\DefaultFallbackCreator.cs" Link="CodeGeneration\FaultTolerance\Fallback\DefaultFallbackCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\Fallback\FallbackProxyCreator.cs" Link="CodeGeneration\FaultTolerance\Fallback\FallbackProxyCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\Fallback\IDefaultFallbackCreator.cs" Link="CodeGeneration\FaultTolerance\Fallback\IDefaultFallbackCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\Fallback\IFallbackProxyCreator.cs" Link="CodeGeneration\FaultTolerance\Fallback\IFallbackProxyCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\Fallback\TimeoutProxyCreator.cs" Link="CodeGeneration\FaultTolerance\Fallback\TimeoutProxyCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\IProxyFactory.cs" Link="CodeGeneration\FaultTolerance\IProxyFactory.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\ITimeoutProxyCreator.cs" Link="CodeGeneration\FaultTolerance\ITimeoutProxyCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\ProxyCreator.cs" Link="CodeGeneration\FaultTolerance\ProxyCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\ProxyFactory.cs" Link="CodeGeneration\FaultTolerance\ProxyFactory.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\FaultTolerance\ProxyTypeStorage.cs" Link="CodeGeneration\FaultTolerance\ProxyTypeStorage.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\ICodeGenerator.cs" Link="CodeGeneration\ICodeGenerator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Methods.cs" Link="CodeGeneration\Methods.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Remoting\Compiler.cs" Link="CodeGeneration\Remoting\Compiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Remoting\ProxyCompiler.cs" Link="CodeGeneration\Remoting\ProxyCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Remoting\RemotingProxyCreator.cs" Link="CodeGeneration\Remoting\RemotingProxyCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Remoting\ServantCompiler.cs" Link="CodeGeneration\Remoting\ServantCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Remoting\ServantCreator.cs" Link="CodeGeneration\Remoting\ServantCreator.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\AbstractMethodCompiler.cs" Link="CodeGeneration\Serialization\AbstractMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\AbstractMethodsCompiler.cs" Link="CodeGeneration\Serialization\AbstractMethodsCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\AbstractReadObjectMethodCompiler.cs" Link="CodeGeneration\Serialization\AbstractReadObjectMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\AbstractReadValueMethodCompiler.cs" Link="CodeGeneration\Serialization\AbstractReadValueMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\AbstractSerializationMethods.CompilationContext.cs" Link="CodeGeneration\Serialization\AbstractSerializationMethods.CompilationContext.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\AbstractWriteObjectMethodCompiler.cs" Link="CodeGeneration\Serialization\AbstractWriteObjectMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\AbstractWriteValueMethodCompiler.cs" Link="CodeGeneration\Serialization\AbstractWriteValueMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\AbstractTypeSerializer.cs" Link="CodeGeneration\Serialization\Binary\AbstractTypeSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\ArraySerializer.cs" Link="CodeGeneration\Serialization\Binary\ArraySerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryMethodCallReader.cs" Link="CodeGeneration\Serialization\Binary\BinaryMethodCallReader.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryMethodCallWriter.cs" Link="CodeGeneration\Serialization\Binary\BinaryMethodCallWriter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryMethodResultReader.cs" Link="CodeGeneration\Serialization\Binary\BinaryMethodResultReader.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryMethodResultWriter.cs" Link="CodeGeneration\Serialization\Binary\BinaryMethodResultWriter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryMethodsCompiler.cs" Link="CodeGeneration\Serialization\Binary\BinaryMethodsCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryReadObjectMethodCompiler.cs" Link="CodeGeneration\Serialization\Binary\BinaryReadObjectMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryReadValueMethodCompiler.cs" Link="CodeGeneration\Serialization\Binary\BinaryReadValueMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinarySerializationCompiler.cs" Link="CodeGeneration\Serialization\Binary\BinarySerializationCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinarySerializer.cs" Link="CodeGeneration\Serialization\Binary\BinarySerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinarySerializer2.cs" Link="CodeGeneration\Serialization\Binary\BinarySerializer2.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryWriteObjectMethodCompiler.cs" Link="CodeGeneration\Serialization\Binary\BinaryWriteObjectMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\BinaryWriteValueMethodCompiler.cs" Link="CodeGeneration\Serialization\Binary\BinaryWriteValueMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\ByReferenceHint.cs" Link="CodeGeneration\Serialization\Binary\ByReferenceHint.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\CollectionSerializer.cs" Link="CodeGeneration\Serialization\Binary\CollectionSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\CustomTypeSerializer.cs" Link="CodeGeneration\Serialization\Binary\CustomTypeSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\EnumerableSerializer.cs" Link="CodeGeneration\Serialization\Binary\EnumerableSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\MessageType2.cs" Link="CodeGeneration\Serialization\Binary\MessageType2.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\NativeTypeSerializer.cs" Link="CodeGeneration\Serialization\Binary\NativeTypeSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\QueueSerializer.cs" Link="CodeGeneration\Serialization\Binary\QueueSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\ApplicationIdSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\ApplicationIdSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\BuiltInTypeSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\BuiltInTypeSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\ByteArraySerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\ByteArraySerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\DateTimeOffsetSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\DateTimeOffsetSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\DateTimeSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\DateTimeSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\DecimalSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\DecimalSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\EnumSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\EnumSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\GuidSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\GuidSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\Int32Serializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\Int32Serializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\IPAddressSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\IPAddressSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\IPEndPointSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\IPEndPointSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\KeyValuePairSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\KeyValuePairSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\LevelSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\LevelSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\NullableSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\NullableSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\StringSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\StringSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\TimeSpanSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\TimeSpanSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\UriSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\UriSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\Serializers\VersionSerializer.cs" Link="CodeGeneration\Serialization\Binary\Serializers\VersionSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\SingletonSerializer.cs" Link="CodeGeneration\Serialization\Binary\SingletonSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Binary\StackSerializer.cs" Link="CodeGeneration\Serialization\Binary\StackSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ExceptionCompiler.cs" Link="CodeGeneration\Serialization\ExceptionCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\IBuiltInTypeSerializer.cs" Link="CodeGeneration\Serialization\IBuiltInTypeSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\IMethodCallReader.cs" Link="CodeGeneration\Serialization\IMethodCallReader.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\IMethodCallWriter.cs" Link="CodeGeneration\Serialization\IMethodCallWriter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\IMethodCompiler.cs" Link="CodeGeneration\Serialization\IMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\IMethodResultReader.cs" Link="CodeGeneration\Serialization\IMethodResultReader.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\IMethodResultWriter.cs" Link="CodeGeneration\Serialization\IMethodResultWriter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\IPAddressSurrogate.cs" Link="CodeGeneration\Serialization\IPAddressSurrogate.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ISerializationMethodCompiler.cs" Link="CodeGeneration\Serialization\ISerializationMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ISerializationMethods.cs" Link="CodeGeneration\Serialization\ISerializationMethods.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ISerializationMethodStorage.cs" Link="CodeGeneration\Serialization\ISerializationMethodStorage.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ISerializer.cs" Link="CodeGeneration\Serialization\ISerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ISerializer2.cs" Link="CodeGeneration\Serialization\ISerializer2.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ISerializerCompiler.cs" Link="CodeGeneration\Serialization\ISerializerCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\KeyValuePairSurrogate.cs" Link="CodeGeneration\Serialization\KeyValuePairSurrogate.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\ParseException.cs" Link="CodeGeneration\Serialization\ParseException.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\SerializationMethodStorage.cs" Link="CodeGeneration\Serialization\SerializationMethodStorage.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\TypeResolverAdapter.cs" Link="CodeGeneration\Serialization\TypeResolverAdapter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlFormatterConverter.cs" Link="CodeGeneration\Serialization\Xml\XmlFormatterConverter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlMethodCallReader.cs" Link="CodeGeneration\Serialization\Xml\XmlMethodCallReader.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlMethodCallWriter.cs" Link="CodeGeneration\Serialization\Xml\XmlMethodCallWriter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlMethodResultReader.cs" Link="CodeGeneration\Serialization\Xml\XmlMethodResultReader.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlMethodResultWriter.cs" Link="CodeGeneration\Serialization\Xml\XmlMethodResultWriter.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlMethodsCompiler.cs" Link="CodeGeneration\Serialization\Xml\XmlMethodsCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlParseException.cs" Link="CodeGeneration\Serialization\Xml\XmlParseException.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlReadObjectMethodCompiler.cs" Link="CodeGeneration\Serialization\Xml\XmlReadObjectMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlReadValueMethodCompiler.cs" Link="CodeGeneration\Serialization\Xml\XmlReadValueMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlSerializationCompiler.cs" Link="CodeGeneration\Serialization\Xml\XmlSerializationCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlSerializer.cs" Link="CodeGeneration\Serialization\Xml\XmlSerializer.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlWriteObjectMethodCompiler.cs" Link="CodeGeneration\Serialization\Xml\XmlWriteObjectMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\Serialization\Xml\XmlWriteValueMethodCompiler.cs" Link="CodeGeneration\Serialization\Xml\XmlWriteValueMethodCompiler.cs" />
+    <Compile Include="..\SharpRemote\CodeGeneration\TypeResolver.cs" Link="CodeGeneration\TypeResolver.cs" />
+    <Compile Include="..\SharpRemote\ConnectionDropReason.cs" Link="ConnectionDropReason.cs" />
+    <Compile Include="..\SharpRemote\ConnectionId.cs" Link="ConnectionId.cs" />
+    <Compile Include="..\SharpRemote\Diagnostics\Debugger.cs" Link="Diagnosis\Debugger.cs" />
+    <Compile Include="..\SharpRemote\Diagnostics\IDebugger.cs" Link="Diagnosis\IDebugger.cs" />
+    <Compile Include="..\SharpRemote\DirectoryInfoExtensions.cs" Link="DirectoryInfoExtensions.cs" />
+    <Compile Include="..\SharpRemote\Dispatch.cs" Link="Dispatch.cs" />
+    <Compile Include="..\SharpRemote\EndPointStatistics.cs" Link="EndPointStatistics.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\AbstractBinaryStreamEndPoint.cs" Link="EndPoints\AbstractBinaryStreamEndPoint.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\AbstractEndPoint.cs" Link="EndPoints\AbstractEndPoint.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\EndPointDisconnectReason.cs" Link="EndPoints\EndPointDisconnectReason.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\EndPointSettings.cs" Link="EndPoints\EndPointSettings.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Heartbeat.cs" Link="EndPoints\Heartbeat.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\HeartbeatMonitor.cs" Link="EndPoints\HeartbeatMonitor.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\HeartbeatSettings.cs" Link="EndPoints\HeartbeatSettings.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\IHeartbeat.cs" Link="EndPoints\IHeartbeat.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\ILatency.cs" Link="EndPoints\ILatency.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Latency.cs" Link="EndPoints\Latency.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\LatencyMonitor.cs" Link="EndPoints\LatencyMonitor.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\LatencySettings.cs" Link="EndPoints\LatencySettings.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\MessageType.cs" Link="EndPoints\MessageType.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\MethodInvocation.cs" Link="EndPoints\MethodInvocation.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\NamedPipes\AbstractNamedPipeEndPoint.cs" Link="EndPoints\NamedPipes\AbstractNamedPipeEndPoint.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\NamedPipes\NamedPipeEndPoint.cs" Link="EndPoints\NamedPipes\NamedPipeEndPoint.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\NamedPipes\NamedPipeRemotingEndPointClient.cs" Link="EndPoints\NamedPipes\NamedPipeRemotingEndPointClient.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\NamedPipes\NamedPipeRemotingEndPointServer.cs" Link="EndPoints\NamedPipes\NamedPipeRemotingEndPointServer.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\ProxyStorage.cs" Link="EndPoints\ProxyStorage.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\ServantStorage.cs" Link="EndPoints\ServantStorage.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Sockets\ISocketEndPoint.cs" Link="EndPoints\Sockets\ISocketEndPoint.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Sockets\ISocketServer.cs" Link="EndPoints\Sockets\ISocketServer.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Sockets\PortRange.cs" Link="EndPoints\Sockets\PortRange.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Sockets\SocketEndPoint.cs" Link="EndPoints\Sockets\SocketEndPoint.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Sockets\SocketServer.cs" Link="EndPoints\Sockets\SocketServer.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Sockets\SocketSettings.cs" Link="EndPoints\Sockets\SocketSettings.cs" />
+    <Compile Include="..\SharpRemote\EndPoints\Web\WebRemotingEndPoint.cs" Link="EndPoints\Web\WebRemotingEndPoint.cs" />
+    <Compile Include="..\SharpRemote\EndPointType.cs" Link="EndPointType.cs" />
+    <Compile Include="..\SharpRemote\ETW\PendingMethodsEventSource.cs" Link="ETW\PendingMethodsEventSource.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\AuthenticationException.cs" Link="Exceptions\AuthenticationException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\AuthenticationRequiredException.cs" Link="Exceptions\AuthenticationRequiredException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\ConnectionLostException.cs" Link="Exceptions\ConnectionLostException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\GrainIdRangeExhaustedException.cs" Link="Exceptions\GrainIdRangeExhaustedException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\HandshakeException.cs" Link="Exceptions\HandshakeException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\InstallationFailedException.cs" Link="Exceptions\InstallationFailedException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\NoSuchApplicationException.cs" Link="Exceptions\NoSuchApplicationException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\NoSuchEndPointException.cs" Link="Exceptions\NoSuchEndPointException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\NoSuchIPEndPointException.cs" Link="Exceptions\NoSuchIPEndPointException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\NoSuchNamedPipeEndPointException.cs" Link="Exceptions\NoSuchNamedPipeEndPointException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\NoSuchServantException.cs" Link="Exceptions\NoSuchServantException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\NotConnectedException.cs" Link="Exceptions\NotConnectedException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\RemoteEndpointAlreadyConnectedException.cs" Link="Exceptions\RemoteEndpointAlreadyConnectedException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\RemoteProcedureCallCanceledException.cs" Link="Exceptions\RemoteProcedureCallCanceledException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\SerializationException.cs" Link="Exceptions\SerializationException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\SharpRemoteException.cs" Link="Exceptions\SharpRemoteException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\TypeMismatchException.cs" Link="Exceptions\TypeMismatchException.cs" />
+    <Compile Include="..\SharpRemote\Exceptions\UnserializableException.cs" Link="Exceptions\UnserializableException.cs" />
+    <Compile Include="..\SharpRemote\Extensions\AssemblyExtensions.cs" Link="Extensions\AssemblyExtensions.cs" />
+    <Compile Include="..\SharpRemote\Extensions\ByteArrayExtensions.cs" Link="Extensions\ByteArrayExtensions.cs" />
+    <Compile Include="..\SharpRemote\Extensions\DisposableExtensions.cs" Link="Extensions\DisposableExtensions.cs" />
+    <Compile Include="..\SharpRemote\Extensions\ProcessExtensions.cs" Link="Extensions\ProcessExtensions.cs" />
+    <Compile Include="..\SharpRemote\Extensions\TypeExtensions.cs" Link="Extensions\TypeExtensions.cs" />
+    <Compile Include="..\SharpRemote\FileInfoExtensions.cs" Link="FileInfoExtensions.cs" />
+    <Compile Include="..\SharpRemote\GrainIdGenerator.cs" Link="GrainIdGenerator.cs" />
+    <Compile Include="..\SharpRemote\GrainIdRange.cs" Link="GrainIdRange.cs" />
+    <Compile Include="..\SharpRemote\HandshakeAck.cs" Link="HandshakeAck.cs" />
+    <Compile Include="..\SharpRemote\HandshakeSyn.cs" Link="HandshakeSyn.cs" />
+    <Compile Include="..\SharpRemote\HandshakeSynack.cs" Link="HandshakeSynack.cs" />
+    <Compile Include="..\SharpRemote\HashHelpers.cs" Link="HashHelpers.cs" />
+    <Compile Include="..\SharpRemote\Hosting\CRuntimeVersions.cs" Link="Hosting\CRuntimeVersions.cs" />
+    <Compile Include="..\SharpRemote\Hosting\DefaultImplementationRegistry.cs" Link="Hosting\DefaultImplementationRegistry.cs" />
+    <Compile Include="..\SharpRemote\Hosting\HostState.cs" Link="Hosting\HostState.cs" />
+    <Compile Include="..\SharpRemote\Hosting\InProcess\InProcessRemotingSilo.cs" Link="Hosting\InProcess\InProcessRemotingSilo.cs" />
+    <Compile Include="..\SharpRemote\Hosting\InProcess\InProcessSilo.cs" Link="Hosting\InProcess\InProcessSilo.cs" />
+    <Compile Include="..\SharpRemote\Hosting\ISilo.cs" Link="Hosting\ISilo.cs" />
+    <Compile Include="..\SharpRemote\Hosting\ISubjectHost.cs" Link="Hosting\ISubjectHost.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\Decision.cs" Link="Hosting\OutOfProcess\Decision.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\Failure.cs" Link="Hosting\OutOfProcess\Failure.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\FailureSettings.cs" Link="Hosting\OutOfProcess\FailureSettings.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\IFailureHandler.cs" Link="Hosting\OutOfProcess\IFailureHandler.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\OutOfProcessQueue.cs" Link="Hosting\OutOfProcess\OutOfProcessQueue.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\OutOfProcessSilo.cs" Link="Hosting\OutOfProcess\OutOfProcessSilo.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\OutOfProcessSiloServer.cs" Link="Hosting\OutOfProcess\OutOfProcessSiloServer.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\Resolution.cs" Link="Hosting\OutOfProcess\Resolution.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\RestartOnFailureStrategy.cs" Link="Hosting\OutOfProcess\RestartOnFailureStrategy.cs" />
+    <Compile Include="..\SharpRemote\Hosting\OutOfProcess\ZeroFailureToleranceStrategy.cs" Link="Hosting\OutOfProcess\ZeroFailureToleranceStrategy.cs" />
+    <Compile Include="..\SharpRemote\Hosting\ProcessFailureReason.cs" Link="Hosting\ProcessFailureReason.cs" />
+    <Compile Include="..\SharpRemote\Hosting\ProcessOptions.cs" Link="Hosting\ProcessOptions.cs" />
+    <Compile Include="..\SharpRemote\Hosting\ProcessWatchdog.cs" Link="Hosting\ProcessWatchdog.cs" />
+    <Compile Include="..\SharpRemote\Hosting\SubjectHost.cs" Link="Hosting\SubjectHost.cs" />
+    <Compile Include="..\SharpRemote\IAuthenticator.cs" Link="IAuthenticator.cs" />
+    <Compile Include="..\SharpRemote\IEndpointChannel.cs" Link="IEndpointChannel.cs" />
+    <Compile Include="..\SharpRemote\IGrain.cs" Link="IGrain.cs" />
+    <Compile Include="..\SharpRemote\IProxy.cs" Link="IProxy.cs" />
+    <Compile Include="..\SharpRemote\IRemotingBase.cs" Link="IRemotingBase.cs" />
+    <Compile Include="..\SharpRemote\IRemotingEndPoint.cs" Link="IRemotingEndPoint.cs" />
+    <Compile Include="..\SharpRemote\IRemotingServer.cs" Link="IRemotingServer.cs" />
+    <Compile Include="..\SharpRemote\IServant.cs" Link="IServant.cs" />
+    <Compile Include="..\SharpRemote\ITypeResolver.cs" Link="ITypeResolver.cs" />
+    <Compile Include="..\SharpRemote\LogInterceptor.cs" Link="LogInterceptor.cs" />
+    <Compile Include="..\SharpRemote\NativeMethods.cs" Link="NativeMethods.cs" />
+    <Compile Include="..\SharpRemote\PendingMethodCall.cs" Link="PendingMethodCall.cs" />
+    <Compile Include="..\SharpRemote\PendingMethodsQueue.cs" Link="PendingMethodsQueue.cs" />
+    <Compile Include="..\SharpRemote\PendingMethodsQueue2.cs" Link="PendingMethodsQueue2.cs" />
+    <Compile Include="..\SharpRemote\ProcessAccessFlags.cs" Link="ProcessAccessFlags.cs" />
+    <Compile Include="..\SharpRemote\ProtocolVersion.cs" Link="ProtocolVersion.cs" />
+    <Compile Include="..\SharpRemote\RingBuffer.cs" Link="RingBuffer.cs" />
+    <Compile Include="..\SharpRemote\SerializationType.cs" Link="SerializationType.cs" />
+    <Compile Include="..\SharpRemote\Serializer.cs" Link="Serializer.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\BinaryReaderExt.cs" Link="ServiceDiscovery\BinaryReaderExt.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\BinaryWriterEx.cs" Link="ServiceDiscovery\BinaryWriterEx.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\INetworkServiceDiscoverer.cs" Link="ServiceDiscovery\INetworkServiceDiscoverer.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\INetworkServiceRegisty.cs" Link="ServiceDiscovery\INetworkServiceRegisty.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\IServiceDiscoverySocket.cs" Link="ServiceDiscovery\IServiceDiscoverySocket.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\Message.cs" Link="ServiceDiscovery\Message.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\NetworkServiceDiscoverer.cs" Link="ServiceDiscovery\NetworkServiceDiscoverer.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\NetworkServiceDiscoverySettings.cs" Link="ServiceDiscovery\NetworkServiceDiscoverySettings.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\RegisteredService.cs" Link="ServiceDiscovery\RegisteredService.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\Service.cs" Link="ServiceDiscovery\Service.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\ServiceDiscoveryAnySocket.cs" Link="ServiceDiscovery\ServiceDiscoveryAnySocket.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\ServiceDiscoverySocket.cs" Link="ServiceDiscovery\ServiceDiscoverySocket.cs" />
+    <Compile Include="..\SharpRemote\ServiceDiscovery\ServiceRegistry.cs" Link="ServiceDiscovery\ServiceRegistry.cs" />
+    <Compile Include="..\SharpRemote\Sockets\ISocket.cs" Link="Sockets\ISocket.cs" />
+    <Compile Include="..\SharpRemote\Sockets\Socket2.cs" Link="Sockets\Socket2.cs" />
+    <Compile Include="..\SharpRemote\StatisticsContainer.cs" Link="StatisticsContainer.cs" />
+    <Compile Include="..\SharpRemote\TaskEx.cs" Link="TaskEx.cs" />
+    <Compile Include="..\SharpRemote\Tasks\SerialTaskScheduler.cs" Link="Tasks\SerialTaskScheduler.cs" />
+    <Compile Include="..\SharpRemote\TimespanStatisticsContainer.cs" Link="TimespanStatisticsContainer.cs" />
+    <Compile Include="..\SharpRemote\TypeInformation.cs" Link="TypeInformation.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\IncompatibleMethodSignature.cs" Link="TypeModel\Differences\IncompatibleMethodSignature.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\ITypeModelDifference.cs" Link="TypeModel\Differences\ITypeModelDifference.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\MissingMethod.cs" Link="TypeModel\Differences\MissingMethod.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\MissingType.cs" Link="TypeModel\Differences\MissingType.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\MissingValueType.cs" Link="TypeModel\Differences\MissingValueType.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\ParameterCountMismatch.cs" Link="TypeModel\Differences\ParameterCountMismatch.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\ParameterTypeMismatch.cs" Link="TypeModel\Differences\ParameterTypeMismatch.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\Differences\SerializationTypeChanged.cs" Link="TypeModel\Differences\SerializationTypeChanged.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\EnumValueDescription.cs" Link="TypeModel\EnumValueDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\FieldDescription.cs" Link="TypeModel\FieldDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\IEnumValueDescription.cs" Link="TypeModel\IEnumValueDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\IFieldDescription.cs" Link="TypeModel\IFieldDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\IMemberDescription.cs" Link="TypeModel\IMemberDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\IMethodDescription.cs" Link="TypeModel\IMethodDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\IParameterDescription.cs" Link="TypeModel\IParameterDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\IPropertyDescription.cs" Link="TypeModel\IPropertyDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\ITypeDescription.cs" Link="TypeModel\ITypeDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\ITypeModel.cs" Link="TypeModel\ITypeModel.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\MethodDescription.cs" Link="TypeModel\MethodDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\ParameterDescription.cs" Link="TypeModel\ParameterDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\PropertyDescription.cs" Link="TypeModel\PropertyDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\SpecialMethod.cs" Link="TypeModel\SpecialMethod.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\TypeDescription.cs" Link="TypeModel\TypeDescription.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\TypeId.cs" Link="TypeModel\TypeId.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\TypeModel.cs" Link="TypeModel\TypeModel.cs" />
+    <Compile Include="..\SharpRemote\TypeModel\TypeModelComparer.cs" Link="TypeModel\TypeModelComparer.cs" />
+    <Compile Include="..\SharpRemote\WeakKeyDictionary.cs" Link="WeakKeyDictionary.cs" />
+    <Compile Include="..\SharpRemote\Win32Error.cs" Link="Win32Error.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Attributes\" />
+    <Folder Include="Clock\" />
+    <Folder Include="CodeGeneration\FaultTolerance\Fallback\" />
+    <Folder Include="CodeGeneration\Remoting\" />
+    <Folder Include="CodeGeneration\Serialization\Binary\Serializers\" />
+    <Folder Include="CodeGeneration\Serialization\Xml\" />
+    <Folder Include="Diagnosis\" />
+    <Folder Include="EndPoints\NamedPipes\" />
+    <Folder Include="EndPoints\Web\" />
+    <Folder Include="EndPoints\Sockets\" />
+    <Folder Include="ETW\" />
+    <Folder Include="Exceptions\" />
+    <Folder Include="Extensions\" />
+    <Folder Include="Hosting\InProcess\" />
+    <Folder Include="Hosting\OutOfProcess\" />
+    <Folder Include="TypeModel\Differences\" />
+    <Folder Include="Tasks\" />
+    <Folder Include="Sockets\" />
+    <Folder Include="ServiceDiscovery\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.8" />
+  </ItemGroup>
 
 </Project>

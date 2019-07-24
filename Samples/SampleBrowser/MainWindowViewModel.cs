@@ -6,7 +6,6 @@ using SampleBrowser.Scenarios.BluetoothPairing;
 using SampleBrowser.Scenarios.Host;
 using SampleBrowser.Scenarios.InProcessHost;
 using SampleBrowser.Scenarios.LongTermUsage;
-using SampleBrowser.Scenarios.WatchdogInstallation;
 
 namespace SampleBrowser
 {
@@ -27,7 +26,6 @@ namespace SampleBrowser
 				new LongTermScenario(),
 				new HostScenario(),
 				new InProcessHostScenario(),
-				new RemoteHostScenario(),
 				new BluetoothPairingScenario()
 			};
 		}

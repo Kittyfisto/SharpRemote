@@ -334,9 +334,6 @@
     <Compile Include="Types\Structs\StructWithAfterSerialize.cs" />
     <Compile Include="Types\Structs\StructWithBeforeDeserialize.cs" />
     <Compile Include="Types\Structs\StructWithBeforeSerialize.cs" />
-    <Compile Include="Watchdog\ApplicationInstallerTest.cs" />
-    <Compile Include="Watchdog\WatchdogAcceptanceTest.cs" />
-    <Compile Include="Watchdog\InternalWatchdogTest.cs" />
     <Compile Include="Test2Authenticator.cs" />
     <Compile Include="WeakKeyDictionaryTest.cs" />
     <Compile Include="WebApi\Attributes\RouteAttributeTest.cs" />

@@ -15,7 +15,6 @@ using SharpRemote.Test.Types.Classes;
 using SharpRemote.Test.Types.Interfaces;
 using SharpRemote.Test.Types.Interfaces.NativeTypes;
 using SharpRemote.Test.Types.Interfaces.PrimitiveTypes;
-using SharpRemote.Watchdog;
 
 namespace SharpRemote.Test.CodeGeneration.Remoting
 {
@@ -361,45 +360,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			servant.Invoke("Do", new BinaryReader(arguments), new BinaryWriter(new MemoryStream()));
 			actualType.Should().Be<string>();
-
-			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
-			// we need to keep the subject alive.
-			GC.KeepAlive(subject.Object);
-		}
-
-		[Test]
-		[Ignore("Investigate why the streams differ in length depending on configuration")]
-		public void TestWatchdog()
-		{
-			var subject = new Mock<IReturnComplexType>();
-			var app = new InstalledApplication(new ApplicationDescriptor {Name = "SharpRemote/0.1"});
-			app.Files.Add(new InstalledFile
-				{
-					Id = 1,
-					Filename = "SharpRemote.dll",
-					FileLength = 212345,
-					Folder = Environment.SpecialFolder.CommonProgramFiles
-				});
-			app.Files.Add(new InstalledFile
-				{
-					Id = 2,
-					Filename = "SharpRemote.Host.exe",
-					FileLength = 1234,
-					Folder = Environment.SpecialFolder.CommonProgramFiles
-				});
-			subject.Setup(x => x.CommitInstallation(It.IsAny<long>()))
-			       .Returns((long id) => app);
-			IServant servant = TestGenerate(subject.Object);
-
-			var arguments = new MemoryStream();
-			var writer = new BinaryWriter(arguments);
-			writer.Write((long) 42);
-			arguments.Position = 0;
-
-			var output = new MemoryStream();
-			servant.Invoke("CommitInstallation", new BinaryReader(arguments), new BinaryWriter(output));
-			output.Position = 0;
-			output.Length.Should().BeInRange(342, 344);
 
 			// Servants hold a weak reference to their subjects, so in order for this test to run 100% of the time,
 			// we need to keep the subject alive.

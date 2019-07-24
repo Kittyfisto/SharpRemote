@@ -99,6 +99,9 @@ namespace SharpRemote.EndPoints.Sockets
 			{
 				const int defaultValue = 65535;
 
+#if DOTNETCORE
+				return defaultValue;
+#else
 				try
 				{
 					var value =
@@ -111,6 +114,7 @@ namespace SharpRemote.EndPoints.Sockets
 				{
 					return defaultValue;
 				}
+#endif
 			}
 		}
 
@@ -120,6 +124,9 @@ namespace SharpRemote.EndPoints.Sockets
 			{
 				const int defaultValue = 120;
 
+#if DOTNETCORE
+				return TimeSpan.FromSeconds(defaultValue);
+#else
 				try
 				{
 					var value =
@@ -132,6 +139,7 @@ namespace SharpRemote.EndPoints.Sockets
 				{
 					return TimeSpan.FromSeconds(defaultValue);
 				}
+#endif
 			}
 		}
 	}

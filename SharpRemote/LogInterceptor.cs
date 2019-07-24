@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using log4net;
 using log4net.Appender;
 using log4net.Core;
@@ -32,7 +33,7 @@ namespace SharpRemote
 			Threshold = level;
 
 			_logAction = logAction;
-			_root = ((Hierarchy) LogManager.GetRepository()).Root;
+			_root = ((Hierarchy) LogManager.GetRepository(Assembly.GetEntryAssembly())).Root;
 			_root.AddAppender(this);
 		}
 

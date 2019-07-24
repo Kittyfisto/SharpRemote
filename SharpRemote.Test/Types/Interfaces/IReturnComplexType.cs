@@ -1,9 +1,9 @@
-﻿using SharpRemote.Watchdog;
+﻿using SharpRemote.Test.Types.Structs;
 
 namespace SharpRemote.Test.Types.Interfaces
 {
 	public interface IReturnComplexType
 	{
-		InstalledApplication CommitInstallation(long id);
+		PropertyStruct CommitInstallation(long id);
 	}
 }

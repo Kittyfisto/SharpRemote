@@ -36,7 +36,14 @@ namespace SharpRemote.CodeGeneration.Remoting
 		private static ModuleBuilder CreateModule()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Servants");
-			var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+
+#if DOTNETCORE
+			var access = AssemblyBuilderAccess.Run;
+#else
+			var access = AssemblyBuilderAccess.RunAndSave;
+#endif
+
+			var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, access);
 			var moduleName = assembly.FullName + ".dll";
 			var module = assembly.DefineDynamicModule(moduleName);
 			return module;

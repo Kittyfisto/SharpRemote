@@ -5,7 +5,7 @@ namespace SharpRemote.Extensions
 {
 	internal static class DisposableExtensions
 	{
-		private static readonly ILog Log = LogManager.GetLogger("SharpRemote.DisposableExtensions");
+		private static readonly ILog Log = LogManager.GetLogger(typeof(DisposableExtensions));
 
 		public static void TryDispose(this IDisposable that)
 		{

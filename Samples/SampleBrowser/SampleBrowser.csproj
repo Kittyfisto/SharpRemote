@@ -88,10 +88,6 @@
     </Compile>
     <Compile Include="Scenarios\LongTermUsage\TaskController.cs" />
     <Compile Include="Scenarios\LongTermUsage\TaskExecutor.cs" />
-    <Compile Include="Scenarios\WatchdogInstallation\RemoteHostScenario.cs" />
-    <Compile Include="Scenarios\WatchdogInstallation\RemoteInstallView.xaml.cs">
-      <DependentUpon>RemoteInstallView.xaml</DependentUpon>
-    </Compile>
     <Page Include="Controls\Console.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -121,10 +117,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Scenarios\LongTermUsage\LongTermView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Scenarios\WatchdogInstallation\RemoteInstallView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

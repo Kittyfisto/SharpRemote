@@ -350,13 +350,13 @@ namespace SharpRemote
 
 		private void DisposeAndRemoveEndPoint(SocketEndPoint endPoint)
 		{
+			endPoint?.TryDispose();
+
 			lock (_syncRoot)
 			{
 				_internalEndPoints.Remove(endPoint);
 				_connectedEndPoints.Remove(endPoint);
 			}
-
-			endPoint?.TryDispose();
 		}
 
 		/// <summary>
@@ -408,11 +408,7 @@ namespace SharpRemote
 
 		private void EndPointOnOnDisconnected(SocketEndPoint endPoint, ConnectionId connectionId)
 		{
-			lock (_syncRoot)
-			{
-				_internalEndPoints.Remove(endPoint);
-				_connectedEndPoints.Remove(endPoint);
-			}
+			DisposeAndRemoveEndPoint(endPoint);
 
 			// This should never be called from within a lock!
 			EmitOnClientDisconnected(endPoint);

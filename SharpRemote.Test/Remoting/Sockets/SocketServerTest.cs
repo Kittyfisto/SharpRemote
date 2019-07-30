@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq;
 using System.Net;
 using FluentAssertions;
 using Moq;
@@ -122,6 +123,35 @@ namespace SharpRemote.Test.Remoting.Sockets
 
 				client1.Property(x => x.IsConnected).ShouldEventually().BeFalse("because the connection should've been dropped");
 				client2.Property(x => x.IsConnected).ShouldEventually().BeFalse("because the connection should've been dropped");
+			}
+		}
+
+		[Test]
+		[Description("Verifies that when a connection is disconnected, then the underlying endpoint is disposed of")]
+		public void TestDisposeConnectedEndPointUponDisconnect()
+		{
+			using (var client = CreateClient())
+			{
+				ISocketServer server;
+				using (server = CreateServer())
+				{
+					server.Bind(IPAddress.Loopback);
+
+					client.Connect(server.LocalEndPoint);
+					client.IsConnected.Should().BeTrue();
+
+					server.Property(x => x.Connections).ShouldEventually().HaveCount(1);
+					var connection = server.Connections.First();
+					connection.Should().BeOfType<SocketEndPoint>();
+
+					var endPoint = (SocketEndPoint) connection;
+					endPoint.IsDisposed.Should().BeFalse();
+
+					client.Disconnect();
+					server.Property(x => x.Connections).ShouldEventually().BeEmpty();
+
+					endPoint.IsDisposed.Should().BeTrue("because the server should've disposed of the endpoint");
+				}
 			}
 		}
 

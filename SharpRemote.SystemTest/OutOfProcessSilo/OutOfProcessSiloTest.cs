@@ -186,6 +186,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Test doesn't work reliably")]
 		[Description("Verifies that new grains can be created once the host process is restarted again")]
 		public void TestStartStopStart2()
 		{
@@ -557,6 +558,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		}
 
 		[Test]
+		[LocalTest("Test doesn't work reliably")]
 		[Defect("https://github.com/Kittyfisto/SharpRemote/issues/63")]
 		public void TestUseByReferenceTypeAfterRestart()
 		{

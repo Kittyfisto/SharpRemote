@@ -136,13 +136,13 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				};
 
 			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: settings, failureHandler: handler.Object))
-			using (var handle = new ManualResetEvent(false))
+			using (var failureDetectedEvent = new ManualResetEvent(false))
 			{
 				handler.Setup(x => x.OnResolutionFinished(It.IsAny<Failure>(), It.IsAny<Decision>(), It.IsAny<Resolution>()))
 				       .Callback((Failure f, Decision d, Resolution r) =>
 					       {
+						       failureDetectedEvent.Set();
 						       silo.Dispose();
-						       handle.Set();
 					       });
 
 				silo.Start();
@@ -152,10 +152,10 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				Process hostProcess = Process.GetProcessById(id.Value);
 				hostProcess.Kill();
 
-				handle.WaitOne(TimeSpan.FromSeconds(2))
-				      .Should().BeTrue("Because the failure should've been detected as well as handled");
+				failureDetectedEvent.WaitOne(TimeSpan.FromSeconds(2))
+				      .Should().BeTrue("Because the failure should've been detected");
 
-				silo.IsDisposed.Should().BeTrue();
+				silo.Property(x => x.IsDisposed).ShouldEventually().BeTrue();
 				silo.HasProcessFailed.Should().BeTrue();
 				silo.IsProcessRunning.Should().BeFalse();
 			}

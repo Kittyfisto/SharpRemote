@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Net;
 using System.Reflection;
 using System.Threading;
@@ -48,6 +49,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		private ConnectionId _currentConnection;
 		private int _currentPid;
 		private volatile bool _isDisposed;
+		private volatile bool _isDisposing;
 		private bool _started;
 
 		public OutOfProcessQueue(
@@ -84,8 +86,43 @@ namespace SharpRemote.Hosting.OutOfProcess
 
 		public void Dispose()
 		{
-			_process.OnFaultDetected -= ProcessOnOnFaultDetected;
-			_isDisposed = true;
+			lock (_syncRoot)
+			{
+				if (_isDisposed)
+				{
+					// We don't return _isDisposing is true because that would allow concurrent Disposes to behave differently.
+					// The first call to Dispose() would block until the worker thread is stopped wheres the second (parallel) call
+					// to Dispose() would not block.
+					// This is undesirable.
+					return;
+				}
+
+				_process.OnFaultDetected -= ProcessOnOnFaultDetected;
+				_isDisposing = true;
+			}
+
+			Log.Debug("Waiting for worker thread to stop...");
+			var timeout = TimeSpan.FromSeconds(5);
+			if (!_thread.Join(timeout)) //< We MUST wait for this thread outside of the lock, otherwise a deadlock becomes incredibly likely
+			{
+				// When this happens, it is likely that we're in a deadlock situation and we do not want to risk that.
+				// (For example a user could have managed to call Dispose() from within the worker thread.
+				// We have two different ways to continue here:
+				// 1) Cause a deadlock
+				// 2) Break the guarantee that Dispose() blocks until the worker thread has finished executing
+				// Out of the two given choices, 2) is the preferred one which is implemented here.
+				Log.WarnFormat("Worker thread did not stop after waiting for {0} seconds, continuing regardless...", timeout.TotalSeconds);
+			}
+			else
+			{
+				Log.Debug("Worker thread successfully stopped");
+			}
+
+			lock (_syncRoot)
+			{
+				_isDisposed = true;
+				_isDisposing = false;
+			}
 		}
 
 		/// <summary>
@@ -115,7 +152,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		{
 			lock (_syncRoot)
 			{
-				// If we're disposing this silo (or have disposed it alrady), then the heartbeat monitor
+				// If we're disposing this silo (or have disposed it already), then the heartbeat monitor
 				// reported a failure that we caused intentionally (by killing the host process) and thus
 				// this "failure" musn't be reported.
 				if (_isDisposed)
@@ -164,10 +201,10 @@ namespace SharpRemote.Hosting.OutOfProcess
 		{
 			lock (_syncRoot)
 			{
-				// If we're disposing this silo (or have disposed it alrady), then the heartbeat monitor
+				// If we're disposing this silo (or have disposed it already), then the heartbeat monitor
 				// reported a failure that we caused intentionally (by killing the host process) and thus
 				// this "failure" musn't be reported.
-				if (_isDisposed)
+				if (_isDisposed || _isDisposing)
 					return;
 			}
 
@@ -192,7 +229,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 
 		private void Do()
 		{
-			while (!_isDisposed)
+			while (!_isDisposed && !_isDisposing)
 			{
 				try
 				{
@@ -410,7 +447,7 @@ namespace SharpRemote.Hosting.OutOfProcess
 		/// <returns></returns>
 		internal OperationResult DoHandleFailure(Operation op)
 		{
-			if (_isDisposed)
+			if (_isDisposed || _isDisposing)
 			{
 				Log.DebugFormat("Ignoring failure '{0}' because this queue has been disposed of already", op);
 				return OperationResult.Ignored;

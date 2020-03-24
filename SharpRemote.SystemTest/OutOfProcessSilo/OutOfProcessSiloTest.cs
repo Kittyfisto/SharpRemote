@@ -56,6 +56,37 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			}
 		}
 
+		private static string TryGetExecutableName(Process process)
+		{
+			try
+			{
+				return process.MainModule.FileName;
+			}
+			catch (Exception)
+			{
+				return null;
+			}
+		}
+
+		private static bool IsProcessRunning(string executablePath)
+		{
+			try
+			{
+				foreach(var process in Process.GetProcesses())
+				{
+					if (String.Equals(executablePath, TryGetExecutableName(process)))
+						if (!process.HasExited)
+							return true;
+				}
+
+				return false;
+			}
+			catch (Exception)
+			{
+				return false;
+			}
+		}
+
 		private void ProcessShouldBeRunning(int pid)
 		{
 			this.Property(x => IsProcessRunning(pid)).ShouldEventually().BeTrue();
@@ -577,6 +608,30 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				var proxyToObject = factory.Create(typeof(Handle));
 				var otherId = GetIdOf(proxyToObject);
 				Console.WriteLine("ObjectId: {0}", otherId);
+			}
+		}
+
+		[Test]
+		[Repeat(20)]
+		public void TestKillProcessBeforeDispose()
+		{
+			using (var logCollector = new LogCollector(new []{ "SharpRemote.Hosting.OutOfProcessSilo" }, new []{Level.All}))
+			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo(failureHandler: new RestartOnFailureStrategy()))
+			{
+				logCollector.AutoPrint(TestContext.Progress);
+				silo.Start();
+
+				var pid = silo.HostProcessId;
+				pid.Should().HaveValue("because the process should be running");
+				var process = Process.GetProcessById(pid.Value);
+				var executablePath = process.MainModule.FileName;
+
+				process.Kill();
+				Thread.Sleep(TimeSpan.FromMilliseconds(100));
+				silo.Dispose();
+
+				Thread.Sleep(TimeSpan.FromSeconds(1));
+				IsProcessRunning(executablePath).Should().BeFalse();
 			}
 		}
 

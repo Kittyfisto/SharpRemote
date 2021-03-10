@@ -287,19 +287,35 @@ namespace SharpRemote.Hosting
 		/// <param name="address">The ip-address this endpoint shall bind itself to</param>
 		public void Run(IPAddress address)
 		{
+			const ushort minPort = 49152;
+			const ushort maxPort = 65535;
+
+			Run(address, minPort, maxPort);
+		}
+
+		/// <summary>
+		///     Runs the server and blocks until a shutdown command is received because the
+		///     <see cref="OutOfProcessSilo" /> is being disposed of or because the parent process
+		///     quits unexpectedly.
+		/// </summary>
+		/// <param name="address">The ip-address this endpoint shall bind itself to</param>
+		/// <param name="minPort">The minimum port number to which this endpoint may be bound to</param>
+		/// <param name="maxPort">The maximum port number to which this endpoint may be bound to</param>
+		public void Run(IPAddress address, ushort minPort, ushort maxPort)
+		{
 			Console.WriteLine(ProcessWatchdog.Constants.BootingMessage);
 
 			try
 			{
 				using (_endPoint)
 				using (var host = new SubjectHost(_endPoint,
-				                                  _registry,
-				                                  OnSubjectHostDisposed,
-				                                  _customTypeResolver))
+					_registry,
+					OnSubjectHostDisposed,
+					_customTypeResolver))
 				{
 					_endPoint.CreateServant(OutOfProcessSilo.Constants.SubjectHostId, (ISubjectHost) host);
 
-					_endPoint.Bind(address);
+					_endPoint.Bind(address, minPort, maxPort);
 					Console.WriteLine(_endPoint.LocalEndPoint.Port);
 					Log.InfoFormat("Port sent to host process");
 					Console.WriteLine(ProcessWatchdog.Constants.ReadyMessage);

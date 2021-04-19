@@ -21,6 +21,7 @@
     </dependencies>
   </metadata>
   <files>
+    <file src="..\bin\Win\SharpRemote.dll" target="lib\net45\" />
     <file src="..\bin\Win\SharpRemote.XML" target="lib\net45\" />
     <file src="..\bin\Win\SharpRemote.pdb" target="lib\net45\" />
     <file src="..\bin\Win\SharpRemote.Host.exe" target="lib\net45\" />

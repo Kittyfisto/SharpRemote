@@ -2,6 +2,9 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.Hosting;
@@ -9,14 +12,8 @@ using SharpRemote.Hosting;
 namespace SharpRemote.Test.Hosting.OutOfProcess
 {
 	[TestFixture]
-	public sealed class OutOfProcessSiloServerTest
+	public sealed class OutOfProcessSiloServerTest : AbstractTest
 	{
-		[OneTimeSetUp]
-		public void TestFixtureSetUp()
-		{
-			
-		}
-
 		[Test]
 		[Description("Verifies that EncodeException() encodes the given exception in a string as base64")]
 		public void TestEncodeException()
@@ -41,7 +38,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 
 		[Test]
 		[Description("Verifies that the settings passed to the ctor are properly forwarded to the socket endpoint")]
-		public void TestCtor()
+		public void TestCtor1()
 		{
 			var args = new[]
 				{
@@ -76,12 +73,18 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 				endPoint.HeartbeatSettings.Interval.Should().Be(TimeSpan.FromSeconds(1.5));
 				endPoint.HeartbeatSettings.ReportSkippedHeartbeatsAsFailureWithDebuggerAttached.Should().BeTrue();
 				endPoint.HeartbeatSettings.SkippedHeartbeatThreshold.Should().Be(11);
+
+				Task.Factory.StartNew(() => server.Run(IPAddress.Loopback, 60000, 60010));
+
+				WaitFor(() => endPoint.LocalEndPoint != null && Enumerable.Range(60000,10).Contains(endPoint.LocalEndPoint.Port), TimeSpan.FromSeconds(10))
+					.Should()
+					.BeTrue();
 			}
 		}
 
 		[Test]
 		[Description("Verifies that it's possible to specify the name of the silo")]
-		public void TestCtor8()
+		public void TestCtor2()
 		{
 			var args = new[]
 				{

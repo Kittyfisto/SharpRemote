@@ -205,6 +205,14 @@ namespace SharpRemote
 		/// <param name="localAddress"></param>
 		void Bind(IPAddress localAddress);
 
+		/// <summary>
+		///     Binds this socket to the given address.
+		/// </summary>
+		/// <param name="localAddress"></param>
+		/// <param name="minPort"></param>
+		/// <param name="maxPort"></param>
+		void Bind(IPAddress localAddress, ushort minPort, ushort maxPort);
+
 		#endregion
 	}
 }

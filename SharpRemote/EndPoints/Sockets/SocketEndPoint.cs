@@ -40,6 +40,22 @@ namespace SharpRemote
 		private ISocket _serverSocket;
 
 		/// <summary>
+		///    Constants used throughout the project.
+		/// </summary>
+		internal static class Constants
+		{
+			/// <summary>
+			/// The minimum port used *by default* when no explicit port and / or range is given.
+			/// </summary>
+			public static readonly ushort MinDefaultPort = 49152;
+			
+			/// <summary>
+			/// The maximum port used *by default* when no explicit port and / or range is given.
+			/// </summary>
+			public static readonly ushort MaxDefaultPort = 65535;
+		}
+
+		/// <summary>
 		///    Logs relevant socket, tcp/ip, etc... settings to this classes logger (SharpRemote.SocketEndPoint).
 		/// </summary>
 		/// <remarks>

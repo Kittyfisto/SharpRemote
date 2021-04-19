@@ -287,10 +287,7 @@ namespace SharpRemote.Hosting
 		/// <param name="address">The ip-address this endpoint shall bind itself to</param>
 		public void Run(IPAddress address)
 		{
-			const ushort minPort = 49152;
-			const ushort maxPort = 65535;
-
-			Run(address, minPort, maxPort);
+			Run(address, SocketEndPoint.Constants.MinDefaultPort, SocketEndPoint.Constants.MaxDefaultPort);
 		}
 
 		/// <summary>

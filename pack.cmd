@@ -6,6 +6,6 @@ if not defined APPVEYOR_BUILD_VERSION (
 	exit /b -1
 )
 
-nuget pack SharpRemote\SharpRemote.nuspec -Version %APPVEYOR_BUILD_VERSION%-beta
+nuget pack SharpRemote\SharpRemote.nuspec -Version %APPVEYOR_BUILD_VERSION%
 
 endlocal

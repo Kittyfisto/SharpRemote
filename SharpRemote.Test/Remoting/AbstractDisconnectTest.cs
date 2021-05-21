@@ -311,7 +311,7 @@ namespace SharpRemote.Test.Remoting
 				client.Disconnect();
 
 				new Action(() => Task.WaitAll(tasks))
-					.ShouldThrow<AggregateException>("Because the tasks ineviatably fail because we disconnect the ");
+					.Should().Throw<AggregateException>("Because the tasks ineviatably fail because we disconnect the ");
 
 				WaitFor(() => !client.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();
 				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();
@@ -358,7 +358,7 @@ namespace SharpRemote.Test.Remoting
 				server.Disconnect();
 
 				new Action(() => Task.WaitAll(tasks))
-					.ShouldThrow<AggregateException>("Because the tasks ineviatably fail because we disconnect the ");
+					.Should().Throw<AggregateException>("Because the tasks ineviatably fail because we disconnect the ");
 
 				WaitFor(() => !client.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();
 				WaitFor(() => !server.IsConnected, TimeSpan.FromSeconds(5)).Should().BeTrue();

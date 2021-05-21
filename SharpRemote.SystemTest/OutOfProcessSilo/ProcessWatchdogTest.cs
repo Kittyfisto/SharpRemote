@@ -112,7 +112,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			var watchdog = new ProcessWatchdog();
 			watchdog.IsDisposed.Should().BeFalse();
 
-			new Action(watchdog.Dispose).ShouldNotThrow();
+			new Action(watchdog.Dispose).Should().NotThrow();
 			watchdog.IsDisposed.Should().BeTrue();
 		}
 

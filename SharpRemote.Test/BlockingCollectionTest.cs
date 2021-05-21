@@ -48,7 +48,7 @@ namespace SharpRemote.Test
 				task = Task.Factory.StartNew(() => queue.Enqueue(9001));
 				task.Wait(100).Should().BeFalse();
 			}
-			new Action(() => task.Wait(500)).ShouldThrow<OperationCanceledException>();
+			new Action(() => task.Wait(500)).Should().Throw<OperationCanceledException>();
 		}
 
 		[Test]
@@ -151,7 +151,7 @@ namespace SharpRemote.Test
 				task.Wait(100).Should().BeFalse();
 			}
 			new Action(() => task.Wait(500))
-				.ShouldThrow<OperationCanceledException>();
+				.Should().Throw<OperationCanceledException>();
 		}
 	}
 }

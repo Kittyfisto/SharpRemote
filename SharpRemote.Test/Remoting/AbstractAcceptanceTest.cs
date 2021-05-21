@@ -64,11 +64,11 @@ namespace SharpRemote.Test.Remoting
 		{
 			const int servantId = 50;
 			new Action(() => _server.CreateProxy<IOverloadedMethods>(servantId))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Unable to create proxy for type 'IOverloadedMethods': The type contains at least two methods with the same name 'Print': This is not supported");
 
 			new Action(() => _server.CreateServant(servantId, new Mock<IOverloadedMethods>().Object))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Unable to create servant for type 'IOverloadedMethods': The type contains at least two methods with the same name 'Print': This is not supported");
 		}
 
@@ -292,7 +292,7 @@ namespace SharpRemote.Test.Remoting
 			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsTask>(servantId);
 			new Action(() => proxy.DoStuff().Wait())
-				.ShouldThrow<NotSupportedException>()
+				.Should().Throw<NotSupportedException>()
 				.WithMessage("IReturnsTask.DoStuff of servant #14 returned a non-started task - this is not supported");
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
@@ -311,7 +311,7 @@ namespace SharpRemote.Test.Remoting
 			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
 			new Action(() => proxy.DoStuff().Wait())
-				.ShouldThrow<NotSupportedException>()
+				.Should().Throw<NotSupportedException>()
 				.WithMessage("IReturnsIntTask.DoStuff of servant #15 returned a non-started task - this is not supported");
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
@@ -348,7 +348,7 @@ namespace SharpRemote.Test.Remoting
 			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			new Action(() => { double unused = proxy.Value; })
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Foobar");
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
@@ -370,7 +370,7 @@ namespace SharpRemote.Test.Remoting
 			_server.CreateServant(servantId, subject.Object);
 			var proxy = _client.CreateProxy<IGetDoubleProperty>(servantId);
 			new Action(() => { double unused = proxy.Value; })
-				.ShouldThrow<UnserializableException>();
+				.Should().Throw<UnserializableException>();
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
@@ -408,7 +408,7 @@ namespace SharpRemote.Test.Remoting
 			var proxy = _client.CreateProxy<IReturnsTask>(servantId);
 			Task task = proxy.DoStuff();
 			new Action(task.Wait)
-				.ShouldThrow<AggregateException>();
+				.Should().Throw<AggregateException>();
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
@@ -427,7 +427,7 @@ namespace SharpRemote.Test.Remoting
 			var proxy = _client.CreateProxy<IReturnsIntTask>(servantId);
 			Task<int> task = proxy.DoStuff();
 			new Action(task.Wait)
-				.ShouldThrow<AggregateException>();
+				.Should().Throw<AggregateException>();
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
@@ -443,7 +443,7 @@ namespace SharpRemote.Test.Remoting
 			const int objectId = 16;
 			_server.CreateServant(objectId, subject.Object);
 			new Action(() => _client.CreateProxy<IReturnsTask>(objectId))
-				.ShouldNotThrow("Because creating proxy & servant of different type is not wrong, until a method is invoked");
+				.Should().NotThrow("Because creating proxy & servant of different type is not wrong, until a method is invoked");
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
@@ -460,7 +460,7 @@ namespace SharpRemote.Test.Remoting
 			_server.CreateServant(objectId, subject.Object);
 			var proxy = _client.CreateProxy<IReturnsTask>(objectId);
 			new Action(() => proxy.DoStuff().Wait())
-				.ShouldThrow<TypeMismatchException>();
+				.Should().Throw<TypeMismatchException>();
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
@@ -507,7 +507,7 @@ namespace SharpRemote.Test.Remoting
 			var proxy = (IProxy) _client.CreateProxy<IEventInt32>(servantId);
 
 			new Action(() => subject.Raise(x => x.Foobar += null, 42))
-				.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
+				.ExecutionTime().Should().BeLessOrEqualTo(TimeSpan.FromSeconds(1));
 
 			servant.ObjectId.Should().Be(servantId);
 			proxy.ObjectId.Should().Be(servantId);
@@ -534,7 +534,7 @@ namespace SharpRemote.Test.Remoting
 
 			const int value = 42;
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
-				.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
+				.ExecutionTime().Should().BeLessOrEqualTo(TimeSpan.FromSeconds(1));
 
 			actualValue.Should().Be(value);
 
@@ -561,7 +561,7 @@ namespace SharpRemote.Test.Remoting
 
 			const int value = 42;
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
 
 			actualValue1.Should().Be(value);
@@ -588,13 +588,13 @@ namespace SharpRemote.Test.Remoting
 
 			const int value1 = 9001;
 			new Action(() => subject.Raise(x => x.Foobar += null, value1))
-				.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
+				.ExecutionTime().Should().BeLessOrEqualTo(TimeSpan.FromSeconds(1));
 			actualValue.Should().Be(value1);
 
 			proxy.Foobar -= fn;
 			const int value2 = int.MaxValue;
 			new Action(() => subject.Raise(x => x.Foobar += null, value2))
-				.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(1));
+				.ExecutionTime().Should().BeLessOrEqualTo(TimeSpan.FromSeconds(1));
 			actualValue.Should().Be(value1);
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
@@ -617,7 +617,7 @@ namespace SharpRemote.Test.Remoting
 
 			const int value = 42;
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
@@ -1117,7 +1117,7 @@ namespace SharpRemote.Test.Remoting
 			const ulong servantId = 34;
 			var proxy = _client.CreateProxy<IInt32Method>(servantId);
 			new Action(() => proxy.DoStuff())
-				.ShouldThrow<NoSuchServantException>();
+				.Should().Throw<NoSuchServantException>();
 
 			const string reason =
 				"Because a method invocation on a non-existant servant should not be a reason to tear down the connection";
@@ -1137,7 +1137,7 @@ namespace SharpRemote.Test.Remoting
 			_server.CreateServant(servantId, (IVoidMethod) subject);
 
 			new Action(() => proxy.DoStuff())
-				.ShouldThrow<TypeMismatchException>();
+				.Should().Throw<TypeMismatchException>();
 
 			const string reason =
 				"Because a method invocation on a mismatched servant-type should not be a reason to tear down the connection";

@@ -57,7 +57,7 @@ namespace SharpRemote.SystemTest.EndPoints
 			actualProxy.Should().BeSameAs(proxy);
 
 			storage.RemoveProxiesInRange(1234, 1234);
-			new Action(() => storage.GetProxy<IByReferenceType>(1234)).ShouldThrow<ArgumentException>();
+			new Action(() => storage.GetProxy<IByReferenceType>(1234)).Should().Throw<ArgumentException>();
 			var newProxy = storage.GetExistingOrCreateNewProxy<IByReferenceType>(1234);
 			newProxy.Should().NotBeNull();
 			newProxy.Should().NotBeSameAs(proxy);
@@ -90,7 +90,7 @@ namespace SharpRemote.SystemTest.EndPoints
 			for (int i = 43; i < 59; ++i)
 			{
 				var objectId = (ulong) (1000 + i);
-				new Action(() => storage.GetProxy<IByReferenceType>(objectId)).ShouldThrow<ArgumentException>();
+				new Action(() => storage.GetProxy<IByReferenceType>(objectId)).Should().Throw<ArgumentException>();
 				IProxy proxy;
 				int numProxies;
 				storage.TryGetProxy(objectId, out proxy, out numProxies);

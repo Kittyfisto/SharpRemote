@@ -51,14 +51,14 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				silo.IsProcessRunning.Should().BeFalse();
 
 				new Action(silo.Start)
-					.ShouldThrow<FileNotFoundException>()
+					.Should().Throw<FileNotFoundException>()
 					.WithMessage("The system cannot find the file specified");
 
 				silo.IsProcessRunning.Should().BeFalse("because we shouldn't have been able to start the process");
 				silo.HasProcessFailed.Should().BeFalse();
 
 				new Action(() => silo.CreateGrain<IVoidMethodInt32Parameter>())
-					.ShouldThrow<NotConnectedException>();
+					.Should().Throw<NotConnectedException>();
 			}
 		}
 
@@ -71,14 +71,14 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				silo.IsProcessRunning.Should().BeFalse();
 
 				new Action(silo.Start)
-					.ShouldThrow<Win32Exception>()
+					.Should().Throw<Win32Exception>()
 					.WithMessage("The specified executable is not a valid application for this OS platform.");
 
 				silo.IsProcessRunning.Should().BeFalse();
 				silo.HasProcessFailed.Should().BeFalse();
 
 				new Action(() => silo.CreateGrain<IVoidMethodInt32Parameter>())
-					.ShouldThrow<NotConnectedException>();
+					.Should().Throw<NotConnectedException>();
 			}
 		}
 
@@ -116,8 +116,8 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		{
 			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo())
 			{
-				new Action(silo.Start).ShouldNotThrow();
-				new Action(silo.Start).ShouldThrow<InvalidOperationException>();
+				new Action(silo.Start).Should().NotThrow();
+				new Action(silo.Start).Should().Throw<InvalidOperationException>();
 			}
 		}
 
@@ -128,11 +128,11 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			using (var silo = new SharpRemote.Hosting.OutOfProcessSilo("SharpRemote.Host.FailsStartup.exe"))
 			{
 				new Action(silo.Start)
-					.ShouldThrow<HandshakeException>()
+					.Should().Throw<HandshakeException>()
 					.WithMessage(
 						"Process 'SharpRemote.Host.FailsStartup.exe' caught an unexpected exception during startup and subsequently failed")
 					.WithInnerException<FileNotFoundException>()
-					.WithInnerMessage("Shit happens");
+					.WithMessage("Shit happens");
 			}
 		}
 
@@ -144,7 +144,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				failureHandler: new RestartOnFailureStrategy(startFailureThreshold: 20)))
 			{
 				new Action(silo.Start)
-					.ShouldThrow<AggregateException>();
+					.Should().Throw<AggregateException>();
 
 				silo.IsProcessRunning.Should().BeFalse();
 			}
@@ -214,7 +214,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				failureHandler: failureHandler))
 			{
 				new Action(silo.Start)
-					.ShouldNotThrow("Because the error will be corrected after the first start fails");
+					.Should().NotThrow("Because the error will be corrected after the first start fails");
 
 				onStartFailureCalled.Count.Should().Be(1, "Because starting the application should've failed only once");
 				onStartFailureCalled[0].Key.Should().Be(1);

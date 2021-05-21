@@ -53,7 +53,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server, EndPoint1);
 				bool success = false;
-				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
+				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).Should().NotThrow();
 				success.Should().BeTrue();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
@@ -120,7 +120,7 @@ namespace SharpRemote.Test.Remoting
 				bool success = true;
 				new Action(
 					() => success = TryConnect(rep, EndPoint2, timeout))
-					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(2));
+					.ExecutionTime().Should().BeLessOrEqualTo(TimeSpan.FromSeconds(2));
 
 				success.Should().BeFalse();
 				const string reason = "because no successfull connection could be established";
@@ -147,7 +147,7 @@ namespace SharpRemote.Test.Remoting
 				client.RemoteEndPoint.Should().Be(server1.LocalEndPoint);
 
 				new Action(() => TryConnect(client, server2.LocalEndPoint, timeout))
-					.ShouldThrow<InvalidOperationException>();
+					.Should().Throw<InvalidOperationException>();
 
 				client.IsConnected.Should().BeTrue();
 				client.RemoteEndPoint.Should().Be(server1.LocalEndPoint);
@@ -164,7 +164,7 @@ namespace SharpRemote.Test.Remoting
 			using (var rep = CreateClient())
 			{
 				new Action(() => TryConnect(rep, (EndPoint)null, TimeSpan.FromSeconds(1)))
-					.ShouldThrow<ArgumentNullException>()
+					.Should().Throw<ArgumentNullException>()
 					.WithMessage("Value cannot be null.\r\nParameter name: endpoint");
 			}
 		}
@@ -179,7 +179,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer(name: "Rep2", clientAuthenticator: authenticator))
 			{
 				Bind(server, EndPoint1);
-				new Action(() => TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
+				new Action(() => TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).Should().NotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -197,7 +197,7 @@ namespace SharpRemote.Test.Remoting
 				Bind(server);
 				bool success = true;
 				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldNotThrow();
+					.Should().NotThrow();
 				success.Should().BeFalse();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -215,7 +215,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				bool success = false;
-				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
+				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).Should().NotThrow();
 				success.Should().BeTrue();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
@@ -234,7 +234,7 @@ namespace SharpRemote.Test.Remoting
 				Bind(server);
 				bool success = false;
 				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldNotThrow();
+					.Should().NotThrow();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}
@@ -252,7 +252,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				bool success = false;
-				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
+				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).Should().NotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -269,7 +269,7 @@ namespace SharpRemote.Test.Remoting
 				Bind(server);
 				bool success = true;
 				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldNotThrow();
+					.Should().NotThrow();
 				success.Should().BeFalse();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -287,7 +287,7 @@ namespace SharpRemote.Test.Remoting
 				Bind(server);
 				bool success = false;
 				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldNotThrow();
+					.Should().NotThrow();
 				success.Should().BeFalse();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -304,7 +304,7 @@ namespace SharpRemote.Test.Remoting
 				Bind(server);
 				bool success = true;
 				new Action(() => success = TryConnect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldNotThrow();
+					.Should().NotThrow();
 				success.Should().BeFalse();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
@@ -321,7 +321,7 @@ namespace SharpRemote.Test.Remoting
 				Bind(server);
 				bool success = true;
 				new Action(() => success = TryConnect(client, server.LocalEndPoint))
-					.ShouldNotThrow();
+					.Should().NotThrow();
 				success.Should().BeFalse();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();

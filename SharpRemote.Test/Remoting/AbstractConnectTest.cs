@@ -39,7 +39,7 @@ namespace SharpRemote.Test.Remoting
 				// ReSharper disable AccessToDisposedClosure
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
 					// ReSharper restore AccessToDisposedClosure
-					.ShouldNotThrow();
+					.Should().NotThrow();
 
 				client.IsConnected.Should().BeTrue();
 				client.RemoteEndPoint.Should().Be(server.LocalEndPoint);
@@ -66,7 +66,7 @@ namespace SharpRemote.Test.Remoting
 				client.RemoteEndPoint.Should().Be(server1.LocalEndPoint);
 
 				new Action(() => Connect(client, server2.LocalEndPoint, timeout))
-					.ShouldThrow<InvalidOperationException>();
+					.Should().Throw<InvalidOperationException>();
 				client.IsConnected.Should().BeTrue();
 				client.RemoteEndPoint.Should().Be(server1.LocalEndPoint);
 
@@ -82,7 +82,7 @@ namespace SharpRemote.Test.Remoting
 			using (var rep = CreateClient())
 			{
 				new Action(() => Connect(rep, (EndPoint)null, TimeSpan.FromSeconds(1)))
-					.ShouldThrow<ArgumentNullException>()
+					.Should().Throw<ArgumentNullException>()
 					.WithMessage("Value cannot be null.\r\nParameter name: endpoint");
 			}
 		}
@@ -95,7 +95,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				new Action(
 					() => Connect(rep, EndPoint2, TimeSpan.FromSeconds(0)))
-					.ShouldThrow<ArgumentOutOfRangeException>()
+					.Should().Throw<ArgumentOutOfRangeException>()
 					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
 			}
 		}
@@ -108,7 +108,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				new Action(
 					() => Connect(rep, EndPoint2, TimeSpan.FromSeconds(-1)))
-					.ShouldThrow<ArgumentOutOfRangeException>()
+					.Should().Throw<ArgumentOutOfRangeException>()
 					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
 			}
 		}
@@ -123,7 +123,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer(name: "Rep2", clientAuthenticator: authenticator))
 			{
 				Bind(server, EndPoint4);
-				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
+				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).Should().NotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -140,7 +140,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldThrow<AuthenticationException>();
+					.Should().Throw<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}
@@ -155,7 +155,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer(name: "Rep2", clientAuthenticator: null, serverAuthenticator: authenticator))
 			{
 				Bind(server);
-				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
+				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).Should().NotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -172,7 +172,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldThrow<AuthenticationException>();
+					.Should().Throw<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}
@@ -188,7 +188,7 @@ namespace SharpRemote.Test.Remoting
 			using (var server = CreateServer(name: "Rep2", clientAuthenticator: clientAuthenticator, serverAuthenticator: serverAuthenticator))
 			{
 				Bind(server);
-				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).ShouldNotThrow();
+				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10))).Should().NotThrow();
 				server.IsConnected.Should().BeTrue();
 				client.IsConnected.Should().BeTrue();
 			}
@@ -204,7 +204,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldThrow<AuthenticationException>();
+					.Should().Throw<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}
@@ -220,7 +220,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldThrow<AuthenticationException>();
+					.Should().Throw<AuthenticationException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}
@@ -235,7 +235,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint, TimeSpan.FromSeconds(10)))
-					.ShouldThrow<AuthenticationRequiredException>();
+					.Should().Throw<AuthenticationRequiredException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}
@@ -250,7 +250,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint))
-					.ShouldThrow<HandshakeException>();
+					.Should().Throw<HandshakeException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}
@@ -272,7 +272,7 @@ namespace SharpRemote.Test.Remoting
 				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
 
 				new Action(() => Connect(client2, server.LocalEndPoint))
-					.ShouldThrow<RemoteEndpointAlreadyConnectedException>();
+					.Should().Throw<RemoteEndpointAlreadyConnectedException>();
 				client2.IsConnected.Should().BeFalse();
 
 				server.IsConnected.Should().BeTrue();

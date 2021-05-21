@@ -232,7 +232,7 @@ namespace SharpRemote.Test.TypeModel
 		{
 			var model = new SharpRemote.TypeModel();
 			model.Add<uint>();
-			new Action(() => model.Add<UInt32Enum>()).ShouldNotThrow();
+			new Action(() => model.Add<UInt32Enum>()).Should().NotThrow();
 			model.Types.Should().Contain(x => x.Type == typeof(uint));
 			model.Types.Should().Contain(x => x.Type == typeof(UInt32Enum));
 		}
@@ -650,7 +650,7 @@ namespace SharpRemote.Test.TypeModel
 		public void TestAddNull()
 		{
 			var model = new SharpRemote.TypeModel();
-			new Action(() => model.Add(null)).ShouldThrow<ArgumentNullException>();
+			new Action(() => model.Add(null)).Should().Throw<ArgumentNullException>();
 		}
 
 		[Test]

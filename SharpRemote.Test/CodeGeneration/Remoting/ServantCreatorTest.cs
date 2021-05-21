@@ -57,7 +57,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		{
 			Type type = null;
 			new Action(() => type = _creator.GenerateServant<T>())
-				.ShouldNotThrow();
+				.Should().NotThrow();
 
 			type.Should().NotBeNull();
 
@@ -249,7 +249,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			var subject = new Mock<IInvokeAttributeMethods>();
 			IServant servant = TestGenerate(subject.Object);
 			new Action(() => servant.GetTaskScheduler("DoesntExist"))
-				.ShouldThrow<ArgumentException>();
+				.Should().Throw<ArgumentException>();
 		}
 
 		[Test]
@@ -377,7 +377,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 				_creator.CreateServant(_endPoint.Object, _channel.Object, 1, subject.Object);
 			}, TaskCreationOptions.LongRunning)).ToArray();
 			new Action(() => Task.WaitAll(tasks))
-				.ShouldNotThrow();
+				.Should().NotThrow();
 		}
 	}
 }

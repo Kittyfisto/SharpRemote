@@ -35,7 +35,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof (KillsProcess));
 				new Action(proxy.Do)
-					.ShouldThrow<ConnectionLostException>(
+					.Should().Throw<ConnectionLostException>(
 						"Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
 				WaitFor(() => silo.HasProcessFailed, TimeSpan.FromSeconds(1))
@@ -183,7 +183,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 				var proxy = silo.CreateGrain<IVoidMethodNoParameters>(typeof (AbortsThread));
 				new Action(proxy.Do)
-					.ShouldThrow<ConnectionLostException>(
+					.Should().Throw<ConnectionLostException>(
 						"Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
 				WaitFor(() => silo.HasProcessFailed, TimeSpan.FromSeconds(1))
@@ -239,7 +239,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 						    .Wait(TimeSpan.FromSeconds(10))
 						    .Should().BeTrue("Because the silo should've detected the deadlock in time");
 					})
-					.ShouldThrow<ConnectionLostException>(
+					.Should().Throw<ConnectionLostException>(
 						"Because the host process is lost while the method is invoked and therefore the connection to the host process was lost and is the reason for the method to not execute properly");
 
 				WaitFor(() => silo.HasProcessFailed, TimeSpan.FromSeconds(1))
@@ -276,7 +276,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 					silo.Start();
 					IVoidMethodNoParameters proxy = silo.CreateGrain<IVoidMethodNoParameters, CausesAccessViolation>();
 
-					new Action(proxy.Do).ShouldThrow<ConnectionLostException>();
+					new Action(proxy.Do).Should().Throw<ConnectionLostException>();
 
 					handle.WaitOne(TimeSpan.FromSeconds(5)).Should().BeTrue();
 					resolution.Should().Be(Resolution.Stopped);

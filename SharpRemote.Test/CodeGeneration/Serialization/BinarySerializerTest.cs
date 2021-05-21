@@ -48,7 +48,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			resolver.Setup(x => x.GetType(It.IsAny<string>())).Returns((Type) null);
 			var serializer = new BinarySerializer(resolver.Object);
 			new Action(() => serializer.Roundtrip("Foobar"))
-				.ShouldThrow<TypeLoadException>()
+				.Should().Throw<TypeLoadException>()
 				.WithMessage(string.Format("Unable to load '{0}': The type resolver returned null",
 				                           typeof(string).AssemblyQualifiedName));
 		}
@@ -61,7 +61,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			resolver.Setup(x => x.GetType(It.IsAny<string>())).Throws<InvalidOperationException>();
 			var serializer = new BinarySerializer(resolver.Object);
 			new Action(() => serializer.Roundtrip("Foobar"))
-				.ShouldThrow<TypeLoadException>()
+				.Should().Throw<TypeLoadException>()
 				.WithMessage(string.Format("Unable to load '{0}': The type resolver threw an exception while resolving the type",
 				                           typeof(string).AssemblyQualifiedName))
 				.WithInnerException<InvalidOperationException>();
@@ -75,7 +75,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			resolver.Setup(x => x.GetType(It.IsAny<string>())).Throws<TypeLoadException>();
 			var serializer = new BinarySerializer(resolver.Object);
 			new Action(() => serializer.Roundtrip("Foobar"))
-				.ShouldThrow<TypeLoadException>();
+				.Should().Throw<TypeLoadException>();
 		}
 	}
 }

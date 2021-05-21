@@ -141,7 +141,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			_silo.Start();
 			_startHandle.Reset();
 
-			new Action(() => killer.Do()).ShouldThrow<ConnectionLostException>();
+			new Action(() => killer.Do()).Should().Throw<ConnectionLostException>();
 			_startHandle.WaitOne(TimeSpan.FromSeconds(10)).Should().BeTrue("because the silo should've restarted the host process automatically");
 			var newPid = _silo.HostProcessId;
 			someGrain.Value.Should().Be(newPid);

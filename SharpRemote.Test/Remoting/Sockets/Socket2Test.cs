@@ -26,7 +26,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 					           Socket2.CreateSocketAndBindToAnyPort(IPAddress.Any, usedPort, usedPort,
 					                                                out address)
 				          )
-					.ShouldThrow<SystemException>()
+					.Should().Throw<SystemException>()
 					.WithMessage("No more available sockets");
 			}
 		}
@@ -47,7 +47,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 					           Socket2.CreateSocketAndBindToAnyPort(IPAddress.Any, usedPort, usedPort,
 					                                                out address)
 				          )
-					.ShouldThrow<SystemException>()
+					.Should().Throw<SystemException>()
 					.WithMessage("No more available sockets");
 			}
 		}

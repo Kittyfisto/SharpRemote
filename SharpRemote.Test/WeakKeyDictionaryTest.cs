@@ -119,7 +119,7 @@ namespace SharpRemote.Test
 			var dictionary = new WeakKeyDictionary<string, int>();
 			dictionary.Add("Foobar", 42);
 			new Action(() => dictionary.Add("Foobar", 42))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("An item with the same key has already been added.");
 
 			dictionary.Count.Should().Be(1);
@@ -268,7 +268,7 @@ namespace SharpRemote.Test
 
 			var key4 = new Key(1, 42);
 			new Action(() => dictionary.Add(key4, 4))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("An item with the same key has already been added.");
 
 			dictionary.Count.Should().Be(2);
@@ -281,7 +281,7 @@ namespace SharpRemote.Test
 		{
 			var dictionary = new WeakKeyDictionary<object, string>();
 			new Action(() => dictionary.Add(null, "foo"))
-				.ShouldThrow<ArgumentNullException>()
+				.Should().Throw<ArgumentNullException>()
 				.WithMessage("Value cannot be null.\r\nParameter name: key");
 		}
 
@@ -578,7 +578,7 @@ namespace SharpRemote.Test
 			var dictionary = new WeakKeyDictionary<string, int>();
 			dictionary.Add("a", 1);
 			new Action(() => { int value = dictionary["b"]; })
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("The given key was not present in the dictionary.");
 
 			EnsureIntegrity(dictionary);

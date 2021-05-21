@@ -49,9 +49,9 @@ namespace SharpRemote.Test.Remoting.NamePipe
 				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
 				new Action(
 					() => new Action(() => Connect(rep, EndPoint1, timeout))
-							  .ShouldThrow<NoSuchNamedPipeEndPointException>()
+							  .Should().Throw<NoSuchNamedPipeEndPointException>()
 							  .WithMessage("Unable to establish a connection with the given endpoint after 100 ms: a (Server)"))
-					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(2));
+					.ExecutionTime().Should().BeLessOrEqualTo(TimeSpan.FromSeconds(2));
 
 				const string reason = "because no successfull connection could be established";
 				rep.IsConnected.Should().BeFalse(reason);

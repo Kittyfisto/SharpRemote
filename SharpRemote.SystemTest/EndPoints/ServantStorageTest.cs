@@ -80,7 +80,7 @@ namespace SharpRemote.SystemTest.EndPoints
 				}, TaskCreationOptions.LongRunning);
 
 				var tasks = new[] {task1, task2, task3, task4, task5};
-				new Action(() => Task.WaitAll(tasks)).ShouldNotThrow();
+				new Action(() => Task.WaitAll(tasks)).Should().NotThrow();
 			}
 		}
 

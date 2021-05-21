@@ -116,7 +116,7 @@ namespace SharpRemote.SystemTest.Hosting
 			                                      endPointName: "Test",
 			                                      locEndPoint: _localEndPoint,
 			                                      remoteEndPoint: _remoteEndPoint))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Value cannot be null.\r\nParameter name: heartbeat");
 		}
 
@@ -135,7 +135,7 @@ namespace SharpRemote.SystemTest.Hosting
 			                                      endPointName: "Test",
 			                                      locEndPoint: _localEndPoint,
 			                                      remoteEndPoint: _remoteEndPoint))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Value cannot be null.\r\nParameter name: debugger");
 		}
 
@@ -153,7 +153,7 @@ namespace SharpRemote.SystemTest.Hosting
 			                                      endPointName: "Test",
 			                                      locEndPoint: _localEndPoint,
 			                                      remoteEndPoint: _remoteEndPoint))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: heartBeatInterval");
 		}
 
@@ -171,7 +171,7 @@ namespace SharpRemote.SystemTest.Hosting
 			                                      endPointName: "Test",
 			                                      locEndPoint: _localEndPoint,
 			                                      remoteEndPoint: _remoteEndPoint))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: failureThreshold");
 		}
 

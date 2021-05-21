@@ -120,7 +120,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				// ReSharper disable AccessToDisposedClosure
 				new Action(() => Connect(client, server.Name, TimeSpan.FromSeconds(10)))
 					// ReSharper restore AccessToDisposedClosure
-					.ShouldNotThrow();
+					.Should().NotThrow();
 
 				client.IsConnected.Should().BeTrue();
 				client.RemoteEndPoint.Should().Be(server.LocalEndPoint);
@@ -140,9 +140,9 @@ namespace SharpRemote.Test.Remoting.Sockets
 				TimeSpan timeout = TimeSpan.FromMilliseconds(100);
 				new Action(
 					() => new Action(() => Connect(rep, EndPoint1, timeout))
-							  .ShouldThrow<NoSuchIPEndPointException>()
+							  .Should().Throw<NoSuchIPEndPointException>()
 							  .WithMessage("Unable to establish a connection with the given endpoint after 100 ms: 127.0.0.1:50012"))
-					.ExecutionTime().ShouldNotExceed(TimeSpan.FromSeconds(2));
+					.ExecutionTime().Should().BeLessOrEqualTo(TimeSpan.FromSeconds(2));
 
 				const string reason = "because no successfull connection could be established";
 				rep.IsConnected.Should().BeFalse(reason);
@@ -151,6 +151,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 		}
 
 		[Test]
+		[FlakyTest(3)]
 		[Description("Verifies that when Connect throws before the timeout is reached, the exception is handled gracefully (and not thrown on the finalizer thread)")]
 		public void TestConnect18()
 		{
@@ -164,7 +165,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				};
 
 				new Action(() => Connect(client, EndPoint5, TimeSpan.FromMilliseconds(1)))
-					.ShouldThrow<NoSuchIPEndPointException>();
+					.Should().Throw<NoSuchIPEndPointException>();
 
 				Thread.Sleep(2000);
 
@@ -187,7 +188,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				socket.Listen(1);
 				socket.BeginAccept(ar => socket.EndAccept(ar), null);
 				new Action(() => Connect(rep, EndPoint3))
-					.ShouldThrow<AuthenticationException>();
+					.Should().Throw<AuthenticationException>();
 			}
 		}
 
@@ -207,7 +208,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				server.RemoteEndPoint.Should().Be(client1.LocalEndPoint);
 
 				new Action(() => Connect(client2, server.LocalEndPoint))
-					.ShouldThrow<RemoteEndpointAlreadyConnectedException>()
+					.Should().Throw<RemoteEndpointAlreadyConnectedException>()
 					.WithMessage(string.Format("Unnamed: EndPoint '{0}' is already connected to '{1}' and doesn't accept any other connection until the current one is disconnected",
 					                           server.LocalEndPoint,
 					                           client1.LocalEndPoint));

@@ -77,7 +77,7 @@ namespace SharpRemote.Test.WebApi
 		public void TestTwoIdenticalRoutesNotAllowed()
 		{
 			new Action(() => _server.AddResource("Test", new Mock<ITwoIdenticalRoutes>().Object))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("The method GetFoo() and GetBar() have the same route: This is not allowed");
 		}
 	}

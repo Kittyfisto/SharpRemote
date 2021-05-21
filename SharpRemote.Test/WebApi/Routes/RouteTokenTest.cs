@@ -18,43 +18,43 @@ namespace SharpRemote.Test.WebApi.Routes
 		[Test]
 		public void TestTokenize2()
 		{
-			new Action(() => RouteToken.Tokenize("{")).ShouldThrow<ArgumentException>();
+			new Action(() => RouteToken.Tokenize("{")).Should().Throw<ArgumentException>();
 		}
 
 		[Test]
 		public void TestTokenize3()
 		{
-			new Action(() => RouteToken.Tokenize("{0")).ShouldThrow<ArgumentException>();
+			new Action(() => RouteToken.Tokenize("{0")).Should().Throw<ArgumentException>();
 		}
 
 		[Test]
 		public void TestTokenize4()
 		{
-			new Action(() => RouteToken.Tokenize("{0{")).ShouldThrow<ArgumentException>();
+			new Action(() => RouteToken.Tokenize("{0{")).Should().Throw<ArgumentException>();
 		}
 
 		[Test]
 		public void TestTokenize5()
 		{
-			new Action(() => RouteToken.Tokenize("{-1}")).ShouldThrow<ArgumentException>();
+			new Action(() => RouteToken.Tokenize("{-1}")).Should().Throw<ArgumentException>();
 		}
 
 		[Test]
 		public void TestTokenize6()
 		{
-			new Action(() => RouteToken.Tokenize("{0xFAAAA}")).ShouldThrow<ArgumentException>();
+			new Action(() => RouteToken.Tokenize("{0xFAAAA}")).Should().Throw<ArgumentException>();
 		}
 
 		[Test]
 		public void TestTokenize7()
 		{
-			new Action(() => RouteToken.Tokenize("{AB}")).ShouldThrow<ArgumentException>();
+			new Action(() => RouteToken.Tokenize("{AB}")).Should().Throw<ArgumentException>();
 		}
 
 		[Test]
 		public void TestTokenize8()
 		{
-			new Action(() => RouteToken.Tokenize("{}")).ShouldThrow<ArgumentException>();
+			new Action(() => RouteToken.Tokenize("{}")).Should().Throw<ArgumentException>();
 		}
 
 		[Test]

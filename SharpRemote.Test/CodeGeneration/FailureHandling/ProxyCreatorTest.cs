@@ -138,7 +138,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			                   .Create();
 
 			new Action(() => Await(proxy.CreateFile("stalker shadow of chernobyl")))
-				.ShouldThrow<AggregateException>()
+				.Should().Throw<AggregateException>()
 				.WithInnerException<FileNotFoundException>();
 			subject.Verify(x => x.CreateFile("stalker shadow of chernobyl"), Times.Once);
 			fallback.Verify(x => x.CreateFile("stalker shadow of chernobyl"), Times.Once);
@@ -158,7 +158,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			                   .Create();
 
 			new Action(() => Await(proxy.CreateFile("great_game")))
-				.ShouldThrow<AggregateException>()
+				.Should().Throw<AggregateException>()
 				.WithInnerException<FileNotFoundException>();
 			subject.Verify(x => x.CreateFile("great_game"), Times.Once);
 			fallback.Verify(x => x.CreateFile("great_game"), Times.Once);
@@ -234,7 +234,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			                   .Create();
 
 			new Action(() => Await(proxy.DoStuff()))
-				.ShouldThrow<AggregateException>()
+				.Should().Throw<AggregateException>()
 				.WithInnerException<FileNotFoundException>();
 			subject.Verify(x => x.DoStuff(), Times.Once);
 			fallback.Verify(x => x.DoStuff(), Times.Once);
@@ -254,7 +254,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			                   .Create();
 
 			new Action(() => Await(proxy.DoStuff()))
-				.ShouldThrow<AggregateException>()
+				.Should().Throw<AggregateException>()
 				.WithInnerException<FileNotFoundException>();
 			subject.Verify(x => x.DoStuff(), Times.Once);
 			fallback.Verify(x => x.DoStuff(), Times.Once);
@@ -345,7 +345,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			                   .Create();
 
 			new Action(() => Await(proxy.DoStuff()))
-				.ShouldThrow<AggregateException>()
+				.Should().Throw<AggregateException>()
 				.WithInnerException<FileNotFoundException>();
 			subject.Verify(x => x.DoStuff(), Times.Once);
 			fallback.Verify(x => x.DoStuff(), Times.Once);
@@ -365,7 +365,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			                   .Create();
 
 			new Action(() => Await(proxy.DoStuff()))
-				.ShouldThrow<AggregateException>()
+				.Should().Throw<AggregateException>()
 				.WithInnerException<FileNotFoundException>();
 			subject.Verify(x => x.DoStuff(), Times.Once);
 			fallback.Verify(x => x.DoStuff(), Times.Once);
@@ -398,11 +398,11 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			new Action(() => creator.PrepareProxyFor(subject.Object)
 			                        .WithFallbackTo(null)
 			                        .Create())
-				.ShouldThrow<ArgumentNullException>();
+				.Should().Throw<ArgumentNullException>();
 			new Action(() => creator.PrepareProxyFor<IVoidMethod>(null)
 			                        .WithFallbackTo(fallback.Object)
 			                        .Create())
-				.ShouldThrow<ArgumentNullException>();
+				.Should().Throw<ArgumentNullException>();
 		}
 
 		[Test]
@@ -482,7 +482,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			subject.Verify(x => x.DoStuff(), Times.Once);
 
 			subject.Setup(x => x.DoStuff()).Throws<ArithmeticException>();
-			new Action(() => proxy.DoStuff().Wait()).ShouldNotThrow();
+			new Action(() => proxy.DoStuff().Wait()).Should().NotThrow();
 			subject.Verify(x => x.DoStuff(), Times.Exactly(2));
 
 			subject.Setup(x => x.DoStuff()).Returns(TaskEx.Failed<int>(new NullReferenceException()));
@@ -502,7 +502,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			subject.Verify(x => x.DoStuff(), Times.Once);
 
 			subject.Setup(x => x.DoStuff()).Throws<ArithmeticException>();
-			new Action(() => proxy.DoStuff()).ShouldNotThrow();
+			new Action(() => proxy.DoStuff()).Should().NotThrow();
 			subject.Verify(x => x.DoStuff(), Times.Exactly(2));
 		}
 
@@ -537,7 +537,7 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			subject.Verify(x => x.Do(44141241));
 
 			subject.Setup(x => x.Do(long.MinValue)).Throws<ArithmeticException>();
-			new Action(() => proxy.Do(long.MinValue)).ShouldNotThrow();
+			new Action(() => proxy.Do(long.MinValue)).Should().NotThrow();
 			subject.Verify(x => x.Do(long.MinValue), Times.Once);
 		}
 

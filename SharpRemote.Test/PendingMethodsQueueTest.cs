@@ -19,7 +19,7 @@ namespace SharpRemote.Test
 			queue.IsDisposed.Should().BeFalse();
 			queue.Dispose();
 			queue.IsDisposed.Should().BeTrue();
-			new Action(queue.Dispose).ShouldNotThrow();
+			new Action(queue.Dispose).Should().NotThrow();
 			queue.IsDisposed.Should().BeTrue();
 		}
 
@@ -105,7 +105,7 @@ namespace SharpRemote.Test
 			{
 				int length;
 				new Action(() => queue.TakePendingWrite(out length))
-					.ShouldThrow<OperationCanceledException>();
+					.Should().Throw<OperationCanceledException>();
 			}
 		}
 

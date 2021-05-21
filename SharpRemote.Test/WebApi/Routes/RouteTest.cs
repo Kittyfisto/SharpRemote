@@ -142,7 +142,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructSByte1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] {typeof(sbyte), typeof(sbyte)}))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.SByte at index 0");
 		}
 
@@ -183,7 +183,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructByte1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] { typeof(byte), typeof(byte) }))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.Byte at index 0");
 		}
 
@@ -224,7 +224,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructShort1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] { typeof(short), typeof(short) }))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.Int16 at index 0");
 		}
 
@@ -264,7 +264,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructUShort1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] { typeof(ushort), typeof(ushort) }))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.UInt16 at index 0");
 		}
 
@@ -304,7 +304,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructInt1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] { typeof(int), typeof(int) }))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.Int32 at index 0");
 		}
 
@@ -344,7 +344,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructUInt1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] { typeof(uint), typeof(uint) }))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.UInt32 at index 0");
 		}
 
@@ -384,7 +384,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructLong1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] { typeof(long), typeof(long) }))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.Int64 at index 0");
 		}
 
@@ -414,7 +414,7 @@ namespace SharpRemote.Test.WebApi.Routes
 		public void TestConstructULong1()
 		{
 			new Action(() => new Route(HttpMethod.Get, "{0}{1}", new[] { typeof(ulong), typeof(ulong) }))
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("A terminator is required after argument of System.UInt64 at index 0");
 		}
 

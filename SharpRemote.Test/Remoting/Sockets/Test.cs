@@ -98,7 +98,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 			using (var socket = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp))
 			{
 				new Action(() => socket.Bind(endpoint))
-					.ShouldNotThrow("Because the corresponding endpoint should no longer be in use");
+					.Should().NotThrow("Because the corresponding endpoint should no longer be in use");
 			}
 		}
 	}

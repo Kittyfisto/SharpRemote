@@ -23,7 +23,7 @@ namespace SharpRemote.Test
 		public void TestDispose1()
 		{
 			var statistics = new EndPointStatistics(_endPoint.Object);
-			new Action(() => statistics.Dispose()).ShouldNotThrow();
+			new Action(() => statistics.Dispose()).Should().NotThrow();
 		}
 
 		[Test]
@@ -31,7 +31,7 @@ namespace SharpRemote.Test
 		{
 			var statistics = new EndPointStatistics(_endPoint.Object);
 			statistics.Start();
-			new Action(() => statistics.Dispose()).ShouldNotThrow();
+			new Action(() => statistics.Dispose()).Should().NotThrow();
 		}
 
 		[Test]

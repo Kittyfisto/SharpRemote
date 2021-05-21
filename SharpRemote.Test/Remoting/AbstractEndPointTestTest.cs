@@ -47,7 +47,7 @@ namespace SharpRemote.Test.Remoting
 				var proxy = rep1.CreateProxy<IGetDoubleProperty>(id);
 
 				new Action(() => { double unused = proxy.Value; })
-					.ShouldThrow<ConnectionLostException>()
+					.Should().Throw<ConnectionLostException>()
 					.WithMessage("The connection to the remote endpoint has been lost");
 			}
 		}
@@ -78,7 +78,7 @@ namespace SharpRemote.Test.Remoting
 				var proxy = client.CreateProxy<IGetDoubleProperty>(id);
 
 				new Action(() => { double unused = proxy.Value; })
-					.ShouldThrow<ConnectionLostException>()
+					.Should().Throw<ConnectionLostException>()
 					.WithMessage("The connection to the remote endpoint has been lost");
 			}
 		}
@@ -94,11 +94,11 @@ namespace SharpRemote.Test.Remoting
 				const string reason =
 					"because a proxy can always be created - its usage may however not work depending on the endpoint's connection status";
 				new Action(() => proxy = rep.CreateProxy<IDisposable>(0))
-					.ShouldNotThrow(reason);
+					.Should().NotThrow(reason);
 				proxy.Should().NotBeNull(reason);
 
 				new Action(() => proxy.Dispose())
-					.ShouldThrow<NotConnectedException>(
+					.Should().Throw<NotConnectedException>(
 						"because the endpoint is not connected to any other endpoint and thus there cannot be a subject on which the method can ever be executed");
 			}
 		}
@@ -114,11 +114,11 @@ namespace SharpRemote.Test.Remoting
 				const string reason =
 					"because a proxy can always be created - its usage may however not work depending on the endpoint's connection status";
 				new Action(() => proxy = rep.CreateProxy<IDisposable>(0))
-					.ShouldNotThrow(reason);
+					.Should().NotThrow(reason);
 				proxy.Should().NotBeNull(reason);
 
 				new Action(() => proxy.Dispose())
-					.ShouldThrow<NotConnectedException>(
+					.Should().Throw<NotConnectedException>(
 						"because the endpoint is not connected to any other endpoint and thus there cannot be a subject on which the method can ever be executed");
 			}
 		}
@@ -135,11 +135,11 @@ namespace SharpRemote.Test.Remoting
 				const string reason =
 					"because a servant can always be created - its usage may however not work depending on the endpoint's connection status";
 				new Action(() => servant = endPoint.CreateServant(0, subject.Object))
-					.ShouldNotThrow(reason);
+					.Should().NotThrow(reason);
 				servant.Should().NotBeNull(reason);
 
 				new Action(() => subject.Raise(x => x.Foobar += null, 42))
-					.ShouldThrow<NotConnectedException>(
+					.Should().Throw<NotConnectedException>(
 						"because the endpoint is not connected to any other endpoint and thus there cannot be a proxy on which the event can ever be executed");
 			}
 		}
@@ -156,11 +156,11 @@ namespace SharpRemote.Test.Remoting
 				const string reason =
 					"because a servant can always be created - its usage may however not work depending on the endpoint's connection status";
 				new Action(() => servant = endPoint.CreateServant(0, subject.Object))
-					.ShouldNotThrow(reason);
+					.Should().NotThrow(reason);
 				servant.Should().NotBeNull(reason);
 
 				new Action(() => subject.Raise(x => x.Foobar += null, 42))
-					.ShouldThrow<NotConnectedException>(
+					.Should().Throw<NotConnectedException>(
 						"because the endpoint is not connected to any other endpoint and thus there cannot be a proxy on which the event can ever be executed");
 			}
 		}
@@ -489,7 +489,7 @@ namespace SharpRemote.Test.Remoting
 				client.OnFailure += (r, unused) =>
 				{
 					new Action(proxy.DoStuff)
-						.ShouldThrow<NotConnectedException>();
+						.Should().Throw<NotConnectedException>();
 					failed = true;
 				};
 

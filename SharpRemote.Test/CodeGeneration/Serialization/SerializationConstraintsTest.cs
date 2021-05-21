@@ -24,7 +24,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		private void TestFailRegister<T>(string reason)
 		{
 			new Action(() => _serializer.RegisterType<T>())
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage(reason);
 			_serializer.IsTypeRegistered<T>().Should().BeFalse();
 		}

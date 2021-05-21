@@ -29,7 +29,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		public void TestCtor2()
 		{
 			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(null))
-				.ShouldThrow<ArgumentNullException>();
+				.Should().Throw<ArgumentNullException>();
 		}
 
 		[Test]
@@ -37,7 +37,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		public void TestCtor3()
 		{
 			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(""))
-				.ShouldThrow<ArgumentException>();
+				.Should().Throw<ArgumentException>();
 		}
 
 		[Test]
@@ -45,7 +45,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		public void TestCtor4()
 		{
 			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo("	"))
-				.ShouldThrow<ArgumentException>();
+				.Should().Throw<ArgumentException>();
 		}
 
 		[Test]
@@ -73,19 +73,19 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		public void TestCtor6()
 		{
 			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { Interval = TimeSpan.Zero } }))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("The heartbeat interval must be greater than zero\r\nParameter name: heartbeatSettings.Interval");
 
 			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings{HeartbeatSettings = { Interval = TimeSpan.FromSeconds(-1) }}))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("The heartbeat interval must be greater than zero\r\nParameter name: heartbeatSettings.Interval");
 
 			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = 0} }))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("The skipped heartbeat threshold must be greater than zero\r\nParameter name: heartbeatSettings.SkippedHeartbeatThreshold");
 
 			new Action(() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { HeartbeatSettings = { SkippedHeartbeatThreshold = -1 } }))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("The skipped heartbeat threshold must be greater than zero\r\nParameter name: heartbeatSettings.SkippedHeartbeatThreshold");
 		}
 
@@ -95,19 +95,19 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		{
 			new Action(
 				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.FromSeconds(-1) }))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
 				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { EndPointConnectTimeout = TimeSpan.Zero }))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("EndPointConnectTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
 				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.FromSeconds(-1) }))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
 			new Action(
 				() => new SharpRemote.Hosting.OutOfProcessSilo(failureSettings: new FailureSettings { ProcessReadyTimeout = TimeSpan.Zero }))
-				.ShouldThrow<ArgumentOutOfRangeException>()
+				.Should().Throw<ArgumentOutOfRangeException>()
 				.WithMessage("ProcessReadyTimeout should be greater than zero\r\nParameter name: failureSettings");
 		}
 

@@ -1769,7 +1769,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		{
 			var serializer = Create();
 			new Action(() => serializer.RegisterType<T>())
-				.ShouldThrow<ArgumentException>("because the type '{0}' violates serialization constraints", typeof(T).Name)
+				.Should().Throw<ArgumentException>("because the type '{0}' violates serialization constraints", typeof(T).Name)
 				.WithMessage(reason);
 			serializer.IsTypeRegistered<T>().Should().BeFalse();
 		}

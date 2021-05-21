@@ -21,7 +21,7 @@ namespace SharpRemote.Test.Hosting.OutOfProcess
 			var exception = new ArgumentNullException("whatever");
 			string encoded = null;
 			new Action(() => encoded = OutOfProcessSiloServer.EncodeException(exception))
-				.ShouldNotThrow();
+				.Should().NotThrow();
 
 			encoded.Should().NotBeNull();
 			encoded.Length.Should().BeGreaterThan(0);

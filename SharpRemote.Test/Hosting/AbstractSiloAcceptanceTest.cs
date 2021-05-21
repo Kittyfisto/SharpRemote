@@ -79,7 +79,7 @@ namespace SharpRemote.Test.Hosting
 		public void TestRegisterCreate4()
 		{
 			new Action(() => _silo.CreateGrain<IGetInt16Property>())
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("There is no default implementation for interface type 'SharpRemote.Test.Types.Interfaces.PrimitiveTypes.IGetInt16Property' defined");
 		}
 
@@ -98,7 +98,7 @@ namespace SharpRemote.Test.Hosting
 		{
 			_silo.RegisterDefaultImplementation<IGetInt16Property, Returns9000>();
 			new Action(() => _silo.RegisterDefaultImplementation<IGetInt16Property, Returns9000>())
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("There already is a default implementation for interface type 'SharpRemote.Test.Types.Interfaces.PrimitiveTypes.IGetInt16Property' defined");
 		}
 

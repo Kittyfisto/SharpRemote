@@ -57,7 +57,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		{
 			Type type = null;
 			new Action(() => type = _creator.GenerateProxy<T>())
-				.ShouldNotThrow();
+				.Should().NotThrow();
 
 			type.Should().NotBeNull();
 
@@ -327,7 +327,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		{
 			var servant = (IGrain) TestGenerate<IInvokeAttributeEvents>();
 			new Action(() => servant.GetTaskScheduler("DoesntExist"))
-				.ShouldThrow<ArgumentException>();
+				.Should().Throw<ArgumentException>();
 		}
 
 		[Test]
@@ -512,7 +512,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		public void TestNonInterfaceClass()
 		{
 			new Action(() => _creator.GenerateProxy<string>())
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Proxies can only be created for interfaces: System.String is not an interface");
 		}
 
@@ -520,7 +520,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		public void TestNonInterfaceStruct()
 		{
 			new Action(() => _creator.GenerateProxy<long>())
-				.ShouldThrow<ArgumentException>()
+				.Should().Throw<ArgumentException>()
 				.WithMessage("Proxies can only be created for interfaces: System.Int64 is not an interface");
 		}
 
@@ -692,7 +692,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 			Task task = proxy.DoStuff();
 			task.Should().NotBeNull();
 			new Action(task.Wait)
-				.ShouldThrow<SystemException>()
+				.Should().Throw<SystemException>()
 				.WithMessage("What would you do for a klondyke bar?");
 			task.IsFaulted.Should().BeTrue();
 
@@ -1174,7 +1174,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 				_creator.CreateProxy<IActionEventStringArray>(_endPoint.Object, _channel.Object, 1);
 			}, TaskCreationOptions.LongRunning)).ToArray();
 			new Action(() => Task.WaitAll(tasks))
-				.ShouldNotThrow();
+				.Should().NotThrow();
 		}
 	}
 }

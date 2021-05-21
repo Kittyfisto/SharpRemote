@@ -200,9 +200,9 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				silo.Stop();
 
 				new Action(() => proxy.Do())
-					.ShouldThrow<RemoteProcedureCallCanceledException>();
+					.Should().Throw<RemoteProcedureCallCanceledException>();
 				new Action(() => silo.CreateGrain<IReturnsType>(typeof(ReturnsTypeofString)))
-					.ShouldThrow<RemoteProcedureCallCanceledException>();
+					.Should().Throw<RemoteProcedureCallCanceledException>();
 
 				silo.Start();
 
@@ -324,7 +324,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 		{
 			var silo = new SharpRemote.Hosting.OutOfProcessSilo();
 			new Action(silo.Dispose)
-				.ShouldNotThrow();
+				.Should().NotThrow();
 		}
 
 		[Test]
@@ -336,7 +336,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			{
 				var silo = new SharpRemote.Hosting.OutOfProcessSilo();
 				new Action(silo.Dispose)
-					.ShouldNotThrow();
+					.Should().NotThrow();
 
 				logCollector.Log.Should().NotContain("Caught exception while disposing");
 				logCollector.Log.Should().NotContain("SharpRemote.NotConnectedException");
@@ -355,7 +355,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 				silo.Stop();
 
 				new Action(silo.Dispose)
-					.ShouldNotThrow();
+					.Should().NotThrow();
 
 				logCollector.Log.Should().NotContain("Caught exception while disposing");
 				logCollector.Log.Should().NotContain("SharpRemote.NotConnectedException");

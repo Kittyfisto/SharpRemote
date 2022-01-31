@@ -1,6 +1,4 @@
-﻿using SharpRemote.WebApi;
-
-namespace SharpRemote.Test.Types.Interfaces.Web
+﻿namespace SharpRemote.WebApi.Test
 {
 	public interface ITwoIdenticalRoutes
 	{

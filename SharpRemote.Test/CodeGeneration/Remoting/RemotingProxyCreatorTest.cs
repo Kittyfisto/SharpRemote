@@ -34,7 +34,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		public void SetUp()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Proxies");
-			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 			_moduleName = assemblyName.Name + ".dll";
 			ModuleBuilder module = _assembly.DefineDynamicModule(_moduleName);
 
@@ -45,12 +45,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 
 			_channel = new Mock<IEndPointChannel>();
 			_creator = new RemotingProxyCreator(module);
-		}
-
-		[OneTimeTearDown]
-		public void TearDown()
-		{
-			_assembly.Save(_moduleName);
 		}
 
 		private T TestGenerate<T>()

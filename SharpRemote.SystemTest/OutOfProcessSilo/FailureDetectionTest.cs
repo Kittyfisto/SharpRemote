@@ -164,6 +164,10 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 			)]
 		public void TestFailureDetection2()
 		{
+			#if NET6_0
+			Assert.Inconclusive("Thread aborting not support in .NET 6.0");
+			#endif
+
 			Failure? failure = null;
 			Decision? decision = null;
 			Resolution? resolution = null;

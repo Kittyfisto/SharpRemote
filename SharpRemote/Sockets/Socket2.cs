@@ -177,13 +177,6 @@ namespace SharpRemote.Sockets
 		}
 
 		/// <inheritdoc />
-		public bool UseOnlyOverlappedIO
-		{
-			get { return _socket.UseOnlyOverlappedIO; }
-			set { _socket.UseOnlyOverlappedIO = value; }
-		}
-
-		/// <inheritdoc />
 		public ISocket Accept()
 		{
 			return new Socket2(_socket.Accept());

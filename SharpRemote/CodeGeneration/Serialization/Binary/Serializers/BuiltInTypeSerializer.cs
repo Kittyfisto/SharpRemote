@@ -7,7 +7,7 @@ namespace SharpRemote.CodeGeneration.Serialization.Binary.Serializers
 	/// <summary>
 	/// Takes care of serializing / deserializing Type values.
 	/// Serialization simply writes the type's assembly qualified name, e.g. "System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-	/// and deserialization calls <see cref="TypeResolver.GetType(string)"/> or a user specified method.
+	/// and deserialization calls <see cref="TypeResolver.GetType(string,bool)"/> or a user specified method.
 	/// </summary>
 	internal sealed class BuiltInTypeSerializer
 		: AbstractTypeSerializer

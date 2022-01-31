@@ -29,7 +29,11 @@ namespace SharpRemote.Test.Exceptions
 			var actualException = exception.Roundtrip();
 			actualException.Message.Should().Be(message);
 			actualException.InnerException.Should().BeOfType<ArgumentNullException>();
+#if NET6_0
+			actualException.InnerException.Message.Should().Be("Somebody screwed up (Parameter 'foobar')");
+#else
 			actualException.InnerException.Message.Should().Be("Somebody screwed up\r\nParameter name: foobar");
+#endif
 		}
 	}
 }

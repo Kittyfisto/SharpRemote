@@ -282,7 +282,7 @@ namespace SharpRemote.Test
 			var dictionary = new WeakKeyDictionary<object, string>();
 			new Action(() => dictionary.Add(null, "foo"))
 				.Should().Throw<ArgumentNullException>()
-				.WithMessage("Value cannot be null.\r\nParameter name: key");
+				.And.ParamName.Should().Be("key");
 		}
 
 		[Test]

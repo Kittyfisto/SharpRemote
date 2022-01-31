@@ -52,7 +52,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 				new Action(silo.Start)
 					.Should().Throw<FileNotFoundException>()
-					.WithMessage("The system cannot find the file specified");
+					.WithMessage("*The system cannot find the file specified*");
 
 				silo.IsProcessRunning.Should().BeFalse("because we shouldn't have been able to start the process");
 				silo.HasProcessFailed.Should().BeFalse();
@@ -72,7 +72,7 @@ namespace SharpRemote.SystemTest.OutOfProcessSilo
 
 				new Action(silo.Start)
 					.Should().Throw<Win32Exception>()
-					.WithMessage("The specified executable is not a valid application for this OS platform.");
+					.WithMessage("*The specified executable is not a valid application for this OS platform.");
 
 				silo.IsProcessRunning.Should().BeFalse();
 				silo.HasProcessFailed.Should().BeFalse();

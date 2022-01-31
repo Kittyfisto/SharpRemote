@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
-using SharpRemote.Test.WebApi;
-using SharpRemote.WebApi;
 
-namespace SharpRemote.Test.Types.Interfaces.Web
+namespace SharpRemote.WebApi.Test
 {
 	public interface IGameController
 	{

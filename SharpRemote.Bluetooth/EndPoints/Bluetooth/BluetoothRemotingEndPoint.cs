@@ -4,7 +4,6 @@ using System.Threading;
 using InTheHand.Net;
 using InTheHand.Net.Bluetooth;
 using InTheHand.Net.Sockets;
-using SharpRemote.EndPoints.Sockets;
 
 // ReSharper disable CheckNamespace
 namespace SharpRemote

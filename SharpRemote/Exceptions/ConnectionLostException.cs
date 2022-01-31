@@ -25,16 +25,6 @@ namespace SharpRemote
 		public readonly string EndPointName;
 
 		/// <summary>
-		///     The address of the local endpoint which lost the connection.
-		/// </summary>
-		public readonly EndPoint LocalEndPoint;
-
-		/// <summary>
-		///     The address of the endpoint to which the connection has been lost.
-		/// </summary>
-		public readonly EndPoint RemoteEndPoint;
-
-		/// <summary>
 		///     Deserialization ctor.
 		/// </summary>
 		/// <param name="info"></param>
@@ -45,8 +35,6 @@ namespace SharpRemote
 			try
 			{
 				EndPointName = info.GetString("EndPointName");
-				LocalEndPoint = info.GetValue("LocalEndPoint", typeof(EndPoint)) as EndPoint;
-				RemoteEndPoint = info.GetValue("RemoteEndPoint", typeof(EndPoint)) as EndPoint;
 			}
 			catch (Exception e)
 			{
@@ -66,14 +54,10 @@ namespace SharpRemote
 		///     Initializes a new instance of this exception.
 		/// </summary>
 		/// <param name="endPointName"></param>
-		/// <param name="localEndPoint"></param>
-		/// <param name="remoteEndPoint"></param>
-		public ConnectionLostException(string endPointName, EndPoint localEndPoint = null, EndPoint remoteEndPoint = null)
+		public ConnectionLostException(string endPointName)
 			: base("The connection to the remote endpoint has been lost")
 		{
 			EndPointName = endPointName;
-			LocalEndPoint = localEndPoint;
-			RemoteEndPoint = remoteEndPoint;
 		}
 
 		/// <inheritdoc />
@@ -82,8 +66,6 @@ namespace SharpRemote
 			base.GetObjectData(info, context);
 
 			info.AddValue("EndPointName", EndPointName);
-			info.AddValue("LocalEndPoint", LocalEndPoint);
-			info.AddValue("RemoteEndPoint", RemoteEndPoint);
 		}
 	}
 }

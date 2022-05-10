@@ -393,6 +393,7 @@ namespace SharpRemote
 					_servants.Dispose();
 
 					_isDisposed = true;
+					Log.Info("AbstractBinaryStreamEndPoint is disposed now!");
 				}
 				finally
 				{
@@ -466,6 +467,12 @@ namespace SharpRemote
 		public IServant GetExistingOrCreateNewServant<T>(T subject) where T : class
 		{
 			return _servants.GetExistingOrCreateNewServant(subject);
+		}
+
+		/// <inheritdoc />
+		public IServant GetExistingOrCreateNewServant<T>(ulong objectId, T subject) where T : class
+		{
+			return _servants.GetExistingOrCreateNewServant(objectId, subject);
 		}
 
 		/// <summary>

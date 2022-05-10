@@ -85,6 +85,21 @@ namespace SharpRemote.Test
 		}
 
 		[Test]
+		[Description("Verifies that disposing one key-value pair works")]
+		public void TestDispose1()
+		{
+			var dictionary = new WeakKeyDictionary<string, int>();
+			dictionary.Add("Foobar", 42);
+			dictionary.Count.Should().Be(1);
+			dictionary.ContainsKey("Foobar").Should().BeTrue();
+			dictionary.Version.Should().Be(1);
+
+			dictionary.Dispose();
+
+			EnsureIntegrity(dictionary);
+		}
+
+		[Test]
 		[Description("Verifies that adding one key-value pair works")]
 		public void TestAdd1()
 		{

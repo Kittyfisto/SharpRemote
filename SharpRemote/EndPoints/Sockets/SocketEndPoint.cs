@@ -355,8 +355,22 @@ namespace SharpRemote
 				{
 					if (socket != null)
 					{
-						socket.Close();
-						socket.TryDispose();
+						try
+						{
+							if (socket.Connected)
+							{
+								socket.Shutdown(SocketShutdown.Both);
+							}
+
+							socket.Close();
+							socket.TryDispose();
+						}
+						catch (Exception e)
+						{
+							Log.WarnFormat("{0}: Ignoring exception caught while closing & disposing of socket: {1}",
+								Name,
+								e);
+						}
 					}
 
 					RemoteEndPoint = null;
@@ -406,6 +420,7 @@ namespace SharpRemote
 				if (TryConnect(result.EndPoint, timeout, out e, out connectionId))
 					return connectionId;
 			}
+			// ReSharper disable once PossibleNullReferenceException
 			throw e;
 		}
 
@@ -560,6 +575,11 @@ namespace SharpRemote
 			LocalEndPoint = (IPEndPoint) serverSocket.LocalEndPoint;
 			Listen();
 		}
+
+		/// <summary>
+		///     This event is invoked whenever there is an exception being thrown during serving socket is established.
+		/// </summary>
+		public event Action<Exception> OnBindException;
 
 		private bool TryConnect(string endPointName, TimeSpan timeout, out Exception exception, out ConnectionId connectionId)
 		{
@@ -893,6 +913,7 @@ namespace SharpRemote
 				Log.WarnFormat("{0}: Caught exception while accepting incoming connection: {1}",
 				               Name,
 				               e);
+				EmitBindException(e);
 				// NOTE: We don't want to disconnect anything here because we might already have a
 				//       working connection with another client. It's just that this new client
 				//       caused us trouble (which is why we dispose of the socket in the finally
@@ -903,6 +924,7 @@ namespace SharpRemote
 				Log.ErrorFormat("{0}: Caught exception while accepting incoming connection: {1}",
 				                Name,
 				                e);
+				EmitBindException(e);
 				// NOTE: We don't want to disconnect anything here because we might already have a
 				//       working connection with another client. It's just that this new client
 				//       caused us trouble (which is why we dispose of the socket in the finally
@@ -916,15 +938,21 @@ namespace SharpRemote
 					{
 						try
 						{
-							socket.Shutdown(SocketShutdown.Both);
-							socket.Disconnect(reuseSocket: false);
-							socket.Dispose();
+							if (socket.Connected)
+							{
+								socket.Shutdown(SocketShutdown.Both);
+								socket.Disconnect(reuseSocket: false);
+							}
+
+							socket.Close();
+							socket.TryDispose();
 						}
 						catch (Exception e)
 						{
 							Log.WarnFormat("{0}: Ignoring exception caught while disconnecting & disposing of socket: {1}",
 							               Name,
 							               e);
+							EmitBindException(e);
 						}
 					}
 				}
@@ -953,6 +981,7 @@ namespace SharpRemote
 
 				// We need to undo anything we did above
 				Disconnect();
+				EmitBindException(e);
 			}
 			catch (Exception e)
 			{
@@ -962,7 +991,14 @@ namespace SharpRemote
 
 				// We need to undo anything we did above
 				Disconnect();
+				EmitBindException(e);
 			}
+		}
+
+		private void EmitBindException(Exception ex)
+		{
+			var fn = OnBindException;
+			fn?.Invoke(ex);
 		}
 	}
 }

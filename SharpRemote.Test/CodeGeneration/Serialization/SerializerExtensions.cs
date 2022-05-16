@@ -24,7 +24,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 				var reader = new BinaryReader(stream, Encoding.UTF8);
 				var actualValue = (T) serializer.ReadObject(reader, null);
 
-				actualValue.Should().Equal(value, "because serialization should preserve the order of elements in the enumeration");
+				actualValue.Should().BeEquivalentTo(value, "because serialization should preserve the order of elements in the enumeration");
 				if (value != null)
 				{
 					actualValue.Should().NotBeSameAs(value, "because serialization should've created a deep copy");

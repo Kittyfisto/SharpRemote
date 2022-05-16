@@ -37,7 +37,7 @@ namespace SharpRemote.CodeGeneration.Remoting
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Servants");
 
-#if DOTNETCORE
+#if NET6_0
 			var access = AssemblyBuilderAccess.Run;
 #else
 			var access = AssemblyBuilderAccess.RunAndSave;

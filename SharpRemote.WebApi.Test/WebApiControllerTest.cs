@@ -4,19 +4,16 @@ using System.Net.Http;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.Extensions;
-using SharpRemote.Test.Types.Interfaces.Web;
-using SharpRemote.WebApi;
 using SharpRemote.WebApi.HttpListener;
 
-namespace SharpRemote.Test.WebApi
+namespace SharpRemote.WebApi.Test
 {
 	[TestFixture]
 	public sealed class WebApiControllerTest
 	{
 		private IPEndPoint _localEndPoint;
 		private HttpClient _client;
-		private HttpListener _listener;
+		private System.Net.HttpListener _listener;
 		private string _apiUrl;
 		private WebApiController _server;
 		private SystemNetHttpListener _container;
@@ -24,7 +21,7 @@ namespace SharpRemote.Test.WebApi
 		[SetUp]
 		public void Setup()
 		{
-			_listener = new HttpListener();
+			_listener = new System.Net.HttpListener();
 			_localEndPoint = new IPEndPoint(IPAddress.Loopback, 8080);
 			_apiUrl = string.Format("http://{0}/sharpremote/api/test/", _localEndPoint);
 			_listener.Prefixes.Add(_apiUrl);
@@ -41,7 +38,7 @@ namespace SharpRemote.Test.WebApi
 			_container?.Dispose();
 			_server?.Dispose();
 			_client?.Dispose();
-			_listener?.TryDispose();
+			((IDisposable)_listener)?.Dispose();
 		}
 
 		private Uri CreateUri(string suffix)

@@ -27,23 +27,9 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 		public void Setup()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.FaultTolerance");
-			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 			string moduleName = assemblyName.Name + ".dll";
 			_module = _assembly.DefineDynamicModule(moduleName);
-		}
-
-		public void Save()
-		{
-			var fname = "SharpRemote.GeneratedCode.FaultTolerance.dll";
-			try
-			{
-				_assembly.Save(fname);
-				TestContext.Out.WriteLine("Assembly written to: {0}", Path.Combine(Directory.GetCurrentDirectory(), fname));
-			}
-			catch (Exception e)
-			{
-				TestContext.Out.WriteLine("Couldn't write assembly: {0}", e);
-			}
 		}
 
 		#region Timeouts
@@ -60,7 +46,6 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithMaximumLatencyOf(TimeSpan.FromSeconds(10))
 			                   .Create();
-			Save();
 
 			Await(proxy.CreateFile("simon")).Should().Be(-21321211);
 			subject.Verify(x => x.CreateFile("simon"), Times.Once);
@@ -476,8 +461,6 @@ namespace SharpRemote.Test.CodeGeneration.FailureHandling
 			var proxy = creator.PrepareProxyFor(subject.Object)
 			                   .WithDefaultFallback()
 			                   .Create();
-			Save();
-
 			proxy.DoStuff();
 			subject.Verify(x => x.DoStuff(), Times.Once);
 

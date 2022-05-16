@@ -184,6 +184,9 @@ namespace SharpRemote
 		/// <exception cref="AuthenticationRequiredException">
 		///     - The given endPoint requires authentication, but this one didn't provide any
 		/// </exception>
+		/// <exception cref="HandshakeTimeoutException">
+		///     - The given endPoint requires authentication, but authentication times out during the process
+		/// </exception>
 		/// <exception cref="HandshakeException">
 		///     - The handshake between this and the given endpoint failed
 		/// </exception>

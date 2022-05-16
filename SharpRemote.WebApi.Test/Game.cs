@@ -1,4 +1,4 @@
-namespace SharpRemote.Test.WebApi
+namespace SharpRemote.WebApi.Test
 {
 	public sealed class Game
 	{

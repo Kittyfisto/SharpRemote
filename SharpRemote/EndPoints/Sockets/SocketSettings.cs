@@ -99,7 +99,7 @@ namespace SharpRemote.EndPoints.Sockets
 			{
 				const int defaultValue = 65535;
 
-#if DOTNETCORE
+#if NET6_0
 				return defaultValue;
 #else
 				try
@@ -124,7 +124,7 @@ namespace SharpRemote.EndPoints.Sockets
 			{
 				const int defaultValue = 120;
 
-#if DOTNETCORE
+#if NET6_0
 				return TimeSpan.FromSeconds(defaultValue);
 #else
 				try

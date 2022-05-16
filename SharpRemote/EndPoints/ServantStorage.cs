@@ -140,6 +140,20 @@ namespace SharpRemote.EndPoints
 			}
 		}
 
+		public IServant GetExistingOrCreateNewServant<T>(ulong objectId, T subject) where T : class
+		{
+			lock (_syncRoot)
+			{
+				IServant servant;
+				if (!_servantsBySubject.TryGetValue(subject, out servant))
+				{
+					servant = CreateServant(objectId, subject);
+				}
+
+				return servant;
+			}
+		}
+
 		public int RemoveUnusedServants()
 		{
 			lock (_syncRoot)

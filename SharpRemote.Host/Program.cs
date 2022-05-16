@@ -6,6 +6,7 @@ using System.Reflection;
 using SharpRemote.Hosting;
 using log4net;
 using log4net.Config;
+using SharpRemote.CodeGeneration;
 
 namespace SharpRemote.Host
 {
@@ -18,7 +19,11 @@ namespace SharpRemote.Host
 			try
 			{
 				GlobalContext.Properties["pid"] = Process.GetCurrentProcess().Id;
-				XmlConfigurator.Configure(new FileInfo("SharpRemote.Host.exe.config"));
+				var log4NetConfigFileInfo = new FileInfo("SharpRemote.Host.exe.config");
+				if (!log4NetConfigFileInfo.Exists)
+					log4NetConfigFileInfo = new FileInfo("SharpRemote.Host.dll.config");
+
+				XmlConfigurator.Configure(log4NetConfigFileInfo);
 
 				AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
 
@@ -26,6 +31,7 @@ namespace SharpRemote.Host
 				{
 					silo.Run(IPAddress.Loopback);
 				}
+				
 			}
 			catch (Exception e)
 			{

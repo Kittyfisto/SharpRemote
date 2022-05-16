@@ -16,7 +16,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 	public abstract class AbstractSerializerAcceptanceTest
 	{
 		protected abstract ISerializer2 Create();
-		protected abstract void Save();
 
 		public static IEnumerable<ulong> GrainIds => new ulong[]
 		{
@@ -1656,7 +1655,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			using (var stream = new MemoryStream())
 			{
 				serializer.RegisterType<T>();
-				Save();
 
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
 				{
@@ -1693,7 +1691,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			using (var stream = new MemoryStream())
 			{
 				serializer.RegisterType<T>();
-				Save();
 
 				using (var writer = serializer.CreateMethodCallWriter(stream, 5, 6, "GetValue"))
 				{

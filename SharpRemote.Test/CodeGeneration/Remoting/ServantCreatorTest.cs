@@ -25,7 +25,7 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		public void SetUp()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Servants");
-			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 			_moduleName = assemblyName.Name + ".dll";
 			ModuleBuilder module = _assembly.DefineDynamicModule(_moduleName);
 
@@ -46,12 +46,6 @@ namespace SharpRemote.Test.CodeGeneration.Remoting
 		private AssemblyBuilder _assembly;
 		private string _moduleName;
 		private ISerializer _serializer;
-
-		[OneTimeTearDown]
-		public void TearDown()
-		{
-			_assembly.Save(_moduleName);
-		}
 
 		private IServant TestGenerate<T>(T subject)
 		{

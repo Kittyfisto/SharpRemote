@@ -165,7 +165,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				new Action(() => TryConnect(rep, (EndPoint)null, TimeSpan.FromSeconds(1)))
 					.Should().Throw<ArgumentNullException>()
-					.WithMessage("Value cannot be null.\r\nParameter name: endpoint");
+					.WithMessage("Value cannot be null*Parameter*endpoint*");
 			}
 		}
 

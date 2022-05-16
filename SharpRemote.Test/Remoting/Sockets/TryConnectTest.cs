@@ -135,7 +135,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				new Action(
 				           () => TryConnect(rep, new IPEndPoint(IPAddress.Loopback, port: 12345), TimeSpan.FromSeconds(value: 0)))
 					.Should().Throw<ArgumentOutOfRangeException>()
-					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
+					.WithMessage("Specified argument was out of the range of valid values*Parameter*timeout*");
 			}
 		}
 
@@ -148,7 +148,7 @@ namespace SharpRemote.Test.Remoting.Sockets
 				new Action(
 				           () => TryConnect(rep, new IPEndPoint(IPAddress.Loopback, port: 12345), TimeSpan.FromSeconds(value: -1)))
 					.Should().Throw<ArgumentOutOfRangeException>()
-					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
+					.WithMessage("Specified argument was out of the range of valid values*Parameter*timeout*");
 			}
 		}
 	}

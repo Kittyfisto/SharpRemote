@@ -77,6 +77,7 @@ namespace SharpRemote
 			for (int i = 0; i < _buckets.Length; i++) _buckets[i] = -1;
 			_entries = new Entry[size];
 			_freeList = -1;
+			_freeCount = 0;
 		}
 
 		/// <summary>
@@ -407,6 +408,8 @@ namespace SharpRemote
 				}
 			}
 			Initialize(0);
+			_version = 0;
+			_count = 0;
 		}
 
 		public void Dispose()

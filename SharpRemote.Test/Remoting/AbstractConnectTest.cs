@@ -83,7 +83,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				new Action(() => Connect(rep, (EndPoint)null, TimeSpan.FromSeconds(1)))
 					.Should().Throw<ArgumentNullException>()
-					.WithMessage("Value cannot be null.\r\nParameter name: endpoint");
+					.WithMessage("Value cannot be null*Parameter*endpoint*");
 			}
 		}
 
@@ -96,7 +96,7 @@ namespace SharpRemote.Test.Remoting
 				new Action(
 					() => Connect(rep, EndPoint2, TimeSpan.FromSeconds(0)))
 					.Should().Throw<ArgumentOutOfRangeException>()
-					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
+					.WithMessage("Specified argument was out of the range of valid values*Parameter*timeout*");
 			}
 		}
 
@@ -109,7 +109,7 @@ namespace SharpRemote.Test.Remoting
 				new Action(
 					() => Connect(rep, EndPoint2, TimeSpan.FromSeconds(-1)))
 					.Should().Throw<ArgumentOutOfRangeException>()
-					.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: timeout");
+					.WithMessage("Specified argument was out of the range of valid values*Parameter*timeout*");
 			}
 		}
 
@@ -250,7 +250,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint))
-					.Should().Throw<HandshakeException>();
+					.Should().Throw<HandshakeTimeoutException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}

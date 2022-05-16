@@ -5,7 +5,7 @@ using System.Globalization;
 
 namespace SharpRemote.WebApi.Routes
 {
-	internal struct RouteToken : IEquatable<RouteToken>
+	internal readonly struct RouteToken : IEquatable<RouteToken>
 	{
 		public readonly TokenType Type;
 		public readonly string Pattern;

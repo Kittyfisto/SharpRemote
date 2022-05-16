@@ -311,14 +311,17 @@ namespace SharpRemote
 				}
 
 				var remaining = timeout - (DateTime.Now - started);
-				ErrorType errorType;
-				string error;
-				object errorReason;
-				if (!TryPerformOutgoingHandshake(socket, remaining, out errorType, out error, out connectionId, out errorReason))
+				if (!TryPerformOutgoingHandshake(socket, remaining, out var errorType, out var error, out connectionId, out var errorReason, out var blockedIpEndpoint))
 				{
 					switch (errorType)
 					{
 						case ErrorType.Handshake:
+							if (errorReason == EndPointDisconnectReason.ConnectionTimedOut)
+							{
+								exception = new HandshakeTimeoutException(error);
+								break;
+							}
+
 							exception = new HandshakeException(error);
 							break;
 
@@ -327,7 +330,7 @@ namespace SharpRemote
 							break;
 
 						case ErrorType.EndPointBlocked:
-							exception = new RemoteEndpointAlreadyConnectedException(error, (errorReason as IPEndPoint)?.ToString());
+							exception = new RemoteEndpointAlreadyConnectedException(error, blockedIpEndpoint?.ToString());
 							break;
 
 						default:
@@ -475,6 +478,9 @@ namespace SharpRemote
 		/// </exception>
 		/// <exception cref="AuthenticationRequiredException">
 		///     - The given endPoint requires authentication, but this one didn't provide any
+		/// </exception>
+		/// <exception cref="HandshakeTimeoutException">
+		///     - The handshake between this and the given endpoint failed due to a time out during the process
 		/// </exception>
 		/// <exception cref="HandshakeException">
 		///     - The handshake between this and the given endpoint failed

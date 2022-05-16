@@ -250,7 +250,7 @@ namespace SharpRemote.Test.Remoting
 			{
 				Bind(server);
 				new Action(() => Connect(client, server.LocalEndPoint))
-					.Should().Throw<HandshakeException>();
+					.Should().Throw<HandshakeTimeoutException>();
 				server.IsConnected.Should().BeFalse();
 				client.IsConnected.Should().BeFalse();
 			}

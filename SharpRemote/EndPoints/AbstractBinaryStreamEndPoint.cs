@@ -393,6 +393,9 @@ namespace SharpRemote
 					_servants.Dispose();
 
 					_isDisposed = true;
+
+					CollectGarbage(null);
+					
 					Log.Info("AbstractBinaryStreamEndPoint is disposed now!");
 				}
 				finally
@@ -1411,11 +1414,11 @@ namespace SharpRemote
 		                            string messageStep,
 		                            out string messageType,
 		                            out string message,
-		                            out string error)
+		                            out string error,
+		                            out EndPointDisconnectReason disconnectReason)
 		{
 			EndPoint remoteEndPoint = GetRemoteEndPointOf(socket);
 			var size = new byte[4];
-			EndPointDisconnectReason disconnectReason;
 			if (!SynchronizedRead(socket, size, timeout, out disconnectReason))
 			{
 				messageType = null;
@@ -1507,16 +1510,22 @@ namespace SharpRemote
 		/// <param name="messageStep"></param>
 		/// <param name="messageType"></param>
 		/// <param name="message"></param>
+		/// <param name="error"></param>
+		/// <param name="errorReason"></param>
 		/// <exception cref="HandshakeException"></exception>
 		protected void ReadMessage(TTransport socket,
 		                           TimeSpan timeout,
 		                           string messageStep,
 		                           out string messageType,
-		                           out string message)
+		                           out string message,
+		                           out string error,
+		                           out EndPointDisconnectReason errorReason)
 		{
-			string error;
-			if (!TryReadMessage(socket, timeout, messageStep, out messageType, out message, out error))
+			if (!TryReadMessage(socket, timeout, messageStep, out messageType, out message, out error, out errorReason))
 			{
+				if (errorReason == EndPointDisconnectReason.ConnectionTimedOut)
+					throw new HandshakeTimeoutException(error);
+				
 				throw new HandshakeException(error);
 			}
 		}
@@ -1532,9 +1541,11 @@ namespace SharpRemote
 		                            string messageType,
 		                            string message = "")
 		{
-			string error;
-			if (!TryWriteMessage(socket, messageType, message, out error))
+			if (!TryWriteMessage(socket, messageType, message, out var error, out var errorReason))
 			{
+				if (errorReason == EndPointDisconnectReason.ConnectionTimedOut)
+					throw new HandshakeTimeoutException(error);
+				
 				throw new HandshakeException(error);
 			}
 		}
@@ -1542,7 +1553,8 @@ namespace SharpRemote
 		private bool TryWriteMessage(TTransport socket,
 		                             string messageType,
 		                             string message,
-		                             out string error)
+		                             out string error,
+		                             out EndPointDisconnectReason errorReason)
 		{
 			EndPoint remoteEndPoint = GetRemoteEndPointOf(socket);
 			using (var stream = new MemoryStream())
@@ -1554,16 +1566,15 @@ namespace SharpRemote
 				writer.Flush();
 				PatchResponseMessageLength(stream, writer);
 				stream.Position = 0;
-
-				EndPointDisconnectReason disconnectReason;
-				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out disconnectReason))
+				
+				if (!SynchronizedWrite(socket, stream.GetBuffer(), (int) stream.Length, out errorReason))
 				{
 					error = string.Format("{0}: EndPoint '{1}' failed to send {2} to remote endpoint '{3}': {4}",
 					                      Name,
 					                      InternalLocalEndPoint,
 					                      messageType,
 					                      remoteEndPoint,
-					                      disconnectReason);
+					                      errorReason);
 					return false;
 				}
 			}
@@ -1599,6 +1610,8 @@ namespace SharpRemote
 			TimeSpan timeout = TimeSpan.FromMinutes(1);
 			string messageType;
 			string message;
+			string error;
+			EndPointDisconnectReason errorReason;
 
 			if (_clientAuthenticator != null)
 			{
@@ -1608,7 +1621,7 @@ namespace SharpRemote
 				Log.DebugFormat("{0}: Creating challenge '{1}' for endpoint '{2}'", Name, challenge, remoteEndPoint);
 				WriteMessage(socket, AuthenticationRequiredMessage, challenge);
 
-				ReadMessage(socket, timeout, AuthenticationResponse, out messageType, out message);
+				ReadMessage(socket, timeout, AuthenticationResponse, out messageType, out message, out error, out errorReason);
 				Log.DebugFormat("{0}: Received response '{1}' for challenge '{2}' from endpoint '{3}'",
 				                Name,
 				                message,
@@ -1634,7 +1647,7 @@ namespace SharpRemote
 				WriteMessage(socket, NoAuthenticationRequiredMessage);
 			}
 
-			ReadMessage(socket, timeout, AuthenticationChallenge, out messageType, out message);
+			ReadMessage(socket, timeout, AuthenticationChallenge, out messageType, out message, out error, out errorReason);
 			if (messageType == AuthenticationRequiredMessage)
 			{
 				if (_serverAuthenticator == null)
@@ -1646,12 +1659,15 @@ namespace SharpRemote
 
 				// After having answered the challenge we wait for a successful response from the client.
 				// If we failed the authentication, then 
-				ReadMessage(socket, timeout, AuthenticationVerification, out messageType, out message);
+				ReadMessage(socket, timeout, AuthenticationVerification, out messageType, out message, out error, out errorReason);
 				if (messageType != AuthenticationSucceedMessage)
 					throw new AuthenticationException(string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint));
 			}
 			else if (messageType != NoAuthenticationRequiredMessage)
 			{
+				if (errorReason == EndPointDisconnectReason.ConnectionTimedOut)
+					throw new HandshakeTimeoutException(error);
+				
 				throw new HandshakeException();
 			}
 
@@ -1670,25 +1686,26 @@ namespace SharpRemote
 		/// <param name="error"></param>
 		/// <param name="currentConnectionId"></param>
 		/// <param name="errorReason"></param>
+		/// <param name="blockeIpEndPoint"></param>
 		protected bool TryPerformOutgoingHandshake(TTransport socket,
 		                                           TimeSpan timeout,
 		                                           out ErrorType errorType,
 		                                           out string error,
 		                                           out ConnectionId currentConnectionId,
-		                                           out object errorReason)
+		                                           out EndPointDisconnectReason errorReason,
+		                                           out EndPoint blockeIpEndPoint)
 		{
-			string messageType;
-			string message;
 			EndPoint remoteEndPoint = GetRemoteEndPointOf(socket);
 
 			if (!TryReadMessage(socket, timeout, AuthenticationChallenge,
-			                    out messageType,
-			                    out message,
-			                    out error))
+			                    out var messageType,
+			                    out var message,
+			                    out error,
+			                    out errorReason))
 			{
 				errorType = ErrorType.Handshake;
 				currentConnectionId = ConnectionId.None;
-				errorReason = null;
+				blockeIpEndPoint = null;
 				return false;
 			}
 
@@ -1703,7 +1720,7 @@ namespace SharpRemote
 					errorType = ErrorType.AuthenticationRequired;
 					error = string.Format("Endpoint '{0}' requires authentication", remoteEndPoint);
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 
@@ -1716,11 +1733,11 @@ namespace SharpRemote
 				// Upon establishing a connection, we try to authenticate the ourselves
 				// against the server by answering his response.
 				string response = _clientAuthenticator.CreateResponse(challenge);
-				if (!TryWriteMessage(socket, AuthenticationResponseMessage, response, out error))
+				if (!TryWriteMessage(socket, AuthenticationResponseMessage, response, out error, out errorReason))
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 
@@ -1729,11 +1746,12 @@ namespace SharpRemote
 				if (!TryReadMessage(socket, timeout, AuthenticationVerification,
 				                    out messageType,
 				                    out message,
-				                    out error))
+				                    out error,
+				                    out errorReason))
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 
@@ -1742,7 +1760,7 @@ namespace SharpRemote
 					errorType = ErrorType.Authentication;
 					error = string.Format("Failed to authenticate against endpoint '{0}'", remoteEndPoint);
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 			}
@@ -1753,7 +1771,7 @@ namespace SharpRemote
 			else if (messageType == EndPointBlocked)
 			{
 				errorType = ErrorType.EndPointBlocked;
-				errorReason = TryParseEndPoint(message);
+				blockeIpEndPoint = TryParseEndPoint(message);
 				error =
 					string.Format("{0}: EndPoint '{1}' is already connected to '{2}' and doesn't accept any other connection until the current one is disconnected",
 					              Name,
@@ -1775,7 +1793,7 @@ namespace SharpRemote
 					              NoAuthenticationRequiredMessage
 					             );
 				currentConnectionId = ConnectionId.None;
-				errorReason = null;
+				blockeIpEndPoint = null;
 				return false;
 			}
 
@@ -1784,22 +1802,23 @@ namespace SharpRemote
 				// After we've authenticated ourselves, it's time for the server to authenticate himself.
 				// Let's send the challenge
 				string challenge = _serverAuthenticator.CreateChallenge();
-				if (!TryWriteMessage(socket, AuthenticationRequiredMessage, challenge, out error))
+				if (!TryWriteMessage(socket, AuthenticationRequiredMessage, challenge, out error, out errorReason))
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 
 				if (!TryReadMessage(socket, timeout, AuthenticationResponse,
 				                    out messageType,
 				                    out message,
-				                    out error))
+				                    out error,
+				                    out errorReason))
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 
@@ -1812,15 +1831,15 @@ namespace SharpRemote
 					error = string.Format("Remote endpoint '{0}' failed the authentication challenge",
 					                      remoteEndPoint);
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 
-				if (!TryWriteMessage(socket, AuthenticationSucceedMessage, "", out error))
+				if (!TryWriteMessage(socket, AuthenticationSucceedMessage, "", out error, out errorReason))
 				{
 					errorType = ErrorType.Handshake;
 					currentConnectionId = ConnectionId.None;
-					errorReason = null;
+					blockeIpEndPoint = null;
 					return false;
 				}
 
@@ -1833,11 +1852,11 @@ namespace SharpRemote
 				WriteMessage(socket, NoAuthenticationRequiredMessage);
 			}
 
-			if (!TryReadMessage(socket, timeout, AuthenticationFinished, out messageType, out message, out error))
+			if (!TryReadMessage(socket, timeout, AuthenticationFinished, out messageType, out message, out error, out errorReason))
 			{
 				errorType = ErrorType.Handshake;
 				currentConnectionId = ConnectionId.None;
-				errorReason = null;
+				blockeIpEndPoint = null;
 				return false;
 			}
 
@@ -1852,7 +1871,7 @@ namespace SharpRemote
 						HandshakeSucceedMessage,
 						messageType);
 				currentConnectionId = ConnectionId.None;
-				errorReason = null;
+				blockeIpEndPoint = null;
 				return false;
 			}
 
@@ -1860,7 +1879,7 @@ namespace SharpRemote
 			currentConnectionId = OnHandshakeSucceeded(socket, remoteEndPoint);
 			errorType = ErrorType.Handshake;
 			error = null;
-			errorReason = null;
+			blockeIpEndPoint = null;
 			return true;
 		}
 

@@ -139,14 +139,17 @@ namespace SharpRemote
 				}
 
 				var remaining = timeout - (DateTime.Now - started);
-				ErrorType errorType;
-				string error;
-				object errorReason;
-				if (!TryPerformOutgoingHandshake(pipe, remaining, out errorType, out error, out connectionId, out errorReason))
+				if (!TryPerformOutgoingHandshake(pipe, remaining, out ErrorType errorType, out string error, out connectionId, out var errorReason, out var blockedIpEndpoint))
 				{
 					switch (errorType)
 					{
 						case ErrorType.Handshake:
+							if (errorReason == EndPointDisconnectReason.ConnectionTimedOut)
+							{
+								exception = new HandshakeTimeoutException(error);
+								break;
+							}
+
 							exception = new HandshakeException(error);
 							break;
 
@@ -155,7 +158,7 @@ namespace SharpRemote
 							break;
 							
 						case ErrorType.EndPointBlocked:
-							exception = new RemoteEndpointAlreadyConnectedException(error, (errorReason as EndPoint)?.ToString());
+							exception = new RemoteEndpointAlreadyConnectedException(error, blockedIpEndpoint?.ToString());
 							break;
 
 						default:

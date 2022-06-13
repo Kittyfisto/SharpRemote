@@ -295,7 +295,11 @@ namespace SharpRemote
 
 		private static void BuildTypeName(StringBuilder builder, TypeInformation typeInformation)
 		{
+#if NET6_0
+			builder.AppendFormat("{0}.{1}.Serialization", typeInformation.Namespace, typeInformation.Name);
+#else
 			builder.AppendFormat("{0}.{1}", typeInformation.Namespace, typeInformation.Name);
+#endif
 			if (typeInformation.IsGenericType)
 			{
 				builder.Append("[");

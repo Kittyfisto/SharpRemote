@@ -3,7 +3,7 @@ using FluentAssertions;
 using NUnit.Framework;
 using SharpRemote.WebApi.Routes;
 
-namespace SharpRemote.Test.WebApi.Routes
+namespace SharpRemote.WebApi.Test.Routes
 {
 	[TestFixture]
 	public sealed class RouteTokenTest

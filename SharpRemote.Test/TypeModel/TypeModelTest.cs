@@ -201,7 +201,7 @@ namespace SharpRemote.Test.TypeModel
 			description.AssemblyQualifiedName.Should().Be(typeof(object).AssemblyQualifiedName);
 
 			model.Types.Should().HaveCount(1);
-			model.Types.Should().Equal(new[] {description});
+			model.Types.Should().BeEquivalentTo(new[] {description});
 		}
 
 		[Test]
@@ -515,12 +515,12 @@ namespace SharpRemote.Test.TypeModel
 			field3.FieldType.IsBuiltIn.Should().BeTrue();
 			((FieldDescription)field3).FieldTypeId.Should().Be(model.GetId<string>());
 
-			model.Types.Should().Contain(new object[]
+			model.Types.Should().Contain(new[]
 			{
-				type, //< FieldStruct
-				field1.FieldType, //< double
-				field2.FieldType, //< int
-				field3.FieldType //< string
+				(TypeDescription)type, //< FieldStruct
+				(TypeDescription)field1.FieldType, //< double
+				(TypeDescription)field2.FieldType, //< int
+				(TypeDescription)field3.FieldType //< string
 			});
 		}
 

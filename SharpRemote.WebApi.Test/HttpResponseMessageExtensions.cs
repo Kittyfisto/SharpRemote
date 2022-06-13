@@ -1,6 +1,6 @@
 ﻿using System.Net.Http;
 
-namespace SharpRemote.Test.WebApi
+namespace SharpRemote.WebApi.Test
 {
 	public static class HttpResponseMessageExtensions
 	{

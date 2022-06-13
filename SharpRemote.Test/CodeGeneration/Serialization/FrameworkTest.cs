@@ -14,8 +14,10 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[Test]
 		public void TestAppDomainManagerInitializationOptions()
 		{
+#if !NET6_0
 			_serializer.ShouldRoundtrip(AppDomainManagerInitializationOptions.None);
 			_serializer.ShouldRoundtrip(AppDomainManagerInitializationOptions.RegisterWithHost);
+#endif
 		}
 
 		[Test]
@@ -96,8 +98,10 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		[Test]
 		public void TestContextForm()
 		{
+#if !NET6_0
 			_serializer.ShouldRoundtrip(ActivationContext.ContextForm.Loose);
 			_serializer.ShouldRoundtrip(ActivationContext.ContextForm.StoreBounded);
+#endif
 		}
 
 		[Test]

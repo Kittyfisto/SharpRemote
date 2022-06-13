@@ -24,18 +24,12 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 		public void TestFixtureSetUp()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
-			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 			_moduleName = assemblyName.Name + ".dll";
 			ModuleBuilder module = _assembly.DefineDynamicModule(_moduleName);
 			_serializer = new BinarySerializer(module);
 		}
-
-		[OneTimeTearDown]
-		public void TestFixtureTearDown()
-		{
-			_assembly.Save(_moduleName);
-		}
-
+		
 		public static IEnumerable<Level> LevelValues => new[]
 		{
 			Level.Error, Level.Alert, Level.All, Level.Critical, Level.Debug,
@@ -441,13 +435,13 @@ namespace SharpRemote.Test.CodeGeneration.Serialization
 			var actualValue = _serializer.Roundtrip(value);
 
 			const string reason = "because those two callbacks should've been invoked in that order";
-			value.Callbacks.Should().Equal(new object[]
+			value.Callbacks.Should().Equal(new []
 			{
 				"BeforeSerialization",
 				"AfterSerialization"
 			}, reason);
 
-			actualValue.Callbacks.Should().Equal(new object[]
+			actualValue.Callbacks.Should().Equal(new []
 			{
 				"BeforeDeserialization",
 				"AfterDeserialization"

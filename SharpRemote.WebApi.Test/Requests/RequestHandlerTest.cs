@@ -3,12 +3,10 @@ using System.Text;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
-using SharpRemote.Test.Types.Interfaces.Web;
-using SharpRemote.WebApi;
 using SharpRemote.WebApi.Requests;
 using SharpRemote.WebApi.Resources;
 
-namespace SharpRemote.Test.WebApi.Requests
+namespace SharpRemote.WebApi.Test.Requests
 {
 	[TestFixture]
 	public sealed class RequestHandlerTest

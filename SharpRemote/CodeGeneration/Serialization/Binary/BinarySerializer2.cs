@@ -92,7 +92,11 @@ namespace SharpRemote
 		                               out IMethodResultReader resultReader,
 		                               IRemotingEndPoint endPoint = null)
 		{
+#if NET6_0
+			var reader = new BinaryReader(stream, Encoding.UTF8);
+#else
 			var reader = new BinaryReader(stream, Encoding.UTF8, true);
+#endif
 			var type = (MessageType2)reader.ReadByte();
 			if (type == MessageType2.Call)
 			{
@@ -550,7 +554,7 @@ namespace SharpRemote
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
 
-#if DOTNETCORE
+#if NET6_0
 			var access = AssemblyBuilderAccess.Run;
 #else
 			var access = AssemblyBuilderAccess.RunAndSave;

@@ -38,12 +38,17 @@ namespace SharpRemote.Test.Remoting
 					}
 					catch (Exception e)
 					{
+#if NET6_0
+						var property = e.GetType().GetProperty("SerializationStackTraceString", BindingFlags.NonPublic | BindingFlags.Instance);
+#else
 						var property = e.GetType().GetProperty("RemoteStackTrace", BindingFlags.NonPublic | BindingFlags.Instance);
+#endif
 						var remoteStackTrace = (string)property.GetValue(e);
 						remoteStackTrace.Should().NotBeEmpty("because the remote stacktrace of the exception should've been preserved");
 
 						var stacktrace = e.StackTrace;
-						stacktrace.Should().Contain(remoteStackTrace, "because the remote stacktrace should be part of the actual stacktrace to allow for easier debugging of distributed applications (I want to know where it crashed on the server)");
+						stacktrace.Should().Contain(remoteStackTrace,
+							"because the remote stacktrace should be part of the actual stacktrace to allow for easier debugging of distributed applications (I want to know where it crashed on the server)");
 					}
 				}
 			}

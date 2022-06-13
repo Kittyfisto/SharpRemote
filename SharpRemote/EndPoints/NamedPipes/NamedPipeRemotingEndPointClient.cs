@@ -155,7 +155,7 @@ namespace SharpRemote
 							break;
 							
 						case ErrorType.EndPointBlocked:
-							exception = new RemoteEndpointAlreadyConnectedException(error, errorReason as EndPoint);
+							exception = new RemoteEndpointAlreadyConnectedException(error, (errorReason as EndPoint)?.ToString());
 							break;
 
 						default:

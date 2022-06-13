@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net;
 using System.Runtime.Serialization;
 
 // ReSharper disable CheckNamespace
@@ -30,7 +29,7 @@ namespace SharpRemote
 		public RemoteEndpointAlreadyConnectedException(SerializationInfo info, StreamingContext context)
 			: base(info, context)
 		{
-			BlockingEndPoint = info.GetValue("BlockingEndPoint", typeof(EndPoint)) as EndPoint;
+			BlockingEndPointName = info.GetValue("BlockingEndPointName", typeof(string)) as string;
 		}
 
 		/// <summary>
@@ -38,27 +37,27 @@ namespace SharpRemote
 		///     for this exception.
 		/// </summary>
 		/// <param name="message"></param>
-		/// <param name="blockingEndPoint">The endpoint responsible for not being able to establish a connection</param>
+		/// <param name="blockingEndPointName">The endpoint responsible for not being able to establish a connection</param>
 		/// <param name="innerException"></param>
 		public RemoteEndpointAlreadyConnectedException(string message,
-		                                               EndPoint blockingEndPoint,
+		                                               string blockingEndPointName,
 		                                               Exception innerException = null)
 			: base(message, innerException)
 		{
-			BlockingEndPoint = blockingEndPoint;
+			BlockingEndPointName = blockingEndPointName;
 		}
 
 		/// <summary>
 		///     The endpoint responsible for not being able to establish a connection.
 		/// </summary>
-		public EndPoint BlockingEndPoint { get; set; }
+		public string BlockingEndPointName { get; set; }
 
 		/// <inheritdoc />
 		public override void GetObjectData(SerializationInfo info, StreamingContext context)
 		{
 			base.GetObjectData(info, context);
 
-			info.AddValue("BlockingEndPoint", BlockingEndPoint);
+			info.AddValue("BlockingEndPointName", BlockingEndPointName);
 		}
 	}
 }

@@ -1,8 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
-using SharpRemote.WebApi;
 
-namespace SharpRemote.Test.WebApi.Attributes
+namespace SharpRemote.WebApi.Test.Attributes
 {
 	[TestFixture]
 	public sealed class RouteAttributeTest

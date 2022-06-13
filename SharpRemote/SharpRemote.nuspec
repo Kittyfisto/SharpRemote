@@ -17,14 +17,22 @@
     <copyright>Copyright 2017</copyright>
     <tags>.NET Remoting RPC</tags>
     <dependencies>
-      <!--<dependency id="SampleDependency" version="1.0" />-->
+      <group targetFramework=".NETFramework4.8" />
+      <group targetFramework=".net6.0" />
     </dependencies>
   </metadata>
   <files>
-    <file src="..\bin\Win\SharpRemote.dll" target="lib\net45\" />
-    <file src="..\bin\Win\SharpRemote.XML" target="lib\net45\" />
-    <file src="..\bin\Win\SharpRemote.pdb" target="lib\net45\" />
-    <file src="..\bin\Win\SharpRemote.Host.exe" target="lib\net45\" />
-    <file src="..\bin\Win\SharpRemote.Host.pdb" target="lib\net45\" />
+    <file src="..\bin\net48\SharpRemote.dll" target="lib\net48\" />
+    <file src="..\bin\net48\SharpRemote.XML" target="lib\net48\" />
+    <file src="..\bin\net48\SharpRemote.pdb" target="lib\net48\" />
+    <file src="..\bin\net48\SharpRemote.Host.exe" target="lib\net48\" />
+    <file src="..\bin\net48\SharpRemote.Host.pdb" target="lib\net48\" />
+    
+    <file src="..\bin\net6.0\SharpRemote.dll" target="lib\net6.0\" />
+    <file src="..\bin\net6.0\SharpRemote.XML" target="lib\net6.0\" />
+    <file src="..\bin\net6.0\SharpRemote.pdb" target="lib\net6.0\" />
+    <file src="..\bin\net6.0\SharpRemote.Host.dll" target="lib\net6.0\" />
+    <file src="..\bin\net6.0\SharpRemote.Host.runtimeconfig.json" target="lib\net6.0\" />
+    <file src="..\bin\net6.0\SharpRemote.Host.pdb" target="lib\net6.0\" />
   </files>
 </package>

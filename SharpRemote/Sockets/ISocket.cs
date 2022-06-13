@@ -318,19 +318,7 @@ namespace SharpRemote.Sockets
 		/// when an attempt was made to set TTL to a value higher than 255.
 		/// <exception cref="System.ObjectDisposedException">The System.Net.Sockets.Socket has been closed.</exception>
 		short Ttl { get; set; }
-
-		///<Summary>
-		///     Specifies whether the socket should only use Overlapped I/O mode.
-		///</Summary>
-		/// <Returns>
-		///     true if the System.Net.Sockets.Socket uses only overlapped I/O; otherwise, false.
-		///     The default is false.
-		/// </Returns>
-		/// <exception cref="System.InvalidOperationException">
-		/// The socket has been bound to a completion port.
-		/// </exception>
-		bool UseOnlyOverlappedIO { get; set; }
-
+		
 		///<Summary>
 		///     Creates a new System.Net.Sockets.Socket for a newly created connection.
 		///</Summary>

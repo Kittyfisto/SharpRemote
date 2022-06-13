@@ -36,7 +36,7 @@ namespace SharpRemote.SystemTest.ServiceDiscovery
 		{
 			new Action(() => _discoverer.RegisterService("dawwdawd", new IPEndPoint(IPAddress.Any, 0), new byte[500]))
 			.Should().Throw<ArgumentOutOfRangeException>()
-			.WithMessage("The total size of a message may not exceed 512 bytes (this message would be 568 bytes in length)\r\nParameter name: payload");
+			.WithMessage("The total size of a message may not exceed 512 bytes (this message would be 568 bytes in length)*Parameter*payload*");
 		}
 
 		//[Test]

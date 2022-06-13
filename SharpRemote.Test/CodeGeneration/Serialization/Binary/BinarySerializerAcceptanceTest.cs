@@ -21,7 +21,7 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 		public void Setup()
 		{
 			var assemblyName = new AssemblyName("SharpRemote.GeneratedCode.Serializer");
-			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+			_assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 			string moduleName = assemblyName.Name + ".dll";
 			_module = _assembly.DefineDynamicModule(moduleName);
 		}
@@ -29,20 +29,6 @@ namespace SharpRemote.Test.CodeGeneration.Serialization.Binary
 		protected override ISerializer2 Create()
 		{
 			return new BinarySerializer2(_module);
-		}
-
-		protected override void Save()
-		{
-			var fname = "SharpRemote.GeneratedCode.Serializer.dll";
-			try
-			{
-				_assembly.Save(fname);
-				TestContext.Out.WriteLine("Assembly written to: {0}", Path.Combine(Directory.GetCurrentDirectory(), fname));
-			}
-			catch (Exception e)
-			{
-				TestContext.Out.WriteLine("Couldn't write assembly: {0}", e);
-			}
 		}
 
 		public static IEnumerable<ProtocolVersion> SupportedVersions => new[]

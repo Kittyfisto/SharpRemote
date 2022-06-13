@@ -562,7 +562,7 @@ namespace SharpRemote.Test.Remoting
 			const int value = 42;
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
 				.Should().Throw<ArgumentOutOfRangeException>()
-				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
+				.WithMessage("Specified argument was out of the range of valid values*Parameter*value*");
 
 			actualValue1.Should().Be(value);
 			actualValue2.Should().NotHaveValue();
@@ -618,7 +618,7 @@ namespace SharpRemote.Test.Remoting
 			const int value = 42;
 			new Action(() => subject.Raise(x => x.Foobar += null, value))
 				.Should().Throw<ArgumentOutOfRangeException>()
-				.WithMessage("Specified argument was out of the range of valid values.\r\nParameter name: value");
+				.WithMessage("Specified argument was out of the range of valid values*Parameter*value*");
 
 			// This line exists to FORCE the GC to NOT collect the subject, which
 			// in turn would unregister the servant from the server, thus making the test
@@ -932,7 +932,7 @@ namespace SharpRemote.Test.Remoting
 
 			subject.Raise(x => x.Do += null, new object[] {new[]{"COM11", "COM13"}});
 
-			values.Should().Equal(new object[]
+			values.Should().Equal(new []
 				{
 					"COM11",
 					"COM13"
@@ -954,7 +954,7 @@ namespace SharpRemote.Test.Remoting
 			var proxy = _client.CreateProxy<IVoidMethodStringArrayParameter>(servantId);
 			proxy.Do(new[]{"COM11", "COM13"});
 
-			values.Should().Equal(new object[]
+			values.Should().Equal(new []
 				{
 					"COM11",
 					"COM13"
